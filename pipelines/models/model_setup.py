@@ -6,12 +6,14 @@ import torch
 import numpy as np
 from pipelines.models.architectures.baselines import SimpleLinear, SimpleCNN
 from pipelines.models.architectures.unets import UNet
-
+import time
+import random
 
 
 BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
             "B6", "B7", "B8", "B8A", "B9",
             "B10", "B11", "B12"]
+
 
 CHANNELS_CONFIGURATIONS = {
     'all': list(range(len(BANDS_S2))),
@@ -103,11 +105,11 @@ def model_inference_fun(opt):
     if device.type.startswith('cuda'):
         model = model.to(device)
 
-    latest_weight_file = load_model_weights(model, opt.model_folder, mode_train=False)
-
+    load_model_weights(model, opt.model_folder, mode_train=False)
 
     module_shape = SUBSAMPLE_MODULE[opt.model] if opt.model in SUBSAMPLE_MODULE else 1
 
+    # This does not work because it expects 3 dim images (without the batch dim)
     # norm = Normalize(mean=SENTINEL2_NORMALIZATION[CHANNELS_CONFIGURATIONS[channel_configuration_name], 0], 
     #                  std=SENTINEL2_NORMALIZATION[CHANNELS_CONFIGURATIONS[channel_configuration_name], 1])
     
@@ -121,7 +123,6 @@ def model_inference_fun(opt):
     def normalize(batch_image):
         assert batch_image.ndim == 4, "Expected 4d tensor"
         return (batch_image - mean_batch) / (std_batch + 1e-6)
-
 
     return get_pred_function(model, device=device,
                              module_shape=module_shape, max_tile_size=opt.max_tile_size,
