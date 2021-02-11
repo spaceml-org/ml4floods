@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.architectures import layer_factory
+from pipelines.models.architectures import layer_factory
 
 
 class UNet(nn.Module):
