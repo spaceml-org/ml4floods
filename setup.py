@@ -28,15 +28,15 @@ EXTRAS = {
 }
 
 setup(
-    name="GPJax",
-    version="0.2.0",
-    author="Thomas Pinder",
-    author_email="t.pinder2@lancaster.ac.uk",
+    name="ml4floods",
+    version="0.0.1",
+    author="SpaceML-org",
+    # author_email="t.pinder2@lancaster.ac.uk",
     packages=find_packages(".", exclude=["tests"]),
-    license="LICENSE",
-    description="Didactic Gaussian processes in Jax and ObJax.",
-    long_description="GPJax aims to provide a low-level interface to Gaussian process models. Code is written entirely in Jax and Objax to enhance readability, and structured so as to allow researchers to easily extend the code to suit their own needs. When defining GP prior in GPJax, the user need only specify a mean and kernel function. A GP posterior can then be realised by computing the product of our prior with a likelihood function. The idea behind this is that the code should be as close as possible to the maths that we would write on paper when working with GP models.",
+    # license="LICENSE",
+    description="Machine learning methods for floods.",
+    # long_description="",
     install_requires=parse_requirements_file("requirements.txt"),
     extras_require=EXTRAS,
-    keywords=["gaussian-processes jax machine-learning bayesian"],
+    keywords=["floods pytorch machine-learning earth"],
 )
