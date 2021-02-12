@@ -9,12 +9,7 @@ def parse_requirements_file(filename):
 
 # Optional Packages
 EXTRAS = {
-    "dev": [
-        "black",
-        "isort",
-        "pylint",
-        "flake8",
-    ],
+    "dev": ["black", "isort", "pylint", "flake8", "pyprojroot"],
     "tests": [
         "pytest",
     ],
