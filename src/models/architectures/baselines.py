@@ -1,5 +1,5 @@
 import torch.nn as nn
-from pipelines.models.architectures import layer_factory
+from src.models.architectures import layer_factory
 
 
 class SimpleLinear(nn.Module):

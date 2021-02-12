@@ -4,8 +4,8 @@ from natsort import natsorted
 import itertools
 import torch
 import numpy as np
-from pipelines.models.architectures.baselines import SimpleLinear, SimpleCNN
-from pipelines.models.architectures.unets import UNet
+from src.models.architectures.baselines import SimpleLinear, SimpleCNN
+from src.models.architectures.unets import UNet
 import time
 import random
 
