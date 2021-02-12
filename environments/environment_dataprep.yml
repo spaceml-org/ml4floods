@@ -1,0 +1,26 @@
+name: ml4fl_py38_jd
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python=3.8
+- pip
+- pip:
+  # PYTORCH ECOSYSTEM
+  - torch
+  - torchvision
+  - numpy
+  - matplotlib
+  - scipy
+  - pandas
+  - h5py
+  - albumentations
+  - rasterio
+  - pytorch-ignite
+  - fastprogress
+  - termcolor
+  - tqdm
+  - natsort
+  - black
+  - isort
+  - mypy

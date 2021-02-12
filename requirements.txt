@@ -1,0 +1,13 @@
+torch
+torchvision
+numpy
+matplotlib
+scipy
+pandas
+h5py
+albumentations
+rasterio
+pytorch-ignite
+fastprogress
+tqdm
+natsort
