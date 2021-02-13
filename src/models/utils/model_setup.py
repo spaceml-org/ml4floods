@@ -220,7 +220,7 @@ def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
     :param tile_size: Size of the tiles.
     :param pad_size: each tile is padded before calling the pred_function.
     :param device: Device to save the predictions
-    :return: torch.Tensor in BCHW format (same B, H and W as x)
+    :return: torch.Tensor in BCHW format (same B, H and W as input_batch)
     """
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"
