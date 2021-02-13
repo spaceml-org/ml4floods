@@ -1,6 +1,5 @@
 from glob import glob
 import os
-from natsort import natsorted
 import itertools
 import torch
 import torch.nn
@@ -49,22 +48,14 @@ SUBSAMPLE_MODULE = {
 }
 
 
-def load_model_weights(model, model_folder, mode_train=False):
+def load_model_weights(model: torch.nn.Module, model_file: str):
     # TODO: Just load the final_weights
-    files = natsorted(glob(os.path.join(model_folder, '*_weights.pt')))
-    if len(files) == 0:
-        if mode_train:
-            return None
-        else:
-            raise FileNotFoundError(f"Model weights not found in folder {model_folder}")
-    # print('Model files       : {}'.format(files))
-    model_file = files[-1]
     print('Using latest model: {}'.format(model_file))
     model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
     return model_file
 
 
-def load_model_architecture(model_name, num_class, num_channels):
+def load_model_architecture(model_name: str, num_class: int, num_channels: int) -> torch.nn.Module:
     if model_name == "linear":
         model = SimpleLinear(num_channels, num_class)
     elif model_name == "unet":
@@ -112,7 +103,11 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
     if device.type.startswith('cuda'):
         model = model.to(device)
 
-    load_model_weights(model, opt.model_folder, mode_train=False)
+    model_weights = os.path.join(opt.model_folder, opt.model + "_final_weights.pt")
+
+    assert os.path.exists(model_weights), f"Model weights file: {model_weights} not found"
+
+    load_model_weights(model, model_weights)
 
     module_shape = SUBSAMPLE_MODULE[opt.model] if opt.model in SUBSAMPLE_MODULE else 1
 
