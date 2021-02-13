@@ -128,21 +128,25 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
 
     return get_pred_function(model,
                              module_shape=module_shape, max_tile_size=opt.max_tile_size,
+                             activation_fun=lambda ot: torch.softmax(ot, dim=1),
                              normalization=normalize)
 
         
 def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280,
-                      normalization: Optional[Callable] = None) -> Callable:
+                      normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None) -> Callable:
     """
     Given a model it returns a callable function to make inferences that:
     1) Normalize the input tensor if provided a callable normalization fun
     2) Tile the input if it's bigger than max_tile_size to avoid memory errors (see pred_by_tile fun)
-    3) Checks the input to the network is divisible by module_shape (to avoid errors in U-Net like models)
+    3) Checks the input to the network is divisible by module_shape and padd if needed
+    (to avoid errors in U-Net like models)
+    4) Apply activation function to the outputs
 
     :param model:
     :param module_shape:
     :param max_tile_size:
     :param normalization:
+    :param activation_fun:
     :return: Function to make inferences
     """
 
@@ -151,13 +155,16 @@ def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280
     
     if normalization is None:
         normalization = lambda ti: ti
+
+    if activation_fun is None:
+        activation_fun = lambda ot: ot
     
     # Pad the input to be divisible by module_shape (otherwise U-Net model fails)
     if module_shape > 1:
-        pred_fun = padded_predict(lambda ti: torch.softmax(model(ti.to(device)), dim=1),
+        pred_fun = padded_predict(lambda ti: activation_fun(model(ti.to(device))),
                                   module_shape=module_shape)
     else:
-        pred_fun = lambda ti: torch.softmax(model(ti.to(device)), dim=1)
+        pred_fun = lambda ti: activation_fun(model(ti.to(device)))
 
     def pred_fun_final(ti):
         with torch.no_grad():
