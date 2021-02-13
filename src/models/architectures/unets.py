@@ -47,7 +47,4 @@ class UNet(nn.Module):
 
         out = self.conv_last(x)
 
-        # For receptive field calculation
-        self.feature_maps = [out]
-
         return out

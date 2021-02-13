@@ -2,8 +2,21 @@ import torch
 import numpy as np
 
 
-def compute_confusions(ground_truth_outputs, test_outputs_categorical, num_class, remove_class_zero=False):
-    
+def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
+                       remove_class_zero=False) -> torch.Tensor:
+    """
+    Compute the confusion matrix for a pair of ground truth and predictions. Returns one confusion matrix for each
+    element in the batch
+
+    :param ground_truth_outputs: BCHW tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
+    :param test_outputs_categorical: BCHW tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
+    :param num_class: Number of classes.
+    :param remove_class_zero: if true the value zero in ground_truth_outputs is considered a masked value;
+    thus removed from the final prediction.
+
+    :return: (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
+
+    """
     if remove_class_zero:
         # Save invalids to discount
         ground_truth = ground_truth_outputs.clone()
@@ -29,7 +42,7 @@ def compute_confusions(ground_truth_outputs, test_outputs_categorical, num_class
     return confusions_batch
 
 
-def cm_analysis(cm, labels, ymap=None, figsize=(10,10)):
+def cm_analysis(cm, labels, figsize=(10, 10)):
     """
     Generate matrix plot of confusion matrix with pretty annotations.
     The plot image is saved to disk.

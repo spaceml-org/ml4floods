@@ -3,6 +3,9 @@ from src.models.architectures import layer_factory
 
 
 class SimpleLinear(nn.Module):
+    """
+    Linear model
+    """
     def __init__(self, n_channels, n_class):
         super().__init__()
 
@@ -14,13 +17,13 @@ class SimpleLinear(nn.Module):
         
         res = self.conv(x)
         
-        # For receptive field calculation
-        self.feature_maps = [res]
-        
         return res
 
 
 class SimpleCNN(nn.Module):
+    """
+    5-layer fully conv CNN
+    """
     def __init__(self, n_channels, n_class):
         super().__init__()
 
@@ -33,8 +36,5 @@ class SimpleCNN(nn.Module):
     def forward(self, x):
         
         res = self.conv(x)
-        
-        # For receptive field calculation
-        self.feature_maps = [res]
         
         return res

@@ -3,11 +3,14 @@ import os
 from natsort import natsorted
 import itertools
 import torch
+import torch.nn
 import numpy as np
 from src.models.architectures.baselines import SimpleLinear, SimpleCNN
 from src.models.architectures.unets import UNet
+from src.models.utils import configuration
 import time
 import random
+from typing import List, Union, Optional, Tuple, Callable, Dict, NamedTuple, Iterable
 
 
 BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
@@ -61,10 +64,7 @@ def load_model_weights(model, model_folder, mode_train=False):
     return model_file
 
 
-def create_model(model_name, num_class, num_channels):
-    if model_name is None:
-        print('Expecting a --model argument')
-        quit()
+def load_model_architecture(model_name, num_class, num_channels):
     if model_name == "linear":
         model = SimpleLinear(num_channels, num_class)
     elif model_name == "unet":
@@ -97,10 +97,17 @@ def set_random_seed(seed=None):
         torch.cuda.manual_seed(seed)
 
         
-def model_inference_fun(opt):
+def model_inference_fun(opt: configuration.AttrDict) -> Callable:
+    """
+    Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
+    prediction does not break bc of memory errors when predicting large tiles.
+
+    :param opt:
+    :return: callable function
+    """
     device = handle_device(opt.device)
 
-    model = create_model(opt.model, opt.num_class, opt.num_channels)
+    model = load_model_architecture(opt.model, opt.num_class, opt.num_channels)
 
     if device.type.startswith('cuda'):
         model = model.to(device)
@@ -129,8 +136,21 @@ def model_inference_fun(opt):
                              normalization=normalize)
 
         
-def get_pred_function(model, device=torch.device("cuda:0"), module_shape=1, max_tile_size=1280, 
-                      normalization=None):
+def get_pred_function(model: torch.nn.Module, device=torch.device("cuda:0"), module_shape=1, max_tile_size=1280,
+                      normalization: Optional[Callable] = None) -> Callable:
+    """
+    Given a model it returns a callable function to make inferences that:
+    1) Normalize the input tensor if provided a callable normalization fun
+    2) Tile the input if it's bigger than max_tile_size to avoid memory errors (see pred_by_tile fun)
+    3) Checks the input to the network is divisible by module_shape (to avoid errors in U-Net like models)
+
+    :param model:
+    :param device:
+    :param module_shape:
+    :param max_tile_size:
+    :param normalization:
+    :return: Function to make inferences
+    """
     
     if device.type.startswith('cuda'):
         model = model.to(device)
@@ -158,8 +178,22 @@ def get_pred_function(model, device=torch.device("cuda:0"), module_shape=1, max_
     return pred_fun_final
 
 
-def padded_predict(predfunction, module_shape):
-    def predict(x):
+def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
+    """
+    This function is needed for U-Net like models that require the shape to be multiple of 8 (otherwise there is an
+    error in concat layer between the tensors of the upsampling and downsampling paths).
+
+    :param predfunction:
+    :param module_shape:
+
+    :return: Return a function that pads the input if it is not multiple of module_shape
+    """
+    def predict(x: torch.Tensor):
+        """
+
+        :param x: BCHW tensor
+        :return: BCHW tensor with the same B, H and W as x
+        """
         shape_tensor = np.array(list(x.shape))[2:].astype(np.int64)
         shape_new_tensor = np.ceil(shape_tensor.astype(np.float32) / module_shape).astype(np.int64) * module_shape
 
@@ -181,7 +215,19 @@ def padded_predict(predfunction, module_shape):
     return predict
 
 
-def predbytiles(pred_function, input_batch, tile_size=1280, pad_size=32, device=torch.device("cpu")):
+def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
+                tile_size=1280, pad_size=32, device=torch.device("cpu")) -> torch.Tensor:
+    """
+    Apply a pred_function (usually a torch model) by tiling the input_batch array.
+    The purpose is to run pred_function(input_batch) avoiding torch memory errors.
+
+    :param pred_function:
+    :param input_batch: torch.Tensor in BCHW format
+    :param tile_size: Size of the tiles.
+    :param pad_size:
+    :param device:
+    :return: torch.Tensor in BCHW format (same B, H and W as x)
+    """
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"
 
