@@ -79,6 +79,15 @@ def handle_device(device='cuda:0'):
 
 
 def set_random_seed(seed=None):
+    """
+    Sets the random seed
+
+    Args:
+        seed:
+
+    Returns:
+
+    """
     if seed is None:
         seed = int((time.time()*1e6) % 1e8)
     random.seed(seed)
@@ -93,8 +102,10 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
 
-    :param opt:
-    :return: callable function
+    Args:
+        opt:
+
+    Returns: callable function
     """
     device = handle_device(opt.device)
 
@@ -142,12 +153,16 @@ def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280
     (to avoid errors in U-Net like models)
     4) Apply activation function to the outputs
 
-    :param model:
-    :param module_shape:
-    :param max_tile_size:
-    :param normalization:
-    :param activation_fun:
-    :return: Function to make inferences
+    Args:
+        model:
+        module_shape:
+        max_tile_size:
+        normalization:
+        activation_fun:
+
+    Returns:
+        Function to make inferences
+
     """
 
     device = model.device
@@ -184,10 +199,13 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
     This function is needed for U-Net like models that require the shape to be multiple of 8 (otherwise there is an
     error in concat layer between the tensors of the upsampling and downsampling paths).
 
-    :param predfunction:
-    :param module_shape:
+    Args:
+        predfunction:
+        module_shape:
 
-    :return: Return a function that pads the input if it is not multiple of module_shape
+    Returns:
+        Function that pads the input if it is not multiple of module_shape
+
     """
     def predict(x: torch.Tensor):
         """
@@ -223,12 +241,16 @@ def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
     The purpose is to run `pred_function(input_batch)` avoiding memory errors.
     It tiles and stiches the pateches with padding using the strategy of: https://arxiv.org/abs/1805.12219
 
-    :param pred_function: pred_function to call
-    :param input_batch: torch.Tensor in BCHW format
-    :param tile_size: Size of the tiles.
-    :param pad_size: each tile is padded before calling the pred_function.
-    :param device: Device to save the predictions
-    :return: torch.Tensor in BCHW format (same B, H and W as input_batch)
+    Args:
+        pred_function: pred_function to call
+        input_batch: torch.Tensor in BCHW format
+        tile_size: Size of the tiles.
+        pad_size: each tile is padded before calling the pred_function.
+        device: Device to save the predictions
+
+    Returns:
+        torch.Tensor in BCHW format (same B, H and W as input_batch)
+
     """
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"

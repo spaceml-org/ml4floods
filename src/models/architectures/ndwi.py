@@ -11,14 +11,16 @@ import torch
 
 def extract_ndwi(x: torch.Tensor, green=2, nir=7, epsilon=1e-8) -> torch.Tensor:
     """
-    Normalize difference water index (Mcfeeters 1996)
+    Normalize difference water index (Mcfeeters 1996) Band index defaults to Sentinel-2 image bands.
 
-    :param x: BCHW image
-    :param green: index of green band
-    :param nir: index of nir band
-    :param epsilon: eps value to avoid dividing by zero
+    Args:
+        x: BCHW image
+        green: index of green band
+        nir: index of nir band
+        epsilon: eps value to avoid dividing by zero
 
-    :return: B1HW image with the ndwi
+    Returns:
+        B1HW image with the ndwi
     """
     band_sum = x[:, green, :, :] + x[:, nir, :, :]
     band_diff = x[:, green, :, :] - x[:, nir, :, :]
