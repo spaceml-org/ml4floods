@@ -117,10 +117,10 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
     
     channel_configuration_bands = CHANNELS_CONFIGURATIONS[opt.channel_configuration]
     mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
-    mean_batch = torch.tensor(mean_batch[None,:,None,None]) # (1, num_channels)
+    mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
     std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
-    std_batch = torch.tensor(std_batch[None,:,None,None]) # (1, num_channels)
+    std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
     def normalize(batch_image):
         assert batch_image.ndim == 4, "Expected 4d tensor"
@@ -131,7 +131,7 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
                              normalization=normalize)
 
         
-def get_pred_function(model: torch.nn.Module, device=torch.device("cuda:0"), module_shape=1, max_tile_size=1280,
+def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280,
                       normalization: Optional[Callable] = None) -> Callable:
     """
     Given a model it returns a callable function to make inferences that:
@@ -140,15 +140,13 @@ def get_pred_function(model: torch.nn.Module, device=torch.device("cuda:0"), mod
     3) Checks the input to the network is divisible by module_shape (to avoid errors in U-Net like models)
 
     :param model:
-    :param device:
     :param module_shape:
     :param max_tile_size:
     :param normalization:
     :return: Function to make inferences
     """
-    
-    if device.type.startswith('cuda'):
-        model = model.to(device)
+
+    device = model.device
     model.eval()
     
     if normalization is None:
@@ -214,13 +212,14 @@ def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
                 tile_size=1280, pad_size=32, device=torch.device("cpu")) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
-    The purpose is to run pred_function(input_batch) avoiding torch memory errors.
+    The purpose is to run `pred_function(input_batch)` avoiding memory errors.
+    It tiles and stiches the pateches with padding using the strategy of: https://arxiv.org/abs/1805.12219
 
-    :param pred_function:
+    :param pred_function: pred_function to call
     :param input_batch: torch.Tensor in BCHW format
     :param tile_size: Size of the tiles.
-    :param pad_size:
-    :param device:
+    :param pad_size: each tile is padded before calling the pred_function.
+    :param device: Device to save the predictions
     :return: torch.Tensor in BCHW format (same B, H and W as x)
     """
     pred_continuous_tf = None
