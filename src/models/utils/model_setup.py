@@ -168,12 +168,13 @@ def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280
 
     def pred_fun_final(ti):
         with torch.no_grad():
+            ti_norm = normalization(ti)
             if any((s > max_tile_size for s in ti.shape[2:])):
                 return predbytiles(pred_fun,
-                                   input_batch=normalization(ti),
+                                   input_batch=ti_norm,
                                    tile_size=max_tile_size)
             
-            return pred_fun(normalization(ti))
+            return pred_fun(ti_norm)
 
     return pred_fun_final
 
