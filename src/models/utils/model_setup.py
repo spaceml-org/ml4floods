@@ -126,7 +126,7 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
         assert batch_image.ndim == 4, "Expected 4d tensor"
         return (batch_image - mean_batch) / (std_batch + 1e-6)
 
-    return get_pred_function(model, device=device,
+    return get_pred_function(model,
                              module_shape=module_shape, max_tile_size=opt.max_tile_size,
                              normalization=normalize)
 
