@@ -1,16 +1,17 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
-import rasterio
 import argparse
 import subprocess
-from google.cloud import storage
 from pathlib import Path
+
+import rasterio
+from google.cloud import storage
+
 from src.utils import SRC_DIR
+
 HOME = SRC_DIR
 from src.data.worldfloods.download import download_worldfloods_data
-
-
 
 
 def data_download(ml_split: str="train"):

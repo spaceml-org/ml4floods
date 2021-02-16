@@ -1,16 +1,18 @@
-from glob import glob
-import os
 import itertools
+import os
+import random
+import time
+from glob import glob
+from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
+                    Tuple, Union)
+
+import numpy as np
 import torch
 import torch.nn
-import numpy as np
-from src.models.architectures.baselines import SimpleLinear, SimpleCNN
+
+from src.models.architectures.baselines import SimpleCNN, SimpleLinear
 from src.models.architectures.unets import UNet
 from src.models.utils import configuration
-import time
-import random
-from typing import List, Union, Optional, Tuple, Callable, Dict, NamedTuple, Iterable
-
 
 BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
             "B6", "B7", "B8", "B8A", "B9",

@@ -8,9 +8,9 @@ import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
 
+from src.data.utils import check_path_exists
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from src.data.worldfloods.prepare_data import prepare_data_func
-from src.data.utils import check_path_exists
 
 
 class WorldFloodsDataset(Dataset):
@@ -121,7 +121,8 @@ class WorldFloodsDataset(Dataset):
 					shape_slice = tuple([s.stop - s.start for s in slice_])
 					
 					# ignore the tiles that are smaller than the specified window_size
-					# if shape_slice != self.window_size and not yield_smaller_patches: # I THINK THE NEGATION HERE IS INCORRECT
+					# if shape_slice != self.window_size and not yield_smaller_patches: 
+					# TODO: check the logic of this negation
 					if shape_slice != self.window_size and yield_smaller_patches:
 						continue
 					

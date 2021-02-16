@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
+
 from src.utils import SRC_DIR
+
 HOME = SRC_DIR
 sys.dont_write_bytecode = True
 
@@ -8,6 +10,7 @@ from pprint import pprint
 
 from src.data.worldfloods.dataset import WorldFloodsDataset
 from src.data.worldfloods.test_download import data_download
+
 
 def toy_data():
 	print("Here!")

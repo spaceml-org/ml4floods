@@ -1,6 +1,7 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
+from typing import List, Optional
 import argparse
 import subprocess
 from pathlib import Path
@@ -11,9 +12,30 @@ from google.cloud import storage
 HOME = str(Path.home())
 
 
+def download_data_from_bucket(
+    filenames: List[str],
+    destination_dir: str,
+    ml_split: str = "train",
+    bucket_id: Optional[str] = None,
+) -> None:
+
+    for ifile in filenames:
+        bucket_id = str(Path(ifile).parts[0])
+
+        file_name = str(Path(*Path(ifile).parts[1:]))
+        save_file_from_bucket(
+            bucket_id, file_name=file_name, destination_file_path=destination_dir
+        )
+
+
+def generate_list_of_files(bucket_id: str, file_path):
+    """Generate a list of files from the bucket."""
+    return None
+
+
 def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path: str):
     """Saves a file from a bucket
-    
+
     Parameters
     ----------
     bucket_id : str
@@ -23,10 +45,10 @@ def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path:
     destination_file_path : str
         the directory of where you want to save the
         data locally (not including the filename)
-    
+
     Examples
     --------
-    
+
     >>> bucket_id = ...
     >>> file_name = 'path/to/file/and/file.csv'
     >>> dest = 'path/in/bucket/'
@@ -60,9 +82,10 @@ def check_path_exists(path: str) -> None:
         raise ValueError(f"Unrecognized path: {str(Path(path))}")
     return None
 
+
 def create_folder(directory: str) -> None:
     """Creates directory if doesn't exist
-    
+
     params:
         directory (str): a directory to be created if
             it doesn't already exist.

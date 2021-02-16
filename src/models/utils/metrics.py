@@ -1,6 +1,7 @@
-import torch
-import numpy as np
 from typing import List
+
+import numpy as np
+import torch
 
 
 def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
@@ -57,8 +58,8 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                  with shape (nclass,).
       figsize:   the size of the figure plotted.
     """
-    import pandas as pd
     import matplotlib.pyplot as plt
+    import pandas as pd
     import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)
