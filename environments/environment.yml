@@ -24,3 +24,5 @@ dependencies:
   - black
   - isort
   - mypy
+  - opencv-python
+  - seaborn
