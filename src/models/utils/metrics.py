@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from typing import List
 
 
 def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
@@ -8,13 +9,15 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
     Compute the confusion matrix for a pair of ground truth and predictions. Returns one confusion matrix for each
     element in the batch
 
-    :param ground_truth_outputs: BCHW tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
-    :param test_outputs_categorical: BCHW tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
-    :param num_class: Number of classes.
-    :param remove_class_zero: if true the value zero in ground_truth_outputs is considered a masked value;
-    thus removed from the final prediction.
+    Args:
+        ground_truth_outputs: BCHW tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
+        test_outputs_categorical: BCHW tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
+        num_class: Number of classes.
+        remove_class_zero: if true the value zero in ground_truth_outputs is considered a masked value;
+        thus removed from the final prediction.
 
-    :return: (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
+    Returns:
+        (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
 
     """
     if remove_class_zero:
@@ -42,20 +45,16 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
     return confusions_batch
 
 
-def cm_analysis(cm, labels, figsize=(10, 10)):
+def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
     """
     Generate matrix plot of confusion matrix with pretty annotations.
     The plot image is saved to disk.
-    args:
-      y_true:    true label of the data, with shape (nsamples,)
-      y_pred:    prediction of the data, with shape (nsamples,)
-      filename:  filename of figure file to save
+
+    Args:
+      cm:  Array with shape (batch_size, len(labels), len(labels))
       labels:    string array, name the order of class labels in the confusion matrix.
                  use `clf.classes_` if using scikit-learn models.
                  with shape (nclass,).
-      ymap:      dict: any -> string, length == nclass.
-                 if not None, map the labels & ys to more understandable strings.
-                 Caution: original y_true, y_pred and labels must align.
       figsize:   the size of the figure plotted.
     """
     import pandas as pd
