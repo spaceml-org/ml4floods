@@ -5,6 +5,8 @@ channels:
 dependencies:
 - python=3.8
 - conda-forge::gdal>=3.1
+- conda-forge::ipython
+- conda-forge::ipykernel
 - conda-forge::libgdal>=3.1
 - pip
 - pip:
@@ -14,6 +16,7 @@ dependencies:
   - pytorch-lightning
   - numpy
   - matplotlib
+  - seaborn
   - scipy
   - pandas
   - rasterio

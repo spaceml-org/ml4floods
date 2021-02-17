@@ -3,6 +3,7 @@ torchvision
 pytorch-lightning
 numpy
 matplotlib
+seaborn
 scipy
 pandas
 rasterio
