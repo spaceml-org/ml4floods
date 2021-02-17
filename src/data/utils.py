@@ -1,7 +1,7 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
-from typing import List, Optional
+from typing import List, Optional, Dict
 import argparse
 import subprocess
 from pathlib import Path
@@ -26,6 +26,18 @@ def download_data_from_bucket(
         save_file_from_bucket(
             bucket_id, file_name=file_name, destination_file_path=destination_dir
         )
+
+
+def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
+    # initialize client
+    client = storage.Client(**kwargs)
+    # get bucket
+    bucket = client.get_bucket(bucket_name)
+    # get blob
+    blob = bucket.blob(filename)
+    # check if it exists
+    # TODO: wrap this within a context
+    return json.loads(blob.download_as_string(client=None))
 
 
 def generate_list_of_files(bucket_id: str, file_path):
