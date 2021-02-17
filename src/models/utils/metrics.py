@@ -1,7 +1,11 @@
 import torch
 import numpy as np
 from typing import List
-
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import json
+import seaborn as sns
+import pandas as pd
 
 def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
                        remove_class_zero=False) -> torch.Tensor:
@@ -21,14 +25,16 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
 
     """
     if remove_class_zero:
-        # Save invalids to discount
         ground_truth = ground_truth_outputs.clone()
+        # Save invalids to discount
         invalids = ground_truth == 0  # (batch_size, H, W) gpu
         ground_truth[invalids] = 1
         ground_truth -= 1
     
         # Set invalids in pred to zero
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
+    else:
+        ground_truth = ground_truth_outputs.clone()
 
     confusions_batch = torch.zeros(size=(ground_truth.shape[0], num_class, num_class),
                                    dtype=torch.long)
@@ -76,9 +82,139 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                 annot[i, j] = ''
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)
-    cm = pd.DataFrame(cm, index=labels, columns=labels)
+    cm = pd.DataFrame(cm_perc, index=labels, columns=labels)
     cm.index.name = 'Actual'
     cm.columns.name = 'Predicted'
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
+    
+def calculate_iou(confusions, labels):
+    confusions = np.array(confusions)
+    conf_matrix = np.sum(confusions, axis=0)
+    true_positive = np.diag(conf_matrix)
+    false_positive = np.sum(conf_matrix, 0) - true_positive
+    false_negative = np.sum(conf_matrix, 1) - true_positive
+    iou = true_positive / (true_positive + false_positive + false_negative)
+    
+    iou_dict = {}
+    for i, l in enumerate(labels):
+        iou_dict[l] = iou[i]
+    return iou_dict
+
+
+def plot_metrics(metrics_dict, label_names):
+    confusions = metrics_dict['confusions']
+    confusions_thresh = metrics_dict['confusions_thresholded']
+    
+    cm_analysis(np.sum(np.array(confusions), axis=0), labels=label_names)
+
+    total_conf_thresh = np.sum(np.array(confusions_thresh), axis=1)
+    tp_rates = []
+    fp_rates = []
+
+    precisions = []
+    recalls = []
+
+    for i in range(len(total_conf_thresh)):
+        cur_conf = total_conf_thresh[i]
+
+        tp = cur_conf[1,1]
+        tn = cur_conf[0,0]
+        fp = cur_conf[0,1]
+        fn = cur_conf[1,0]
+
+        tp_rate = tp / (tp+fn)
+        fp_rate = fp / (fp+tn)
+
+        tp_rates.append(tp_rate)
+        fp_rates.append(fp_rate)
+
+        precision = tp / (tp+fp)
+        recall = tp / (tp+fn)
+
+        precisions.append(precision)
+        recalls.append(recall)
+
+    fig, ax = plt.subplots(1, 2, figsize=(16, 9))
+    sns.set_style('darkgrid')
+    plot_df = pd.DataFrame({"Precision": precisions, "Recall": recalls, "FP Rate": fp_rates, "TP Rate": tp_rates})
+    sns.lineplot(data=plot_df, x="Recall", y="Precision", ax=ax[0])
+    sns.lineplot(data=plot_df, x="FP Rate", y="TP Rate", ax=ax[1])
+    
+#     ax[0].plot(fp_rates, tp_rates)
+#     ax[1].plot(recalls, precisions)
+
+    plt.show()
+    
+    print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
+        
+def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_water=np.arange(0,1,.05), plot=True):
+    confusions = []
+    
+    # Sort thresholds from high to low
+    thresholds_water = np.sort(thresholds_water)
+    thresholds_water = thresholds_water[-1::-1]
+    confusions_thresh = []
+    
+    for i, (test_inputs, ground_truth_outputs) in tqdm(enumerate(dataloader)):
+        
+        test_outputs = pred_fun(test_inputs)
+        
+        test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
+        print(np.unique(test_outputs_categorical))
+        ground_truth_outputs = ground_truth_outputs.to(test_outputs_categorical.device)
+                
+        # Save invalids to discount
+        invalids = ground_truth_outputs == 0
+        ground_truth_outputs[invalids] = 1
+        ground_truth_outputs -= 1
+        
+        # Set invalids in pred to zero
+        test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
+
+        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical, num_class=num_class, remove_class_zero=False)
+        # confusions_batch is (batch_size, num_class, num_class)
+
+        # Discount invalids
+        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device)
+
+        confusions_batch[:, 0, 0] -= inv_substract
+        confusions.extend(confusions_batch.tolist())
+        
+        # Thresholded version for precision recall curves
+        # Set clouds to land
+        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long, device=torch.device("cpu"))
+
+        ground_truth_outputs[ground_truth_outputs == 2] = 0
+
+        results = []
+        valids = ~invalids
+        
+        # thresholds_water sorted from high to low
+        for threshold in thresholds_water:
+            # keep invalids in pred to zero
+            test_outputs_categorical_thresh[valids & (test_outputs[:, 1] > threshold)] = 1
+
+            confusions_batch = compute_confusions(ground_truth_outputs,
+                                                  test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]
+
+            # Discount invalids
+            confusions_batch[:, 0, 0] -= torch.sum(invalids)
+
+            results.append(confusions_batch.numpy())
+
+        # results is [len(thresholds), batch_size, 2, 2]
+        confusions_thresh.append(np.stack(results))
+
+    confusions_thresh = np.concatenate(confusions_thresh, axis=1)
+    
+    iou = calculate_iou(confusions, labels=label_names)
+    
+    return {
+        'confusions': confusions,
+        'confusions_thresholded': confusions_thresh,
+        'thresholds': thresholds_water,
+        'iou': iou
+    }
+        
