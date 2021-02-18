@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Optional, Callable
 from rasterio.io import DatasetReader
 from itertools import product
 from rasterio import windows
 import rasterio
 from collections import namedtuple
 from pathlib import Path
+
 
 WindowSize = namedtuple("WindowSize", ["height", "width"])
 
@@ -43,6 +44,7 @@ def save_tiles(
     dest_dir: str,
     bands: List[str],
     window_size: WindowSize,
+    transform: Optional[Callable]=None,
     verbose: bool=False
     ) -> None:
     with rasterio.open(file_name) as dataset:
@@ -68,14 +70,14 @@ def save_tiles(
                 continue
             else:
                 # create unique filename for the tile
-                window_file_name = f"{str(Path(file_name).name)}_tile_{itile}.tif"
+                window_file_name = f"{str(Path(file_name).stem)}_tile_{itile}{str(Path(file_name).suffix)}"
                 
                 # filepath for saving
                 output_tile_file_name = str(Path(dest_dir).joinpath(window_file_name))
                 
                 # open file and also save meta data
                 with rasterio.open(output_tile_file_name, "w", **window_meta) as out_f:
-                    out_f.write(dataset.read(window=window_tile))
+                    out_f.write(dataset.read(window=window_tile, ))
         
                 itile += 1
                 if verbose:
