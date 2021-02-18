@@ -139,13 +139,13 @@ def model_inference_fun(opt: configuration.AttrDict) -> Callable:
         assert batch_image.ndim == 4, "Expected 4d tensor"
         return (batch_image - mean_batch) / (std_batch + 1e-6)
 
-    return get_pred_function(model,
+    return get_pred_function(model,device=device,
                              module_shape=module_shape, max_tile_size=opt.max_tile_size,
                              activation_fun=lambda ot: torch.softmax(ot, dim=1),
                              normalization=normalize)
 
         
-def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280,
+def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=1280,
                       normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None) -> Callable:
     """
     Given a model it returns a callable function to make inferences that:
@@ -167,7 +167,6 @@ def get_pred_function(model: torch.nn.Module, module_shape=1, max_tile_size=1280
 
     """
 
-    device = model.device
     model.eval()
     
     if normalization is None:
