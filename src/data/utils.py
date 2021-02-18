@@ -28,7 +28,44 @@ def download_data_from_bucket(
         )
 
 
+def check_file_in_bucket_exists(
+    bucket_name: str, filename_full_path: str, **kwargs
+) -> bool:
+    """
+    Function to check if the file in the bucket exist utilizing Google Cloud Storage
+    (GCP) blobs.
+
+    Args:
+      bucket_name (str): a string corresponding to the name of the GCP bucket.
+      filename_full_path (str): a string containing the full path from bucket to file.
+
+    Returns:
+      A boolean value corresponding to the existence of the file in the bucket.
+    """
+    # initialize client
+    client = storage.Client(**kwargs)
+    # get bucket
+    bucket = client.get_bucket(bucket_name)
+    # get blob
+    blob = bucket.blob(filename_full_path)
+    # check if it exists
+    return blob.exists()
+
+
 def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
+    """
+    Function to load the json data for the WorldFloods bucket using the filename
+    corresponding to the image file name. The filename corresponds to the full
+    path following the bucket name through intermediate directories to the final
+    json file name.
+
+    Args:
+      bucket_name (str): the name of the Google Cloud Storage (GCP) bucket.
+      filename (str): the full path following the bucket_name to the json file.
+
+    Returns:
+      The unpacked json data formatted to a dictionary.
+    """
     # initialize client
     client = storage.Client(**kwargs)
     # get bucket
