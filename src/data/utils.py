@@ -5,6 +5,7 @@ from typing import List, Optional, Dict
 import argparse
 import subprocess
 from pathlib import Path
+import json
 
 import rasterio
 from google.cloud import storage
