@@ -152,3 +152,12 @@ def create_folder(directory: str) -> None:
         print(f"Folder '{directory}' Is Already There.")
     else:
         print(f"Folder '{directory}' is created.")
+def get_files_in_directory(directory: str, suffix: str) -> List[str]:
+    p = Path(directory).glob(f'*{suffix}')
+    files = [str(x) for x in p if x.is_file()]
+    return files
+
+def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
+    p = Path(directory).glob(f'*{suffix}')
+    files = [str(x.name) for x in p if x.is_file()]
+    return files
