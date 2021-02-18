@@ -93,10 +93,13 @@ class WorldFloodsDataset(Dataset):
         # TODO: Need to check why the 0th index.
         y = np.nan_to_num(y_tif)
         
+        data = {"image": x, "mask": y}
+
         # Apply transformation
         if self.transforms is not None:
-            res = self.transforms(image=x, mask=y)
-            x, y = res["image"], res["mask"]
+            data = self.transforms(data)
+            # x, y = res["image"], res["mask"]
         
         # get the channels
-        return x, y
+        # return x, y
+        return data
