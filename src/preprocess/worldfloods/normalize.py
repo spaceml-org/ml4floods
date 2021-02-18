@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from src.data.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 
 
 def get_normalisation(use_channels: str) -> Tuple[np.ndarray, np.ndarray]:
