@@ -26,7 +26,7 @@ def permute_channels(
     return image.transpose(2, 0, 1)
 
 
-class ToTensor(BasicTransform):
+class ToTensor_NOPE(BasicTransform):
     """Convert image and mask to `torch.Tensor`.
 
     Multi-channel images will be returned as HxWxC by default, unless `permute_channels` is disabled.
@@ -105,6 +105,78 @@ class ToTensor(BasicTransform):
         return ("num_classes", "convert_one_hot")
 
 
+class ToTensor(BasicTransform):
+    def __init__(self):
+        super(ToTensor, self).__init__(always_apply=True, p=1.0)
+        
+    def __call__(self, input_data: dict, force_apply=True) -> dict:
+        # Convert image to tensor
+        input_data['image'] = self._image_to_tensor(input_data['image'])
+        input_data['mask'] = self._mask_to_tensor(input_data['mask'])
+
+        return input_data
+
+    def _image_to_tensor(self, image: np.ndarray) -> torch.Tensor:
+        return torch.from_numpy(image)
+
+    def _mask_to_tensor(self, mask):
+        mask_tensor = torch.from_numpy(mask).long()
+        return mask_tensor
+
+    @property
+    def targets(self):
+        raise NotImplementedError
+
+
+class PermuteChannels(BasicTransform):
+    def __init__(self):
+        super(PermuteChannels, self).__init__(always_apply=True, p=1.0)
+        
+    def __call__(self, input_data: dict, force_apply=True) -> dict:
+        input_data["image"] = self._permute_channels(input_data["image"])
+        input_data["mask"] = self._permute_channels(input_data["mask"])
+
+        return input_data
+
+    def _permute_channels(self, input_image: np.ndarray) -> np.ndarray:
+        if input_image.ndim == 3:
+            input_image = input_image.transpose(2, 0, 1)
+        return input_image
+
+    @property
+    def targets(self):
+        raise NotImplementedError
+
+
+class OneHotEncoding(BasicTransform):
+    """One hot encode the input ground truth labels.
+    TODO: Make sure that we are getting the output shape as desired
+        - current output shape = C x H x W x num_classes
+    """
+
+    def __init__(self, num_classes: int):
+        super(OneHotEncoding, self).__init__(always_apply=True, p=1.0)
+        self.num_classes = num_classes
+        
+    def __call__(self, input_data: dict, force_apply=True) -> dict:
+        input_data["mask"] = self._one_hot_encode(input_data["mask"])
+
+        return input_data
+
+    def _one_hot_encode(self, input_mask: torch.Tensor) -> torch.Tensor:
+        if self.num_classes > 1:
+            input_mask = torch.nn.functional.one_hot(
+                input_mask, self.num_classes
+            )
+        
+        return input_mask
+
+    @property
+    def targets(self):
+        raise NotImplementedError
+
+
+# IGNORE FOR NOW
 class PerChannel(BaseCompose):
     """Apply transformations per-channel
 
@@ -120,8 +192,7 @@ class PerChannel(BaseCompose):
         self.transforms = transforms
         self.channels = channels
 
-    def __call__(self, force_apply=False, **data):
-
+    def __call__(self, input_data: dict, force_apply=False) -> dict:
         image = data["image"]
 
         # Mono images
@@ -168,20 +239,18 @@ class ResizeFactor(DualTransform):
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
 
-    def apply(self, img, interpolation=cv2.INTER_LINEAR, **params):
-        new_size = np.round(np.array(img.shape[:2]) / self.downsampling_factor).astype(
+    def __call__(self, input_data: dict, interpolation=cv2.INTER_LINEAR, **params) -> dict:
+        image = input_data["image"]
+        new_size = np.round(np.array(image.shape[:2]) / self.downsampling_factor).astype(
             np.int64
         )
-        return F.resize(
-            img, height=new_size[0], width=new_size[1], interpolation=interpolation
+        image = F.resize(
+            image, height=new_size[0], width=new_size[1], interpolation=interpolation
         )
 
-    def apply_to_bbox(self, bbox, **params):
-        # Bounding box coordinates are scale invariant
-        return bbox
+        input_data["image"] = image
 
-    def get_transform_init_args_names(self):
-        return ("height", "width", "interpolation")
+        return input_data
 
 
 def get_augmentation(
