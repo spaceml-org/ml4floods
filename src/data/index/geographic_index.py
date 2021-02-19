@@ -1,6 +1,8 @@
 from typing import List
 from dataclasses import dataclass
 
+import pickle
+
 
 class GeographicIndex:
 
@@ -26,6 +28,14 @@ class GeographicIndex:
             index_list.append([])
         return index_list
 
+    def save_index(self, path):
+        with open(path, 'wb') as f:
+            pickle.dump(self.index_list, f)
+
+    def load_index(self, path):
+        with open(path, 'rb') as f:
+            self.index_list = pickle.load(f)
+
     def __init__(self):
-        self.index_list = _initialize_index()
+        self.index_list = GeographicIndex._initialize_index()
 
