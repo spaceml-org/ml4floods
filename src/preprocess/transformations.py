@@ -109,12 +109,14 @@ class ToTensor(BasicTransform):
     def __init__(self):
         super(ToTensor, self).__init__(always_apply=True, p=1.0)
         
-    def __call__(self, input_data: dict, force_apply=True) -> dict:
+    # def __call__(self, input_data: dict, force_apply=True) -> dict:
+    def __call__(self, image, mask, force_apply=True) -> dict:
         # Convert image to tensor
-        input_data['image'] = self._image_to_tensor(input_data['image'])
-        input_data['mask'] = self._mask_to_tensor(input_data['mask'])
+        image = self._image_to_tensor(image)
+        mask = self._mask_to_tensor(mask)
 
-        return input_data
+        res = {'image': image, 'mask': mask}
+        return res
 
     def _image_to_tensor(self, image: np.ndarray) -> torch.Tensor:
         return torch.from_numpy(image)
@@ -132,11 +134,12 @@ class PermuteChannels(BasicTransform):
     def __init__(self):
         super(PermuteChannels, self).__init__(always_apply=True, p=1.0)
         
-    def __call__(self, input_data: dict, force_apply=True) -> dict:
-        input_data["image"] = self._permute_channels(input_data["image"])
-        input_data["mask"] = self._permute_channels(input_data["mask"])
+    def __call__(self, image, mask, force_apply=True) -> dict:
+        image = self._permute_channels(image)
+        mask = self._permute_channels(mask)
 
-        return input_data
+        res = {'image': image, 'mask': mask}
+        return res
 
     def _permute_channels(self, input_image: np.ndarray) -> np.ndarray:
         if input_image.ndim == 3:
@@ -158,10 +161,11 @@ class OneHotEncoding(BasicTransform):
         super(OneHotEncoding, self).__init__(always_apply=True, p=1.0)
         self.num_classes = num_classes
         
-    def __call__(self, input_data: dict, force_apply=True) -> dict:
-        input_data["mask"] = self._one_hot_encode(input_data["mask"])
+    def __call__(self, image, mask, force_apply=True) -> dict:
+        mask = self._one_hot_encode(mask)
 
-        return input_data
+        res = {'image': image, 'mask': mask}
+        return res
 
     def _one_hot_encode(self, input_mask: torch.Tensor) -> torch.Tensor:
         if self.num_classes > 1:
