@@ -4,12 +4,19 @@ import albumentations
 import cv2
 import numpy as np
 import torch
-from albumentations import (Compose, Flip, GaussNoise, MotionBlur, Normalize,
-                            PadIfNeeded, RandomRotate90, ShiftScaleRotate)
+from albumentations import (
+    Compose,
+    Flip,
+    GaussNoise,
+    MotionBlur,
+    Normalize,
+    PadIfNeeded,
+    RandomRotate90,
+    ShiftScaleRotate,
+)
 from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
-from albumentations.core.transforms_interface import (BasicTransform,
-                                                      DualTransform)
+from albumentations.core.transforms_interface import BasicTransform, DualTransform
 
 from src.preprocess.worldfloods.normalize import get_normalisation
 
@@ -237,21 +244,21 @@ class PerChannel(BaseCompose):
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
-
+        print(image.shape)
         # Mono images
         if image.ndim == 2:
             image = np.expand_dims(image, 0)
 
         if self.channels is None:
-            self.channels = range(image.shape[0])
+            self.channels = range(image.shape[-1])
 
         for ichannel in self.channels:
             for itransform in self.transforms:
                 # get result (dictionary output)
-                res = itransform(image=image[ichannel, :, :])
 
+                res = itransform(image=image[:, :, ichannel])
                 # augment the channel of the dictionary
-                image[ichannel, :, :] = res["image"]
+                image[:, :, ichannel] = res["image"]
 
         # create output dictionary
         data["image"], data["mask"] = image, mask
@@ -307,26 +314,24 @@ def transforms_generator(config: Dict):
 
     # initialize list of transformations
     list_of_transforms = []
-
+    list_of_transforms += [
+        InversePermuteChannels(),
+    ]
     # populate arguments
     if config["resizefactor"] is not None:
         transform_resize = ResizeFactor(**config["resizefactor"])
         list_of_transforms += [
-            InversePermuteChannels(),
             transform_resize,
-            PermuteChannels(),
         ]
 
-    # if config["use_channels"] is not None:
-    #     channel_mean, channel_std = get_normalisation(config["use_channels"])
-    #     transform_normalize = Normalize(
-    #         mean=channel_mean, std=channel_std, max_pixel_value=1.0
-    #     )
-    #     list_of_transforms += [
-    #         InversePermuteChannels(),
-    #         transform_normalize,
-    #         PermuteChannels(),
-    #     ]
+    if config["use_channels"] is not None:
+        channel_mean, channel_std = get_normalisation(config["use_channels"])
+        transform_normalize = Normalize(
+            mean=channel_mean, std=channel_std, max_pixel_value=1.0
+        )
+        list_of_transforms += [
+            transform_normalize,
+        ]
 
     if config["gaussnoise"] is not None:
         transform_gaussnoise = GaussNoise(
@@ -341,6 +346,10 @@ def transforms_generator(config: Dict):
     if config["motionblur"] is not None:
         transform_motionblue = MotionBlur(**config["motionblur"])
         list_of_transforms += [transform_motionblue]
+
+    list_of_transforms += [
+        PermuteChannels(),
+    ]
 
     if config["totensor"] is True:
         list_of_transforms += [ToTensor()]
