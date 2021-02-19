@@ -4,7 +4,8 @@ channels:
 - conda-forge
 dependencies:
 - python=3.8
-- pip
+- conda-forge::gdal>=3.1
+- conda-forge::libgdal>=3.1
 - pip:
   # PYTORCH ECOSYSTEM
   - torch
