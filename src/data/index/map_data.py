@@ -1,6 +1,6 @@
-from typing import Dict, Set
 import datetime
 from dataclasses import dataclass
+from typing import Dict, Set
 
 
 @dataclass

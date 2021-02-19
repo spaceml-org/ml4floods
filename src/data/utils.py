@@ -1,11 +1,11 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
-from typing import List, Optional, Dict
 import argparse
+import json
 import subprocess
 from pathlib import Path
-import json
+from typing import Dict, List, Optional
 
 import rasterio
 from google.cloud import storage

@@ -1,10 +1,11 @@
+import os
+import sys
 from pathlib import Path
 from typing import List, Optional
 
-from src.data.utils import save_file_from_bucket
-import sys, os
 from pyprojroot import here
-from src.data.utils import download_data_from_bucket
+
+from src.data.utils import download_data_from_bucket, save_file_from_bucket
 
 # spyder up to find the root
 root = here(project_files=[".here"])

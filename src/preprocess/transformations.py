@@ -1,21 +1,16 @@
-from typing import Tuple, Dict
+from typing import Dict, Tuple
+
+import albumentations
 import cv2
 import numpy as np
 import torch
-import albumentations
+from albumentations import (Compose, Flip, GaussNoise, MotionBlur, Normalize,
+                            PadIfNeeded, RandomRotate90, ShiftScaleRotate)
 from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
-from albumentations.core.transforms_interface import BasicTransform, DualTransform
-from albumentations import (
-    Compose,
-    Flip,
-    GaussNoise,
-    MotionBlur,
-    Normalize,
-    PadIfNeeded,
-    RandomRotate90,
-    ShiftScaleRotate,
-)
+from albumentations.core.transforms_interface import (BasicTransform,
+                                                      DualTransform)
+
 from src.preprocess.worldfloods.normalize import get_normalisation
 
 # TODO: split the ToTensor to ToImageTensor and ToMaskTensor for better clarity.

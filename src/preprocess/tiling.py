@@ -1,11 +1,11 @@
-from typing import List, Optional, Callable
-from rasterio.io import DatasetReader
-from itertools import product
-from rasterio import windows
-import rasterio
 from collections import namedtuple
+from itertools import product
 from pathlib import Path
+from typing import Callable, List, Optional
 
+import rasterio
+from rasterio import windows
+from rasterio.io import DatasetReader
 
 WindowSize = namedtuple("WindowSize", ["height", "width"])
 

@@ -1,7 +1,9 @@
 import os
 import random
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Dict
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import rasterio
@@ -11,11 +13,6 @@ from torch.utils.data import Dataset
 from src.data.utils import check_path_exists
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from src.data.worldfloods.prepare_data import prepare_data_func
-
-
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import List, Dict
 
 
 @dataclass

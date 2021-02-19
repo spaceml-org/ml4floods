@@ -3,9 +3,10 @@ Examples:
 
 """
 from dataclasses import dataclass
+from typing import Dict
+
 import numpy as np
 import rasterio
-from typing import Dict
 
 
 def store_tiff_to_bytes(dc: dataclass) -> dataclass:
