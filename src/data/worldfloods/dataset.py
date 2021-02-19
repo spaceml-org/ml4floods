@@ -1,7 +1,7 @@
 import os
 import random
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Dict
 
 import numpy as np
 import rasterio
@@ -54,7 +54,7 @@ class WorldFloodsDataset(Dataset):
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
         transforms: Optional[List[Callable]]=None
-    ):
+    ) -> None:
 
         self.image_files = image_files
         self.image_prefix = image_prefix
@@ -67,39 +67,33 @@ class WorldFloodsDataset(Dataset):
         # TODO: Do this for the list of filepaths at the end as well
         self.image_files.sort()
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int)-> Dict:
         
         # get filenames
-        x_name = self.image_files[idx]
-        y_name = x_name.replace(self.image_prefix, self.gt_prefix, 1)
+        image_name = self.image_files[idx]
+        y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
         
         # Open Image File
-        with rasterio.open(x_name) as f:
-            x_tif = f.read()
-            
-            # permute channels because of rasterio
-            x_tif = np.transpose(x_tif, (1, 2, 0))
+        with rasterio.open(image_name) as f:
+            image_tif = f.read()
             
         # Open Ground Truth File
         with rasterio.open(y_name) as f:
-            y_tif = f.read()
-            
-            # permute channels because of rasterio
-            y_tif = np.transpose(y_tif, (1, 2, 0))
+            mask_tif = f.read()
         
         # get rid of nan, convert to float
-        x = np.nan_to_num(x_tif).astype(np.float32)
+        image = np.nan_to_num(image_tif).astype(np.float32)
         
         # TODO: Need to check why the 0th index.
-        y = np.nan_to_num(y_tif)
+        mask = np.nan_to_num(mask_tif)
         
-        # data = {"image": x, "mask": y}
-
         # Apply transformation
         if self.transforms is not None:
-            res = self.transforms(image=x, mask=y)
-            # x, y = res["image"], res["mask"]
-        
-        # get the channels
+            data = self.transforms(image=image, mask=mask)
+        else:
+            data = {"image": image, "mask": mask}
         # return x, y
-        return res
+        return data
+    
+    def __len__(self)-> int:
+        return len(self.image_files)

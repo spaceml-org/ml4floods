@@ -29,7 +29,7 @@ def get_normalisation(use_channels: str) -> Tuple[np.ndarray, np.ndarray]:
 
     s2_channels = CHANNELS_CONFIGURATIONS[use_channels]
 
-    s2_norm = SENTINEL2_NORMALIZATION[s2_channels]
+    s2_norm = SENTINEL2_NORMALIZATION[[int(x - 1) for x in s2_channels]]
 
     #  channel stats for now
     sentinel_means = s2_norm.copy()[:, 0]

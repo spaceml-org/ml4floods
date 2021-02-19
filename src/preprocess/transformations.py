@@ -1,6 +1,8 @@
+from typing import Tuple, Dict
 import cv2
 import numpy as np
 import torch
+import albumentations
 from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
 from albumentations.core.transforms_interface import BasicTransform, DualTransform
@@ -14,7 +16,7 @@ from albumentations import (
     RandomRotate90,
     ShiftScaleRotate,
 )
-
+from src.preprocess.worldfloods.normalize import get_normalisation
 
 # TODO: split the ToTensor to ToImageTensor and ToMaskTensor for better clarity.
 # TODO: separate functions for the operators (e.g. permute_channels)
@@ -90,7 +92,11 @@ class ToTensor_NOPE(BasicTransform):
         mask_tensor = torch.from_numpy(mask).long()
 
         if self.num_classes > 1 and self.convert_one_hot:
-            assert mask_tensor.ndim == 2
+            # check size
+            msg = f"Incorrect shape for mask tensor ({mask.shape})"
+            assert mask_tensor.ndim == 2, msg
+
+            # One-Hot Encoding
             mask_tensor = torch.nn.functional.one_hot(
                 mask_tensor, self.num_classes
             ).permute(2, 0, 1)
@@ -108,15 +114,19 @@ class ToTensor_NOPE(BasicTransform):
 class ToTensor(BasicTransform):
     def __init__(self):
         super(ToTensor, self).__init__(always_apply=True, p=1.0)
-        
+
     # def __call__(self, input_data: dict, force_apply=True) -> dict:
-    def __call__(self, image, mask, force_apply=True) -> dict:
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
+        image, mask = data["image"], data["mask"]
+
+        # convert to tensor
         image = self._image_to_tensor(image)
         mask = self._mask_to_tensor(mask)
 
-        res = {'image': image, 'mask': mask}
-        return res
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
+        return data
 
     def _image_to_tensor(self, image: np.ndarray) -> torch.Tensor:
         return torch.from_numpy(image)
@@ -133,17 +143,48 @@ class ToTensor(BasicTransform):
 class PermuteChannels(BasicTransform):
     def __init__(self):
         super(PermuteChannels, self).__init__(always_apply=True, p=1.0)
-        
-    def __call__(self, image, mask, force_apply=True) -> dict:
+
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Convert image to tensor
+        image, mask = data["image"], data["mask"]
+
         image = self._permute_channels(image)
         mask = self._permute_channels(mask)
 
-        res = {'image': image, 'mask': mask}
-        return res
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
+        return data
 
     def _permute_channels(self, input_image: np.ndarray) -> np.ndarray:
         if input_image.ndim == 3:
             input_image = input_image.transpose(2, 0, 1)
+        return input_image
+
+    @property
+    def targets(self):
+        raise NotImplementedError
+
+
+class InversePermuteChannels(BasicTransform):
+    def __init__(
+        self,
+    ):
+        super(InversePermuteChannels, self).__init__(always_apply=True, p=1.0)
+
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Convert image to tensor
+        image, mask = data["image"], data["mask"]
+
+        image = self._inverse_permute_channels(image)
+        mask = self._inverse_permute_channels(mask)
+
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
+        return data
+
+    def _inverse_permute_channels(self, input_image: np.ndarray) -> np.ndarray:
+        if input_image.ndim == 3:
+            input_image = input_image.transpose(1, 2, 0)
         return input_image
 
     @property
@@ -160,19 +201,21 @@ class OneHotEncoding(BasicTransform):
     def __init__(self, num_classes: int):
         super(OneHotEncoding, self).__init__(always_apply=True, p=1.0)
         self.num_classes = num_classes
-        
-    def __call__(self, image, mask, force_apply=True) -> dict:
+
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Convert image to tensor
+        image, mask = data["image"], data["mask"]
+
         mask = self._one_hot_encode(mask)
 
-        res = {'image': image, 'mask': mask}
-        return res
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
+        return data
 
     def _one_hot_encode(self, input_mask: torch.Tensor) -> torch.Tensor:
         if self.num_classes > 1:
-            input_mask = torch.nn.functional.one_hot(
-                input_mask, self.num_classes
-            )
-        
+            input_mask = torch.nn.functional.one_hot(input_mask, self.num_classes)
+
         return input_mask
 
     @property
@@ -196,22 +239,27 @@ class PerChannel(BaseCompose):
         self.transforms = transforms
         self.channels = channels
 
-    def __call__(self, input_data: dict, force_apply=False) -> dict:
-        image = data["image"]
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Convert image to tensor
+        image, mask = data["image"], data["mask"]
 
         # Mono images
-        if len(image.shape) == 2:
-            image = np.expand_dims(image, -1)
+        if image.ndim == 2:
+            image = np.expand_dims(image, 0)
 
         if self.channels is None:
-            self.channels = range(image.shape[2])
+            self.channels = range(image.shape[0])
 
-        for c in self.channels:
-            for t in self.transforms:
-                image[:, :, c] = t(image=image[:, :, c])["image"]
+        for ichannel in self.channels:
+            for itransform in self.transforms:
+                # get result (dictionary output)
+                res = itransform(image=image[ichannel, :, :])
 
-        data["image"] = image
+                # augment the channel of the dictionary
+                image[ichannel, :, :] = res["image"]
 
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
         return data
 
 
@@ -243,18 +291,69 @@ class ResizeFactor(DualTransform):
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
 
-    def __call__(self, input_data: dict, interpolation=cv2.INTER_LINEAR, **params) -> dict:
-        image = input_data["image"]
-        new_size = np.round(np.array(image.shape[:2]) / self.downsampling_factor).astype(
-            np.int64
-        )
+    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+        image, mask = data["image"], data["mask"]
+
+        new_size = np.round(
+            np.array(image.shape[:2]) / self.downsampling_factor
+        ).astype(np.int64)
         image = F.resize(
-            image, height=new_size[0], width=new_size[1], interpolation=interpolation
+            image,
+            height=new_size[0],
+            width=new_size[1],
+            interpolation=self.interpolation,
         )
+        # create output dictionary
+        data["image"], data["mask"] = image, mask
+        return data
 
-        input_data["image"] = image
 
-        return input_data
+def transforms_generator(config: Dict):
+
+    # initialize list of transformations
+    list_of_transforms = []
+
+    # populate arguments
+    if config["resizefactor"] is not None:
+        transform_resize = ResizeFactor(**config["resizefactor"])
+        list_of_transforms += [
+            InversePermuteChannels(),
+            transform_resize,
+            PermuteChannels(),
+        ]
+
+    # if config["use_channels"] is not None:
+    #     channel_mean, channel_std = get_normalisation(config["use_channels"])
+    #     transform_normalize = Normalize(
+    #         mean=channel_mean, std=channel_std, max_pixel_value=1.0
+    #     )
+    #     list_of_transforms += [
+    #         InversePermuteChannels(),
+    #         transform_normalize,
+    #         PermuteChannels(),
+    #     ]
+
+    if config["gaussnoise"] is not None:
+        transform_gaussnoise = GaussNoise(
+            var_limit=(
+                config["gaussnoise"]["var_limit_lower"],
+                config["gaussnoise"]["var_limit_upper"],
+            ),
+            p=config["gaussnoise"]["p"],
+        )
+        list_of_transforms += [transform_gaussnoise]
+
+    if config["motionblur"] is not None:
+        transform_motionblue = MotionBlur(**config["motionblur"])
+        list_of_transforms += [transform_motionblue]
+
+    if config["totensor"] is True:
+        list_of_transforms += [ToTensor()]
+
+    if config["num_classes"] > 1:
+        list_of_transforms += [OneHotEncoding(num_classes=3)]
+
+    return albumentations.Compose(list_of_transforms)
 
 
 def get_augmentation(
