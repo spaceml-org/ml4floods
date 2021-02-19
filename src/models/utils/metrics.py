@@ -89,7 +89,17 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
     
+    
 def calculate_iou(confusions, labels):
+    """
+    Caculate IoU for a list of confusion matrices 
+    
+    Args:
+        confusions: List with shape (batch_size, len(labels), len(labels))
+        labels: List of class names
+        
+        returns: dictionary of class names and iou scores for that class (summed across whole matrix list)
+    """
     confusions = np.array(confusions)
     conf_matrix = np.sum(confusions, axis=0)
     true_positive = np.diag(conf_matrix)
@@ -103,7 +113,17 @@ def calculate_iou(confusions, labels):
     return iou_dict
 
 
+
 def plot_metrics(metrics_dict, label_names):
+    """
+    Plot confusion matrix, precision/recall curve,  tp_rate/fp_rate curve, class IoUs
+    
+    Args:
+        metrics_dict: metrics dictionary as output by 'compute_metrics'
+        labels_names: list of class label names
+        
+        returns: None
+    """
     confusions = metrics_dict['confusions']
     confusions_thresh = metrics_dict['confusions_thresholded']
     
@@ -141,15 +161,25 @@ def plot_metrics(metrics_dict, label_names):
     plot_df = pd.DataFrame({"Precision": precisions, "Recall": recalls, "FP Rate": fp_rates, "TP Rate": tp_rates})
     sns.lineplot(data=plot_df, x="Recall", y="Precision", ax=ax[0])
     sns.lineplot(data=plot_df, x="FP Rate", y="TP Rate", ax=ax[1])
-    
-#     ax[0].plot(fp_rates, tp_rates)
-#     ax[1].plot(recalls, precisions)
 
     plt.show()
     
     print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
         
-def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_water=np.arange(0,1,.05), plot=True):
+def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_water=np.arange(0,1,.05), plot=False):
+    """
+    Run inference on a dataloader and compute metrics for that data
+    
+    Args:
+        dataloader: pytorch Dataloader for test set
+        pred_fun: function to perform inference using a model
+        num_class: number of classes
+        label_names: list of label names
+        thresholds: list of threshold for precision/recall curves
+        plot: flag for calling plot method with metrics
+        
+        returns: dictionary of metrics
+    """
     confusions = []
     
     # Sort thresholds from high to low
@@ -211,10 +241,15 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     
     iou = calculate_iou(confusions, labels=label_names)
     
-    return {
+    out_dict = {
         'confusions': confusions,
         'confusions_thresholded': confusions_thresh,
         'thresholds': thresholds_water,
         'iou': iou
     }
+    
+    if plot:
+        plot_metrics(out_dict)
+    
+    return out_dict
         
