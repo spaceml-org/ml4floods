@@ -1,13 +1,12 @@
 torch
 torchvision
+pytorch-lightning
 numpy
 matplotlib
+seaborn
 scipy
 pandas
-h5py
-albumentations
 rasterio
-pytorch-ignite
+geopandas
 fastprogress
 tqdm
-natsort
