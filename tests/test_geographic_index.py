@@ -23,3 +23,4 @@ class TestGeographicIndex(unittest.TestCase):
         idx = GeographicIndex()
         idx.load_index("foobar_index.pkl")
         assert idx.index_list[(45-90)*360 + 179+180]
+        os.remove("foobar_index.pkl")
