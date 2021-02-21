@@ -37,6 +37,9 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Vim swap files
+*.swp
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
