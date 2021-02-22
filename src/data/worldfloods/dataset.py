@@ -145,7 +145,6 @@ class WorldFloodsDatasetTiled(Dataset):
         # (order of the flow of data points to the ML model)
         # TODO: Do this for the list of filepaths at the end as well
         self.image_files.sort()
-
         # get the image slices
         self.accumulated_list_of_windows_test = get_list_of_window_slices(
             self.image_files, window_size=self.window_size
