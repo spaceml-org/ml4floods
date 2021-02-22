@@ -1,0 +1,26 @@
+{
+    "model_version": "baseline",
+    "num_classes": 3,
+    "resizefactor": {
+        "downsampling_factor": 3,
+        "p": 1.0
+    },
+    "normalize": true,
+    "shiftscalerotate": {
+        "shift_limit": 0.001,
+        "scale_limit": 0.01,
+        "rotate_limit": 0.01,
+        "p": 0.5
+    },
+    "gaussnoise": {
+        "var_limit_lower": 1e-6,
+        "var_limit_upper": 1e-3,
+        "p": 0.2
+    },
+    "motionblur": {
+        "blur_limit": 7,
+        "always_apply": false
+    },
+    "totensor": true,
+    "use_channels": "all"
+}

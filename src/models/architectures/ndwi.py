@@ -1,6 +1,5 @@
 import torch
 
-
 # s2bands (0-based index):
 #     green = 2
 #     nir = 7

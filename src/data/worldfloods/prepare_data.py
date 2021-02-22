@@ -8,8 +8,8 @@ import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
 
-from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from src.data.utils import check_path_exists
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 
 
 def check_directory_correspondence(
