@@ -166,11 +166,11 @@ class WorldFloodsDatasetTiled(Dataset):
 
         # Open Image File
         with rasterio.open(image_name) as f:
-            image_tif = f.read(window=sub_window.window)
+            image_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
         # Open Ground Truth File
         with rasterio.open(y_name) as f:
-            mask_tif = f.read(window=sub_window.window)
+            mask_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
