@@ -152,12 +152,39 @@ def create_folder(directory: str) -> None:
         print(f"Folder '{directory}' Is Already There.")
     else:
         print(f"Folder '{directory}' is created.")
+
+
 def get_files_in_directory(directory: str, suffix: str) -> List[str]:
-    p = Path(directory).glob(f'*{suffix}')
+    p = Path(directory).glob(f"*{suffix}")
     files = [str(x) for x in p if x.is_file()]
     return files
 
+
+def get_files_in_bucket_directory(
+    bucket_id: str, directory: str, suffix: str
+) -> List[str]:
+    p = Path(directory).glob(f"*{suffix}")
+    files = [str(x) for x in p if x.is_file()]
+    return files
+
+
 def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
-    p = Path(directory).glob(f'*{suffix}')
+    p = Path(directory).glob(f"*{suffix}")
     files = [str(x.name) for x in p if x.is_file()]
+    return files
+
+
+def get_files_in_bucket_directory(
+    bucket_id: str, directory: str, suffix: str, **kwargs
+) -> List[str]:
+
+    # initialize client
+    client = storage.Client(**kwargs)
+    # get bucket
+    bucket = client.get_bucket(bucket_id)
+    # get blob
+    blobs = bucket.list_blobs(prefix=directory)
+    # check if it exists
+
+    files = [str(x.name) for x in blobs if str(Path(x.name).suffix) == suffix]
     return files
