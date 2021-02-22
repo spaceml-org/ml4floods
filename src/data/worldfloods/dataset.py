@@ -5,6 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from src.preprocess.tiling import WindowSize
 from typing import Callable, Dict, List, Optional, Tuple
+from pyprojroot import here
+
+ROOT = here(project_files=[".here"])
 
 import numpy as np
 import rasterio
@@ -102,6 +105,16 @@ class WorldFloodsDatasetTiled(Dataset):
     """
     A dataloader for the WorldFloods dataset.
 
+    Args:
+        image_files (List[str]): list of specific image files
+            e.g., path/to/file/prefix/filename
+        image_prefix (str): prefix for images
+        gt_prefix (str): prefix for groundtruth
+        window_size (Tuple[int,int]): tuple for window size for sliing
+            height,width
+        transforms (List[Callable]): the transformations to be done later
+            for each tile.
+
     Attributes
     ----------
     window_size: tuple(int, int)
@@ -118,7 +131,7 @@ class WorldFloodsDatasetTiled(Dataset):
         image_files: List[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        window_size: WindowSize = WindowSize(height=128, width=128),
+        window_size: Tuple[int, int] = (64, 64),
         transforms: Optional[List[Callable]] = None,
     ) -> None:
 
@@ -126,7 +139,7 @@ class WorldFloodsDatasetTiled(Dataset):
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
         self.transforms = transforms
-        self.window_size = window_size
+        self.window_size = WindowSize(height=window_size[0], width=window_size[1])
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
