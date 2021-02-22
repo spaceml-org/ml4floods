@@ -2,6 +2,7 @@ import pickle
 
 from src.data.index.map_data import MapData
 
+
 class MapDataFactory:
     def __init__(self, index_path: str):
         """

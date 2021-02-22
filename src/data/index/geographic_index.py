@@ -2,6 +2,8 @@ from typing import List
 from dataclasses import dataclass
 import logging
 import pickle
+from dataclasses import dataclass
+from typing import List
 
 
 LOGGER = logging.getLogger(__name__)

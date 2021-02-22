@@ -1,26 +1,33 @@
 name: ml4fl_py38
 channels:
-- defaults
 - conda-forge
+- defaults
 dependencies:
 - python=3.8
+- conda-forge::gdal>=3.1
+- conda-forge::ipython
+- conda-forge::ipykernel
+- conda-forge::libgdal>=3.1
 - pip
 - pip:
   # PYTORCH ECOSYSTEM
   - torch
   - torchvision
+  - pytorch-lightning
   - numpy
   - matplotlib
+  - seaborn
   - scipy
   - pandas
-  - h5py
-  - albumentations
   - rasterio
-  - pytorch-ignite
+  - geopandas
   - fastprogress
-  - termcolor
   - tqdm
-  - natsort
   - black
   - isort
   - mypy
+  - opencv-python
+  - seaborn
+  - ipykernel
+  - google-cloud-storage
+  - pyprojroot
