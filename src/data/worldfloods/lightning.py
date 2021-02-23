@@ -10,17 +10,25 @@ from pathlib import Path
 class WorldFloodsDataModule(pl.LightningDataModule):
     def __init__(
         self,
+        input_folder: str = "S2",
+        target_folder: str = "gt",
         data_dir: str = "./",
-        transformations: Optional[List[Callable]] = None,
+        train_transformations: Optional[List[Callable]] = None,
+        test_transformations: Optional[List[Callable]] = None,
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
     ):
         super().__init__()
         self.data_dir = data_dir
-        self.transform = (
-            albumentations.Compose(transformations)
-            if transformations is not None
+        self.train_transform = (
+            albumentations.Compose(train_transformations)
+            if train_transformations is not None
+            else None
+        )
+        self.test_transform = (
+            albumentations.Compose(test_transformations)
+            if test_transformations is not None
             else None
         )
 
@@ -30,8 +38,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.bands = bands
         self.batch_size = batch_size
         # Prefixes
-        self.image_prefix = "S2"
-        self.gt_prefix = "gt"
+        self.image_prefix = input_folder
+        self.gt_prefix = target_folder
         self.window_size = window_size
 
     def prepare_data(self):
@@ -64,21 +72,22 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.train_transform,
         )
+        # TODO: Clarify whether validations set should use augmentation or not
         self.val_dataset = WorldFloodsDatasetTiled(
             image_files=self.val_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.test_transform, 
         )
         self.test_dataset = WorldFloodsDatasetTiled(
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.test_transform,
         )
 
     def train_dataloader(self):
@@ -94,23 +103,33 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 class WorldFloodsGCPDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        transformations: Optional[List[Callable]] = None,
+        bucket_id: str = "ml4floods",
+        path_to_splits: str = "worldfloods/public",
+        input_folder: str = "S2",
+        target_folder: str = "gt",
+        train_transformations: Optional[List[Callable]] = None,
+        test_transformations: Optional[List[Callable]] = None,
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
     ):
         super().__init__()
-        self.transform = (
-            albumentations.Compose(transformations)
-            if transformations is not None
+        self.train_transform = (
+            albumentations.Compose(train_transformations)
+            if train_transformations is not None
+            else None
+        )
+        self.test_transform = (
+            albumentations.Compose(test_transformations)
+            if test_transformations is not None
             else None
         )
 
         # WORLDFLOODS Directories
-        self.bucket_name = "ml4floods"
-        self.train_dir = "worldfloods/public/train/S2/"
-        self.val_dir = "worldfloods/public/val/S2/"
-        self.test_dir = "worldfloods/public/test/S2/"
+        self.bucket_name = bucket_id
+        self.train_dir = f"{path_to_splits}/train/{input_folder}"
+        self.val_dir = f"{path_to_splits}/val/{input_folder}"
+        self.test_dir = f"{path_to_splits}/test/{input_folder}"
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
@@ -118,8 +137,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         self.bands = bands
         self.batch_size = batch_size
         # Prefixes
-        self.image_prefix = "S2"
-        self.gt_prefix = "gt"
+        self.image_prefix = input_folder
+        self.gt_prefix = target_folder
         self.window_size = window_size
 
     def prepare_data(self):
@@ -153,21 +172,21 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.train_transform,
         )
         self.val_dataset = WorldFloodsDatasetTiled(
             image_files=self.val_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.test_transform,
         )
         self.test_dataset = WorldFloodsDatasetTiled(
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
-            transforms=self.transform,
+            transforms=self.test_transform,
         )
 
     def train_dataloader(self):
