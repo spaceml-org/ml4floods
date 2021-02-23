@@ -127,6 +127,46 @@ def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path:
     return None
 
 
+def open_file_from_bucket(target_directory: str):
+    """Saves a file from a bucket
+
+    Parameters
+    ----------
+    bucket_id : str
+        the name of the bucket
+    file_name : str
+        the name of the file in bucket (include the directory)
+    destination_file_path : str
+        the directory of where you want to save the
+        data locally (not including the filename)
+
+    Examples
+    --------
+
+    >>> bucket_id = ...
+    >>> file_name = 'path/to/file/and/file.csv'
+    >>> dest = 'path/in/bucket/'
+    >>> load_file_from_bucket(
+        bucket_id=bucket_id,
+        file_name=file_name,
+        destimation_file_path=dest
+    )
+    """
+    bucket_id, file_path, file_name = parse_gcp_path(target_directory)
+
+    file_path = str(Path(file_path).joinpath(file_name))[1:]
+    client = storage.Client()
+
+    bucket = client.get_bucket(bucket_id)
+    # get blob
+    blob = bucket.get_blob(file_path)
+
+    # download data
+    blob = blob.download_as_string()
+
+    return blob
+
+
 def save_file_to_bucket(target_directory: str, source_directory: str):
     """Saves a file to a bucket
 
