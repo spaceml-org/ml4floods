@@ -6,9 +6,14 @@ from typing import List, Optional
 
 
 class WorldFloodsModel(pl.LightningModule):
-    def __init__(self, network_architecture: torch.nn.Module, num_class:int,
-                 weight_per_class: Optional[List[float]]=None, lr:float=1e-4, lr_decay:float=.5,
+    def __init__(self, 
+                 network_architecture: torch.nn.Module, 
+                 num_class:int,
+                 weight_per_class: Optional[List[float]]=None, 
+                 lr:float=1e-4, 
+                 lr_decay:float=.5,
                  lr_patience:int=2):
+        
         super().__init__()
         self.num_class = num_class
         self.network = network_architecture
@@ -65,7 +70,7 @@ class WorldFloodsModel(pl.LightningModule):
                                                                factor=self.lr_decay, verbose=True,
                                                                patience=self.lr_patience)
 
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_MSE"}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "dice_loss"}
 
 
 

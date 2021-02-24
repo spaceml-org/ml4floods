@@ -354,8 +354,8 @@ def transforms_generator(config: Dict):
     if config["totensor"] is True:
         list_of_transforms += [ToTensor()]
 
-    if config["num_classes"] > 1:
-        list_of_transforms += [OneHotEncoding(num_classes=3)]
+#     if config["num_classes"] > 1:
+#         list_of_transforms += [OneHotEncoding(num_classes=3)]
 
     return albumentations.Compose(list_of_transforms)
 
