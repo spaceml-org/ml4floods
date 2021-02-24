@@ -3,6 +3,8 @@ Demo script to download some demo data files. Mainly used for testing but can al
 """
 import argparse
 from src.data.utils import create_folder
+from dataclasses import dataclass, field
+from datetime import datetime
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -10,13 +12,27 @@ from typing import Optional
 import rasterio
 from google.cloud import storage
 
-from src.data.worldfloods.dataset import WorldFloodsImage
 from pyprojroot import here
 
 root = here(project_files=[".here"])
 
 HOME = root
 from src.data.worldfloods.download import download_image, download_worldfloods_data
+
+@dataclass
+class WorldFloodsImage:
+    # ESSENTIAL METADATA
+    filename: str
+    uri: str = field(default=None)
+    filepath: str = field(default=None)
+    bucket_id: str = field(default=None)
+    product_id: str = field(default=None)
+
+    # BREADCRUMBS
+    load_date: str = field(default=datetime.now())
+    viewed_by: list = field(default_factory=list, compare=False, repr=False)
+    source_system: str = field(default="Not Specified")
+
 
 
 def test_data_download(ml_split: str = "train"):
