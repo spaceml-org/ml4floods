@@ -5,7 +5,11 @@ import requests
 import shutil
 import tempfile
 
-import geemap.eefolium
+
+BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
+            "B6", "B7", "B8", "B8A", "B9",
+            "B10", "B11", "B12", "QA60"]
+
 
 def get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
@@ -17,13 +21,59 @@ def get_collection(collection_name, date_start, date_end, bounds):
     return collection_filtered, n_images
 
 
-def collection_mosaic_day(imcol, region_of_interest):
+def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/S2", bands=BANDS_S2, verbose=1):
+    """
+
+    Args:
+        date_start:
+        date_end:
+        bounds:
+        collection_name:
+        bands:
+
+    Returns:
+
+    """
+    img_col_all, n_images_col = get_collection(collection_name, date_start, date_end, bounds)
+    if n_images_col <= 0:
+        if verbose > 1:
+            print(f"Not images found for collection {collection_name} date start: {date_start} date end: {date_end}")
+        return
+
+    img_col_all = img_col_all.select(bands)
+
+    # Import and filter s2cloudless.
+    s2_cloudless_col = (ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY')
+        .filterBounds(bounds)
+        .filterDate(date_start, date_end))
+
+    img_col_all = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
+        'primary': img_col_all,
+        'secondary': s2_cloudless_col,
+        'condition': ee.Filter.equals(**{
+            'leftField': 'system:index',
+            'rightField': 'system:index'
+        })
+    }))
+
+    img_col = collection_mosaic_day(img_col_all, bounds,
+                                    fun_before_mosaic=None)
+                                    #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
+
+    return img_col
+
+
+def collection_mosaic_day(imcol, region_of_interest, fun_before_mosaic=None):
     """
     Groups by solar day the images in the image collection.
 
-    :param imcol:
-    :param region_of_interest:
-    :return:
+    Args:
+        imcol:
+        region_of_interest:
+        fun_before_mosaic:
+
+    Returns:
+
     """
     # https://gis.stackexchange.com/questions/280156/mosaicking-a-image-collection-by-date-day-in-google-earth-engine
     imlist = imcol.toList(imcol.size())
@@ -42,8 +92,11 @@ def collection_mosaic_day(imcol, region_of_interest):
 
         ims_day = imcol.filterDate(utc_date, utc_date.advance(1, "day"))
 
+        # im = ims_day.mosaic()
+        if fun_before_mosaic is not None:
+            ims_day = ims_day.map(fun_before_mosaic)
+
         im = ims_day.mosaic()
-        # im = im.reproject(ee.Projection("EPSG:3857"), scale=10)
         return im.set({
             "system:time_start": utc_date.millis(),
             "system:id": solar_date.format("YYYY-MM-dd"),
