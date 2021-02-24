@@ -8,6 +8,7 @@ import os
 from glob import glob
 from src.data.utils import filter_pols, filter_land
 from src.data import utils
+from typing import Optional
 
 import rasterio.windows
 
@@ -48,8 +49,7 @@ CODES_FLOODMAP = {
     "aquaculture (wet rice)": 1,
     "tsunami-affected land": 1,
     "ran of kutch water": 1,
-    "maximum flood water extent (cumulative)": 1,
-    "area_of_interest" : -1
+    "maximum flood water extent (cumulative)": 1
 }
 
 
@@ -117,20 +117,27 @@ def generate_floodmap_v1(register, filename_floodmap, pol_bounds_s2, worldfloods
     return floodmap
 
 
-def compute_water(tiffs2, floodmap, window=None, use_permanent_water_jrc=True):
+def compute_water(tiffs2:str, floodmap:gpd.GeoDataFrame, window: Optional[rasterio.windows.Window]=None,
+                  permanent_water_path:str=None):
     """
     Rasterise flood map and add JRC permanent water layer
 
     :param tiffs2: Tif file S2 (either remote or local)
     :param floodmap: geopandas dataframe with the annotated polygons
     :param window: rasterio.windows.Window to read. Could also be slices (slice(100, 200), slice(100, 200)
-    :param use_permanent_water_jrc: Whether or not user JRC permanent water layer (from tifffimages/PERMANENTWATERJRC folder)
+    :param permanent_water_path: Whether or not user JRC permanent water layer (from tifffimages/PERMANENTWATERJRC folder)
 
     :return: water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
 
-    shapes_rasterise = ((g, CODES_FLOODMAP[w]) for g, w in floodmap[['geometry', 'w_class']].itertuples(index=False,
-                                                                                                        name=None))
+
+    # area_of_interest contains the extent that was labeled (values out of this pol should be marked as invalid)
+    floodmap_aoi = floodmap[floodmap["w_class"] == "area_of_interest"]
+    if floodmap_aoi.shape[0] > 0:
+        floodmap_rasterise = floodmap[floodmap["w_class"] != "area_of_interest"]
+
+    shapes_rasterise = ((g, CODES_FLOODMAP[w]) for g, w in floodmap_rasterise[['geometry', 'w_class']].itertuples(index=False,
+                                                                                                                  name=None))
 
     with rasterio.open(tiffs2) as src_s2:
         if window is None:
@@ -140,23 +147,30 @@ def compute_water(tiffs2, floodmap, window=None, use_permanent_water_jrc=True):
             out_shape = rasterio.windows.shape(window, height=src_s2.height, width=src_s2.width)
             transform = rasterio.windows.transform(window, src_s2.transform)
 
-        water_mask = features.rasterize(shapes=shapes_rasterise, fill=0,
-                                        out_shape=out_shape,
-                                        dtype=np.int16,
-                                        transform=transform)
+    water_mask = features.rasterize(shapes=shapes_rasterise, fill=0,
+                                    out_shape=out_shape,
+                                    dtype=np.int16,
+                                    transform=transform)
 
-    filename_permanent_water = tiffs2.replace("/S2/", "/PERMANENTWATERJRC/")
-    if use_permanent_water_jrc and utils.check_file_in_bucket_exists(filename_permanent_water):
+    # Load valid mask using the area_of_interest polygons (valid pixels are those within area_of_interest polygons)
+    if floodmap_aoi.shape[0] > 0:
+        shapes_rasterise = ((g, 1) for g, w in
+                            floodmap_aoi[['geometry', 'w_class']].itertuples(index=False,
+                                                                             name=None))
+        valid_mask = features.rasterize(shapes=shapes_rasterise, fill=0,
+                                        out_shape=out_shape,
+                                        dtype=np.uint8,
+                                        transform=transform)
+        water_mask[valid_mask == 0] = -1
+
+    if permanent_water_path is not None:
         logging.info("\t Adding permanent water")
-        permament_water = rasterio.open(filename_permanent_water).read(1, window=window)
+        permament_water = rasterio.open(permanent_water_path).read(1, window=window)
 
         # Set to permanent water
-        water_mask[permament_water == 3] = 3
+        water_mask[(water_mask != -1) & (permament_water == 3)] = 3
 
         # Seasonal water (permanent_water == 2) will not be used
-    else:
-        if use_permanent_water_jrc:
-            logging.warning(f"\t Permanent water {filename_permanent_water} not found")
 
     return water_mask
 

@@ -21,7 +21,8 @@ def get_collection(collection_name, date_start, date_end, bounds):
     return collection_filtered, n_images
 
 
-def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/S2", bands=BANDS_S2, verbose=1):
+def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/S2", bands=BANDS_S2, verbose=1,
+                      threshold_invalid=.5):
     """
 
     Args:
@@ -30,6 +31,7 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
         bounds:
         collection_name:
         bands:
+        threshold_invalid:
 
     Returns:
 
@@ -56,11 +58,29 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
         })
     }))
 
-    img_col = collection_mosaic_day(img_col_all, bounds,
-                                    fun_before_mosaic=None)
+    # Add s2cloudless as new band
+    img_col_all = img_col_all.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+
+    daily_mosaic =  collection_mosaic_day(img_col_all, bounds,
+                                          fun_before_mosaic=None)
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
 
-    return img_col
+    # Filter images with many invalids
+    def _count_valid(img):
+        mascara = img.mask()
+        mascara = mascara.select(bands)
+        mascara = mascara.reduce(ee.Reducer.allNonZero())
+        # TODO do the same with clouds??
+        dictio = mascara.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
+                                      bestEffort=True, scale=10.)
+
+        img = img.set("valids", dictio.get("all"))
+
+        return img
+
+    daily_mosaic = daily_mosaic.map(_count_valid).filter(ee.Filter.greaterThanOrEquals('valids', threshold_invalid))
+
+    return daily_mosaic
 
 
 def collection_mosaic_day(imcol, region_of_interest, fun_before_mosaic=None):

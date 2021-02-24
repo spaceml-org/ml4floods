@@ -179,6 +179,8 @@ def generate_floodmap(register, filename_floodmap, filterland=True):
             mapdf_hydro = mapdf_hydro[["geometry", "w_class", "source"]].copy()
             floodmap = pd.concat([floodmap, mapdf_hydro], axis=0, ignore_index=True)
 
+    # TODO add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
+
     # Concat area of interest
     area_of_interest["source"] = "area_of_interest"
     area_of_interest["w_class"] = "area_of_interest"
@@ -404,6 +406,9 @@ def unzip_copernicus_ems(file_name, folder_out= "Copernicus_EMS_raw"):
 def fetch_zip_files(code: str) -> List[str]:
     """
     FILL MEEE
+    """
+    """
+    https://emergency.copernicus.eu/mapping/list-of-components/EMSR502/aemfeed
     """
     product_url = "https://emergency.copernicus.eu/mapping/list-of-components/" + code
     session = HTMLSession()
