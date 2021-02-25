@@ -218,3 +218,31 @@ def get_files_in_bucket_directory(
 
     files = [str(x.name) for x in blobs if str(Path(x.name).suffix) == suffix]
     return files
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+
+    # TODO encode shapely.geometry objects
+    # TODO encode timestamps with isoformat()
+    def default(self, obj_to_encode):
+        """Pandas and Numpy have some specific types that we want to ensure
+        are coerced to Python types, for JSON generation purposes. This attempts
+        to do so where applicable.
+        """
+        # Pandas dataframes have a to_json() method, so we'll check for that and
+        # return it if so.
+        if hasattr(obj_to_encode, 'to_json'):
+            return obj_to_encode.to_json()
+        # Numpy objects report themselves oddly in error logs, but this generic
+        # type mostly captures what we're after.
+        if isinstance(obj_to_encode, np.generic):
+            return obj_to_encode.item()
+        # ndarray -> list, pretty straightforward.
+        if isinstance(obj_to_encode, np.ndarray):
+            return obj_to_encode.tolist()
+        # torch or tensorflow -> list, pretty straightforward.
+        if hasattr(obj_to_encode, "numpy"):
+            return obj_to_encode.numpy().tolist()
+        # If none of the above apply, we'll default back to the standard JSON encoding
+        # routines and let it work normally.
+        return super().default(obj_to_encode)

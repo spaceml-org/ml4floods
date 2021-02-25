@@ -4,12 +4,7 @@ import traceback
 import requests
 import shutil
 import tempfile
-
-
-BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
-            "B6", "B7", "B8", "B8A", "B9",
-            "B10", "B11", "B12", "QA60"]
-
+from src.data.config import  BANDS_S2
 
 def get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
