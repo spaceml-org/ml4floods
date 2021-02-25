@@ -230,7 +230,7 @@ formats = ["%d/%m/%Y T%H:%M:%SZ",
            "%Y/%m/%d %H:%M UTC",
            "%d/%m/%Y %H:%M:%S UTC"]
 
-def is_file_in_directory(parent_dir_of_file: str, string_pattern: str) -> bool:
+def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> bool:
     """
     Helper function that checks whether a file already exists in the parent
     directory.
@@ -243,10 +243,8 @@ def is_file_in_directory(parent_dir_of_file: str, string_pattern: str) -> bool:
     Returns:
       A boolean indicating whether a file exists in the parent directory.
     """
-    source_files = glob(os.path.join(unzipped_directory, "*_source*.dbf"))
-    if len(source_files) != 1:
-        print(f"Source file not found in directory {unzipped_directory}")
-        return
+    source_files = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
+    return len(source_files) == 1
 
 
 def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose : bool = False) -> Dict:
