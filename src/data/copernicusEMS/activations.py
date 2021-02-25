@@ -128,11 +128,11 @@ copernicus_ems_webscrape_data  = {"confirmation": 1,
                                   "form_build_id": "xxxx",
                                   "form_id": "emsmapping_disclaimer_download_form"}
 
-def download_vector_cems(zipfile_url, ems_dir="CopernicusEMS"):
+def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
     """
     This function downloads the zip files from the zip file url of each
     Copernicus EMS hazard activation and saves them locally to a file
-    directory ems_dir under a subdirectory based off the activation code.
+    directory folder_out under a subdirectory based off the activation code.
     
     Args:
       zipfile_url (str): Url to retrieve the downloadable zip file from 
@@ -140,22 +140,22 @@ def download_vector_cems(zipfile_url, ems_dir="CopernicusEMS"):
         code of the form 'EMSR[0-9]{3},' where the string EMSR is followed
         by three digits taken from 0-9.
       
-      ems_dir (str): The name of the directory created to hold the Copernicus 
+      folder_out (str): The name of the directory created to hold the Copernicus 
         EMS zip file download.
     
     Returns:
-      file_path_out (str): a filepath built from the ems_dir handle and the
+      file_path_out (str): a filepath built from the folder_out handle and the
         Copernicus EMS activation code name embedded in the file.
     """  
     # Activation Code derived from zipfile_url
     act_code = os.path.basename(zipfile_url)
     
-    # Create a directory called ems_dir to hold zipped EMS activations
-    if not os.path.exists(ems_dir):
-        os.mkdir(ems_dir)
+    # Create a directory called folder_out to hold zipped EMS activations
+    if not os.path.exists(folder_out):
+        os.mkdir(folder_out)
 
-    # Create a filepath from ems_dir and act_code if it doesn't exist
-    file_path_out = os.path.join(ems_dir, act_code)
+    # Create a filepath from folder_out and act_code if it doesn't exist
+    file_path_out = os.path.join(folder_out, act_code)
     if os.path.exists(file_path_out):
         print("\tFile %s already exists. Not downloaded" % zipfile_url)
         return file_path_out
@@ -171,10 +171,10 @@ def download_vector_cems(zipfile_url, ems_dir="CopernicusEMS"):
     open(file_path_out, 'wb').write(r.content) 
     return file_path_out
 
-def unzip_copernicus_ems(file_name : str, ems_dir : str = "Copernicus_EMS_raw"):
+def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw"):
     """
     This function unzips a single zip file from a Copernicus EMS hazard to a
-    local directory ems_dir with a subdirectory derived from the file handle of 
+    local directory folder_out with a subdirectory derived from the file handle of 
     the file prior to the extension. Copernicus EMS per code zip file may be retrieved 
     and downloaded using download_vector_cems locally to access rapid mapping products 
     as described in: 
@@ -184,20 +184,20 @@ def unzip_copernicus_ems(file_name : str, ems_dir : str = "Copernicus_EMS_raw"):
     Args:
       file_name (str): The zip file to be extracted
       
-      ems_dir (str): The local directory to store the subdirectories named by the file
+      folder_out (str): The local directory to store the subdirectories named by the file
         handle naming convention.
         
     Returns:
-       directory_to_extract_to (str): a directory based on the file_name within ems_dir.
+       directory_to_extract_to (str): a directory based on the file_name within folder_out.
 
     """
-    # Create directory ems_dir locally
-    if not os.path.exists(ems_dir):
-        os.mkdir(ems_dir)
+    # Create directory folder_out locally
+    if not os.path.exists(folder_out):
+        os.mkdir(folder_out)
 
     # Create subdirectories to extract zip files to based on file name handle
     zip_ref = zipfile.ZipFile(file_name, 'r')
-    directory_to_extract_to = os.path.join(ems_dir, 
+    directory_to_extract_to = os.path.join(folder_out, 
                                            os.path.basename(os.path.splitext(file_name)[0]))
     
     # Check to see if directories exist
@@ -244,7 +244,10 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
       A boolean indicating whether a file exists in the parent directory.
     """
     source_files = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
-    return len(source_files) == 1
+    if len(source_files) == 1:
+        return source_files[0]
+    else:
+        return 
 
 
 def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose : bool = False) -> Dict:
