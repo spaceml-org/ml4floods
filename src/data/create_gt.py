@@ -8,7 +8,6 @@ import os
 from shapely.ops import cascaded_union
 from src.data.utils import filter_pols, filter_land
 from typing import Optional, Dict, Tuple
-from shapely.geometry import Polygon
 from src.data.config import  BANDS_S2
 from src.data import cloud_masks
 
