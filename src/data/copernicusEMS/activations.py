@@ -349,14 +349,48 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     area_of_interest = gpd.read_file(area_of_interest_file)
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
-    register = {"name": product_name,
-                "ems_code": ems_code,
-                "timestamp": date_post_event,
-                "satellite": satellite_post_event,
-                "area_of_interest" : area_of_interest_pol,
-                "timestamp_ems_code": date_ems_code,
-                "observed_event_file": observed_event_file,
-                "area_of_interest_file": area_of_interest_file}
+#     register = {"name": product_name,
+#                 "ems_code": ems_code,
+#                 "timestamp": date_post_event,
+#                 "satellite": satellite_post_event,
+#                 "area_of_interest" : area_of_interest_pol,
+#                 "timestamp_ems_code": date_ems_code,
+#                 "observed_event_file": observed_event_file,
+#                 "area_of_interest_file": area_of_interest_file}
+    
+    if "obj_desc" in pd_geo:
+        event_type = np.unique(pd_geo.obj_desc)
+        if len(event_type) > 1:
+            print("Multiple event types within shapefile {}".format(event_type))
+        event_type = event_type[0]
+    else:
+        event_type = "NaN"
+
+    crs_code_space, crs_code = str(pd_geo.crs).split(":")
+    
+    register = {
+        'event id': product_name,
+        'layer name': os.path.basename(os.path.splitext(observed_event_file)[0]),
+        'event type': event_type,
+        'satellite date': date_post_event,
+        'country': "NaN",
+        'satellite': satellite_post_event,
+        'bounding box': get_bbox(pd_geo),
+        'reference system': {
+            'code space': crs_code_space,
+            'code': crs_code
+        },
+        'abstract': "NaN",
+        'purpose': "NaN",
+        'source': 'CopernicusEMS',
+        "area_of_interest_polygon" : area_of_interest_pol,
+        # CopernicusEMS specific fields
+        "observed_event_file": observed_event_file,
+        "area_of_interest_file": area_of_interest_file,
+        "ems_code": ems_code,
+        
+    }
+    
 
     register.update(stuff_pre_event)
 
@@ -475,7 +509,15 @@ def generate_floodmap(register, filename_floodmap, filterland=True):
     return floodmap
 
 
-
+def generate_polygon(bbox):
+    """
+    Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
+    """
+    return [[bbox[0],bbox[1]],
+             [bbox[2],bbox[1]],
+             [bbox[2],bbox[3]],
+             [bbox[0],bbox[3]],
+             [bbox[0],bbox[1]]]
 
 def get_bbox(pd_geo: gpd.GeoDataFrame) -> Dict:
     """
