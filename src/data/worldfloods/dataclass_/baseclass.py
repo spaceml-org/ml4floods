@@ -14,7 +14,7 @@ class WorldFloodsS2Image:
     full_path: str = field(default="Not Specified")
 
     # PAYLOAD
-    #     source_tiff: bytea = field(default = "Not Specified")
+    #     source_tiff: bytes = field(default = "Not Specified")
     meta_data: Dict = field(default="Not Specified")
 
     # BREADCRUMBS

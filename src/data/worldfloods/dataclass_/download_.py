@@ -65,7 +65,14 @@ print(f"Demo filename:\n'{files[0]}'")
 
 
 def init_wfs2_dataclass(full_path: str) -> dataclass:
+    """Function to initialize and return the WorldFloodsS2ImageSaved dataclass.
 
+    Args:
+        full_path (str): Path of the tiff file.
+
+    Returns:
+        dataclass: Returns dataclass object of the mentioned tiff file.
+    """
     # parse the components
 
     # initialize dataclass
