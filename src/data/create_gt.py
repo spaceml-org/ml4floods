@@ -5,11 +5,12 @@ from rasterio import features
 import rasterio
 import geopandas as gpd
 import os
-from glob import glob
+from shapely.ops import cascaded_union
 from src.data.utils import filter_pols, filter_land
 from typing import Optional, Dict, Tuple
 from shapely.geometry import Polygon
 from src.data.config import  BANDS_S2
+from src.data import cloud_masks
 
 import rasterio.windows
 
@@ -69,13 +70,19 @@ UNOSAT_CLASS_TO_TXT = {
     99: "maximum flood water extent (cumulative)"
 }
 
-def generate_floodmap_v1(register:Dict, filename_floodmap:Optional[str], pol_bounds_s2:Polygon,
+def generate_floodmap_v1(register:Dict,
                          worldfloods_root:str, filterland:bool=True) -> gpd.GeoDataFrame:
     """ Generates a floodmap (shapefile) with the joined info of the hydro and flood content. """
 
-    mapdf = filter_pols(gpd.read_file(os.path.join(worldfloods_root, "maps/", register["resource folder"], register["layer name"],
+    # TODO add area_of_interest map.shp for all the files!
+    area_of_interest = gpd.read_file(os.path.join(worldfloods_root, "maps",
+                                                  "area_of_interest", register["layer name"], "map.shp"))
+    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+
+    # TODO assert CRS is 'EPSG:4326' for all the polygons!!
+    mapdf = filter_pols(gpd.read_file(os.path.join(worldfloods_root, "maps", register["resource folder"], register["layer name"],
                                                    "map.shp")),
-                        pol_bounds_s2)
+                        area_of_interest_pol)
     assert mapdf.shape[0] > 0, f"No polygons within bounds for {register}"
     if register["source"] == "CopernicusEMS":
         column_water_class = mapdf["notation"]
@@ -95,9 +102,9 @@ def generate_floodmap_v1(register:Dict, filename_floodmap:Optional[str], pol_bou
     if "hydro" in register:
         register_hydro = register["hydro"]
         assert register_hydro["source"] == "CopernicusEMS", f"Unexpected hydro file for source {register}"
-        mapdf_hydro = filter_pols(gpd.read_file(os.path.join(worldfloods_root, "maps/", register_hydro["resource folder"], register_hydro["layer name"],
+        mapdf_hydro = filter_pols(gpd.read_file(os.path.join(worldfloods_root, "maps", register_hydro["resource folder"], register_hydro["layer name"],
                                                              "map.shp")),
-                                  pol_bounds_s2)
+                                  area_of_interest_pol)
 
         mapdf_hydro = filter_land(mapdf_hydro) if filterland and (mapdf_hydro.shape[0] > 0) else mapdf_hydro
         if mapdf_hydro.shape[0] > 0:
@@ -108,13 +115,15 @@ def generate_floodmap_v1(register:Dict, filename_floodmap:Optional[str], pol_bou
 
     floodmap.loc[floodmap.w_class.isna(), 'w_class'] = "Not Applicable"
 
-    if filename_floodmap is not None:
-        # Remove files if exist
-        name_to_glob = filename_floodmap.replace(".shp", ".*")
-        for fremove in glob(name_to_glob):
-            os.remove(fremove)
+    # Concat area of interest
+    area_of_interest["source"] = "area_of_interest"
+    area_of_interest["w_class"] = "area_of_interest"
+    area_of_interest = area_of_interest[["geometry", "w_class", "source"]].copy()
+    floodmap = pd.concat([floodmap, area_of_interest], axis=0, ignore_index=True)
 
-        floodmap.to_file(filename_floodmap)
+    # TODO set crs of the floodmap
+
+    # TODO save in the register file the new stuff (filenames)?
 
     return floodmap
 
@@ -124,12 +133,14 @@ def compute_water(tiffs2:str, floodmap:gpd.GeoDataFrame, window: Optional[raster
     """
     Rasterise flood map and add JRC permanent water layer
 
-    :param tiffs2: Tif file S2 (either remote or local)
-    :param floodmap: geopandas dataframe with the annotated polygons
-    :param window: rasterio.windows.Window to read. Could also be slices (slice(100, 200), slice(100, 200)
-    :param permanent_water_path: Whether or not user JRC permanent water layer (from tifffimages/PERMANENTWATERJRC folder)
+    Args:
+        tiffs2: Tif file S2 (either remote or local)
+        floodmap: geopandas dataframe with the annotated polygons
+        window: rasterio.windows.Window to read. Could also be slices (slice(100, 200), slice(100, 200)
+        permanent_water_path: Whether or not user JRC permanent water layer (from tifffimages/PERMANENTWATERJRC folder)
 
-    :return: water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
+    Returns:
+        water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
 
 
@@ -177,42 +188,11 @@ def compute_water(tiffs2:str, floodmap:gpd.GeoDataFrame, window: Optional[raster
     return water_mask
 
 
-# def load_compute_cloud_mask(tiffs2:str, s2_img:np.ndarray=None, save_mask:bool=False,
-#                             window:Optional[rasterio.windows.Window]=None) ->np.ndarray:
-#     """load or compute cloud mask for s2 image """
-#
-#     filename_cloudmask = tiffs2.replace("/S2/","/cloudprob/")
-#
-#     # Check if _edited file exists and use that
-#     filename_cloudmask_edited = filename_cloudmask.replace("/cloudprob/", "/cloudprob_edited/")
-#
-#     if utils.check_file_in_bucket_exists(filename_cloudmask_edited):
-#         logging.info("\t Loading cloud mask edited file")
-#         clouds = rasterio.open(filename_cloudmask_edited).read(1, window=window)
-#     elif utils.check_file_in_bucket_exists(filename_cloudmask):
-#         clouds = rasterio.open(filename_cloudmask).read(1, window=window)
-#     else:
-#         logging.info("\t Cloud mask not found. Computing")
-#         from src.data import cloud_masks
-#         with rasterio.open(tiffs2) as src_s2:
-#             if s2_img is None:
-#                 s2_img = src_s2.read(window=window)
-#
-#             if not save_mask:
-#                 filename_cloudmask = None
-#             else:
-#                 assert not filename_cloudmask.startswith("gs://"), "Cannot save directly in the bucket"
-#                 logging.info("\t Cloud mask will be saved")
-#             clouds = cloud_masks.compute_cloud_mask_save(filename_cloudmask, s2_img,
-#                                                          src_s2.profile)
-#
-#     return clouds
-
-
 def _read_s2img_cloudmask(s2tiff:str, window: Optional[rasterio.windows.Window]=None,
                           cloudprob_tiff:Optional[str]=None, cloudprob_in_lastband:bool=False)->Tuple[np.ndarray, np.ndarray]:
     """
     Helper function of generate_gt_v1 and generate_gt_v2
+
     Args:
         s2tiff:
         window:
@@ -220,22 +200,25 @@ def _read_s2img_cloudmask(s2tiff:str, window: Optional[rasterio.windows.Window]=
         cloudprob_in_lastband:
 
     Returns:
+        s2img: C,H,W array with len(BANDS_S2) channels
+        cloud_mask: H, W array with cloud probability
 
     """
-
-    assert cloudprob_in_lastband or cloudprob_tiff is not None, "Expected either cloud prob in the last band or a cloud probability tiff"
+    bands_read = list(range(1, len(BANDS_S2) + 1))  # bands in rasterio are 1-based!
+    with rasterio.open(s2tiff, "r") as s2_rst:
+        s2_img = s2_rst.read(bands_read, window=window)
 
     if cloudprob_in_lastband:
         with rasterio.open(s2tiff, "r") as s2_rst:
             last_band = s2_rst.count
             cloud_mask = s2_rst.read(last_band, window=window)
     else:
-        with rasterio.open(cloudprob_tiff, "r") as cld_rst:
-            cloud_mask = cld_rst.read(1, window=window)
-
-    bands_read = list(range(1, len(BANDS_S2) + 1))  # bands in rasterio are 1-based!
-    with rasterio.open(s2tiff, "r") as s2_rst:
-        s2_img = s2_rst.read(bands_read, window=window)
+        if cloudprob_tiff is None:
+            # Compute cloud mask
+            cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
+        else:
+            with rasterio.open(cloudprob_tiff, "r") as cld_rst:
+                cloud_mask = cld_rst.read(1, window=window)
 
     return s2_img, cloud_mask
 

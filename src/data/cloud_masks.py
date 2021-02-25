@@ -14,24 +14,22 @@ def sentinel2_to_cloud_mask_preprocess(x):
     
     return x[:13, :, :].transpose(1, 2, 0)[None, ...] / 10000
 
-
-def compute_cloud_mask_save(cp_path, x, profile, verbose=False):
+def compute_cloud_mask(x):
     z = sentinel2_to_cloud_mask_preprocess(x)
     cloud_detector = S2PixelCloudDetector(
         threshold=0.4, average_over=4, dilation_size=2, all_bands=True
     )
 
-    if verbose:
-        print("detecting clouds")
     cloud_mask = cloud_detector.get_cloud_probability_maps(z)
     cloud_mask = cloud_mask.squeeze()
+    return cloud_mask
+
+def compute_cloud_mask_save(cp_path, x, profile):
+    cloud_mask = compute_cloud_mask(x)
 
     if cp_path is not None:
         profile.update(count=1, compress="lzw", dtype="float32", driver="COG",
                        BIGTIFF= "IF_SAFER",RESAMPLING="CUBICSPLINE") # Generate overviews with CUBICSPLINE resampling!
-
-        if verbose:
-            print("writing cloud mask")
 
         with rasterio.open(cp_path, "w", **profile) as dst:
             dst.write(cloud_mask.astype(np.float32), 1)
