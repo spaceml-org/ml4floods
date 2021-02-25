@@ -1,25 +1,39 @@
 """
-Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
+This script contains all the utility functions that are not specific to a particular kind of dataset.
+These are mainly used for explorations, testing, and demonstrations.
 """
-import argparse
+
+# import argparse
+# import subprocess
+# import rasterio
 import json
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import rasterio
 from google.cloud import storage
 
-HOME = str(Path.home())
+# HOME = str(Path.home())
 
 
 def download_data_from_bucket(
     filenames: List[str],
     destination_dir: str,
-    ml_split: str = "train",
+    # ml_split: str = "train",
     bucket_id: Optional[str] = None,
 ) -> None:
+    """Function to download data from the bucket to a local destination directory.
+    This function differs from the save_file_from_bucket() function in that 
+    it takes as input a list of filenames to be downloaded compared to save_file_from_bucket()
+    which deals with only a single file. 
+    Wraps around the save_file_from_bucket() function to download the list of files.
 
+    Args:
+        filenames (List[str]): List of filenames to be downloaded from the bucket.
+        destination_dir (str): Path of the destination directory.
+        bucket_id (str, optional): Name of the bucket being used to download the files. 
+            Defaults to None.
+    """    
+    
     for ifile in filenames:
         bucket_id = str(Path(ifile).parts[0])
 
@@ -78,36 +92,35 @@ def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
     return json.loads(blob.download_as_string(client=None))
 
 
-def generate_list_of_files(bucket_id: str, file_path):
-    """Generate a list of files from the bucket."""
-    return None
+# def generate_list_of_files(bucket_id: str, file_path: str):
+#     """Generate a list of files within the mentioned filepath from the bucket."""
+
+#     return None
 
 
 def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path: str):
-    """Saves a file from a bucket
+    """Function to save a file from a bucket to the mentioned destination file path.
 
-    Parameters
-    ----------
-    bucket_id : str
-        the name of the bucket
-    file_name : str
-        the name of the file in bucket (include the directory)
-    destination_file_path : str
-        the directory of where you want to save the
-        data locally (not including the filename)
+    Args:
+        bucket_id (str): the name of the bucket
+        file_name (str): the name of the file in bucket (include the directory)
+        destination_file_path (str): the directory of where you want to save the
+            data locally (not including the filename)
 
-    Examples
-    --------
+    Returns:
+        None: Returns nothing.
 
-    >>> bucket_id = ...
-    >>> file_name = 'path/to/file/and/file.csv'
-    >>> dest = 'path/in/bucket/'
-    >>> load_file_from_bucket(
-        bucket_id=bucket_id,
-        file_name=file_name,
-        destimation_file_path=dest
-    )
+    Examples:
+        >>> bucket_id = sample_bucket
+        >>> file_name = 'path/to/file/and/file.csv'
+        >>> dest = 'path/in/bucket/'
+        >>> save_file_from_bucket(
+        ...     bucket_id=bucket_id,
+        ...     file_name=file_name,
+        ...     destination_file_path=dest
+        ... )
     """
+
     client = storage.Client()
 
     bucket = client.get_bucket(bucket_id)
@@ -128,30 +141,21 @@ def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path:
 
 
 def open_file_from_bucket(target_directory: str):
-    """Saves a file from a bucket
+    """Function to open a file directly from the bucket.
 
-    Parameters
-    ----------
-    bucket_id : str
-        the name of the bucket
-    file_name : str
-        the name of the file in bucket (include the directory)
-    destination_file_path : str
-        the directory of where you want to save the
-        data locally (not including the filename)
+    Args:
+        target_directory (str): Complete filepath of the file to be opened
+            within the session.
 
-    Examples
-    --------
+    Returns:
+        google.cloud.storage.blob.Blob: Returns the blob of file 
+            that is read into memory within the current session.
+    
+    Example:
+        >>> target_directory = 'path/to/file/and/file.pkl'
+        >>> open_file_from_bucket(target_directory)
+    """    
 
-    >>> bucket_id = ...
-    >>> file_name = 'path/to/file/and/file.csv'
-    >>> dest = 'path/in/bucket/'
-    >>> load_file_from_bucket(
-        bucket_id=bucket_id,
-        file_name=file_name,
-        destimation_file_path=dest
-    )
-    """
     bucket_id, file_path, file_name = parse_gcp_path(target_directory)
 
     file_path = str(Path(file_path).joinpath(file_name))[1:]
@@ -168,30 +172,21 @@ def open_file_from_bucket(target_directory: str):
 
 
 def save_file_to_bucket(target_directory: str, source_directory: str):
-    """Saves a file to a bucket
+    """Function to save file to a bucket.
 
-    Parameters
-    ----------
-    bucket_id : str
-        the name of the bucket
-    local_save_file : str
-        the name of the file to save (include the directory)
-    destination_file_path : str
-        the directory (not including) of the bucket where
-        you want to save.
+    Args:
+        target_directory (str): Destination file path.
+        source_directory (str): Source file path
 
-    Examples
-    --------
+    Returns:
+        None: Returns nothing.
 
-    >>> bucket_id = ...
-    >>> file_name = 'path/to/file/and/file.csv'
-    >>> dest = 'path/in/bucket/'
-    >>> load_file_from_bucket(
-        bucket_id=bucket_id,
-        file_name=file_name,
-        destimation_file_path=dest
-    )
+    Examples:
+        >>> target_directory = 'target/path/to/file/.pkl'
+        >>> source_directory = 'source/path/to/file/.pkl'
+        >>> save_file_to_bucket(target_directory)
     """
+
     client = storage.Client()
 
     bucket_id, _, _ = parse_gcp_path(target_directory)
@@ -209,24 +204,33 @@ def save_file_to_bucket(target_directory: str, source_directory: str):
 
 
 def check_path_exists(path: str) -> None:
+    """Checks if the given exists.
+
+    Args:
+        path (str): Input file path
+
+    Raises:
+        ValueError: Raises an error in case the file path does not exist
+
+    Returns:
+        None: Returns nothing.
+    """    
     if not Path(path).is_dir():
         raise ValueError(f"Unrecognized path: {str(Path(path))}")
     return None
 
 
 def create_folder(directory: str) -> None:
-    """Creates directory if doesn't exist
+    """Function to create directory if it doesn't exist.
 
-    params:
-        directory (str): a directory to be created if
-            it doesn't already exist.
-
-        Typical usage example:
-
-        >>> from .src.data.utils import create_folder
+    Args:
+        directory (str): directory to be created if it doesn't already exist.
+    
+    Example:
         >>> directory = "./temp"
         >>> create_folder(directory)
     """
+
     try:
         Path(directory).mkdir(parents=True, exist_ok=False)
     except FileExistsError:
@@ -236,23 +240,46 @@ def create_folder(directory: str) -> None:
 
 
 def get_files_in_directory(directory: str, suffix: str) -> List[str]:
+    """Function to return the list of files within a given directory.
+
+    Args:
+        directory (str): Directory path to get the file list from.
+        suffix (str): file extension to be listed
+
+    Returns:
+        List[str]: Returns the list of files that match the given extension
+            within the given directory.
+    """
     p = Path(directory).glob(f"*{suffix}")
     files = [str(x) for x in p if x.is_file()]
     return files
 
 
-def get_files_in_bucket_directory(
-    bucket_id: str, directory: str, suffix: str
-) -> List[str]:
-    p = Path(directory).glob(f"*{suffix}")
-    files = [str(x) for x in p if x.is_file()]
-    return files
-
-
+# TODO: This is a redundant function. 
+# Refactor all the code to use only one of 
+# these two functions and get rid of the redundant function.
 def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
+    """Function to return the list of files within a given directory.
+
+    Args:
+        directory (str): Directory path to get the file list from.
+        suffix (str): file extension to be listed
+
+    Returns:
+        List[str]: Returns the list of files that match the given extension
+            within the given directory.
+    """
     p = Path(directory).glob(f"*{suffix}")
     files = [str(x.name) for x in p if x.is_file()]
     return files
+
+
+# def get_files_in_bucket_directory(
+#     bucket_id: str, directory: str, suffix: str
+# ) -> List[str]:
+#     p = Path(directory).glob(f"*{suffix}")
+#     files = [str(x) for x in p if x.is_file()]
+#     return files
 
 
 def get_files_in_bucket_directory(
@@ -280,8 +307,16 @@ def get_files_in_bucket_directory(
     return files
 
 
-def parse_gcp_path(full_path) -> Tuple[str]:
-    """Parse the bucket"""
+def parse_gcp_path(full_path: str) -> Tuple[str]:
+    """Function to parse a GCP bucket file path into smaller components.
+
+    Args:
+        full_path (str): Full path of a file within a GCP bucket.
+
+    Returns:
+        Tuple[str]: Returns a tuple of substrings from the full_path that include
+            bucket_id, filepath, and filename.
+    """    
     # parse the components
     bucket_id = str(Path(full_path.split("gs://")[1]).parts[0])
     file_path = str(Path(full_path.split(bucket_id)[1]).parent)
