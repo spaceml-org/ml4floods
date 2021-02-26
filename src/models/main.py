@@ -3,39 +3,6 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
-def setup_config(args):
-    # ======================================================
-    # WORLD FLOODS FLOOD EXTENT SEGMENTATION CONFIG SETUP 
-    # ======================================================  
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    from src.models.utils.configuration import AttrDict
-    
-    # 1. Load config json from argparse input
-    with open(args.config)as json_file:
-        config = json.load(json_file)
-    
-    # 2. Add additional fields to config using worldfloods constants etc
-    from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
-    
-    config['train'] = args.train
-    config['test'] = args.test
-    config['deploy'] = args.deploy
-    
-    config['wandb_entity'] = args.wandb_entity
-    config['wandb_project'] = args.wandb_project
-    
-    config['model_params']['hyperparameters']['num_channels'] = len(CHANNELS_CONFIGURATIONS[config['model_params']['hyperparameters']['channel_configuration']])
-    
-    config = AttrDict.from_nested_dicts(config)
-
-    print('Loaded Config for experiment: ', config.experiment_name)
-    pp.pprint(config)
-    
-    # 3. return config to training
-    return config
-
-
 def train(config):
     # ======================================================
     # EXPERIMENT SETUP
@@ -61,6 +28,8 @@ def train(config):
     print("SETTING UP MODEL")
     print("======================================================")
     from src.models.model_setup import get_model
+    config.model_params.test = False
+    config.model_params.train = True
     model = get_model(config.model_params)
     
     
@@ -73,7 +42,7 @@ def train(config):
     wandb_logger = WandbLogger(
         project=config.wandb_project, 
         entity=config.wandb_entity,
-        save_dir=f"{config.model_params.model_folder}/{config.experiment_name}"
+#         save_dir=f"{config.model_params.model_folder}/{config.experiment_name}"
     )
     
     
@@ -134,11 +103,12 @@ def train(config):
     print("======================================================")
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, 'model.pt'))
     wandb.save("*.pt")
+    wandb.finish()
     
     return 1
     
 
-def test(opt):
+def test(config):
     """
     Test a model:
     
@@ -158,7 +128,37 @@ def test(opt):
         
     6. Serve metrics to Visualisation Dashboards
     """
-    trainer.test(model, datamodule=mnist)
+    # ======================================================
+    # EXPERIMENT SETUP
+    # ====================================================== 
+    from pytorch_lightning import seed_everything
+    # Seed
+    seed_everything(config.seed)
+    
+    # Device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    
+    # DATASET SETUP
+    print("======================================================")
+    print("SETTING UP DATASET")
+    print("======================================================")
+    from src.models.dataset_setup import get_dataset
+    dataset = get_dataset(config.data_params)
+    
+    
+    # MODEL SETUP 
+    print("======================================================")
+    print("SETTING UP MODEL")
+    print("======================================================")
+    from src.models.model_setup import get_model
+    config.model_params.test = True
+    config.model_params.train = False
+    config.model_params.model_path = f"{config.model_params.model_folder}/latest-run/files/model.pt"
+    model = get_model(config.model_params)
+    
+    
+#     trainer.test(model, datamodule=mnist)
     return 0
 
 
@@ -181,7 +181,6 @@ def deploy(opt):
 
 if __name__ == "__main__":
     import argparse
-    import json
     import os
     import sys
     from pathlib import Path
@@ -190,6 +189,8 @@ if __name__ == "__main__":
     root = here(project_files=[".here"])
     # append to path
     sys.path.append(str(here()))
+    
+    from src.models.config_setup import setup_config
     
     parser = argparse.ArgumentParser('Area Ratios Segmentation Classifiers')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')

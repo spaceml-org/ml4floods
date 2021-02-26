@@ -3,20 +3,24 @@
     "seed": 12,
     "model_params": {
         "device": "cpu",
-        "model_folder": "ml4floods/src/models/out",
+        "model_folder": "wandb",
+        "use_pretrained_weights": true,
+        "path_to_weights": "checkpoints/",
         "hyperparameters": {
             "max_tile_size": 256,
             "channel_configuration": "all",
             "label_names": ["land", "water", "cloud"],
             "weight_per_class": [0.516942, 0.027322, 0.455787],
-            "model_type": "linear",
+            "model_type": "unet",
             "num_classes": 3,
-            "max_epochs": 2,
+            "max_epochs": 10,
             "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
             "lr_patience": 2
-        }
+        },
+        "train": true,
+        "test": true
     },
     "data_params": {
         "loader_type": "local",

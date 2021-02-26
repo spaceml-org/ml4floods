@@ -1,3 +1,4 @@
+import os
 import torch
 import wandb
 import torchvision
@@ -6,6 +7,7 @@ import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
 
 from src.models.utils import losses, metrics
+from src.models.utils.model_setup import load_model_weights
 from src.models.architectures.baselines import SimpleLinear, SimpleCNN
 from src.models.architectures.unets import UNet, UNet_dropout
 from src.data.worldfloods.configs import SENTINEL2_NORMALIZATION, COLORS_WORLDFLOODS
@@ -26,6 +28,12 @@ class WorldFloodsModel(pl.LightningModule):
         
         #label names setup
         self.label_names = h_params.get('label_names', [i for i in range(self.num_class)]) 
+        
+        
+        ###### IF PRETRAINED WEIGHTS ######
+        if model_params.use_pretrained_weights:
+            filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type, model_params.hyperparameters.model_type  + "_final_weights.pt")
+            self.load_pretrained_architecture(filepath)
         
                                              
     def training_step(self, batch: Dict, batch_idx) -> float:
@@ -133,6 +141,10 @@ class WorldFloodsModel(pl.LightningModule):
             raise Exception(f'No model implemented for model_type: {config.model_type}')
 
         return model
+    
+    def load_pretrained_architecture(self, filepath):
+        load_model_weights(self.network, filepath)
+        
 
     def batch_to_unnorm_rgb(self, x):
         model_input_npy = x.cpu().numpy()
