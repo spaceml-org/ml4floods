@@ -3,7 +3,7 @@
     "seed": 12,
     "model_params": {
         "device": "cpu",
-        "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
+        "model_folder": "ml4floods/src/models/out",
         "hyperparameters": {
             "max_tile_size": 256,
             "channel_configuration": "all",
@@ -11,8 +11,8 @@
             "weight_per_class": [0.516942, 0.027322, 0.455787],
             "model_type": "linear",
             "num_classes": 3,
-            "max_epochs": 10,
-            "val_every": 3,
+            "max_epochs": 2,
+            "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
             "lr_patience": 2
