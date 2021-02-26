@@ -27,7 +27,14 @@ dependencies:
   - isort
   - mypy
   - opencv-python
-  - seaborn
-  - ipykernel
   - google-cloud-storage
   - pyprojroot
+  - torch
+  - torchvision
+  - Flask
+  - Flask-HTTPAuth
+  - Flask-Login
+  - Flask-WTF
+  - gunicorn
+  - mercantile
+  - pillow
