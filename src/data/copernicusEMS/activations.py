@@ -63,7 +63,8 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
                                           "Event Date": "CodeDate"},
                                          axis=1)
 
-    return tables_floods
+    return tables_floods.set_index("Code")
+
 
 def fetch_zip_files(code: str) -> List[str]:
     """
@@ -128,6 +129,7 @@ copernicus_ems_webscrape_data  = {"confirmation": 1,
                                   "form_build_id": "xxxx",
                                   "form_id": "emsmapping_disclaimer_download_form"}
 
+
 def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
     """
     This function downloads the zip files from the zip file url of each
@@ -170,6 +172,7 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
        
     open(file_path_out, 'wb').write(r.content) 
     return file_path_out
+
 
 def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw"):
     """
@@ -219,6 +222,7 @@ def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw
         
     return directory_to_extract_to
 
+
 # move to config later 
 formats = ["%d/%m/%Y T%H:%M:%SZ",
            "%d/%m/%Y %H:%M:%SZ",
@@ -230,7 +234,8 @@ formats = ["%d/%m/%Y T%H:%M:%SZ",
            "%Y/%m/%d %H:%M UTC",
            "%d/%m/%Y %H:%M:%S UTC"]
 
-def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> bool:
+
+def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> str:
     """
     Helper function that checks whether a file already exists in the parent
     directory.
@@ -241,16 +246,44 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
       string_pattern (str): keyword and file extension for the file of interest.
       
     Returns:
-      A boolean indicating whether a file exists in the parent directory.
+      A string of the file of interest if it exists in the parent directory, returns
+      None otherwise.
     """
-    source_files = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
-    if len(source_files) == 1:
-        return source_files[0]
+    source_file = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
+    if len(source_file) == 1:
+        return source_file[0]
     else:
+        print(f"{file_extension_pattern} not found in directory {parent_dir_of_file}")
         return 
 
 
-def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose : bool = False) -> Dict:
+def pre_post_event_date_difference(date_post_event: datetime, 
+                                   date_ems_code: datetime, 
+                                   verbose: bool = False) -> None:
+    """
+    Function to print the datetime difference between pre-flood event and post-flood event.
+    
+    Args:
+      date_post_event (datetime): date after a flood event.
+      date_ems_code (datetime): date Copernicus EMS activation code was issued.
+      
+    Returns:
+      None
+    """
+    diff_dates = date_post_event - date_ems_code
+    if verbose:
+        if diff_dates.days < 0:
+            print("Difference between dates is negative %d" % diff_dates.days)
+
+        elif diff_dates.days > 35:
+            print("difference too big %d" % diff_dates.days)
+            
+        elif (max_date_post_event-date_post_event).days >= 10:
+            print("difference between max date post event and min date post event too big %d" % (max_date_post_event-date_post_event).days)        
+    return
+
+
+def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose: bool = False) -> Dict:
     """
     Function that collects the following files from the unzipped directories for each Copernicus EMS
     activation code and stores them into a dictionary with additional metadata with respect to the source.
@@ -270,24 +303,19 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
       'timestamp_ems_code', 'observed_event_file', 'area_of_interest_file.'
 
     """
-    source_files = glob(os.path.join(unzipped_directory, "*_source*.dbf"))
-    if len(source_files) != 1:
-        print(f"Source file not found in directory {unzipped_directory}")
-        return
-    source_file = source_files[0]
-
-    area_of_interest_files = glob(os.path.join(unzipped_directory, "*_observed*.shp"))
-    if len(area_of_interest_files) != 1:
-        print(f"Observed event file not found in directory {unzipped_directory}")
-        return
-    observed_event_file = area_of_interest_files[0]
-
-    area_of_interest_files = glob(os.path.join(unzipped_directory, "*_area*.shp"))
-    if len(area_of_interest_files) != 1:
-        print(f"Area of interest file not found in directory {unzipped_directory}")
+    # Fetch source files needed to generate floodmap - source, observed event, area of interest
+    source_file = is_file_in_directory(unzipped_directory, "*_source*.dbf")
+    if not source_file:
         return
 
-    area_of_interest_file = area_of_interest_files[0]
+    observed_event_file = is_file_in_directory(unzipped_directory, "*_observed*.shp")
+    if not observed_event_file:
+        return
+    
+    area_of_interest_file = is_file_in_directory(unzipped_directory, "*_area*.shp")
+    if not area_of_interest_file:
+        return
+
 
     pd_source = load_source_file(source_file)
     if pd_source is None:
@@ -302,61 +330,35 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
                                               (pd_source.date == date_post_event)]["source_nam"])[0]
 
     date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-
-    diff_dates = date_post_event - date_ems_code
-
-    if diff_dates.days < 0:
-        if verbose:
-            print("Difference between dates is negative %d" % diff_dates.days)
-        return
-
-    if diff_dates.days > 35:
-        if verbose:
-            print("difference too big %d" % diff_dates.days)
-        return
-
-    if (max_date_post_event-date_post_event).days >= 10:
-        if verbose:
-            print("difference between max date post event and min date post event too big %d" % (max_date_post_event-date_post_event).days)
-        return
-
-    stuff_pre_event = {}
+     
+    pre_post_event_date_difference(date_post_event, date_ems_code, verbose)
+    
+    # Check if pre-event date precedes post-event date
+    content_pre_event = {}
     if np.any(pd_source.eventphase == "Pre-event"):
         date_pre_event = max(np.array(pd_source[pd_source.eventphase == "Pre-event"]["date"]))
         satellite_pre_event = np.array(pd_source[(pd_source.eventphase == "Pre-event") &
                                                  (pd_source.date == date_pre_event)]["source_nam"])[0]
 
-        stuff_pre_event["satellite_pre_event"] = satellite_pre_event
-        stuff_pre_event["timestamp_pre_event"] = date_pre_event
-        if (date_post_event - date_pre_event).days < 0:
-            if verbose:
-                print("Date pre event %s is after date post event %s" % (date_pre_event.strftime("%Y-%m-%d"),
-                                                                         date_post_event.strftime("%Y-%m-%d")))
+        content_pre_event["satellite_pre_event"] = satellite_pre_event
+        content_pre_event["timestamp_pre_event"] = date_pre_event
+        if (date_post_event - date_pre_event).days < 0 and verbose:
+            print("Date pre event %s is after date post event %s" % (date_pre_event.strftime("%Y-%m-%d"),
+                                                                     date_post_event.strftime("%Y-%m-%d")))
             return
 
     # Filter content of shapefile
     pd_geo = gpd.read_file(observed_event_file)
-    if np.any(pd_geo["event_type"] != '5-Flood'):
-        if verbose:
-            print("%s Event type is not Flood"%observed_event_file)
+    if np.any(pd_geo["event_type"] != '5-Flood') and verbose:
+        print("%s Event type is not Flood"%observed_event_file)
         return
 
-    if not isinstance(satellite_post_event, str):
-        if verbose:
-            print("Satellite post event: {} is not a string!".format(satellite_post_event))
+    if not isinstance(satellite_post_event, str) and verbose:
+        print("Satellite post event: {} is not a string!".format(satellite_post_event))
         return
 
     area_of_interest = gpd.read_file(area_of_interest_file)
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
-
-#     register = {"name": product_name,
-#                 "ems_code": ems_code,
-#                 "timestamp": date_post_event,
-#                 "satellite": satellite_post_event,
-#                 "area_of_interest" : area_of_interest_pol,
-#                 "timestamp_ems_code": date_ems_code,
-#                 "observed_event_file": observed_event_file,
-#                 "area_of_interest_file": area_of_interest_file}
     
     if "obj_desc" in pd_geo:
         event_type = np.unique(pd_geo.obj_desc)
@@ -391,8 +393,7 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
         
     }
     
-
-    register.update(stuff_pre_event)
+    register.update(content_pre_event)
 
     hidrology_files = glob(os.path.join(unzipped_directory, "*_hydrography*.shp"))
     if len(hidrology_files) == 0:
@@ -535,52 +536,6 @@ def get_bbox(pd_geo: gpd.GeoDataFrame) -> Dict:
 
 
 COPY_FORMATS = ["dbf", "prj", "shp", "shx"]
-
-def processing_register(register, folder, bucket):
-
-    filename = register["observed_event_file"]
-
-    # bucket path (not local)
-    layer_name = os.path.join("worldfloods/maps/", folder, os.path.splitext(os.path.basename(filename.replace(" ", "_")))[0])
-
-    files_to_copy = [f"{os.path.splitext(filename)[0]}.{ext}" for ext in COPY_FORMATS]
-    copy_to_bucket(bucket, files_to_copy, layer_name)
-
-    pd_geo = gpd.read_file(filename)
-    bounding_box = get_bbox(pd_geo)
-
-    if "obj_desc" in pd_geo:
-        event_type = np.unique(pd_geo.obj_desc)
-        if len(event_type) > 1:
-            print("Multiple event types within shapefile {}".format(event_type))
-        event_type = event_type[0]
-    else:
-        event_type = "NaN"
-
-    crs_code_space, crs_code = pd_geo.crs["init"].split(":")
-    meta = {
-        'event id': register["name"],
-        'layer name': os.path.basename(layer_name),
-        'event type': event_type,
-        'satellite date': register["timestamp"].isoformat(),
-        'country': "NaN",
-        'satellite': register["satellite"],
-        'bounding box': bounding_box,
-        'reference system': {
-            'code space': crs_code_space,
-            'code': crs_code
-        },
-        'abstract': "NaN",
-        'purpose': "NaN",
-        'source': 'CopernicusEMS'
-    }
-    blob_name = os.path.join(layer_name, "meta.json")
-    if bucket.get_blob(blob_name) is None:
-        with open("meta.json", "w") as fh:
-            json.dump(meta, fh)
-        blob = bucket.blob(blob_name)
-        blob.upload_from_filename("meta.json")
-
 
 
 
