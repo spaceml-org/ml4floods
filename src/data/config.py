@@ -56,3 +56,41 @@ UNOSAT_CLASS_TO_TXT = {
     77: "ran of kutch water",
     99: "maximum flood water extent (cumulative)"
 }
+
+# TODO to be used by copernicusEMS.activations
+RENAME_SATELLITE = {"landsat 5": "Landsat-5",
+                    "landsat 8": "Landsat-8",
+                    "landsat-8": "Landsat-8",
+                    "landsat 7": "Landsat-7",
+                    "sentinel-1": "Sentinel-1",
+                    "pleadies": "Pleiades-1A-1B",
+                    "sentinel-2": "Sentinel-2",
+                    "radarsat-1": "RADARSAT-1",
+                    "radarsat-2": "RADARSAT-2",
+                    "terrasar-x": "TERRASAR-X",
+                    'spot 6' : "SPOT-6-7",
+                    "worldview-2": "WorldView-2"}
+
+SATELLITE_TYPE = {'COSMO-SkyMed': "SAR",
+                  'GeoEye-1': "SAR",
+                  'Landsat-5': "Optical",
+                  'Landsat-7': "Optical",
+                  'Landsat-8': "Optical",
+                  'PlanetScope': "Optical",
+                  'Pleiades-1A-1B': "Optical",
+                  'RADARSAT-1': "SAR",
+                  'RADARSAT-2': "SAR",
+                  'SPOT-6-7': "Optical",
+                  'Sentinel-1': "SAR",
+                  'Sentinel-2': "Optical",
+                  'TERRASAR-X': "SAR",
+                  'WorldView-1': "Optical",
+                  'WorldView-2': "Optical",
+                  'WorldView-3': "Optical",
+                  'alos palsar': "SAR",
+                  'asar imp': "SAR",
+                  'dmc': "Optical",
+                  'earth observing 1': "Optical",
+                  'modis-aqua': "Optical",
+                  'modis-terra': "Optical",
+                  'spot4': "Optical"}
