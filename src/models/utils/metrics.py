@@ -82,7 +82,7 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                 annot[i, j] = ''
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)    
-    DataFrame(cm_perc, index=labels, columns=labels)
+    cm = pd.DataFrame(cm_perc, index=labels, columns=labels)
     cm.index.name = 'Actual'
     cm.columns.name = 'Predicted'
     fig, ax = plt.subplots(figsize=figsize)
@@ -249,7 +249,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     }
     
     if plot:
-        plot_metrics(out_dict)
+        plot_metrics(out_dict, label_names)
     
     return out_dict
         
