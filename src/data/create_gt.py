@@ -27,6 +27,7 @@ def generate_floodmap_v1(register:Dict,
     mapdf = filter_pols(gpd.read_file(os.path.join(worldfloods_root, "maps", register["resource folder"], register["layer name"],
                                                    "map.shp")),
                         area_of_interest_pol)
+
     assert mapdf.shape[0] > 0, f"No polygons within bounds for {register}"
     if register["source"] == "CopernicusEMS":
         column_water_class = mapdf["notation"]
@@ -66,6 +67,8 @@ def generate_floodmap_v1(register:Dict,
     floodmap = pd.concat([floodmap, area_of_interest], axis=0, ignore_index=True)
 
     # TODO set crs of the floodmap
+
+    # TODO assert w_class in CODES_FLOODMAP
 
     # TODO save in the register file the new stuff (filenames)?
 
