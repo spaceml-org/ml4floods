@@ -18,6 +18,9 @@ PROVIDER_GEOTIFF_PREFIXES = ["S2", "L8", "gt"]
 CLOUDMASK_PREFIX = "cloudprob"
 FLOODMAP_PREFIX = "floodmaps"
 
+def file_exists(path):
+    with open_fs(path+"?strict=False") as fs:
+        return fs.exists('')
 
 def index_worldfloods(fs_prefix, out_path):
     idx = GeographicIndex()
@@ -48,16 +51,16 @@ def index_worldfloods(fs_prefix, out_path):
                     if "s2metadata" in metadata and len(metadata["s2metadata"]) == 1:
                         s2satdate = satdate = parser.parse(metadata["s2metadata"][0]["date_string"])
         
-                    if os.path.exists(os.path.join(fs_prefix, MASTER_PREFIX, FLOODMAP_PREFIX, basename+".shp")):
+                    if file_exists(os.path.join(fs_prefix, MASTER_PREFIX, FLOODMAP_PREFIX, basename+".shp")):
                         relevant_files.append({"type": "floodmap", "last_modified": satdate, "path": os.path.join(MASTER_PREFIX, FLOODMAP_PREFIX, basename+".shp")})
         
-                    if os.path.exists(os.path.join(fs_prefix, MASTER_PREFIX, CLOUDMASK_PREFIX, basename+".tif")):
+                    if file_exists(os.path.join(fs_prefix, MASTER_PREFIX, CLOUDMASK_PREFIX, basename+".tif")):
                         relevant_files.append({"type": "cloudmask", "last_modified": satdate, "path": os.path.join(MASTER_PREFIX, CLOUDMASK_PREFIX, basename+".tif")})
         
                     count += 1
                     for sat_prefix in PROVIDER_GEOTIFF_PREFIXES:
                         sat_path = os.path.join(fs_prefix, MASTER_PREFIX, sat_prefix, basename+".tif")
-                        if os.path.exists(sat_path):
+                        if file_exists(sat_path):
                             relevant_files.append({"type": "satellite_image", "last_modified": s2satdate if sat_prefix == "S2" else satdate, "provider_id": sat_prefix, "path": os.path.join(MASTER_PREFIX, sat_prefix, basename+".tif")})
 
                     relevant_files.append({"type": "meta", "last_modified": metadata_timestamp, "path": os.path.join(MASTER_PREFIX, METADATA_PREFIX, basename+".json")})
