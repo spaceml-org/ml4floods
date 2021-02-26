@@ -19,6 +19,9 @@ from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from src.data.worldfloods.prepare_data import prepare_data_func
 from src.preprocess.utils import get_list_of_window_slices
 
+from multiprocessing import Lock
+lock = Lock()
+
 
 @dataclass
 class WorldFloodsImage:
@@ -165,12 +168,22 @@ class WorldFloodsDatasetTiled(Dataset):
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
-        with rasterio.open(image_name) as f:
-            image_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
+        try:
+            image_tif = self.rasterio_read(image_name, sub_window.window)
+            mask_tif = self.rasterio_read(y_name, sub_window.window)
+        except Exception as e:
+            print('Caught Exception reading image from bucket')
+            image_tif = self.rasterio_read(image_name, sub_window.window)
+            mask_tif = self.rasterio_read(y_name, sub_window.window)
+            # Option 1: return zeros
+            # Option 2: try again after some time
+        
+#         with rasterio.open(image_name) as f:
+#             image_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
-        # Open Ground Truth File
-        with rasterio.open(y_name) as f:
-            mask_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
+#         # Open Ground Truth File
+#         with rasterio.open(y_name) as f:
+#             mask_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
@@ -188,3 +201,10 @@ class WorldFloodsDatasetTiled(Dataset):
 
     def __len__(self) -> int:
         return len(self.accumulated_list_of_windows_test)
+    
+    def rasterio_read(self, image_name, window):
+        with lock:
+            with rasterio.open(image_name) as f:
+                im_tif = f.read(window=window, boundless=True, fill_value=0)
+            
+        return im_tif

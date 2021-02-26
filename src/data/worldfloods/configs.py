@@ -43,3 +43,8 @@ SENTINEL2_NORMALIZATION = np.array(
     ],
     dtype=np.float32,
 )
+
+COLORS_WORLDFLOODS = np.array([[0, 0, 0],
+                               [139, 64, 0],
+                               [0, 0, 139],
+                               [220, 220, 220]], dtype=np.float32) / 255
