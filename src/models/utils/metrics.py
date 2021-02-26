@@ -46,7 +46,7 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
             confusions_batch[:, c1, c] = (pred_c1 & gtc).sum(dim=(1, 2))
     
     if remove_class_zero:
-        inv_substract = torch.sum(invalids dim=(1, 2)).to(confusions_batch.device)
+        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device)
         confusions_batch[:, 0, 0] -= inv_substract
     
     return confusions_batch
@@ -65,7 +65,6 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
       figsize:   the size of the figure plotted.
     """
     import matplotlib.pyplot as plt
-    import pandas as
     import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)
@@ -82,10 +81,7 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
             elif c == 0:
                 annot[i, j] = ''
             else:
-                annot[i, j] = '%.1f%%\n%d' % (p, c)
-    cm = 
-    
-    
+                annot[i, j] = '%.1f%%\n%d' % (p, c)    
     DataFrame(cm_perc, index=labels, columns=labels)
     cm.index.name = 'Actual'
     cm.columns.name = 'Predicted'
