@@ -19,6 +19,7 @@ root = here(project_files=[".here"])
 HOME = root
 from src.data.worldfloods.download import download_image, download_worldfloods_data
 
+
 @dataclass
 class WorldFloodsImage:
     # ESSENTIAL METADATA
@@ -34,10 +35,12 @@ class WorldFloodsImage:
     source_system: str = field(default="Not Specified")
 
 
-
-def test_data_download(ml_split: str = "train"):
+def test_data_download(ml_split: str = "train", test_dir: Optional[str] = None):
 
     # STEP 1 - Create Demo Directory
+
+    if test_dir is None:
+        test_dir = "./"
 
     # Step 2 - Download List of demo files
     bucket_id = "ml4floods"
@@ -51,16 +54,19 @@ def test_data_download(ml_split: str = "train"):
 
     download_worldfloods_data(
         directories=files,
-        destination_dir=str(Path(HOME).joinpath("datasets")),
+        destination_dir=str(Path(test_dir).joinpath("datasets")),
         bucket_id=bucket_id,
         ml_split=ml_split,
     )
 
 
-def download_demo_image(dest_dir: Optional[str] = None):
+def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] = None):
+
+    if test_dir is None:
+        test_dir = "./"
 
     if dest_dir is None:
-        dest_dir = Path(HOME).joinpath("datasets/demo_images")
+        dest_dir = Path(test_dir).joinpath("datasets/demo_images")
         create_folder(dest_dir)
 
     # ============
@@ -98,10 +104,15 @@ def download_demo_image(dest_dir: Optional[str] = None):
     return None
 
 
-def download_demo_trainsplit_image(dest_dir: Optional[str] = None):
+def download_demo_trainsplit_image(
+    dest_dir: Optional[str] = None, test_dir: Optional[str] = None
+):
+
+    if test_dir is None:
+        test_dir = "./"
 
     if dest_dir is None:
-        dest_dir = Path(HOME).joinpath("datasets/demo_images")
+        dest_dir = Path(test_dir).joinpath("datasets/demo_images")
         create_folder(dest_dir)
 
     # ============

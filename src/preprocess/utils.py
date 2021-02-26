@@ -6,15 +6,11 @@ from typing import List
 import rasterio
 from src.preprocess.tiling import WindowSlices, WindowSize, get_window_tiles
 
-from pyprojroot import here
-
-SRC_DIR = here(project_files=[".here"])
-
 
 def get_list_of_window_slices(
     file_names: List[str], window_size: WindowSize
 ) -> List[WindowSlices]:
-    """Function to return the list of window slices for the all the 
+    """Function to return the list of window slices for the all the
     input images and the given window size.
 
     Args:
@@ -22,10 +18,10 @@ def get_list_of_window_slices(
         window_size (WindowSize): Window size of the tiles.
 
     Returns:
-        List[WindowSlices]: List of window slices for the each tile 
+        List[WindowSlices]: List of window slices for the each tile
         corresponding to each input image.
     """
-    
+
     accumulated_list_of_windows = []
     for ifilename in file_names:
 

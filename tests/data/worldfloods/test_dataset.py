@@ -1,9 +1,6 @@
 import sys
 from pathlib import Path
 
-from src.utils import SRC_DIR
-
-HOME = SRC_DIR
 sys.dont_write_bytecode = True
 
 from pprint import pprint

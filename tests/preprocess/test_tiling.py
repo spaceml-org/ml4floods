@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from src.data.utils import create_folder, get_files_in_directory
 import rasterio
 from src.preprocess.tiling import WindowSize, save_tiles
@@ -8,7 +9,10 @@ from pyprojroot import here
 ROOT = here(project_files=[".here"])
 
 
-def test_save_tiles():
+def test_save_tiles(test_dir: Optional[str] = None):
+
+    if test_dir is None:
+        test_dir = "./"
 
     # ===========================
     # Demo Image

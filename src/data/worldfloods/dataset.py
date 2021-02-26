@@ -4,9 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from src.preprocess.tiling import WindowSize
 from typing import Callable, Dict, List, Optional, Tuple
-from pyprojroot import here
 
-ROOT = here(project_files=[".here"])
 
 import numpy as np
 import rasterio

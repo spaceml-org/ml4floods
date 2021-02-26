@@ -3,15 +3,9 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from pyprojroot import here
 
 from src.data.utils import download_data_from_bucket, save_file_from_bucket
 
-# spyder up to find the root
-root = here(project_files=[".here"])
-
-
-HOME = root
 
 BUCKET_ID = "ml4floods"
 DIR = "worldfloods/public/"
@@ -51,9 +45,9 @@ def download_worldfloods_data(
     bucket_id: Optional[str] = None,
 ) -> None:
     """Function to download data from the bucket to a local destination directory.
-    This function differs from the save_file_from_bucket() function in that 
+    This function differs from the save_file_from_bucket() function in that
     it takes as input a list of filenames to be downloaded compared to save_file_from_bucket()
-    which deals with only a single file. 
+    which deals with only a single file.
     Wraps around the save_file_from_bucket() function to download the list of files.
 
     Args:
@@ -62,7 +56,7 @@ def download_worldfloods_data(
         ml_split (str, optional): The split that is to be downloaded.
             Defaults to "train".
             Options: train, val, test
-        bucket_id (str, optional): Name of the source GCP bucket. 
+        bucket_id (str, optional): Name of the source GCP bucket.
             Defaults to None.
     """
 
