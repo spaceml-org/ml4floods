@@ -11,7 +11,7 @@
             "channel_configuration": "all",
             "label_names": ["land", "water", "cloud"],
             "weight_per_class": [0.516942, 0.027322, 0.455787],
-            "model_type": "unet",
+            "model_type": "linear",
             "num_classes": 3,
             "max_epochs": 10,
             "val_every": 1,
