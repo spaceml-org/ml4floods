@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 
 from google.cloud import storage
 from shapely.ops import cascaded_union
+from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon
@@ -78,8 +79,6 @@ def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
     # TODO: wrap this within a context
     return json.loads(blob.download_as_string(client=None))
 
-
-CLASS_LAND_COPERNICUSEMSHYDRO = ["BH090-Land Subject to Inundation", "BA030-Island"]
 
 
 def filter_land(gpddats : gpd.GeoDataFrame) -> gpd.GeoDataFrame:

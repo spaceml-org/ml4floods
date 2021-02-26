@@ -8,8 +8,7 @@ import os
 from shapely.ops import cascaded_union
 from src.data.utils import filter_pols, filter_land
 from typing import Optional, Dict, Tuple
-from src.data.config import  BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT, SATELLITE_TYPE
-from src.data import cloud_masks
+from src.data.config import  BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
 
 import rasterio.windows
 
@@ -100,16 +99,6 @@ def compute_water(tiffs2:str, floodmap:gpd.GeoDataFrame, window: Optional[raster
     Returns:
         water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
-
-
-    # area_of_interest contains the extent that was labeled (values out of this pol should be marked as invalid)
-    floodmap_aoi = floodmap[floodmap["w_class"] == "area_of_interest"]
-    if floodmap_aoi.shape[0] > 0:
-        floodmap_rasterise = floodmap[floodmap["w_class"] != "area_of_interest"]
-
-    shapes_rasterise = ((g, CODES_FLOODMAP[w]) for g, w in floodmap_rasterise[['geometry', 'w_class']].itertuples(index=False,
-                                                                                                                  name=None))
-
     with rasterio.open(tiffs2) as src_s2:
         if window is None:
             out_shape = src_s2.shape
@@ -117,6 +106,21 @@ def compute_water(tiffs2:str, floodmap:gpd.GeoDataFrame, window: Optional[raster
         else:
             out_shape = rasterio.windows.shape(window, height=src_s2.height, width=src_s2.width)
             transform = rasterio.windows.transform(window, src_s2.transform)
+        target_crs = str(src_s2.crs).lower()
+
+    if str(floodmap.crs).lower() != target_crs:
+        floodmap = floodmap.to_crs(crs=target_crs)
+
+    # area_of_interest contains the extent that was labeled (values out of this pol should be marked as invalid)
+    floodmap_aoi = floodmap[floodmap["w_class"] == "area_of_interest"]
+    if floodmap_aoi.shape[0] > 0:
+        # TODO we are filtering now hydro_l look into all_touched in rasterio.features.rasterize
+        floodmap_rasterise = floodmap[(floodmap["w_class"] != "area_of_interest") & (floodmap["source"] != "hydro_l")]
+    else:
+        floodmap_rasterise = floodmap[floodmap["source"] != "hydro_l"]
+
+    shapes_rasterise = ((g, CODES_FLOODMAP[w]) for g, w in floodmap_rasterise[['geometry', 'w_class']].itertuples(index=False,
+                                                                                                                  name=None))
 
     water_mask = features.rasterize(shapes=shapes_rasterise, fill=0,
                                     out_shape=out_shape,
@@ -172,6 +176,7 @@ def _read_s2img_cloudmask(s2tiff:str, window: Optional[rasterio.windows.Window]=
             cloud_mask = s2_rst.read(last_band, window=window)
     else:
         if cloudprob_tiff is None:
+            from src.data import cloud_masks
             # Compute cloud mask
             cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
         else:
@@ -217,7 +222,7 @@ def generate_gt_v1(s2tiff:str, floodmap:gpd.GeoDataFrame, metadata_floodmap:Dict
     metadata["encoding_values"] = {-1: "invalid", 0: "land", 1: "water", 2: "cloud"}
     metadata["shape"] = list(water_mask.shape)
     metadata["s2tiff"] = os.path.basename(s2tiff)
-    metadata["permanent_water_tiff"] = os.path.basename(permanent_water_tiff)
+    metadata["permanent_water_tiff"] = os.path.basename(permanent_water_tiff) if permanent_water_tiff is not None else "None"
     metadata["cloudprob_tiff"] = os.path.basename(cloudprob_tiff) if not cloudprob_in_lastband and cloudprob_tiff is not None else "None"
     metadata["method clouds"] = "s2cloudless"
 
@@ -272,11 +277,11 @@ def generate_gt_v2(s2tiff:str, floodmap:gpd.GeoDataFrame, metadata_floodmap:Dict
     water_mask = compute_water(s2tiff, floodmap[floodmap["w_class"] != "area_of_interest"],
                                window=window, permanent_water_path=permanent_water_tiff)
 
-    satellite_name = metadata_floodmap['satellite']
-    assert satellite_name in SATELLITE_TYPE, f"Satellite {satellite_name} is not stored in SATELLITE_TYPE dictionary!"
+    # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
+    invalid_clouds_land_pixels = metadata_floodmap['satellite'] == "Sentinel-2"
 
     gt = _generate_gt_fromarray(s2_img, cloudprob=cloud_mask, water_mask=water_mask,
-                                satellite_type=SATELLITE_TYPE[metadata_floodmap['satellite']])
+                                invalid_clouds_land_pixels=invalid_clouds_land_pixels)
 
     # Compute metadata of the ground truth
     metadata = {}
@@ -285,7 +290,7 @@ def generate_gt_v2(s2tiff:str, floodmap:gpd.GeoDataFrame, metadata_floodmap:Dict
                                    {0: "invalid", 1: "land", 2: "water"}]
     metadata["shape"] = list(water_mask.shape)
     metadata["s2tiff"] =  os.path.basename(s2tiff)
-    metadata["permanent_water_tiff"] =  os.path.basename(permanent_water_tiff)
+    metadata["permanent_water_tiff"] =  os.path.basename(permanent_water_tiff) if permanent_water_tiff is not None else "None"
     metadata["cloudprob_tiff"] =  os.path.basename(cloudprob_tiff) if not cloudprob_in_lastband and cloudprob_tiff is not None else "None"
     metadata["method clouds"] = "s2cloudless"
 
@@ -294,10 +299,6 @@ def generate_gt_v2(s2tiff:str, floodmap:gpd.GeoDataFrame, metadata_floodmap:Dict
     metadata["pixels clouds S2"] = int(np.sum(gt[0] == 2))
     metadata["pixels water S2"] = int(np.sum(gt[1] == 2))
     metadata["pixels land S2"] = int(np.sum(gt[1] == 1))
-
-    # Sanity check: same number of invalid values in GT[0] and GT[1]
-    assert metadata["pixels invalid S2"] == int(np.sum(gt[1] == 0)), \
-        f" Different number of invalids in gt{metadata['pixels invalid S2']} {int(np.sum(gt[1] == 0))}"
 
     # Compute stats of the water mask
     metadata["pixels flood water S2"] = int(np.sum(water_mask == 1))
@@ -347,7 +348,7 @@ def _generate_gt_v1_fromarray(s2_img: np.ndarray, cloudprob: np.ndarray, water_m
 
 
 def _generate_gt_fromarray(s2_img:np.ndarray, cloudprob:np.ndarray, water_mask:np.ndarray,
-                           satellite_type:str=None) -> np.ndarray:
+                           invalid_clouds_land_pixels:bool=False) -> np.ndarray:
     """
 
     Generate Ground Truth of WorldFloods V2 (multi-output binary classification problem)
@@ -356,7 +357,9 @@ def _generate_gt_fromarray(s2_img:np.ndarray, cloudprob:np.ndarray, water_mask:n
         s2_img: (C, H, W) array
         cloudprob: (H, W) array
         water_mask: (H, W) array {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
-        satellite_type: type of satellite {"optical", "SAR"}
+        invalid_clouds_land_pixels: set in the land/water ground truth land pixels as invalid
+        (this is a safety check for Copernicus EMS data derived from optical satellites since
+        they don't mark cloudy pixels in the provided products)
 
     Returns:
         (2, H, W) np.uint8 array where:
@@ -366,7 +369,6 @@ def _generate_gt_fromarray(s2_img:np.ndarray, cloudprob:np.ndarray, water_mask:n
         A pixel is set to invalid if it's invalid in the water_mask layer or invalid in the s2_img (all values to zero)
 
     """
-    assert satellite_type in {"SAR", "optical"}, f"Unknown satellite type: {satellite_type}"
     invalids = np.all(s2_img == 0, axis=0) & (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
@@ -381,8 +383,8 @@ def _generate_gt_fromarray(s2_img:np.ndarray, cloudprob:np.ndarray, water_mask:n
     watergt[invalids] = 0
     watergt[water_mask >= 1] = 2
 
-    # Set to invalid cloudy pixels if the satellite is optical
-    if satellite_type == "optical":
-        watergt[cloudprob > .5] = 0
+    if invalid_clouds_land_pixels:
+        # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
+        watergt[(water_mask==0) & (cloudprob > .5)] = 0
 
     return np.stack([water_mask, cloudgt], axis=0)

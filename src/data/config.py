@@ -42,6 +42,11 @@ CODES_FLOODMAP = {
     "maximum flood water extent (cumulative)": 1
 }
 
+CLASS_LAND_COPERNICUSEMSHYDRO = ["BH090-Land Subject to Inundation", "BA030-Island", 'BA010-Coastline']
+
+ACCEPTED_FIELDS = list(CODES_FLOODMAP.keys()) + CLASS_LAND_COPERNICUSEMSHYDRO
+
+
 # Unosat names definition https://docs.google.com/document/d/1i-Fz0o8isGTpRr39HqvUOQBs0yh8_Pz_WcyF5JK0bM0/edit#heading=h.3neqeg3hyp0t
 UNOSAT_CLASS_TO_TXT = {
     0: "preflood water",
@@ -57,7 +62,6 @@ UNOSAT_CLASS_TO_TXT = {
     99: "maximum flood water extent (cumulative)"
 }
 
-# TODO to be used by copernicusEMS.activations
 RENAME_SATELLITE = {"landsat 5": "Landsat-5",
                     "landsat 8": "Landsat-8",
                     "landsat-8": "Landsat-8",

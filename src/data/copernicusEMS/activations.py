@@ -3,10 +3,11 @@ import pandas as pd
 import requests
 import os
 import shutil
-from typing import List, Dict
+from typing import List, Dict, Optional
 import zipfile
 from glob import glob
 from shapely.ops import cascaded_union
+from src.data.config import RENAME_SATELLITE, ACCEPTED_FIELDS
 import numpy as np
 import datetime
 import geopandas as gpd
@@ -108,6 +109,7 @@ def write_file_to_bucket(user_gcp_key_file: str,
     Returns:
       None. File is uploaded to the GCP bucket.
     """
+    # TODO this is broken move to utils.py?
     storage_client = storage.Client.from_service_account_json(user_gcp_key_file)
     
     # Create a bucket object
@@ -118,6 +120,7 @@ def write_file_to_bucket(user_gcp_key_file: str,
     blob = bucket.blob(filename_w_path)
     
     # Upload file bucket object
+    # TODO this is broken
     blob.upload_from_filename(local_file_name)
     
     # Notify user
@@ -257,15 +260,18 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
         return 
 
 
-def pre_post_event_date_difference(date_post_event: datetime, 
-                                   date_ems_code: datetime, 
-                                   verbose: bool = False) -> None:
+def post_event_date_difference_is_ok(date_post_event: datetime,
+                                     date_ems_code: datetime,
+                                     max_date_post_event: datetime,
+                                     verbose: bool = False, ) -> bool:
     """
     Function to print the datetime difference between pre-flood event and post-flood event.
     
     Args:
       date_post_event (datetime): date after a flood event.
       date_ems_code (datetime): date Copernicus EMS activation code was issued.
+      max_date_post_event (datetime):
+      verbose:
       
     Returns:
       None
@@ -274,16 +280,42 @@ def pre_post_event_date_difference(date_post_event: datetime,
     if verbose:
         if diff_dates.days < 0:
             print("Difference between dates is negative %d" % diff_dates.days)
+            return False
 
         elif diff_dates.days > 35:
             print("difference too big %d" % diff_dates.days)
+            return False
             
         elif (max_date_post_event-date_post_event).days >= 10:
-            print("difference between max date post event and min date post event too big %d" % (max_date_post_event-date_post_event).days)        
-    return
+            print("difference between max date post event and min date post event too big %d" % (max_date_post_event-date_post_event).days)
+            return False
+
+    return True
+
+def _check_hydro_ok(shapefile, expected_crs:str)->bool:
+    gpd_obj = gpd.read_file(shapefile)
+
+    if gpd_obj.crs is None:
+        print(f"{shapefile} file is not georeferenced")
+        return False
+
+    area_of_interest_crs = str(gpd_obj.crs).lower()
+
+    if area_of_interest_crs != expected_crs:
+        print(f"{shapefile} and observed_event_file have different georreferencing")
+        return False
+
+    if not all(notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]):
+        print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}")
+        return False
+
+    return True
 
 
-def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose: bool = False) -> Dict:
+COLUMN_W_CLASS_OBSERVED_EVENT = "notation"
+COLUMN_W_CLASS_HYDRO = "obj_type"
+
+def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose: bool = False) -> Optional[Dict]:
     """
     Function that collects the following files from the unzipped directories for each Copernicus EMS
     activation code and stores them into a dictionary with additional metadata with respect to the source.
@@ -301,6 +333,7 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     Returns:
       A dictionary with the keys 'name', 'ems_code', 'timestamp', 'satellite', 'area_of_interest'
       'timestamp_ems_code', 'observed_event_file', 'area_of_interest_file.'
+      None if there are inconsistencies in the metadata
 
     """
     # Fetch source files needed to generate floodmap - source, observed event, area of interest
@@ -316,7 +349,6 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     if not area_of_interest_file:
         return
 
-
     pd_source = load_source_file(source_file)
     if pd_source is None:
         return
@@ -331,7 +363,8 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
 
     date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
      
-    pre_post_event_date_difference(date_post_event, date_ems_code, verbose)
+    if not post_event_date_difference_is_ok(date_post_event, date_ems_code, max_date_post_event, verbose):
+        return
     
     # Check if pre-event date precedes post-event date
     content_pre_event = {}
@@ -350,14 +383,42 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     # Filter content of shapefile
     pd_geo = gpd.read_file(observed_event_file)
     if np.any(pd_geo["event_type"] != '5-Flood') and verbose:
-        print("%s Event type is not Flood"%observed_event_file)
+        print(f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}")
         return
+
+    if not all(notation in ACCEPTED_FIELDS for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]):
+        print(f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}")
+        return
+
+    if pd_geo.crs is None:
+        print(f"{observed_event_file} file is not georeferenced")
+        return
+
+    str_crs = str(pd_geo.crs).lower()
 
     if not isinstance(satellite_post_event, str) and verbose:
         print("Satellite post event: {} is not a string!".format(satellite_post_event))
         return
 
+    if satellite_post_event in RENAME_SATELLITE:
+        satellite_post_event = RENAME_SATELLITE[satellite_post_event]
+
     area_of_interest = gpd.read_file(area_of_interest_file)
+
+    if area_of_interest.crs is None:
+        print(f"{area_of_interest_file} file is not georeferenced")
+        return
+
+    area_of_interest_crs = str(area_of_interest.crs).lower()
+
+    if area_of_interest_crs != str_crs:
+        print(f"{area_of_interest_file} and {observed_event_file} have different georreferencing")
+        return
+
+    if area_of_interest_crs != "epsg:4326":
+        area_of_interest.to_crs(crs="epsg:4326", inplace=True)
+
+    # Save pol of area of interest in epsg:4326 (lat/lng)
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
     
     if "obj_desc" in pd_geo:
@@ -368,7 +429,7 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     else:
         event_type = "NaN"
 
-    crs_code_space, crs_code = str(pd_geo.crs).split(":")
+    crs_code_space, crs_code = str_crs.split(":")
     
     register = {
         'event id': product_name,
@@ -387,29 +448,28 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
         'source': 'CopernicusEMS',
         "area_of_interest_polygon" : area_of_interest_pol,
         # CopernicusEMS specific fields
-        "observed_event_file": observed_event_file,
-        "area_of_interest_file": area_of_interest_file,
+        "observed_event_file": os.path.basename(observed_event_file),
+        "area_of_interest_file": os.path.basename(area_of_interest_file),
         "ems_code": ems_code,
-        
     }
     
     register.update(content_pre_event)
-
-    hidrology_files = glob(os.path.join(unzipped_directory, "*_hydrography*.shp"))
-    if len(hidrology_files) == 0:
-        return register
 
     name_possibilities = ["_hydrographyA_", "_hydrography_a"]
     for name_pos in name_possibilities:
         hydrology_file_as = glob(os.path.join(unzipped_directory, f"*{name_pos}*.shp"))
         if len(hydrology_file_as) == 1:
-            register["hydrology_file"] = hydrology_file_as[0]
+            if not _check_hydro_ok(hydrology_file_as[0], expected_crs=str_crs):
+                return
+            register["hydrology_file"] = os.path.basename(hydrology_file_as[0])
 
     name_possibilities = ["_hydrographyL_", "_hydrography_l"]
     for name_pos in name_possibilities:
         hydrology_file_l = glob(os.path.join(unzipped_directory, f"*{name_pos}*.shp"))
         if len(hydrology_file_l) == 1:
-            register["hydrology_file_l"] = hydrology_file_l[0]
+            if not _check_hydro_ok(hydrology_file_l[0], expected_crs=str_crs):
+                return
+            register["hydrology_file_l"] = os.path.basename(hydrology_file_l[0])
 
     return register
 
@@ -432,6 +492,7 @@ def parse_date_messy(date_list):
             pass
 
     return None
+
 
 def load_source_file(source_file, filter_event_dates=True, verbose=False):
     """
@@ -469,32 +530,45 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
     return pd_source
 
 
-def generate_floodmap(register, filename_floodmap, filterland=True):
-    """ Generates a floodmap (shapefile) with the joined info of the hydro and flood content. """
+def generate_floodmap(metadata_floodmap: Dict, folder_files:str, filterland:bool=True) -> gpd.GeoDataFrame:
+    """ Generates a floodmap with the joined info of the hydro and flood. """
 
-    area_of_interest = gpd.read_file(register["area_of_interest_file"])
-    area_of_interest_pol = cascaded_union(area_of_interest["geometry"]) # register["area_of_interest"]
+    area_of_interest = gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
+                                                  metadata_floodmap["area_of_interest_file"]))
 
-    mapdf = utils.filter_pols(gpd.read_file(register["observed_event_file"]),
+    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+
+    mapdf = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
+                                                         metadata_floodmap["observed_event_file"])),
                               area_of_interest_pol)
-    assert mapdf.shape[0] > 0, f"No polygons within bounds for {register}"
+    assert mapdf.shape[0] > 0, f"No polygons within bounds for {metadata_floodmap}"
 
     floodmap = gpd.GeoDataFrame({"geometry": mapdf.geometry},
                                 crs=mapdf.crs)
-    floodmap["w_class"] = mapdf["notation"]
+    floodmap["w_class"] = mapdf[COLUMN_W_CLASS_OBSERVED_EVENT]
     floodmap["source"] = "flood"
 
-    if "hydrology_file" in register:
-        mapdf_hydro = utils.filter_pols(gpd.read_file(register["hydrology_file"]),
+    if "hydrology_file" in metadata_floodmap:
+        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
+                                                                   metadata_floodmap["hydrology_file"])),
                                         area_of_interest_pol)
         mapdf_hydro = utils.filter_land(mapdf_hydro) if filterland and (mapdf_hydro.shape[0] > 0) else mapdf_hydro
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro"
-            mapdf_hydro = mapdf_hydro.rename({"obj_type": "w_class"}, axis=1)
+            mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
             mapdf_hydro = mapdf_hydro[["geometry", "w_class", "source"]].copy()
             floodmap = pd.concat([floodmap, mapdf_hydro], axis=0, ignore_index=True)
 
-    # TODO add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
+    # Add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
+    if "hydrology_file_l" in metadata_floodmap:
+        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
+                                                                   metadata_floodmap["hydrology_file_l"])),
+                                        area_of_interest_pol)
+        if mapdf_hydro.shape[0] > 0:
+            mapdf_hydro["source"] = "hydro_l"
+            mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
+            mapdf_hydro = mapdf_hydro[["geometry", "w_class", "source"]].copy()
+            floodmap = pd.concat([floodmap, mapdf_hydro], axis=0, ignore_index=True)
 
     # Concat area of interest
     area_of_interest["source"] = "area_of_interest"
@@ -502,10 +576,11 @@ def generate_floodmap(register, filename_floodmap, filterland=True):
     area_of_interest = area_of_interest[["geometry", "w_class", "source"]].copy()
     floodmap = pd.concat([floodmap, area_of_interest], axis=0, ignore_index=True)
 
-    floodmap.loc[floodmap.w_class.isna(), 'w_class'] = "Not Applicable"
+    assert floodmap.crs is not None, "Unexpected error. floodmap is not georreferenced!"
 
-    if filename_floodmap is not None:
-        floodmap.to_file(filename_floodmap, driver="GeoJSON")
+    # TODO set CRS of floodmap? check it is still OK
+
+    floodmap.loc[floodmap.w_class.isna(), 'w_class'] = "Not Applicable"
 
     return floodmap
 
