@@ -174,6 +174,7 @@ def _read_s2img_cloudmask(s2tiff:str, window: Optional[rasterio.windows.Window]=
         with rasterio.open(s2tiff, "r") as s2_rst:
             last_band = s2_rst.count
             cloud_mask = s2_rst.read(last_band, window=window)
+            cloud_mask = cloud_mask.astype(np.float32) / 100. # cloud mask in the last band is from 0 - 100
     else:
         if cloudprob_tiff is None:
             from src.data import cloud_masks
