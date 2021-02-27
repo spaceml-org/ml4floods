@@ -1,14 +1,16 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
-import argparse
 import json
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import rasterio
 from google.cloud import storage
+from shapely.ops import cascaded_union
+from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
+import numpy as np
+import geopandas as gpd
+from shapely.geometry import Polygon
 
 HOME = str(Path.home())
 
@@ -76,6 +78,33 @@ def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
     # check if it exists
     # TODO: wrap this within a context
     return json.loads(blob.download_as_string(client=None))
+
+
+
+def filter_land(gpddats : gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """ Filter land from pandas dataframe (land class specified in hydrology maps from CopernicusEMS) """
+    isnot_land = gpddats.obj_type.apply(lambda g: g not in CLASS_LAND_COPERNICUSEMSHYDRO)
+
+    if np.sum(isnot_land) == gpddats.shape[0]:
+        return gpddats
+
+    gpddats_notland = gpddats[isnot_land].copy()
+    if gpddats_notland.shape[0] == 0:
+        return gpddats_notland
+
+    land_geometries = gpddats.geometry[~isnot_land]
+    land_geometries = cascaded_union(land_geometries.tolist())
+
+    gpddats_notland["geometry"] = gpddats_notland.geometry.apply(lambda g: g.difference(land_geometries))
+
+    return gpddats_notland
+
+
+def filter_pols(gpddats: gpd.GeoDataFrame, pol_shapely: Polygon) -> gpd.GeoDataFrame:
+    """ filter pols that do not intersects pol_shapely """
+    gpddats_cp = gpddats[~(gpddats.geometry.isna() | gpddats.geometry.is_empty)].copy()
+
+    return gpddats_cp[gpddats_cp.geometry.apply(lambda g: g.intersects(pol_shapely))].reset_index().copy()
 
 
 def generate_list_of_files(bucket_id: str, file_path):
@@ -223,7 +252,7 @@ def create_folder(directory: str) -> None:
 
         Typical usage example:
 
-        >>> from .src.data.utils import create_folder
+        >>> from src.data.utils import create_folder
         >>> directory = "./temp"
         >>> create_folder(directory)
     """
@@ -278,6 +307,34 @@ def get_files_in_bucket_directory(
 
     files = [str(x.name) for x in blobs if str(Path(x.name).suffix) == suffix]
     return files
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+
+    # TODO encode shapely.geometry objects
+    # TODO encode timestamps with isoformat()
+    def default(self, obj_to_encode):
+        """Pandas and Numpy have some specific types that we want to ensure
+        are coerced to Python types, for JSON generation purposes. This attempts
+        to do so where applicable.
+        """
+        # Pandas dataframes have a to_json() method, so we'll check for that and
+        # return it if so.
+        if hasattr(obj_to_encode, 'to_json'):
+            return obj_to_encode.to_json()
+        # Numpy objects report themselves oddly in error logs, but this generic
+        # type mostly captures what we're after.
+        if isinstance(obj_to_encode, np.generic):
+            return obj_to_encode.item()
+        # ndarray -> list, pretty straightforward.
+        if isinstance(obj_to_encode, np.ndarray):
+            return obj_to_encode.tolist()
+        # torch or tensorflow -> list, pretty straightforward.
+        if hasattr(obj_to_encode, "numpy"):
+            return obj_to_encode.numpy().tolist()
+        # If none of the above apply, we'll default back to the standard JSON encoding
+        # routines and let it work normally.
+        return super().default(obj_to_encode)
 
 
 def parse_gcp_path(full_path) -> Tuple[str]:
