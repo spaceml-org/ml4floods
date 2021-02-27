@@ -8,6 +8,8 @@ retrieve zip files that contain the following Copernicus Rapid Mapping Products:
 - Observed Events
 - Hydrography
 We then download and unzip the files.
+**Notebook**:[`1_scrape_emsr_copernicus.ipynb`](1_scrape_emsr_copernicus.ipynb)
+**Source**:[`activations.py`]()
 
 ## 2. Generating Flood Maps with Copernicus Rapid Mapping Products
 In this notebook we go over how to retrieve the associated Rapid Mapping Products
