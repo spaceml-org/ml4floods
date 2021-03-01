@@ -37,3 +37,5 @@ dependencies:
   - mercantile
   - pillow
   - pytest
+  - flake8
+  - s2cloudless

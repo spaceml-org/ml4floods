@@ -11,8 +11,9 @@ def sentinel2_to_cloud_mask_preprocess(x):
     """
     # last channel is a 'quality assesment' channel rather than a sensor input
     # s2 cloudless also expects channels last and to be scaled to 0-1
-    
+
     return x[:13, :, :].transpose(1, 2, 0)[None, ...] / 10000
+
 
 def compute_cloud_mask(x):
     z = sentinel2_to_cloud_mask_preprocess(x)
@@ -24,12 +25,19 @@ def compute_cloud_mask(x):
     cloud_mask = cloud_mask.squeeze()
     return cloud_mask
 
+
 def compute_cloud_mask_save(cp_path, x, profile):
     cloud_mask = compute_cloud_mask(x)
 
     if cp_path is not None:
-        profile.update(count=1, compress="lzw", dtype="float32", driver="COG",
-                       BIGTIFF= "IF_SAFER",RESAMPLING="CUBICSPLINE") # Generate overviews with CUBICSPLINE resampling!
+        profile.update(
+            count=1,
+            compress="lzw",
+            dtype="float32",
+            driver="COG",
+            BIGTIFF="IF_SAFER",
+            RESAMPLING="CUBICSPLINE",
+        )  # Generate overviews with CUBICSPLINE resampling!
 
         with rasterio.open(cp_path, "w", **profile) as dst:
             dst.write(cloud_mask.astype(np.float32), 1)
@@ -60,18 +68,18 @@ def main(worldfloods_root, verbose):
         tf_path = os.path.join(copernicus_s2_path, tf)
         cp_path = os.path.join(copernicus_cloudprob_path, tf)
         if i % 20 == 0:
-            print('')
+            print("")
         if verbose:
             print("PROCESSING:", tf_path, cp_path)
         if os.path.exists(cp_path):
-#             print(cp_path, "already exists, skipping...")
-            print(',', end='', flush=True)
+            #             print(cp_path, "already exists, skipping...")
+            print(",", end="", flush=True)
             continue
         try:
-            print('.', end='',flush=True)
+            print(".", end="", flush=True)
             create_cloud_mask(tf_path, cp_path, verbose)
         except Exception as e:
-            print(f'problem in file {tf_path}: {e}')
+            print(f"problem in file {tf_path}: {e}")
 
 
 if __name__ == "__main__":
