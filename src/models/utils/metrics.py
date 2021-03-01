@@ -193,7 +193,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         test_outputs = pred_fun(test_inputs)
         
         test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
-        ground_truth_outputs = ground_truth_outputs.to(test_outputs_categorical.device)
+        ground_truth_outputs = torch.clone(ground_truth_outputs.to(test_outputs_categorical.device))
         
         # Save invalids to discount
         invalids = ground_truth_outputs == 0
