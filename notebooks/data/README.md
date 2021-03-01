@@ -3,18 +3,11 @@
 
 
 ---
-## 1 - Geographic Index Demo
+## 1.0 - Geographic Index Demo
 
 In this demo notebook, we demonstrate how to initialize a mini-database based on a query of coordinates. This will showcase how we can get a class which contains the filepaths and associated meta-data.
 
 [Source](./geographic_index_demo.ipynb)
-
----
-## 1.1 - Demo Index
-
-In this short demo notebook, we showcase what the index dictionary contains when we initialize the database.
-
-[Source](./produce_looks_like_index.ipynb)
 
 
 ---
