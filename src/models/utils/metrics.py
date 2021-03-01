@@ -124,7 +124,7 @@ def plot_metrics(metrics_dict, label_names):
         
         returns: None
     """
-    confusions = metrics_dict['confusions']
+    confusions = np.array(metrics_dict['confusions']).transpose(0,2,1)
     confusions_thresh = metrics_dict['confusions_thresholded']
     
     cm_analysis(np.sum(np.array(confusions), axis=0), labels=label_names)

@@ -176,7 +176,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.train_transform,
-            bands=self.bands
+            bands=self.bands,
+            lock_read=True
         )
         self.val_dataset = WorldFloodsDatasetTiled(
             image_files=self.val_files,
@@ -184,7 +185,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.test_transform,
-            bands=self.bands
+            bands=self.bands,
+            lock_read=True
         )
         self.test_dataset = WorldFloodsDatasetTiled(
             image_files=self.test_files,
@@ -192,7 +194,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.test_transform,
-            bands=self.bands
+            bands=self.bands,
+            lock_read=True
         )
 
     def train_dataloader(self):
@@ -203,3 +206,4 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.batch_size)
+

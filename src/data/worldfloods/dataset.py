@@ -13,6 +13,7 @@ import numpy as np
 import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
+import contextlib
 
 from src.data.worldfloods.configs import BANDS_S2
 from src.preprocess.utils import get_list_of_window_slices
@@ -57,7 +58,8 @@ class WorldFloodsDataset(Dataset):
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
         transforms: Optional[List[Callable]] = None,
-        bands: List[int] = list(range(len(BANDS_S2)))
+        bands: List[int] = list(range(len(BANDS_S2))),
+        lock_read:bool=False
     ) -> None:
 
         self.image_files = image_files
@@ -65,7 +67,10 @@ class WorldFloodsDataset(Dataset):
         self.gt_prefix = gt_prefix
         self.transforms = transforms
         self.bands_read = bands
-        self._lock = threading.Lock()
+        if lock_read:
+            self._lock = threading.Lock()
+        else:
+            self._lock = contextlib.nullcontext
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
@@ -135,6 +140,7 @@ class WorldFloodsDatasetTiled(Dataset):
         window_size: Tuple[int, int] = (64, 64),
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
+        lock_read: bool = False
     ) -> None:
 
         self.image_files = image_files
@@ -143,7 +149,12 @@ class WorldFloodsDatasetTiled(Dataset):
         self.transforms = transforms
         self.window_size = WindowSize(height=window_size[0], width=window_size[1])
         self.channels_read = bands
-        self._lock = threading.Lock()
+
+        if lock_read:
+            # Useful when reading from bucket
+            self._lock = threading.Lock()
+        else:
+            self._lock = contextlib.nullcontext
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
