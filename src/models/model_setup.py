@@ -1,12 +1,7 @@
 import torch
 import itertools
-import os
-import random
-import time
-from glob import glob
 from src.models.worldfloods_model import WorldFloodsModel
-# from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
-from src.models.utils.model_setup import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)
@@ -40,7 +35,17 @@ def get_channel_configuration_bands(channel_configuration):
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
-def get_model_inference_function(model, config):
+def get_model_inference_function(model, config) -> Callable:
+    """
+    Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
+    prediction does not break bc of memory errors when predicting large tiles.
+
+    Args:
+        model :LightingModule
+        config:
+
+    Returns: callable function
+    """
     
     device = handle_device(config.model_params.device)
 
