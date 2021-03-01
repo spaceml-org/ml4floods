@@ -38,9 +38,6 @@ def setup_config(args):
     config['test'] = args.test
     config['deploy'] = args.deploy
     
-    config['wandb_entity'] = args.wandb_entity
-    config['wandb_project'] = args.wandb_project
-    
     config['model_params']['hyperparameters']['num_channels'] = len(CHANNELS_CONFIGURATIONS[config['model_params']['hyperparameters']['channel_configuration']])
     
     config = AttrDict.from_nested_dicts(config)
@@ -49,4 +46,20 @@ def setup_config(args):
     pp.pprint(config)
     
     # 3. return config to training
+    return config
+
+
+def get_default_config(config_fp):
+    import argparse
+    parser = argparse.ArgumentParser('WorldFloods 1.0')
+    parser.add_argument('--config', default=config_fp)
+    parser.add_argument('--gpus', default='0', type=str)
+    # Mode: train, test or deploy
+    parser.add_argument('--train', default=False, action='store_true')
+    parser.add_argument('--test', default=False, action='store_true')
+    parser.add_argument('--deploy', default=False, action='store_true')
+
+    args, _ = parser.parse_known_args()
+    
+    config = setup_config(args)
     return config
