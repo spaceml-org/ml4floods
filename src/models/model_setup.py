@@ -36,7 +36,7 @@ def get_channel_configuration_bands(channel_configuration):
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
-def get_model_inference_function(model, config) -> Callable:
+def get_model_inference_function(model, config, apply_normalization:bool=True) -> Callable:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -44,6 +44,7 @@ def get_model_inference_function(model, config) -> Callable:
     Args:
         model :LightingModule
         config:
+        apply_normalization:
 
     Returns: callable function
     """
@@ -52,18 +53,21 @@ def get_model_inference_function(model, config) -> Callable:
 
     model_type = config.model_params.hyperparameters.model_type
     module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
-    
-    channel_configuration_bands = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
-    
-    mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
-    mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
-    std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
-    std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
-    
-    def normalize(batch_image):
-        assert batch_image.ndim == 4, "Expected 4d tensor"
-        return (batch_image - mean_batch) / (std_batch + 1e-6)
+    if apply_normalization:
+        channel_configuration_bands = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
+
+        mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
+        mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
+
+        std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
+        std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
+
+        def normalize(batch_image):
+            assert batch_image.ndim == 4, "Expected 4d tensor"
+            return (batch_image - mean_batch) / (std_batch + 1e-6)
+    else:
+        normalize = None
     
     return get_pred_function(model,device,
                              module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
