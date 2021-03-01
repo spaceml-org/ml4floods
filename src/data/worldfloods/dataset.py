@@ -70,7 +70,7 @@ class WorldFloodsDataset(Dataset):
         if lock_read:
             self._lock = threading.Lock()
         else:
-            self._lock = contextlib.nullcontext
+            self._lock = contextlib.nullcontext()
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
