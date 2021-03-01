@@ -73,10 +73,8 @@ class WorldFloodsDataset(Dataset):
         self.image_files.sort()
 
     def __getitem__(self, idx: int) -> Dict:
-
         # get filenames
         image_name = self.image_files[idx]
-        print(image_name)
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         image_tif = rasterio_read(image_name, self._lock, window=None,
