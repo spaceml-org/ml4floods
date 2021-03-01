@@ -29,8 +29,6 @@ dependencies:
   - opencv-python
   - google-cloud-storage
   - pyprojroot
-  - torch
-  - torchvision
   - Flask
   - Flask-HTTPAuth
   - Flask-Login
@@ -38,3 +36,4 @@ dependencies:
   - gunicorn
   - mercantile
   - pillow
+  - pytest

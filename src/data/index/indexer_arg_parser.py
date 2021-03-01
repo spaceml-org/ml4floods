@@ -10,7 +10,7 @@ class IndexerArgParser(ArgumentParser):
         self.add_argument(
             "--worldfloods-path",
             type=str,
-            default="/tank/ml4cc/nicholas/worldfloods",
+            default="gs://ml4floods/",
             help="Path to worldfloods directory, required only to contain tiffimages subdirectory.",
         )
         self.add_argument(

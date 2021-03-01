@@ -3,14 +3,19 @@ This script contains all the utility functions that are not specific to a partic
 These are mainly used for explorations, testing, and demonstrations.
 """
 
-# import argparse
-# import subprocess
-# import rasterio
+import argparse
+import subprocess
+import rasterio
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from google.cloud import storage
+from shapely.ops import cascaded_union
+from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
+import numpy as np
+import geopandas as gpd
+from shapely.geometry import Polygon
 
 # HOME = str(Path.home())
 
@@ -22,18 +27,18 @@ def download_data_from_bucket(
     bucket_id: Optional[str] = None,
 ) -> None:
     """Function to download data from the bucket to a local destination directory.
-    This function differs from the save_file_from_bucket() function in that 
+    This function differs from the save_file_from_bucket() function in that
     it takes as input a list of filenames to be downloaded compared to save_file_from_bucket()
-    which deals with only a single file. 
+    which deals with only a single file.
     Wraps around the save_file_from_bucket() function to download the list of files.
 
     Args:
         filenames (List[str]): List of filenames to be downloaded from the bucket.
         destination_dir (str): Path of the destination directory.
-        bucket_id (str, optional): Name of the bucket being used to download the files. 
+        bucket_id (str, optional): Name of the bucket being used to download the files.
             Defaults to None.
-    """    
-    
+    """
+
     for ifile in filenames:
         bucket_id = str(Path(ifile).parts[0])
 
@@ -98,6 +103,45 @@ def load_json_from_bucket(bucket_name: str, filename: str, **kwargs) -> Dict:
 #     return None
 
 
+def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """ Filter land from pandas dataframe (land class specified in hydrology maps from CopernicusEMS) """
+    isnot_land = gpddats.obj_type.apply(
+        lambda g: g not in CLASS_LAND_COPERNICUSEMSHYDRO
+    )
+
+    if np.sum(isnot_land) == gpddats.shape[0]:
+        return gpddats
+
+    gpddats_notland = gpddats[isnot_land].copy()
+    if gpddats_notland.shape[0] == 0:
+        return gpddats_notland
+
+    land_geometries = gpddats.geometry[~isnot_land]
+    land_geometries = cascaded_union(land_geometries.tolist())
+
+    gpddats_notland["geometry"] = gpddats_notland.geometry.apply(
+        lambda g: g.difference(land_geometries)
+    )
+
+    return gpddats_notland
+
+
+def filter_pols(gpddats: gpd.GeoDataFrame, pol_shapely: Polygon) -> gpd.GeoDataFrame:
+    """ filter pols that do not intersects pol_shapely """
+    gpddats_cp = gpddats[~(gpddats.geometry.isna() | gpddats.geometry.is_empty)].copy()
+
+    return (
+        gpddats_cp[gpddats_cp.geometry.apply(lambda g: g.intersects(pol_shapely))]
+        .reset_index()
+        .copy()
+    )
+
+
+def generate_list_of_files(bucket_id: str, file_path):
+    """Generate a list of files from the bucket."""
+    return None
+
+
 def save_file_from_bucket(bucket_id: str, file_name: str, destination_file_path: str):
     """Function to save a file from a bucket to the mentioned destination file path.
 
@@ -148,13 +192,13 @@ def open_file_from_bucket(target_directory: str):
             within the session.
 
     Returns:
-        google.cloud.storage.blob.Blob: Returns the blob of file 
+        google.cloud.storage.blob.Blob: Returns the blob of file
             that is read into memory within the current session.
-    
+
     Example:
         >>> target_directory = 'path/to/file/and/file.pkl'
         >>> open_file_from_bucket(target_directory)
-    """    
+    """
 
     bucket_id, file_path, file_name = parse_gcp_path(target_directory)
 
@@ -214,7 +258,7 @@ def check_path_exists(path: str) -> None:
 
     Returns:
         None: Returns nothing.
-    """    
+    """
     if not Path(path).is_dir():
         raise ValueError(f"Unrecognized path: {str(Path(path))}")
     return None
@@ -225,8 +269,11 @@ def create_folder(directory: str) -> None:
 
     Args:
         directory (str): directory to be created if it doesn't already exist.
-    
+
     Example:
+        Typical usage example:
+
+        >>> from src.data.utils import create_folder
         >>> directory = "./temp"
         >>> create_folder(directory)
     """
@@ -255,8 +302,8 @@ def get_files_in_directory(directory: str, suffix: str) -> List[str]:
     return files
 
 
-# TODO: This is a redundant function. 
-# Refactor all the code to use only one of 
+# TODO: This is a redundant function.
+# Refactor all the code to use only one of
 # these two functions and get rid of the redundant function.
 def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
     """Function to return the list of files within a given directory.
@@ -316,7 +363,40 @@ def parse_gcp_path(full_path: str) -> Tuple[str]:
     Returns:
         Tuple[str]: Returns a tuple of substrings from the full_path that include
             bucket_id, filepath, and filename.
-    """    
+    """
+    return None
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+
+    # TODO encode shapely.geometry objects
+    # TODO encode timestamps with isoformat()
+    def default(self, obj_to_encode):
+        """Pandas and Numpy have some specific types that we want to ensure
+        are coerced to Python types, for JSON generation purposes. This attempts
+        to do so where applicable.
+        """
+        # Pandas dataframes have a to_json() method, so we'll check for that and
+        # return it if so.
+        if hasattr(obj_to_encode, "to_json"):
+            return obj_to_encode.to_json()
+        # Numpy objects report themselves oddly in error logs, but this generic
+        # type mostly captures what we're after.
+        if isinstance(obj_to_encode, np.generic):
+            return obj_to_encode.item()
+        # ndarray -> list, pretty straightforward.
+        if isinstance(obj_to_encode, np.ndarray):
+            return obj_to_encode.tolist()
+        # torch or tensorflow -> list, pretty straightforward.
+        if hasattr(obj_to_encode, "numpy"):
+            return obj_to_encode.numpy().tolist()
+        # If none of the above apply, we'll default back to the standard JSON encoding
+        # routines and let it work normally.
+        return super().default(obj_to_encode)
+
+
+def parse_gcp_path(full_path) -> Tuple[str]:
+    """Parse the bucket"""
     # parse the components
     bucket_id = str(Path(full_path.split("gs://")[1]).parts[0])
     file_path = str(Path(full_path.split(bucket_id)[1]).parent)
