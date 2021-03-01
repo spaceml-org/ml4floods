@@ -43,7 +43,7 @@ class WorldFloodsModel(pl.LightningModule):
                 x (torch.Tensor): (B,  C, W, H), input image
                 y (torch.Tensor): (B, num_class, W, H) encoded as {0: invalid, 1: land, 2: water, 3: cloud}
         """
-        x, y = batch['image'], batch['mask'].squeeze()
+        x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
         loss = losses.calc_loss_mask_invalid(logits, y, weight=self.weight_per_class)
         self.log("loss", loss)
@@ -75,7 +75,7 @@ class WorldFloodsModel(pl.LightningModule):
                 x (torch.Tensor): (B, C, W, H), input image
                 y (torch.Tensor): (B, num_classes, W, H) encoded as {0: invalid, 1: land, 2: water, 3: cloud}
         """
-        x, y = batch['image'], batch['mask'].squeeze()
+        x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
         
         bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class)

@@ -1,6 +1,6 @@
 from src.data.utils import get_files_in_bucket_directory, get_files_in_directory
 from typing import Tuple, Optional, List, Callable
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader
 import albumentations
 from src.data.worldfloods.dataset import WorldFloodsDatasetTiled
 import pytorch_lightning as pl
@@ -72,6 +72,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
+            bands=self.bands,
             transforms=self.train_transform,
         )
         # TODO: Clarify whether validations set should use augmentation or not
@@ -79,6 +80,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_files=self.val_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
+            bands=self.bands,
             window_size=self.window_size,
             transforms=self.test_transform, 
         )
@@ -86,6 +88,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
+            bands=self.bands,
             window_size=self.window_size,
             transforms=self.test_transform,
         )
@@ -173,6 +176,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.train_transform,
+            bands=self.bands
         )
         self.val_dataset = WorldFloodsDatasetTiled(
             image_files=self.val_files,
@@ -180,6 +184,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.test_transform,
+            bands=self.bands
         )
         self.test_dataset = WorldFloodsDatasetTiled(
             image_files=self.test_files,
@@ -187,6 +192,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             transforms=self.test_transform,
+            bands=self.bands
         )
 
     def train_dataloader(self):

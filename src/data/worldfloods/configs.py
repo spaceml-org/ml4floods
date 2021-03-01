@@ -18,7 +18,7 @@ BANDS_S2 = [
 
 
 CHANNELS_CONFIGURATIONS = {
-    "all": list(range(1,len(BANDS_S2)+1)),
+    "all": list(range(0,len(BANDS_S2))),
     "rgb": [1, 2, 3],
     "rgbi": [1, 2, 3, 7],
     "sub_20": [1, 2, 3, 4, 5, 6, 7, 8],

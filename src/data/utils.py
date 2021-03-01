@@ -270,14 +270,6 @@ def get_files_in_directory(directory: str, suffix: str) -> List[str]:
     return files
 
 
-def get_files_in_bucket_directory(
-    bucket_id: str, directory: str, suffix: str
-) -> List[str]:
-    p = Path(directory).glob(f"*{suffix}")
-    files = [str(x) for x in p if x.is_file()]
-    return files
-
-
 def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
     p = Path(directory).glob(f"*{suffix}")
     files = [str(x.name) for x in p if x.is_file()]

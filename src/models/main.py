@@ -228,13 +228,13 @@ if __name__ == "__main__":
     config = setup_config(args)
 
     # Run training
-    if config.train:
+    if args.train:
         train(config)
 
     # Run testing
-    if config.test:
+    if args.test:
         test(config)
 
     # Run deployment ready inference
-    if config.deploy:
+    if args.deploy:
         deploy(config)

@@ -100,6 +100,7 @@ def get_dataset(data_config):
             train_transformations=train_transform,
             test_transformations=test_transform,
             data_dir=destination_dir,
+            bands=bands,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size)
         dataset.setup()
