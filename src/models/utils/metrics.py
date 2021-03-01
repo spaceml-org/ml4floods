@@ -200,7 +200,6 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         ground_truth_outputs[invalids] = 1
         ground_truth_outputs -= 1
         
-        print(test_outputs_categorical.shape, invalids.shape)
         # Set invalids in pred to zero
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
 
