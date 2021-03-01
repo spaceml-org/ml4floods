@@ -1,5 +1,5 @@
 import torch
-from pytorch_lightning.utilities.cloud_io import atomic_save
+import json
 
 
 def train(config):
@@ -97,11 +97,29 @@ def train(config):
     print("======================================================")
     print("FINISHED TRAINING, SAVING MODEL")
     print("======================================================")
-
+    from pytorch_lightning.utilities.cloud_io import atomic_save
     atomic_save(model.state_dict(), f"{experiment_path}/model.pt")
     torch.save(model.state_dict(), os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.finish()
+
+    # Save cofig file in experiment_path
+    config_file_path = f"{experiment_path}/config.json"
+
+    if config_file_path.startswith("gs://"):
+        from google.cloud import storage
+        splitted_path = config_file_path.replace("gs://", "").split("/")
+        bucket_name = splitted_path[0]
+        blob_name = "/".join(splitted_path[1:])
+        bucket = storage.Client().get_bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(
+            data=json.dumps(config),
+            content_type='application/json'
+        )
+    else:
+        with open(config_file_path, "w") as fh:
+            json.dump(config, fh)
     
     return 1
     

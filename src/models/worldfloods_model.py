@@ -35,7 +35,7 @@ class WorldFloodsModel(pl.LightningModule):
         if model_params.use_pretrained_weights:
             filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type, model_params.hyperparameters.model_type  + "_final_weights.pt")
             self.load_pretrained_architecture(filepath)
-                                                  
+
     def training_step(self, batch: Dict, batch_idx) -> float:
         """
         Args:
