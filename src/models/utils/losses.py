@@ -17,7 +17,7 @@ def dice_loss_mask_invalid(logits: torch.Tensor, target:torch.Tensor, smooth=1.)
 
     """
     assert logits.dim() == 4, f"Expected 4D tensor logits"
-    assert target.dim() == 4, f"Expected 4D tensor target"
+    assert target.dim() == 3, f"Expected 3D tensor target"
 
     pred = torch.softmax(logits, dim=1)
     valid = (target != 0) # (B, H, W) tensor
@@ -54,7 +54,7 @@ def bce_loss_mask_invalid(logits: torch.Tensor, target:torch.Tensor, weight:Opti
 
     """
     assert logits.dim() == 4, f"Expected 4D tensor logits"
-    assert target.dim() == 4, f"Expected 4D tensor target"
+    assert target.dim() == 3, f"Expected 3D tensor target"
 
     valid = (target != 0)
     target_without_invalids = (target - 1) * valid

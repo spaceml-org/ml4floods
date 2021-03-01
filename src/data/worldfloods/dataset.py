@@ -1,13 +1,10 @@
 import os
 import random
-from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from src.preprocess.tiling import WindowSize
 from typing import Callable, Dict, List, Optional, Tuple
-from pyprojroot import here
 
-ROOT = here(project_files=[".here"])
 
 import numpy as np
 import rasterio
@@ -20,34 +17,28 @@ from src.data.worldfloods.prepare_data import prepare_data_func
 from src.preprocess.utils import get_list_of_window_slices
 
 
-@dataclass
-class WorldFloodsImage:
-    # ESSENTIAL METADATA
-    filename: str
-    uri: str = field(default=None)
-    filepath: str = field(default=None)
-    bucket_id: str = field(default=None)
-    product_id: str = field(default=None)
-
-    # BREADCRUMBS
-    load_date: str = field(default=datetime.now())
-    viewed_by: list = field(default_factory=list, compare=False, repr=False)
-    source_system: str = field(default="Not Specified")
 
 
 class WorldFloodsDataset(Dataset):
-    """
-    A dataloader for the WorldFloods dataset.
-
-    Attributes
-    ----------
-    window_size: tuple(int, int)
-            size of the tiling window
-    image_prefix: str
-            the subdirectory name for the images
-    gt_prefix: str
-            the subdirectory name for the groundtruth
-
+    """A prepackaged WorldFloods PyTorch Dataset
+    This initializes the dataset given a set a set of image files with a 
+    subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
+    
+    Args:
+        image_files (List[str]): the image files to be loaded into the 
+            dataset
+        image_prefix (str): the input folder sub_directory
+        gt_prefix (str): the target folder sub directory
+        transforms (Callable): the transformations used within the 
+            training data module
+            
+    Attributes:
+        image_files (List[str]): the image files to be loaded into the 
+            dataset
+        image_prefix (str): the input folder sub_directory
+        gt_prefix (str): the target folder sub directory
+        transforms (Callable): the transformations used within the 
+            training data module
     """
 
     def __init__(
@@ -69,10 +60,19 @@ class WorldFloodsDataset(Dataset):
         self.image_files.sort()
 
     def __getitem__(self, idx: int) -> Dict:
+        """Index to select an image
+        
+        Args:
+            idx (int): index
+        
+        Returns:
+            a dictionary with the image and mask keys
+            {"image", "mask"}
+        """
 
         # get filenames
         image_name = self.image_files[idx]
-        print(image_name)
+        
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
@@ -102,28 +102,32 @@ class WorldFloodsDataset(Dataset):
 
 
 class WorldFloodsDatasetTiled(Dataset):
-    """
-    A dataloader for the WorldFloods dataset.
-
+    """A prepackaged WorldFloods PyTorch Dataset
+    This initializes the dataset given a set a set of image files with a 
+    subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
+    This also does the tiling under the hood given the windowsize.
+    
     Args:
-        image_files (List[str]): list of specific image files
-            e.g., path/to/file/prefix/filename
-        image_prefix (str): prefix for images
-        gt_prefix (str): prefix for groundtruth
-        window_size (Tuple[int,int]): tuple for window size for sliing
-            height,width
-        transforms (List[Callable]): the transformations to be done later
-            for each tile.
-
-    Attributes
-    ----------
-    window_size: tuple(int, int)
-            size of the tiling window
-    image_prefix: str
-            the subdirectory name for the images
-    gt_prefix: str
-            the subdirectory name for the groundtruth
-
+        image_files (List[str]): the image files to be loaded into the 
+            dataset
+        image_prefix (str): the input folder sub_directory
+        gt_prefix (str): the target folder sub directory
+        window_size (Tuple[int,int]): the window sizes (height, width) to be
+            used for the tiling
+        transforms (Callable): the transformations used within the 
+            training data module
+            
+    Attributes:
+        image_files (List[str]): the image files to be loaded into the 
+            dataset
+        image_prefix (str): the input folder sub_directory
+        gt_prefix (str): the target folder sub directory
+        window_size (namedtuple): a tuple with the height and width
+            arguments
+        transforms (Callable): the transformations used within the 
+            training data module
+        accumulated_list_of_windows_test (List[namedtuple]): a list of
+            namedtuples each consisting of a filename and a rasterio.window
     """
 
     def __init__(
@@ -151,7 +155,15 @@ class WorldFloodsDatasetTiled(Dataset):
         )
 
     def __getitem__(self, idx: int) -> Dict:
-
+        """Index to select an image tile
+        
+        Args:
+            idx (int): index
+        
+        Returns:
+            a dictionary with the keys to the image tiles and mask tiles
+            {"image", "mask"}
+        """
         # get filenames from named tuple
         sub_window = self.accumulated_list_of_windows_test[idx]
 
@@ -166,11 +178,11 @@ class WorldFloodsDatasetTiled(Dataset):
 
         # Open Image File
         with rasterio.open(image_name) as f:
-            image_tif = f.read(window=sub_window.window)
+            image_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
         # Open Ground Truth File
         with rasterio.open(y_name) as f:
-            mask_tif = f.read(window=sub_window.window)
+            mask_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
