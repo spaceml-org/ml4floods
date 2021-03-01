@@ -187,7 +187,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
     
-    for i, batch in tqdm(enumerate(dataloader)):
+    for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
         test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
         
         test_outputs = pred_fun(test_inputs)
