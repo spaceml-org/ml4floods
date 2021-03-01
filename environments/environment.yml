@@ -31,3 +31,4 @@ dependencies:
   - ipykernel
   - google-cloud-storage
   - pyprojroot
+  - pytest
