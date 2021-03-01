@@ -187,19 +187,20 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
     
-    for i, (test_inputs, ground_truth_outputs) in tqdm(enumerate(dataloader)):
+    for i, batch in tqdm(enumerate(dataloader)):
+        test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
         
         test_outputs = pred_fun(test_inputs)
         
         test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
-        print(np.unique(test_outputs_categorical))
         ground_truth_outputs = ground_truth_outputs.to(test_outputs_categorical.device)
-                
+        
         # Save invalids to discount
         invalids = ground_truth_outputs == 0
         ground_truth_outputs[invalids] = 1
         ground_truth_outputs -= 1
         
+        print(test_outputs_categorical.shape, invalids.shape)
         # Set invalids in pred to zero
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
 
