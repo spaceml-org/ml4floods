@@ -2,6 +2,7 @@ import torch
 import itertools
 from src.models.worldfloods_model import WorldFloodsModel
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+import numpy as np
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)

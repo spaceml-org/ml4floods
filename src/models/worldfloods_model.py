@@ -7,7 +7,6 @@ import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
 
 from src.models.utils import losses, metrics
-from src.models.utils.model_setup import load_model_weights
 from src.models.architectures.baselines import SimpleLinear, SimpleCNN
 from src.models.architectures.unets import UNet, UNet_dropout
 from src.data.worldfloods.configs import SENTINEL2_NORMALIZATION, COLORS_WORLDFLOODS
@@ -136,8 +135,8 @@ class WorldFloodsModel(pl.LightningModule):
 
         return model
     
-    def load_pretrained_architecture(self, filepath):
-        load_model_weights(self.network, filepath)
+    # def load_pretrained_architecture(self, filepath):
+    #     load_model_weights(self.network, filepath)
 
     def batch_to_unnorm_rgb(self, x):
         model_input_npy = x.cpu().numpy()
