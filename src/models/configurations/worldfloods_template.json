@@ -3,7 +3,7 @@
     "seed": 12,
     "model_params": {
         "device": "cpu",
-        "model_folder": "wandb",
+        "model_folder": "gs://",
         "use_pretrained_weights": true,
         "path_to_weights": "checkpoints/",
         "hyperparameters": {

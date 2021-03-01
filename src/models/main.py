@@ -1,7 +1,6 @@
 import torch
-from tqdm import tqdm
-import numpy as np
-import pandas as pd
+from pytorch_lightning.utilities.cloud_io import atomic_save
+
 
 def train(config):
     # ======================================================
@@ -10,9 +9,6 @@ def train(config):
     from pytorch_lightning import seed_everything
     # Seed
     seed_everything(config.seed)
-    
-    # Device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     
     # DATASET SETUP
@@ -32,7 +28,6 @@ def train(config):
     config.model_params.train = True
     model = get_model(config.model_params)
     
-    
     # LOGGING SETUP 
     print("======================================================")
     print("SETTING UP LOGGERS")
@@ -40,20 +35,21 @@ def train(config):
     import wandb
     from pytorch_lightning.loggers import WandbLogger
     wandb_logger = WandbLogger(
+        name=config.experiment_name,
         project=config.wandb_project, 
         entity=config.wandb_entity,
 #         save_dir=f"{config.model_params.model_folder}/{config.experiment_name}"
     )
-    
     
     # CHECKPOINTING SETUP
     print("======================================================")
     print("SETTING UP CHECKPOINTING")
     print("======================================================")
     from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-    
+    experiment_path = f"{config.model_params.model_folder}/{config.experiment_name}"
+
     checkpoint_callback = ModelCheckpoint(
-        filepath=f"{config.model_params.model_folder}/{config.experiment_name}/checkpoint",
+        filepath=f"{experiment_path}/checkpoint",
         save_top_k=True,
         verbose=True,
         monitor='dice_loss',
@@ -70,7 +66,6 @@ def train(config):
     )
     
     callbacks = [checkpoint_callback, early_stop_callback]
-    
 
     # TRAINING SETUP 
     print("======================================================")
@@ -87,6 +82,7 @@ def train(config):
         auto_lr_find=False,
         benchmark=False,
         distributed_backend=None,
+        gpus=config.gpus,
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
         log_gpu_memory=None,
@@ -101,8 +97,10 @@ def train(config):
     print("======================================================")
     print("FINISHED TRAINING, SAVING MODEL")
     print("======================================================")
-    torch.save(model.state_dict(), os.path.join(wandb.run.dir, 'model.pt'))
-    wandb.save("*.pt")
+
+    atomic_save(model.state_dict(), f"{experiment_path}/model.pt")
+    torch.save(model.state_dict(), os.path.join(wandb_logger.save_dir, 'model.pt'))
+    wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.finish()
     
     return 1
@@ -194,7 +192,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser('Area Ratios Segmentation Classifiers')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
-    parser.add_argument('--cuda', '-c', default='0')
+    parser.add_argument('--gpus', default='0', type=str)
     # Mode: train, test or deploy
     parser.add_argument('--train', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')

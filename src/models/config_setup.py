@@ -34,6 +34,7 @@ def setup_config(args):
     from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
     
     config['train'] = args.train
+    config['gpus'] = args.gpus
     config['test'] = args.test
     config['deploy'] = args.deploy
     

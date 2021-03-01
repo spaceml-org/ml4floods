@@ -16,26 +16,26 @@ from src.data.worldfloods.configs import SENTINEL2_NORMALIZATION, COLORS_WORLDFL
 class WorldFloodsModel(pl.LightningModule):
     def __init__(self, model_params: dict):
         super().__init__()
-        h_params = model_params.get('hyperparameters', {})
-        self.num_class = h_params.get('num_classes', 3)
-        self.network = self.configure_architecture(h_params)
-        self.weight_per_class = torch.tensor(h_params.get('weight_per_class', [1 for i in range(self.num_class)]))
+        self.save_hyperparameters()
+        h_params_dict = model_params.get('hyperparameters', {})
+        self.num_class = h_params_dict.get('num_classes', 3)
+        self.network = self.configure_architecture(h_params_dict)
+        self.weight_per_class = torch.tensor(h_params_dict.get('weight_per_class', [1 for i in range(self.num_class)]))
 
         # learning rate params
-        self.lr = h_params.get('lr', 1e-4)
-        self.lr_decay = h_params.get('lr_decay', 0.5)
-        self.lr_patience = h_params.get('lr_patience', 2)
+        self.lr = h_params_dict.get('lr', 1e-4)
+        self.lr_decay = h_params_dict.get('lr_decay', 0.5)
+        self.lr_patience = h_params_dict.get('lr_patience', 2)
         
         #label names setup
-        self.label_names = h_params.get('label_names', [i for i in range(self.num_class)]) 
+        self.label_names = h_params_dict.get('label_names', [i for i in range(self.num_class)])
         
         
         ###### IF PRETRAINED WEIGHTS ######
         if model_params.use_pretrained_weights:
             filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type, model_params.hyperparameters.model_type  + "_final_weights.pt")
             self.load_pretrained_architecture(filepath)
-        
-                                             
+                                                  
     def training_step(self, batch: Dict, batch_idx) -> float:
         """
         Args:
@@ -49,20 +49,22 @@ class WorldFloodsModel(pl.LightningModule):
         self.log("loss", loss)
         
         if batch_idx == 0 and self.logger is not None:
-            
-            mask_data = y.cpu().numpy()
-            pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
-            img_data = self.batch_to_unnorm_rgb(x)
-            
-            self.logger.experiment.log({"overlay":  [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
-            
-            self.logger.experiment.log({"image": [wandb.Image(img) for img in img_data]}) 
-            self.logger.experiment.log({"y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
-            self.logger.experiment.log({"pred": [wandb.Image(self.mask_to_rgb(img+1)) for img in pred_data]})
+            self.log_images(x, y, logits)
             
         return loss
 
-                                             
+    def log_images(self, x, y, logits):
+        mask_data = y.cpu().numpy()
+        pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
+        img_data = self.batch_to_unnorm_rgb(x)
+
+        self.logger.experiment.log(
+            {"overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+
+        self.logger.experiment.log({"image": [wandb.Image(img) for img in img_data]})
+        self.logger.experiment.log({"y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
+        self.logger.experiment.log({"pred": [wandb.Image(self.mask_to_rgb(img + 1)) for img in pred_data]})
+
     def validation_step(self, batch: Dict, batch_idx):
         """
         Args:
@@ -81,34 +83,23 @@ class WorldFloodsModel(pl.LightningModule):
         pred_categorical = torch.argmax(logits, dim=1).long()
 
         # cm_batch is (B, num_class, num_class)
-        cm_batch = metrics.compute_confusions(y, pred_categorical, num_class=self.num_class, remove_class_zero=False)
+        cm_batch = metrics.compute_confusions(y, pred_categorical, num_class=self.num_class,
+                                              remove_class_zero=True)
 
         # TODO log accuracy per class
 
-        # TODO log IoU per class
+        # Log IoU per class
         iou_dict = metrics.calculate_iou(cm_batch, self.label_names)
         for k in iou_dict.keys():
             self.log(f"iou {k}", iou_dict[k])
             
         if batch_idx == 0 and self.logger is not None:
-            
-            mask_data = y.cpu().numpy()
-            pred_data = pred_categorical.cpu().numpy()
-            img_data = self.batch_to_unnorm_rgb(x)
-            
-            self.logger.experiment.log({"overlay":  [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
-            
-            self.logger.experiment.log({"image": [wandb.Image(img) for img in img_data]}) 
-            self.logger.experiment.log({"y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
-            self.logger.experiment.log({"pred": [wandb.Image(self.mask_to_rgb(img+1)) for img in pred_data]})
-            
+            self.log_images(x, y, logits)
         
     def on_val_epoch_end(self):
         self.log('images', self.image_grid)
         self.log('masks', self.mask_grid)
-        self.log('preds', self.pred_grid)   
-
-
+        self.log('preds', self.pred_grid)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.network.parameters(), self.lr)
@@ -138,13 +129,12 @@ class WorldFloodsModel(pl.LightningModule):
             model = UNet_dropout(num_channels, num_classes)
 
         else:
-            raise Exception(f'No model implemented for model_type: {config.model_type}')
+            raise Exception(f'No model implemented for model_type: {h_params.model_type}')
 
         return model
     
     def load_pretrained_architecture(self, filepath):
         load_model_weights(self.network, filepath)
-        
 
     def batch_to_unnorm_rgb(self, x):
         model_input_npy = x.cpu().numpy()
@@ -168,7 +158,6 @@ class WorldFloodsModel(pl.LightningModule):
             2: "water",
             3: "cloud"
         }
-    
 
     def mask_to_rgb(self, mask, values=[0,1,2,3], colors_cmap=COLORS_WORLDFLOODS):
         """
