@@ -52,6 +52,9 @@ class WorldFloodsModel(pl.LightningModule):
             self.log_images(x, y, logits)
             
         return loss
+    
+    def forward(self, x):
+        return self.network(x)
 
     def log_images(self, x, y, logits):
         mask_data = y.cpu().numpy()

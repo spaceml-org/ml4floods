@@ -4,7 +4,7 @@
     "model_params": {
         "device": "cpu",
         "model_folder": "gs://",
-        "use_pretrained_weights": true,
+        "use_pretrained_weights": false,
         "path_to_weights": "checkpoints/",
         "hyperparameters": {
             "max_tile_size": 256,
