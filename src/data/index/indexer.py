@@ -22,7 +22,13 @@ def file_exists(path):
     with open_fs(path+"?strict=False") as fs:
         return fs.exists('')
 
-def index_worldfloods(fs_prefix, out_path):
+def index_worldfloods(fs_prefix: str, out_path: str) -> None:
+    """Function to index all the files within the fs_prefix path.
+
+    Args:
+        fs_prefix (str): Source directory for the data to be indexed.
+        out_path (str): Destination directory to store the indexed data.
+    """
     idx = GeographicIndex()
     count = 0
     totalcount = 0

@@ -10,3 +10,11 @@ rasterio
 geopandas
 fastprogress
 tqdm
+black
+isort
+mypy
+opencv-python
+seaborn
+ipykernel
+google-cloud-storage
+pyprojroot

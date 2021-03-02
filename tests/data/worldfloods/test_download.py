@@ -3,6 +3,8 @@ Demo script to download some demo data files. Mainly used for testing but can al
 """
 import argparse
 from src.data.utils import create_folder
+from dataclasses import dataclass, field
+from datetime import datetime
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -10,7 +12,6 @@ from typing import Optional
 import rasterio
 from google.cloud import storage
 
-from src.data.worldfloods.dataset import WorldFloodsImage
 from pyprojroot import here
 
 root = here(project_files=[".here"])
@@ -19,9 +20,27 @@ HOME = root
 from src.data.worldfloods.download import download_image, download_worldfloods_data
 
 
-def test_data_download(ml_split: str = "train"):
+@dataclass
+class WorldFloodsImage:
+    # ESSENTIAL METADATA
+    filename: str
+    uri: str = field(default=None)
+    filepath: str = field(default=None)
+    bucket_id: str = field(default=None)
+    product_id: str = field(default=None)
+
+    # BREADCRUMBS
+    load_date: str = field(default=datetime.now())
+    viewed_by: list = field(default_factory=list, compare=False, repr=False)
+    source_system: str = field(default="Not Specified")
+
+
+def test_data_download(ml_split: str = "train", test_dir: Optional[str] = None):
 
     # STEP 1 - Create Demo Directory
+
+    if test_dir is None:
+        test_dir = "./"
 
     # Step 2 - Download List of demo files
     bucket_id = "ml4floods"
@@ -35,16 +54,19 @@ def test_data_download(ml_split: str = "train"):
 
     download_worldfloods_data(
         directories=files,
-        destination_dir=str(Path(HOME).joinpath("datasets")),
+        destination_dir=str(Path(test_dir).joinpath("datasets")),
         bucket_id=bucket_id,
         ml_split=ml_split,
     )
 
 
-def download_demo_image(dest_dir: Optional[str] = None):
+def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] = None):
+
+    if test_dir is None:
+        test_dir = "./"
 
     if dest_dir is None:
-        dest_dir = Path(HOME).joinpath("datasets/demo_images")
+        dest_dir = Path(test_dir).joinpath("datasets/demo_images")
         create_folder(dest_dir)
 
     # ============
@@ -82,10 +104,15 @@ def download_demo_image(dest_dir: Optional[str] = None):
     return None
 
 
-def download_demo_trainsplit_image(dest_dir: Optional[str] = None):
+def download_demo_trainsplit_image(
+    dest_dir: Optional[str] = None, test_dir: Optional[str] = None
+):
+
+    if test_dir is None:
+        test_dir = "./"
 
     if dest_dir is None:
-        dest_dir = Path(HOME).joinpath("datasets/demo_images")
+        dest_dir = Path(test_dir).joinpath("datasets/demo_images")
         create_folder(dest_dir)
 
     # ============
