@@ -57,16 +57,25 @@ def walk_bucket(events_df):
     
     custom_df = pd.DataFrame(custom_events)
     custom_df['CodeDate'] = pd.to_datetime(custom_df['CodeDate'])
-    events_df = events_df.append(custom_df)
+    update_df = events_df.append(custom_df)
     
     s2_df = pd.DataFrame(s2_recs)
     gt_df = pd.DataFrame(gt_recs)
     s2_df['READY'] = s2_df['EXT']=='.tiff'
     gt_df['READY'] = gt_df['EXT']=='.tiff'
+    s2_df['PROCESSING'] = s2_df['EXT']=='.token'
+    gt_df['PROCESSING'] = gt_df['EXT']=='.token'
     
-    events_df = pd.merge(events_df, s2_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'S2_READY'})
-    events_df = pd.merge(events_df, gt_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'GT_READY'})
-    events_df['S2_READY'] = events_df['S2_READY'].fillna(0)
-    events_df['GT_READY'] = events_df['GT_READY'].fillna(0)
+    # add the READY column -> prod() for AND condition
+    update_df = pd.merge(update_df, s2_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'S2_READY'})
+    update_df = pd.merge(update_df, gt_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'GT_READY'})
+    update_df['S2_READY'] = update_df['S2_READY'].fillna(0)
+    update_df['GT_READY'] = update_df['GT_READY'].fillna(0)
     
-    return events_df
+    # add the PROCESSING column -> sum() for OR condition
+    update_df = pd.merge(update_df, s2_df[['EVENTCODE','PROCESSING']].groupby('EVENTCODE').sum().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'PROCESSING':'S2_PROCESSING'})
+    update_df = pd.merge(update_df, gt_df[['EVENTCODE','PROCESSING']].groupby('EVENTCODE').sum().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'PROCESSING':'GT_PROCESSING'})
+    update_df['S2_READY'] = update_df['S2_READY'].fillna(0)
+    update_df['GT_READY'] = update_df['GT_READY'].fillna(0)
+    
+    return update_df
