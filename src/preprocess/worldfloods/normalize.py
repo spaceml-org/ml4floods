@@ -7,26 +7,19 @@ from src.data.worldfloods.configs import (CHANNELS_CONFIGURATIONS,
 
 
 def get_normalisation(use_channels: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Normalization for the S2 datasets
+    """Normalization for the S2 datasets.
 
-    Parameters
-    ----------
-    use_channels : str
+    Args:
+        use_channels (str): Channels that are to be used.
 
-    Returns
-    -------
-    sentinel_means : np.ndarray
-        the mean for the selected bands
-    sentinel_std : np.ndarray
-        the std for the selected bands
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Returns the mean and standard deviation.
 
-    Example
-    -------
-
-    >>> from src.preprocess.worldfloods import get_normalization
-    >>> use_channels = 'all'
-    >>> mu, std = get_normalization(use_channels)
-    """
+    Example:
+        >>> from src.preprocess.worldfloods import get_normalization
+        >>> use_channels = 'all'
+        >>> mu, std = get_normalization(use_channels)    
+    """    
 
     s2_channels = CHANNELS_CONFIGURATIONS[use_channels]
 

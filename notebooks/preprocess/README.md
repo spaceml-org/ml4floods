@@ -1,44 +1,51 @@
 # Notebooks
 
 ---
-## 1 - Tiling
+## 1 - PyTorch Dataset
 
 This is for tiling your images first, saving and then loading as train/test/val split.
 
-**Files**:
-* `1.0_demo_pytorch_tiling.ipynb`
+
+**Source**: [`1.0_demo_pytorch_tiling.ipynb`](1.0_demo_pytorch_tiling.ipynb)
+
+#### Supplementary
+
+For more details about how to do the tiling from scratch using rasterio, please see notebooks within the `tiling` folder.
+
 
 ---
-### 1.1 - Tiling Inside the PyTorch Dataset
 
-We also have a demo of the tiling **inside** the actual dataset.
+## 2 - PyTorch Dataset + Transforms
 
-**Files**:
-* `3.0_demo_pytorch_tiling.ipynb`
+How to use the Albumentations library when defining the transformations within the PyTorch Dataset.
 
----
-## 2 - Transforms
 
-How to use the Albumentations library when doing the transformations for the dataset.
+**Source**: [`2.0_demo_pytorch_transforms.ipynb`](2.0_demo_pytorch_transforms.ipynb)
 
-**Files**:
-* `1.0_demo_pytorching_tiling.ipynb`
-* `2.0_demo_pytorch_transforms.ipynb`
+#### Supplementary
+
+For more details about the albumentations library or potentially other libraries, please see notebooks within the `transformations` folder.
+
 
 ---
+
 ## 3 - PyTorch Lightning Data Module
 
-How to keep all of the operations contained for importing the dataset AND dataloader.
+In this series of demo notebooks, we demonstrate how to use the PyTorch-Lightning DataModule which abstracts many processes to streamline the data generation process. We showcase how this will allow the user flexibility but also allow us to provide config files with set parameters to enable reproducibility.
 
-**Files**:
-* `4.0_demo_pl_datamodule.ipynb`
+**Notebook I**: [`3.0_demo_pl_datamodule.ipynb`](3.0_demo_pl_datamodule.ipynb)
+
+> This notebook is a simple version that takes in local files. A demo download function is provided for demonstration purposes.
+
+**Notebook II**: [`3.1_demo_pl_datamodule_gcp.ipynb`](3.1_demo_pl_datamodule_gcp.ipynb)
+
+> This notebook reads files directly from the GCP bucket.
 
 
 ---
-### 4.0 - PyTorch Lightning Data Module w/ GCP
 
-How to keep all of the operations contained for importing the dataset AND dataloader AND only use GCP. So taking the current data as-is.
+## 4 - Data Pipeline
 
-**Files**:
-* `4.1_demo_pl_datamodule.ipynb`
+In this notebook, we generalize the above notebooks to provide an all inclusive pipeline showcase how we go from data to dataloader for the WorldFloods dataset. This features a configuration file which will drive all subsequent steps including the downloading (optional), the tiling (optional), the dataset and ML-ready dataloader.
 
+**Notebook**: [`4.0_demo_preprocess_pipeline.ipynb`](4.0_demo_preprocess_pipeline.ipynb)
