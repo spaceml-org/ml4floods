@@ -222,10 +222,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Set device ids visible to CUDA
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
     
     # Setup config
     config = setup_config(args)
+    
+    config['wandb_entity'] = args.wandb_entity
+    config['wandb_project'] = args.wandb_project
 
     # Run training
     if args.train:
