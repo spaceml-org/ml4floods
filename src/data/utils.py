@@ -307,7 +307,6 @@ def get_files_in_directory(directory: str, suffix: str) -> List[str]:
 # TODO: This is a redundant function.
 # Refactor all the code to use only one of
 # these two functions and get rid of the redundant function.
->>>>>>> main
 def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
     """Function to return the list of files within a given directory.
 
