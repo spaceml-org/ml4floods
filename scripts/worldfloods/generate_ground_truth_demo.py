@@ -29,12 +29,17 @@ from src.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
 import rasterio.windows
 
 
+%load_ext autoreload
+%autoreload 2 
+
+
 #%%
 
 # 1 - Demo images (str), floodmaps+S2 Image
+demo_image_filename = "EMSR286_09ITUANGOSOUTH_DEL_MONIT02_v1_observed_event_a.tif"
 
 # 1.1 - Demo Image
-demo_s2_image_path = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_09ITUANGOSOUTH_DEL_MONIT02_v1_observed_event_a.tif"
+demo_s2_image_path = f"gs://ml4floods/worldfloods/public/test/S2/{demo_image_filename}"
 
 # 1.2  - Demo Load the stuffs
 with rasterio.open(demo_s2_image_path, "r") as s2_image:
@@ -46,11 +51,11 @@ with rasterio.open(demo_s2_image_path, "r") as s2_image:
 """TALKING"""
 
 # 1.3 - Demo Floodmap
-demo_floodmap = "gs://ml4floods/worldfloods/public/test/floodmaps/EMSR286_09ITUANGOSOUTH_DEL_MONIT02_v1_observed_event_a.shp"
+demo_floodmap = f"gs://ml4floods/worldfloods/public/test/floodmaps/{demo_image_filename.replace('tif', 'shp')}"
 
 # 1.4 - Load Floodmap with Geopandas
 floodmap_gdf = gpd.read_file(demo_floodmap)
-
+floodmap_gdf
 #%%
 """In this cell, we want to run the previous inputs through the GT script. 
 
@@ -59,7 +64,7 @@ We are generating the original ground truth
 
 
 # Run it through the GT script
-gt, gt_meta = generate_land_water_cloud_gt(demo_s2_image_path, floodmap_gdf, None)
+gt, gt_meta = generate_land_water_cloud_gt(demo_s2_image_path, floodmap_gdf, None, keep_streams=True)
 # Pray
 
 #%%
@@ -103,18 +108,20 @@ plt.show()
 """Clouds GT"""
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(40, 20))
 
-rasterio_plot(gt_binary[cloud_channel], vmin=0, vmax=2)
+rasterio_plot(gt_binary[cloud_channel])
 
 plt.show()
 # %%
 """Water GT"""
 
 channel = 1
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(40, 20))
 
-rasterio_plot(gt_binary[water_channel], vmin=0, vmax=2)
+temp = np.zeros_like(gt_binary[water_channel])
+temp[gt_binary[water_channel]==2] = 50
+rasterio_plot(temp, cmap="gray")
 
 plt.show()
 
