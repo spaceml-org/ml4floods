@@ -67,7 +67,7 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
     return tables_floods.set_index("Code")
 
 
-def fetch_zip_files(code: str) -> List[str]:
+def fetch_zip_file_urls(code: str) -> List[str]:
     """
     This Function takes a unique Copernicus EMS hazard activation code and 
     retrieves the url which holds the zip files associated with that code.
@@ -175,6 +175,52 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
        
     open(file_path_out, 'wb').write(r.content) 
     return file_path_out
+
+def download_vector_cems_gcp(zipfile_url, folder_out="CopernicusEMS"):
+    """
+    This function downloads the zip files from the zip file url of each
+    Copernicus EMS hazard activation and saves them locally to a file
+    directory folder_out under a subdirectory based off the activation code.
+    
+    Args:
+      zipfile_url (str): Url to retrieve the downloadable zip file from 
+        the Copernicus EMS Rapid Mapping Activations site for a unique hazard 
+        code of the form 'EMSR[0-9]{3},' where the string EMSR is followed
+        by three digits taken from 0-9.
+      
+      folder_out (str): The name of the directory created to hold the Copernicus 
+        EMS zip file download.
+    
+    Returns:
+      file_path_out (str): a filepath built from the folder_out handle and the
+        Copernicus EMS activation code name embedded in the file.
+    """  
+    # Activation Code derived from zipfile_url
+    act_code = os.path.basename(zipfile_url)
+    
+    # Create a directory called folder_out to hold zipped EMS activations
+#     if not os.path.exists(folder_out):
+#         os.mkdir(folder_out)
+
+    # Create a filepath from folder_out and act_code if it doesn't exist
+    file_path_out = os.path.join(folder_out, act_code)
+    if os.path.exists(file_path_out):
+        print("\tFile %s already exists. Not downloaded" % zipfile_url)
+        return file_path_out
+
+    # Check if zipfile_url is valid before making an url request
+    if is_downloadable(zipfile_url):
+        r = requests.get(zipfile_url, allow_redirects=True)
+    else:
+        r = requests.post(zipfile_url,
+                          allow_redirects=True,
+                          data=copernicus_ems_webscrape_data)
+    
+    gcp_file_path = f"
+       
+    gcp.open(f"0_DEV/0_Raw/WorldFloods/copernicus_ems/{file_path_out}", 'wb').write(r.content) 
+    return file_path_out
+
 
 
 def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw"):
