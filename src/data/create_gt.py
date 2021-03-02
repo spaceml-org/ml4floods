@@ -121,6 +121,7 @@ def compute_water(
     floodmap: gpd.GeoDataFrame,
     window: Optional[rasterio.windows.Window] = None,
     permanent_water_path: str = None,
+    keep_streams: bool = False,
 ) -> np.ndarray:
     """
     Rasterise flood map and add JRC permanent water layer
@@ -130,10 +131,12 @@ def compute_water(
         floodmap: geopandas dataframe with the annotated polygons
         window: rasterio.windows.Window to read. Could also be slices (slice(100, 200), slice(100, 200)
         permanent_water_path: Whether or not user JRC permanent water layer (from tifffimages/PERMANENTWATERJRC folder)
+        keep_streams: A boolean flag to indicate whether to include streams in the water mask
 
     Returns:
         water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
+    
     with rasterio.open(tiffs2) as src_s2:
         if window is None:
             out_shape = src_s2.shape
@@ -150,14 +153,16 @@ def compute_water(
 
     # area_of_interest contains the extent that was labeled (values out of this pol should be marked as invalid)
     floodmap_aoi = floodmap[floodmap["w_class"] == "area_of_interest"]
+
+    floodmap_rasterise = floodmap
     if floodmap_aoi.shape[0] > 0:
         # TODO we are filtering now hydro_l look into all_touched in rasterio.features.rasterize
-        floodmap_rasterise = floodmap[
+        floodmap_rasterise = floodmap_rasterise[
             (floodmap["w_class"] != "area_of_interest")
-            & (floodmap["source"] != "hydro_l")
         ]
-    else:
-        floodmap_rasterise = floodmap[floodmap["source"] != "hydro_l"]
+
+    if not keep_streams:
+        floodmap_rasterise = floodmap_rasterise[floodmap["source"] != "hydro_l"]
 
     shapes_rasterise = (
         (g, CODES_FLOODMAP[w])
@@ -172,6 +177,7 @@ def compute_water(
         out_shape=out_shape,
         dtype=np.int16,
         transform=transform,
+        all_touched=True,
     )
 
     # Load valid mask using the area_of_interest polygons (valid pixels are those within area_of_interest polygons)
@@ -188,6 +194,7 @@ def compute_water(
             out_shape=out_shape,
             dtype=np.uint8,
             transform=transform,
+            all_touched=True,
         )
         water_mask[valid_mask == 0] = -1
 
@@ -300,6 +307,7 @@ def generate_land_water_cloud_gt(
     metadata_floodmap: Dict,
     window: Optional[rasterio.windows.Window] = None,
     permanent_water_tiff: Optional[str] = None,
+    keep_streams: bool = False,
     cloudprob_tiff: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
@@ -312,6 +320,7 @@ def generate_land_water_cloud_gt(
         metadata_floodmap: Metadata of the floodmap (not used here but kept for compatibility with generate_gt_v2)
         window:
         permanent_water_tiff:
+        keep_streams: A boolean flag to indicate whether to include streams in the water mask
         cloudprob_tiff:
         cloudprob_in_lastband:
 
@@ -337,6 +346,7 @@ def generate_land_water_cloud_gt(
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
         permanent_water_path=permanent_water_tiff,
+        keep_streams=keep_streams
     )
 
     gt = _generate_gt_v1_fromarray(s2_img, cloudprob=cloud_mask, water_mask=water_mask)
