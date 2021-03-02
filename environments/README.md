@@ -13,7 +13,7 @@
 ---
 ## Installation Instructions
 
-This repo uses the most updated `jax` library on github so this is absolutely essential, e.g. it uses the latest `np.interp` function which isn't on the `pip` distribution yet. The `environment.yml` file will have the most updated distribution.
+The `environment.yml` file will have the most updated distributions for the **packages**. If you'd like to have **jupyterlab**, see below.
 
 1. Clone the repository.
 
@@ -30,7 +30,7 @@ conda env create -f environments/environment.yml
 3. If you already have the environment installed, you can update it.
 
 ```bash
-conda activate jaxrbig
+conda activate ml4fl_py38
 conda env update --file environments/environment.yml
 ```
 
