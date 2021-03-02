@@ -259,9 +259,10 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
         # add gcp dir to each of the strings
         # TODO: make this cleaner...this feels hacky.
-        self.train_files = [f"gs://{self.bucket_name}/{x}" for x in self.train_files]
-        self.val_files = [f"gs://{self.bucket_name}/{x}" for x in self.val_files]
-        self.test_files = [f"gs://{self.bucket_name}/{x}" for x in self.test_files]
+        os.path.join(path_to_splits, "train", input_folder)
+        self.train_files = [f"gs://{os.path.join(self.bucket_name, x)}" for x in self.train_files]
+        self.val_files = [f"gs://{os.path.join(self.bucket_name, x)}" for x in self.val_files]
+        self.test_files = [f"gs://{os.path.join(self.bucket_name, x)}" for x in self.test_files]
 
         # create datasets
         self.train_dataset = WorldFloodsDatasetTiled(
