@@ -26,3 +26,5 @@ dependencies:
   - isort
   - mypy
   - opencv-python
+  # PREPROCESSING
+  - s2cloudless
