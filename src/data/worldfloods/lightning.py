@@ -5,6 +5,7 @@ import albumentations
 from src.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
 import pytorch_lightning as pl
 from pathlib import Path
+import os
 
 
 class WorldFloodsDataModule(pl.LightningDataModule):
@@ -129,9 +130,9 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
         # WORLDFLOODS Directories
         self.bucket_name = bucket_id
-        self.train_dir = f"{path_to_splits}/train/{input_folder}"
-        self.val_dir = f"{path_to_splits}/val/{input_folder}"
-        self.test_dir = f"{path_to_splits}/test/{input_folder}"
+        self.train_dir = os.path.join(path_to_splits, "train", input_folder)
+        self.val_dir = os.path.join(path_to_splits,"val", input_folder)
+        self.test_dir = os.path.join(path_to_splits,"test", input_folder)
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
