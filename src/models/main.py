@@ -82,7 +82,7 @@ def train(config):
         auto_lr_find=False,
         benchmark=False,
         distributed_backend=None,
-        gpus=config.gpus,
+        gpus=config.gpus if config.gpus != '' else None,
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
         log_gpu_memory=None,
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser('Area Ratios Segmentation Classifiers')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
-    parser.add_argument('--gpus', default='0', type=str)
+    parser.add_argument('--gpus', default='', type=str)
     # Mode: train, test or deploy
     parser.add_argument('--train', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
@@ -223,6 +223,7 @@ if __name__ == "__main__":
     
     # Set device ids visible to CUDA
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
+#     os.environ['GDAL_DISABLE_READDIR_ON_OPEN'] = 'FALSE'
     
     # Setup config
     config = setup_config(args)
