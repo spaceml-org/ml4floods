@@ -23,7 +23,9 @@ def get_dataset(data_config):
 
     bands = CHANNELS_CONFIGURATIONS[data_config.bands]
     window_size = WindowSize(height=data_config.window_size[0], width=data_config.window_size[1])
-    
+
+
+    # TODO move preparation to python lightning prepare data!
     # ======================================================
     # LOCAL PREPARATION
     # ======================================================
@@ -69,6 +71,7 @@ def get_dataset(data_config):
             train_transformations=train_transform,
             test_transformations=test_transform,
             data_dir=destination_dir,
+            bands=bands,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size
         )
