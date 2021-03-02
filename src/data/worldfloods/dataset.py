@@ -115,28 +115,6 @@ class WorldFloodsDatasetTiled(Dataset):
     This also does the tiling under the hood given the windowsize.
     
     Args:
-<<<<<<< HEAD
-        image_files (List[str]): list of specific image files
-            e.g., path/to/file/prefix/filename
-        image_prefix (str): prefix for images
-        gt_prefix (str): prefix for groundtruth
-        window_size (Tuple[int,int]): tuple for window size for sliing
-            height,width
-        transforms (List[Callable]): the transformations to be done later
-            for each tile.
-
-    Attributes
-    ----------
-    window_size: tuple(int, int)
-            size of the tiling window
-    image_prefix: str
-            the subdirectory name for the images
-    gt_prefix: str
-            the subdirectory name for the groundtruth
-    bands: List[int]
-            0-based list of bands to read from BANDS_S2
-
-=======
         image_files (List[str]): the image files to be loaded into the 
             dataset
         image_prefix (str): the input folder sub_directory
@@ -157,7 +135,8 @@ class WorldFloodsDatasetTiled(Dataset):
             training data module
         accumulated_list_of_windows_test (List[namedtuple]): a list of
             namedtuples each consisting of a filename and a rasterio.window
->>>>>>> main
+        bands: List[int]
+            0-based list of bands to read from BANDS_S2
     """
 
     def __init__(
