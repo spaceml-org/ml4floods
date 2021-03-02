@@ -293,8 +293,6 @@ def get_files_in_directory(directory: str, suffix: str) -> List[str]:
         directory (str): Directory path to get the file list from.
         suffix (str): file extension to be listed
 
-<<<<<<< HEAD
-=======
     Returns:
         List[str]: Returns the list of files that match the given extension
             within the given directory.
