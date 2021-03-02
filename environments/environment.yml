@@ -38,3 +38,7 @@ dependencies:
   - pillow
   - pytest
   - s2cloudless
+  - requests_html
+  - ee
+  - StringIO
+  - geemap
