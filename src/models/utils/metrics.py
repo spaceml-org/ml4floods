@@ -83,8 +83,8 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
             else:
                 annot[i, j] = '%.1f%%\n%d' % (p, c)    
     cm = pd.DataFrame(cm_perc, index=labels, columns=labels)
-    cm.index.name = 'Actual'
-    cm.columns.name = 'Predicted'
+    cm.index.name = 'Predicted'
+    cm.columns.name = 'Actual'
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
