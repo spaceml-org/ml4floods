@@ -10,9 +10,10 @@ from pyprojroot import here
 root = here(project_files=[".here"])
 import io
 import json
+from typing import Dict, List
 
 
-def filenames_train_test_split(bucket_name, train_test_split_file):
+def filenames_train_test_split(bucket_name, train_test_split_file) -> Dict[str, Dict[str, List[str]]] :
     if bucket_name != "" and bucket_name is not None:
         from google.cloud import storage
         client = storage.Client()

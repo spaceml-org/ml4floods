@@ -197,7 +197,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
     def __init__(
         self,
         bucket_id: str = "ml4floods",
-        filenames_train_test: Dict[Dict[List]] = None,
+        filenames_train_test: Dict[str, Dict[str, List[str]]] = None,
         input_folder: str = "S2",
         target_folder: str = "gt",
         train_transformations: Optional[Callable] = None,
