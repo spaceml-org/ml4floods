@@ -2,7 +2,7 @@ from src.data.utils import get_files_in_bucket_directory, get_files_in_directory
 from typing import Tuple, Optional, List, Callable
 from torch.utils.data import DataLoader
 import albumentations
-from src.data.worldfloods.dataset import WorldFloodsDatasetTiled
+from src.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
 import pytorch_lightning as pl
 from pathlib import Path
 
@@ -84,12 +84,11 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             window_size=self.window_size,
             transforms=self.test_transform, 
         )
-        self.test_dataset = WorldFloodsDatasetTiled(
+        self.test_dataset = WorldFloodsDataset(
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            window_size=self.window_size,
             transforms=self.test_transform,
         )
 
@@ -188,11 +187,10 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             bands=self.bands,
             lock_read=True
         )
-        self.test_dataset = WorldFloodsDatasetTiled(
+        self.test_dataset = WorldFloodsDataset(
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
-            window_size=self.window_size,
             transforms=self.test_transform,
             bands=self.bands,
             lock_read=True
