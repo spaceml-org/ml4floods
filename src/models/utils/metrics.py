@@ -141,8 +141,8 @@ def plot_metrics(metrics_dict, label_names):
 
         tp = cur_conf[1,1]
         tn = cur_conf[0,0]
-        fp = cur_conf[0,1]
-        fn = cur_conf[1,0]
+        fp = cur_conf[1,0]
+        fn = cur_conf[0,1]
 
         tp_rate = tp / (tp+fn)
         fp_rate = fp / (fp+tn)
