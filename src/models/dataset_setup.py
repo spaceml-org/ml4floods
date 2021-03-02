@@ -1,12 +1,25 @@
 from src.preprocess.worldfloods import normalize as wf_normalization
 import src.preprocess.transformations as transformations
 from src.preprocess.tiling import WindowSize, save_tiles
+from src.data import utils
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 import os
 from pathlib import Path
 from pyprojroot import here
 # spyder up to find the root
 root = here(project_files=[".here"])
+import io
+import json
+
+
+def filenames_train_test_split(bucket_name, train_test_split_file):
+    if bucket_name != "" and bucket_name is not None:
+        from google.cloud import storage
+        client = storage.Client()
+        with io.BytesIO() as file_obj:
+            client.download_blob_to_file(f"gs://{bucket_name}/{train_test_split_file}", file_obj)
+            file_obj.seek(0)
+            return json.load(file_obj)
 
 
 def get_dataset(data_config):
@@ -24,45 +37,23 @@ def get_dataset(data_config):
     bands = CHANNELS_CONFIGURATIONS[data_config.bands]
     window_size = WindowSize(height=data_config.window_size[0], width=data_config.window_size[1])
 
-
-    # TODO move preparation to python lightning prepare data!
     # ======================================================
     # LOCAL PREPARATION
     # ======================================================
-    if 'local' in data_config.loader_type:
-        from src.data.worldfloods.lightning import WorldFloodsDataModule
-        from src.data.utils import create_folder, get_files_in_bucket_directory, save_file_from_bucket
-        image_count = data_config.get('image_count', -1)
-        
-        destination_dir = Path(root).joinpath('datasets', f"{data_config.path_to_splits}")
-        filenames = {
-            "train": {},
-            "val": {},
-            "test": {}
-        }
-        # Read Filenames from bucket
-        for split in filenames.keys():
-            filenames[split][data_config.input_folder] = get_files_in_bucket_directory(data_config.bucket_id, f"{data_config.path_to_splits}/{split}/{data_config.input_folder}", suffix=".tif")[:image_count]
-            filenames[split][data_config.target_folder] = get_files_in_bucket_directory(data_config.bucket_id, f"{data_config.path_to_splits}/{split}/{data_config.target_folder}", suffix=".tif")[:image_count]
-
+    local_destination_dir = data_config.path_to_splits
+    filenames_train_test = filenames_train_test_split(data_config.bucket_id, data_config.train_test_split_file)
     
     # ======================================================
     # LOCAL DATASET SETUP
     # ======================================================
     if data_config.loader_type == 'local':
+        from src.data.worldfloods.lightning import WorldFloodsDataModule
         print('Using local dataset for this run')
         
         # Read Files from bucket
-        for split in filenames.keys():
-            for k in filenames[split].keys():
-                create_folder(f"{destination_dir}/{split}/{k}")
-                for fp in filenames[split][k]:
-                    raw_fp = fp.split(f"{split}/{k}/")[1]
-                    if not os.path.isfile(f"{destination_dir}/{split}/{k}/{raw_fp}"):
-                        save_file_from_bucket(data_config.bucket_id, fp, f"{destination_dir}/{split}/{k}/")
-                        print(f"Loaded {fp}")
-                    else:
-                        print(f"{destination_dir}/{split}/{k}/{fp} already exists")
+        download_tiffs_from_bucket(data_config.bucket_id,
+                                   [data_config.input_folder, data_config.target_folder],
+                                   filenames_train_test, local_destination_dir)
                         
         # CREATE DATASET                
         dataset = WorldFloodsDataModule(
@@ -70,7 +61,7 @@ def get_dataset(data_config):
             target_folder=data_config.target_folder,
             train_transformations=train_transform,
             test_transformations=test_transform,
-            data_dir=destination_dir,
+            data_dir=local_destination_dir,
             bands=bands,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size
@@ -80,33 +71,33 @@ def get_dataset(data_config):
     # ======================================================
     # LOCAL TILED DATASET SETUP
     # ======================================================
-    elif data_config.loader_type == 'local_tiles':
-        print('Using local pre-tiled dataset for this run')
-        
-        # Read Files from bucket
-        for split in filenames.keys():
-            for k in filenames[split].keys():
-                create_folder(f"{destination_dir}_tiles/{split}/{k}")
-                cur_bands = bands if data_config.input_folder == k else [1,]
-                for fp in filenames[split][k]:
-                    raw_fp = fp.split(f"{split}/{k}/")[1].split('.tif')[0]
-                    if not os.path.isfile(f"{destination_dir}_tiles/{split}/{k}/{raw_fp}_tile_0.tif"):     
-                        save_tiles(f"gs://{data_config.bucket_id}/{fp}", f"{destination_dir}_tiles/{split}/{k}/", cur_bands, window_size)
-                        print(f'Loaded {fp}')
-                    else:
-                        print(f'Tiles for {fp} already exist')
-           
-        # CREATE DATASET
-        dataset = WorldFloodsDataModule(
-            input_folder=data_config.input_folder,
-            target_folder=data_config.target_folder,
-            train_transformations=train_transform,
-            test_transformations=test_transform,
-            data_dir=destination_dir,
-            bands=bands,
-            window_size=data_config.window_size,
-            batch_size=data_config.batch_size)
-        dataset.setup()
+    # elif data_config.loader_type == 'local_tiles':
+    #     print('Using local pre-tiled dataset for this run')
+    #
+    #     # Read Files from bucket
+    #     for split in filenames_train_test.keys():
+    #         for k in filenames_train_test[split].keys():
+    #             create_folder(f"{local_destination_dir}_tiles/{split}/{k}")
+    #             cur_bands = bands if data_config.input_folder == k else [1,]
+    #             for fp in filenames_train_test[split][k]:
+    #                 raw_fp = fp.split(f"{split}/{k}/")[1].split('.tif')[0]
+    #                 if not os.path.isfile(f"{local_destination_dir}_tiles/{split}/{k}/{raw_fp}_tile_0.tif"):
+    #                     save_tiles(f"gs://{data_config.bucket_id}/{fp}", f"{local_destination_dir}_tiles/{split}/{k}/", cur_bands, window_size)
+    #                     print(f'Loaded {fp}')
+    #                 else:
+    #                     print(f'Tiles for {fp} already exist')
+    #
+    #     # CREATE DATASET
+    #     dataset = WorldFloodsDataModule(
+    #         input_folder=data_config.input_folder,
+    #         target_folder=data_config.target_folder,
+    #         train_transformations=train_transform,
+    #         test_transformations=test_transform,
+    #         data_dir=destination_dir,
+    #         bands=bands,
+    #         window_size=data_config.window_size,
+    #         batch_size=data_config.batch_size)
+    #     dataset.setup()
         
     
     # ======================================================
@@ -118,7 +109,7 @@ def get_dataset(data_config):
         
         dataset = WorldFloodsGCPDataModule(
             bucket_id=data_config.bucket_id,
-            path_to_splits=data_config.path_to_splits,
+            filenames_train_test=filenames_train_test,
             input_folder=data_config.input_folder,
             target_folder=data_config.target_folder,
             window_size=window_size,
@@ -138,6 +129,28 @@ def get_dataset(data_config):
     print("test", dataset.test_dataset.__len__(), " tiles")
     
     return dataset
+
+
+def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local_destination_dir):
+    for split in filenames.keys():
+        for input_target_folder in input_target_folders:
+            folder_local = os.path.join(local_destination_dir, split, input_target_folder)
+            os.makedirs(folder_local, exist_ok=True)
+            for fp in filenames[split][input_target_folder]:
+                basename = os.path.basename(fp)
+                file_dest = os.path.join(folder_local, basename)
+                if not os.path.isfile(file_dest):
+                    save_file(bucket_id, fp, file_dest)
+                    print(f"Loaded {fp}")
+                else:
+                    print(f"{file_dest} already exists")
+
+
+def save_file(bucket_id, remote_blob_name, local_file):
+    from google.cloud import storage
+    # get blob
+    blob = storage.Client().get_bucket(bucket_id).get_blob(remote_blob_name)
+    blob.download_to_filename(local_file)
 
 
 def get_transformations(data_config):

@@ -1,5 +1,5 @@
 from src.data.utils import get_files_in_bucket_directory, get_files_in_directory
-from typing import Tuple, Optional, List, Callable
+from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
 import albumentations
 from src.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
@@ -55,8 +55,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         data_dir: str = "./",
         input_folder: str = "S2",
         target_folder: str = "gt",
-        train_transformations: Optional[List[Callable]] = None,
-        test_transformations: Optional[List[Callable]] = None,
+        train_transformations: Optional[Callable] = None,
+        test_transformations: Optional[Callable] = None,
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
@@ -162,8 +162,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
     
     Args:
         bucket_id (str): the GCP bucket name
-        path_to_splits: (str): the top level directory where the input
-            and target folder directories are found relevative to the bucket
+        filenames_train_test: (str): Dict with the train, test and validation images
         input_folder (str): the input folder sub_directory
         target_folder (str): the target folder sub directory
         train_transformations (Callable): the transformations used within the 
@@ -198,11 +197,11 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
     def __init__(
         self,
         bucket_id: str = "ml4floods",
-        path_to_splits: str = "worldfloods/public",
+        filenames_train_test: Dict[Dict[List]] = None,
         input_folder: str = "S2",
         target_folder: str = "gt",
-        train_transformations: Optional[List[Callable]] = None,
-        test_transformations: Optional[List[Callable]] = None,
+        train_transformations: Optional[Callable] = None,
+        test_transformations: Optional[Callable] = None,
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
@@ -221,9 +220,14 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
         # WORLDFLOODS Directories
         self.bucket_name = bucket_id
-        self.train_dir = os.path.join(path_to_splits, "train", input_folder)
-        self.val_dir = os.path.join(path_to_splits,"val", input_folder)
-        self.test_dir = os.path.join(path_to_splits,"test", input_folder)
+        self.train_files = filenames_train_test["train"][input_folder]
+        self.val_files = filenames_train_test["val"][input_folder]
+        self.test_files = filenames_train_test["test"][input_folder]
+
+        # TODO: make this cleaner...this feels hacky.
+        self.train_files = [f"gs://{self.bucket_name}/{x}" for x in self.train_files]
+        self.val_files = [f"gs://{self.bucket_name}/{x}" for x in self.val_files]
+        self.test_files = [f"gs://{self.bucket_name}/{x}" for x in self.test_files]
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
@@ -237,8 +241,6 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         """Does Nothing for now. Here for compatibility."""
-        # TODO: potentially download the data
-        # TODO: create the train/test/val structure
         # TODO: here we can check for correspondence between the files
         pass
 
@@ -247,21 +249,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         file paths in the bucket. This also does the tiling operations.
         """
         # get filenames from the bucket
-        self.train_files = get_files_in_bucket_directory(
-            self.bucket_name, self.train_dir, ".tif"
-        )
-        self.val_files = get_files_in_bucket_directory(
-            self.bucket_name, self.val_dir, ".tif"
-        )
-        self.test_files = get_files_in_bucket_directory(
-            self.bucket_name, self.test_dir, ".tif"
-        )
 
         # add gcp dir to each of the strings
-        # TODO: make this cleaner...this feels hacky.
-        self.train_files = [f"gs://{self.bucket_name}/{x}" for x in self.train_files]
-        self.val_files = [f"gs://{self.bucket_name}/{x}" for x in self.val_files]
-        self.test_files = [f"gs://{self.bucket_name}/{x}" for x in self.test_files]
 
         # create datasets
         self.train_dataset = WorldFloodsDatasetTiled(
