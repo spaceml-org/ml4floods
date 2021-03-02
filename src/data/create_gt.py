@@ -203,6 +203,7 @@ def compute_water(
     return water_mask
 
 
+# TODO: Have a single function. No need of 2 versions
 def _read_s2img_cloudmask_v1(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
@@ -226,7 +227,7 @@ def _read_s2img_cloudmask_v1(
     bands_read = list(range(1, len(BANDS_S2)))
     with rasterio.open(s2tiff, "r") as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
-    print(cloudprob_in_lastband)
+    # print(cloudprob_in_lastband)
     if cloudprob_in_lastband:
         with rasterio.open(s2tiff, "r") as s2_rst:
             last_band = s2_rst.count
@@ -247,6 +248,7 @@ def _read_s2img_cloudmask_v1(
     return s2_img, cloud_mask
 
 
+# TODO: Have a single function. No need of 2 versions
 def _read_s2img_cloudmask_v2(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
@@ -268,7 +270,7 @@ def _read_s2img_cloudmask_v2(
 
     """
     bands_read = list(range(1, len(BANDS_S2) + 1))
-    bands_read = list(range(1, 4))  # bands in rasterio are 1-based!
+    # bands_read = list(range(1, 4))  # bands in rasterio are 1-based!
     with rasterio.open(s2tiff, "r") as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
     print(cloudprob_in_lastband)
@@ -438,7 +440,7 @@ def generate_water_cloud_binary_gt(
         water_mask=water_mask,
         invalid_clouds_threshold=invalid_clouds_threshold,
     )
-
+ 
     # Compute metadata of the ground truth
     metadata = {}
     metadata["gtversion"] = "v2"
@@ -482,6 +484,10 @@ def generate_water_cloud_binary_gt(
 
     with rasterio.open(s2tiff) as s2_src:
         metadata["bounds"] = s2_src.bounds
+
+
+
+    
 
     return gt, metadata
 
@@ -720,6 +726,9 @@ def _generate_gt_v1_fromarray(
     return gt
 
 
+# THIS FUNCTION WORKS
+# TODO: Would be nice to return the original water mask and 
+# do all the extra processing at the DataLoader end.
 def _generate_gt_fromarray(
     s2_img: np.ndarray,
     cloudprob: np.ndarray,
@@ -746,19 +755,21 @@ def _generate_gt_fromarray(
         A pixel is set to invalid if it's invalid in the water_mask layer or invalid in the s2_img (all values to zero)
 
     """
+    
     invalids = np.all(s2_img == 0, axis=0) & (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
     cloudgt[cloudprob > 0.5] = 2
     cloudgt[invalids] = 0
-
+    
     # For clouds we could set to invalid only if the s2_img is invalid (not the water mask)?
 
     # Set watermask values for compute stats
-    watergt = np.ones(water_mask.shape, dtype=np.uint8)
-    watergt[water_mask >= 1] = 2
+    watergt = np.ones(water_mask.shape, dtype=np.uint8) # whole image is 1
+    watergt[water_mask >= 1] = 2                        # only water is 2
     watergt[invalids] = 0
+    
 
     print(f"Number cloudgt invalids: {np.sum(cloudgt==0)}")
     print(f"Number watergt invalids: {np.sum(watergt==0)}")
@@ -767,4 +778,6 @@ def _generate_gt_fromarray(
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
         watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
 
-    return np.stack([water_mask, cloudgt], axis=0)
+    stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
+
+    return stacked_cloud_water_mask
