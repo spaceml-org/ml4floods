@@ -82,10 +82,10 @@ class WorldFloodsDataset(Dataset):
         image_name = self.image_files[idx]
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
-        image_tif = rasterio_read(image_name, self._lock, window=None,
+        image_tif = rasterio_read(image_name, self._lock,
                                   channels=[c + 1 for c in self.bands_read])
 
-        mask_tif = rasterio_read(y_name, self._lock, window=None)
+        mask_tif = rasterio_read(y_name, self._lock)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
@@ -180,9 +180,10 @@ class WorldFloodsDatasetTiled(Dataset):
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
-        image_tif = rasterio_read(image_name, self._lock, sub_window.window,
-                                       [c+1 for c in self.channels_read])
-        mask_tif = rasterio_read(y_name, self._lock, sub_window.window)
+        image_tif = rasterio_read(image_name, self._lock, channels=[c+1 for c in self.channels_read],
+                                  kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
+        mask_tif = rasterio_read(y_name, self._lock, channels=None,
+                                 kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
@@ -201,9 +202,9 @@ class WorldFloodsDatasetTiled(Dataset):
         return len(self.accumulated_list_of_windows_test)
 
 
-def rasterio_read(image_name, lock, window, channels=None):
+def rasterio_read(image_name, lock, channels=None, kwargs_rasterio={}):
     with lock:
         with rasterio.open(image_name) as f:
-            im_tif = f.read(channels, window=window, boundless=True, fill_value=0)
+            im_tif = f.read(channels, **kwargs_rasterio)
 
     return im_tif
