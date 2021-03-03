@@ -8,6 +8,7 @@ import seaborn as sns
 import pandas as pd
 
 
+@torch.no_grad()
 def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
                        remove_class_zero=False) -> torch.Tensor:
     """
@@ -232,7 +233,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
                                                   test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]
 
             # Discount invalids
-            confusions_batch[:, 0, 0] -= torch.sum(invalids)
+            confusions_batch[:, 0, 0] -= torch.sum(invalids.to(confusions_batch.device))
 
             results.append(confusions_batch.numpy())
 
