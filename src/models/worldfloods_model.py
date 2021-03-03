@@ -32,7 +32,8 @@ class WorldFloodsModel(pl.LightningModule):
         
         ###### IF PRETRAINED WEIGHTS ######
         if model_params.use_pretrained_weights:
-            filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type, model_params.hyperparameters.model_type  + "_final_weights.pt")
+            filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type,
+                                    model_params.hyperparameters.model_type  + "_final_weights.pt")
             self.load_pretrained_architecture(filepath)
 
     def training_step(self, batch: Dict, batch_idx) -> float:
@@ -139,6 +140,7 @@ class WorldFloodsModel(pl.LightningModule):
     #     load_model_weights(self.network, filepath)
 
     def batch_to_unnorm_rgb(self, x):
+        # TODO consider bands!!
         model_input_npy = x.cpu().numpy()
         norm_facts = SENTINEL2_NORMALIZATION.copy()
         norm_facts = norm_facts[..., np.newaxis, np.newaxis]
