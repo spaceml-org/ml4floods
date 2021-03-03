@@ -203,7 +203,8 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         # Set invalids in pred to zero
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
 
-        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical, num_class=num_class, remove_class_zero=False)
+        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical,
+                                              num_class=num_class, remove_class_zero=False)
         # confusions_batch is (batch_size, num_class, num_class)
 
         # Discount invalids
@@ -214,7 +215,8 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         
         # Thresholded version for precision recall curves
         # Set clouds to land
-        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long, device=torch.device("cpu"))
+        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long,
+                                                      device=ground_truth_outputs.device)
 
         ground_truth_outputs[ground_truth_outputs == 2] = 0
 
