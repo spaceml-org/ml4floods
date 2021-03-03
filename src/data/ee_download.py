@@ -1,10 +1,13 @@
-import ee
-from google.cloud import storage
-import traceback
-import requests
 import shutil
 import tempfile
-from src.data.config import  BANDS_S2
+import traceback
+
+import ee
+import requests
+from google.cloud import storage
+
+from src.data.config import BANDS_S2
+
 
 def get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)

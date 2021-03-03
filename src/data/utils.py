@@ -4,20 +4,116 @@ These are mainly used for explorations, testing, and demonstrations.
 """
 
 import argparse
-import subprocess
-import rasterio
 import json
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from google.cloud import storage
-from shapely.ops import cascaded_union
-from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
-import numpy as np
 import geopandas as gpd
+import numpy as np
+import rasterio
+from google.cloud import storage
 from shapely.geometry import Polygon
+from shapely.ops import cascaded_union
+
+from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
+from dataclasses import dataclass, field
 
 # HOME = str(Path.home())
+
+
+@dataclass
+class GCPPath:
+    full_path: str
+    bucket_id: str = field(default=None)
+    parent_path: str = field(default=None)
+    file_name: str = field(default=None)
+    suffix: str = field(default=None)
+
+    def __init__(self, full_path):
+
+        self.full_path = full_path
+        #         print(self.full_path)
+        self.bucket_id = str(Path(full_path.split("gs://")[1]).parts[0])
+
+        #         print(self.bucket_id)
+        self.parent_path = str(Path(full_path.split(self.bucket_id)[1]).parent)[1:]
+        #         print(self.parent_path)
+        self.file_name = str(Path(full_path).name)
+        #         print(self.file_name)
+        self.suffix = self.file_name.split(".")[1]
+
+    #         print(self.suffix)
+
+    def get_files_in_parent_directory(self, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+        # check if it exists
+
+        files = ["gs://" + str(Path(self.bucket_id).joinpath(x.name)) for x in blobs]
+        return files
+
+    def get_files_in_parent_directory_with_suffix(self, suffix=str, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+        # check if it exists
+        files = [
+            "gs://" + str(Path(self.bucket_id).joinpath(x.name))
+            for x in blobs
+            if str(Path(x.name).suffix) == suffix
+        ]
+        return files
+
+    def transfer_file_to_bucket(
+        self, destination_bucket_name: str, destination_file_path: str, **kwargs
+    ):
+
+        storage_client = storage.Client(**kwargs)
+        source_bucket = storage_client.get_bucket(self.bucket_id)
+        source_blob = source_bucket.blob(self.get_file_path())
+
+        destination_bucket = storage_client.get_bucket(destination_bucket_name)
+
+        destination_blob_name = str(
+            Path(destination_file_path).joinpath(self.file_name)
+        )
+        # copy to new destination
+        new_blob = source_bucket.copy_blob(
+            source_blob, destination_bucket, destination_blob_name
+        )
+
+        return self
+
+    #         return get_files_in_bucket_directory(self.bucket_id, directory=self.parent_path, suffix=self.suffix)
+
+    def get_file_path(self):
+        return str(Path(self.parent_path).joinpath(self.file_name))
+
+    def replace_bucket(self, bucket_id):
+        self.bucket_id = bucket_id
+        return self
+
+    def replace_file_name(self, file_name):
+        self.file_name = file_name
+        return self
+
+    def replace(self, original: str, replacement: str):
+
+        full_path = self.full_path.replace(original, replacement)
+
+        #         self.__init__(full_path)
+
+        return GCPPath(full_path)
 
 
 def download_data_from_bucket(
@@ -403,3 +499,72 @@ def parse_gcp_path(full_path) -> Tuple[str]:
     file_name = str(Path(full_path).name)
 
     return bucket_id, file_path, file_name
+
+
+def copy_file_between_gcpbuckets(
+    source_bucket_name: str,
+    source_file_path: str,
+    destination_bucket_name: str,
+    destination_blob_name: str,
+    **kwargs,
+) -> None:
+    """
+    Function for copying files between directories or buckets. it will use GCP's copy
+    function.
+
+    Args:
+        source_bucket_name (str): name of SOURCE bucket
+        source_file_path (str): name of SOURCE file path (without bucket name)
+        destination_bucket_name (str): name of DESTINATION bucket
+        destination_blob_name (str): name of DESTINATION file path (without bucket name)
+
+    Examples:
+        >>> source_bucket_name = "bucket_id_source"
+        >>> destination_bucket_name = "destination_bucket_name"
+        >>> file_path_from = "path/to/data.tif"
+        >>> file_path_to = "path/to/data.tif"
+        >>> mv_blob(source_bucket_name, file_path_from, destination_bucket_name, file_path_to)
+    """
+    storage_client = storage.Client(**kwargs)
+    source_bucket = storage_client.get_bucket(source_bucket_name)
+    source_blob = source_bucket.blob(source_file_path)
+    destination_bucket = storage_client.get_bucket(destination_bucket_name)
+
+    # copy to new destination
+    new_blob = source_bucket.copy_blob(
+        source_blob, destination_bucket, destination_blob_name
+    )
+
+    return None
+
+
+def add_gcp_prefix(filepath: str, gcp_prefix: str):
+    """Adds the annoying GCP prefix!!!!!
+    Args:
+        filepath (str): the filepath within the bucket
+        gcp_prefix (str): the bucketname
+    Returns:
+        filepath (str): with the gcp prefix
+    Examples:
+        >>> add_gcp_prefix("test", "bucket")
+        gs://bucket/test
+    """
+    return "gs://" + str(Path(gcp_prefix).joinpath(filepath))
+
+
+def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
+    """Adds the annoying GCP prefix!!!!!
+    Args:
+        filepath (str): the filepath within the bucket
+        gcp_prefix (str): the bucketname
+    Returns:
+        filepath (str): with the gcp prefix
+    Examples:
+        >>> add_gcp_prefix("test", "bucket")
+        gs://bucket/test
+    """
+    filepath = filepath.replace("gs://", "")
+    if gcp_prefix:
+        return str(Path(*Path(filepath).parts[1:]))
+    else:
+        return filepath

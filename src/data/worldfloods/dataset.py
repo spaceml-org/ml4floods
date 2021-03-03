@@ -2,9 +2,7 @@ import os
 import random
 from datetime import datetime
 from pathlib import Path
-from src.preprocess.tiling import WindowSize
 from typing import Callable, Dict, List, Optional, Tuple
-
 
 import numpy as np
 import rasterio
@@ -14,9 +12,8 @@ from torch.utils.data import Dataset
 from src.data.utils import check_path_exists
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from src.data.worldfloods.prepare_data import prepare_data_func
+from src.preprocess.tiling import WindowSize
 from src.preprocess.utils import get_list_of_window_slices
-
-
 
 
 class WorldFloodsDataset(Dataset):

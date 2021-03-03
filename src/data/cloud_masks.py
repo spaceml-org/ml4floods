@@ -1,8 +1,9 @@
-from s2cloudless import S2PixelCloudDetector
-import rasterio
 import argparse
 import os
+
 import numpy as np
+import rasterio
+from s2cloudless import S2PixelCloudDetector
 
 
 def sentinel2_to_cloud_mask_preprocess(x):

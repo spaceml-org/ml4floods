@@ -1,18 +1,20 @@
-from requests_html import HTMLSession
-import pandas as pd
-import requests
+import datetime
+import json
 import os
 import shutil
-from typing import List, Dict, Optional
 import zipfile
 from glob import glob
-from shapely.ops import cascaded_union
-from src.data.config import RENAME_SATELLITE, ACCEPTED_FIELDS
-import numpy as np
-import datetime
+from typing import Dict, List, Optional
+
 import geopandas as gpd
-import json
+import numpy as np
+import pandas as pd
+import requests
+from requests_html import HTMLSession
+from shapely.ops import cascaded_union
+
 from src.data import utils
+from src.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
 
 
 def is_downloadable(url: str) -> bool:

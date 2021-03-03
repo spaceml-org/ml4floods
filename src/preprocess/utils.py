@@ -4,7 +4,8 @@ import sys
 from typing import List
 
 import rasterio
-from src.preprocess.tiling import WindowSlices, WindowSize, get_window_tiles
+
+from src.preprocess.tiling import WindowSize, WindowSlices, get_window_tiles
 
 
 def get_list_of_window_slices(

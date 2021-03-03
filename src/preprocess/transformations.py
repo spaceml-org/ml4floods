@@ -4,19 +4,12 @@ import albumentations
 import cv2
 import numpy as np
 import torch
-from albumentations import (
-    Compose,
-    Flip,
-    GaussNoise,
-    MotionBlur,
-    Normalize,
-    PadIfNeeded,
-    RandomRotate90,
-    ShiftScaleRotate,
-)
+from albumentations import (Compose, Flip, GaussNoise, MotionBlur, Normalize,
+                            PadIfNeeded, RandomRotate90, ShiftScaleRotate)
 from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
-from albumentations.core.transforms_interface import BasicTransform, DualTransform
+from albumentations.core.transforms_interface import (BasicTransform,
+                                                      DualTransform)
 
 from src.preprocess.worldfloods.normalize import get_normalisation
 

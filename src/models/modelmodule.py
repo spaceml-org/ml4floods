@@ -1,8 +1,9 @@
+from typing import List, Optional, Tuple
+
 import pytorch_lightning as pl
-from typing import Tuple
 import torch
+
 from src.models.utils import losses, metrics
-from typing import List, Optional
 
 
 class WorldFloodsModel(pl.LightningModule):

@@ -1,16 +1,19 @@
 import logging
-import pandas as pd
-import numpy as np
-from rasterio import features
-import rasterio
-import geopandas as gpd
 import os
-from shapely.ops import cascaded_union
-from src.data.utils import filter_pols, filter_land
-from typing import Optional, Dict, Tuple
-from src.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
+from typing import Dict, Optional, Tuple
 
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import rasterio
 import rasterio.windows
+from rasterio import features
+from shapely.ops import cascaded_union
+from rasterio.crs import CRS
+from affine import Affine
+
+from src.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
+from src.data.utils import filter_land, filter_pols
 
 
 def generate_floodmap_v1(
@@ -136,7 +139,7 @@ def compute_water(
     Returns:
         water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
-    
+
     with rasterio.open(tiffs2) as src_s2:
         if window is None:
             out_shape = src_s2.shape
@@ -280,7 +283,6 @@ def _read_s2img_cloudmask_v2(
     # bands_read = list(range(1, 4))  # bands in rasterio are 1-based!
     with rasterio.open(s2tiff, "r") as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
-    print(cloudprob_in_lastband)
     if cloudprob_in_lastband:
         with rasterio.open(s2tiff, "r") as s2_rst:
             last_band = s2_rst.count
@@ -302,9 +304,8 @@ def _read_s2img_cloudmask_v2(
 
 
 def generate_land_water_cloud_gt(
-    s2tiff: str,
-    floodmap: gpd.GeoDataFrame,
-    metadata_floodmap: Dict,
+    s2_image_path: str,
+    floodmap_path: str,
     window: Optional[rasterio.windows.Window] = None,
     permanent_water_tiff: Optional[str] = None,
     keep_streams: bool = False,
@@ -315,9 +316,8 @@ def generate_land_water_cloud_gt(
     Old ground truth generating function (inherited from worldfloods_internal.compute_meta_tif.generate_mask_meta_clouds)
 
     Args:
-        s2tiff:
+        s2_image_path:
         floodmap:
-        metadata_floodmap: Metadata of the floodmap (not used here but kept for compatibility with generate_gt_v2)
         window:
         permanent_water_tiff:
         keep_streams: A boolean flag to indicate whether to include streams in the water mask
@@ -329,11 +329,13 @@ def generate_land_water_cloud_gt(
         meta: dictionary with metadata information
 
     """
+    # open floodmap with geopandas
+    floodmap = gpd.read_file(floodmap_path)
     # =========================================
     # Generate Cloud Mask given S2 Data
     # =========================================
     s2_img, cloud_mask = _read_s2img_cloudmask_v1(
-        s2tiff,
+        s2_image_path,
         window=window,
         cloudprob_tiff=cloudprob_tiff,
         cloudprob_in_lastband=cloudprob_in_lastband,
@@ -342,11 +344,11 @@ def generate_land_water_cloud_gt(
     # Compute Water Mask
     # =========================================
     water_mask = compute_water(
-        s2tiff,
+        s2_image_path,
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
         permanent_water_path=permanent_water_tiff,
-        keep_streams=keep_streams
+        keep_streams=keep_streams,
     )
 
     gt = _generate_gt_v1_fromarray(s2_img, cloudprob=cloud_mask, water_mask=water_mask)
@@ -356,7 +358,7 @@ def generate_land_water_cloud_gt(
     metadata["gtversion"] = "v1"
     metadata["encoding_values"] = {-1: "invalid", 0: "land", 1: "water", 2: "cloud"}
     metadata["shape"] = list(water_mask.shape)
-    metadata["s2tiff"] = os.path.basename(s2tiff)
+    metadata["s2_image_path"] = os.path.basename(s2_image_path)
     metadata["permanent_water_tiff"] = (
         os.path.basename(permanent_water_tiff)
         if permanent_water_tiff is not None
@@ -389,7 +391,7 @@ def generate_land_water_cloud_gt(
         "pixels water S2"
     ], f'Different number of water pixels than expected {metadata["pixels flood water S2"]} {metadata["pixels hydro water S2"]} {metadata["pixels permanent water S2"]}, {metadata["pixels water S2"]} '
 
-    with rasterio.open(s2tiff) as s2_src:
+    with rasterio.open(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
 
     return gt, metadata
@@ -450,7 +452,7 @@ def generate_water_cloud_binary_gt(
         water_mask=water_mask,
         invalid_clouds_threshold=invalid_clouds_threshold,
     )
- 
+
     # Compute metadata of the ground truth
     metadata = {}
     metadata["gtversion"] = "v2"
@@ -494,10 +496,6 @@ def generate_water_cloud_binary_gt(
 
     with rasterio.open(s2tiff) as s2_src:
         metadata["bounds"] = s2_src.bounds
-
-
-
-    
 
     return gt, metadata
 
@@ -737,7 +735,7 @@ def _generate_gt_v1_fromarray(
 
 
 # THIS FUNCTION WORKS
-# TODO: Would be nice to return the original water mask and 
+# TODO: Would be nice to return the original water mask and
 # do all the extra processing at the DataLoader end.
 def _generate_gt_fromarray(
     s2_img: np.ndarray,
@@ -765,21 +763,20 @@ def _generate_gt_fromarray(
         A pixel is set to invalid if it's invalid in the water_mask layer or invalid in the s2_img (all values to zero)
 
     """
-    
+
     invalids = np.all(s2_img == 0, axis=0) & (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
     cloudgt[cloudprob > 0.5] = 2
     cloudgt[invalids] = 0
-    
+
     # For clouds we could set to invalid only if the s2_img is invalid (not the water mask)?
 
     # Set watermask values for compute stats
-    watergt = np.ones(water_mask.shape, dtype=np.uint8) # whole image is 1
-    watergt[water_mask >= 1] = 2                        # only water is 2
+    watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1
+    watergt[water_mask >= 1] = 2  # only water is 2
     watergt[invalids] = 0
-    
 
     print(f"Number cloudgt invalids: {np.sum(cloudgt==0)}")
     print(f"Number watergt invalids: {np.sum(watergt==0)}")
@@ -791,3 +788,11 @@ def _generate_gt_fromarray(
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 
     return stacked_cloud_water_mask
+
+
+def _get_image_geocoords(image_path: str) -> Tuple[CRS, Affine]:
+    """Get important geocoordinates from saved image"""
+    with rasterio.open(image_path) as src_image:
+        crs = src_image.crs
+        transform = src_image.transform
+    return crs, transform
