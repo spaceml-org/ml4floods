@@ -1,11 +1,10 @@
-from src.data.utils import get_files_in_bucket_directory, get_files_in_directory
+from src.data.utils import get_files_in_directory
 from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
-import albumentations
 from src.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
 import pytorch_lightning as pl
 from pathlib import Path
-import os
+from src.preprocess.utils import get_list_of_window_slices
 
 
 class WorldFloodsDataModule(pl.LightningDataModule):
@@ -63,16 +62,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
     ):
         super().__init__()
         self.data_dir = data_dir
-        self.train_transform = (
-            albumentations.Compose(train_transformations)
-            if train_transformations is not None
-            else None
-        )
-        self.test_transform = (
-            albumentations.Compose(test_transformations)
-            if test_transformations is not None
-            else None
-        )
+        self.train_transform = train_transformations
+        self.test_transform = test_transformations
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
@@ -86,7 +77,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         """Does Nothing for now. Here for compatibility."""
-        # TODO: create the train/test/val structure
         # TODO: here we can check for correspondence between the files
         pass
 
@@ -100,7 +90,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
         # loop through the naming splits
         for isplit in splits:
-
             # get the subdirectory
             sub_dir = Path(self.data_dir).joinpath(isplit).joinpath(self.image_prefix)
             # append filenames to split dictionary
@@ -112,17 +101,17 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.test_files = files["test"]
 
         # create datasets
+        # TODO cache the list of window_slices
         self.train_dataset = WorldFloodsDatasetTiled(
-            image_files=self.train_files,
+            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
             bands=self.bands,
             transforms=self.train_transform,
         )
-        # TODO: Clarify whether validations set should use augmentation or not
         self.val_dataset = WorldFloodsDatasetTiled(
-            image_files=self.val_files,
+            list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
@@ -207,16 +196,8 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         bands: List[int] = [1, 2, 3],
     ):
         super().__init__()
-        self.train_transform = (
-            albumentations.Compose(train_transformations)
-            if train_transformations is not None
-            else None
-        )
-        self.test_transform = (
-            albumentations.Compose(test_transformations)
-            if test_transformations is not None
-            else None
-        )
+        self.train_transform = train_transformations
+        self.test_transform = test_transformations
 
         # WORLDFLOODS Directories
         self.bucket_name = bucket_id
@@ -254,7 +235,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
         # create datasets
         self.train_dataset = WorldFloodsDatasetTiled(
-            image_files=self.train_files,
+            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,
@@ -263,7 +244,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             lock_read=True
         )
         self.val_dataset = WorldFloodsDatasetTiled(
-            image_files=self.val_files,
+            list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             window_size=self.window_size,

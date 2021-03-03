@@ -4,16 +4,25 @@ from src.preprocess.tiling import WindowSize, save_tiles
 from src.data import utils
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 import os
-from pathlib import Path
 from pyprojroot import here
 # spyder up to find the root
 root = here(project_files=[".here"])
 import io
 import json
-from typing import Dict, List
+from typing import Dict, List, Callable, Tuple, Optional
 
 
-def filenames_train_test_split(bucket_name, train_test_split_file) -> Dict[str, Dict[str, List[str]]] :
+def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Read train test split file from remote
+
+    Args:
+        bucket_name:
+        train_test_split_file:
+
+    Returns:
+
+    """
     if bucket_name != "" and bucket_name is not None:
         from google.cloud import storage
         client = storage.Client()
@@ -21,6 +30,9 @@ def filenames_train_test_split(bucket_name, train_test_split_file) -> Dict[str, 
             client.download_blob_to_file(f"gs://{bucket_name}/{train_test_split_file}", file_obj)
             file_obj.seek(0)
             return json.load(file_obj)
+    else:
+        with open(train_test_split_file, "r") as fh:
+            return json.load(fh)
 
 
 def get_dataset(data_config):
@@ -51,12 +63,12 @@ def get_dataset(data_config):
         from src.data.worldfloods.lightning import WorldFloodsDataModule
         print('Using local dataset for this run')
         
-        # Read Files from bucket
+        # Read Files from bucket and copy them in local_destination_dir
         download_tiffs_from_bucket(data_config.bucket_id,
                                    [data_config.input_folder, data_config.target_folder],
                                    filenames_train_test, local_destination_dir)
                         
-        # CREATE DATASET                
+        # CREATE DATAMODULE
         dataset = WorldFloodsDataModule(
             input_folder=data_config.input_folder,
             target_folder=data_config.target_folder,
@@ -132,7 +144,7 @@ def get_dataset(data_config):
     return dataset
 
 
-def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local_destination_dir):
+def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local_destination_dir, verbose=False):
     for split in filenames.keys():
         for input_target_folder in input_target_folders:
             folder_local = os.path.join(local_destination_dir, split, input_target_folder)
@@ -142,9 +154,11 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local
                 file_dest = os.path.join(folder_local, basename)
                 if not os.path.isfile(file_dest):
                     save_file(bucket_id, fp, file_dest)
-                    print(f"Loaded {fp}")
+                    if verbose:
+                        print(f"Loaded {fp}")
                 else:
-                    print(f"{file_dest} already exists")
+                    if verbose:
+                        print(f"{file_dest} already exists")
 
 
 def save_file(bucket_id, remote_blob_name, local_file):
@@ -154,7 +168,7 @@ def save_file(bucket_id, remote_blob_name, local_file):
     blob.download_to_filename(local_file)
 
 
-def get_transformations(data_config):
+def get_transformations(data_config) -> Tuple[Callable, Callable]:
     """
     Function to generate transformations object to pass to dataloader
     TODO: Build from config instead of using default values
