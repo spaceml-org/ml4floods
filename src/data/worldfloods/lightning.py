@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from src.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
 import pytorch_lightning as pl
 from pathlib import Path
+from src.preprocess.tiling import WindowSize
 from src.preprocess.utils import get_list_of_window_slices
 
 
@@ -73,7 +74,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # Prefixes
         self.image_prefix = input_folder
         self.gt_prefix = target_folder
-        self.window_size = window_size
+        self.window_size = WindowSize(height=window_size[0], width=window_size[1])
 
     def prepare_data(self):
         """Does Nothing for now. Here for compatibility."""
@@ -106,7 +107,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
-            window_size=self.window_size,
             bands=self.bands,
             transforms=self.train_transform,
         )
@@ -115,7 +115,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            window_size=self.window_size,
             transforms=self.test_transform, 
         )
         self.test_dataset = WorldFloodsDataset(
@@ -218,7 +217,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         # Prefixes
         self.image_prefix = input_folder
         self.gt_prefix = target_folder
-        self.window_size = window_size
+        self.window_size = WindowSize(height=window_size[0], width=window_size[1])
 
     def prepare_data(self):
         """Does Nothing for now. Here for compatibility."""
@@ -238,7 +237,6 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
-            window_size=self.window_size,
             transforms=self.train_transform,
             bands=self.bands,
             lock_read=True
@@ -247,7 +245,6 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
-            window_size=self.window_size,
             transforms=self.test_transform,
             bands=self.bands,
             lock_read=True

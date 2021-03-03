@@ -2,7 +2,7 @@ import os
 import random
 from datetime import datetime
 from pathlib import Path
-from src.preprocess.tiling import WindowSize, WindowSlices
+from src.preprocess.tiling import WindowSlices
 from typing import Callable, Dict, List, Optional, Tuple
 
 
@@ -139,7 +139,6 @@ class WorldFloodsDatasetTiled(Dataset):
         list_of_windows: List[WindowSlices],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        window_size: Tuple[int, int] = (64, 64),
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
         lock_read: bool = False
@@ -148,7 +147,6 @@ class WorldFloodsDatasetTiled(Dataset):
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
         self.transforms = transforms
-        self.window_size = WindowSize(height=window_size[0], width=window_size[1])
         self.channels_read = bands
 
         if lock_read:
