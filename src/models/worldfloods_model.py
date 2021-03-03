@@ -5,11 +5,12 @@ import torchvision
 import numpy as np
 import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
+from src.preprocess.worldfloods import normalize
 
 from src.models.utils import losses, metrics
 from src.models.architectures.baselines import SimpleLinear, SimpleCNN
 from src.models.architectures.unets import UNet, UNet_dropout
-from src.data.worldfloods.configs import SENTINEL2_NORMALIZATION, COLORS_WORLDFLOODS
+from src.data.worldfloods.configs import COLORS_WORLDFLOODS, CHANNELS_CONFIGURATIONS, BANDS_S2
 
 
 class WorldFloodsModel(pl.LightningModule):
@@ -140,13 +141,17 @@ class WorldFloodsModel(pl.LightningModule):
     #     load_model_weights(self.network, filepath)
 
     def batch_to_unnorm_rgb(self, x):
-        # TODO consider bands!!
         model_input_npy = x.cpu().numpy()
-        norm_facts = SENTINEL2_NORMALIZATION.copy()
-        norm_facts = norm_facts[..., np.newaxis, np.newaxis]
-        std = norm_facts[np.newaxis,3:0:-1, 1]
-        mean = norm_facts[np.newaxis,3:0:-1, 0]
-        model_input_rgb_npy = model_input_npy[:, 3:0:-1] * std + mean
+
+        mean, std = normalize.get_normalisation("rgb")  # B, R, G!
+        mean = mean[np.newaxis]
+        std = std[np.newaxis]
+
+        # Find the RGB indexes within the S2 bands
+        bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[self.hparams["model_params"]["hyperparameters"]['channel_configuration']]]
+        bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+
+        model_input_rgb_npy = model_input_npy[:, bands_index_rgb] * std[:, -1::-1] + mean[:, -1::-1]
         model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.).transpose((0, 2, 3, 1))
         return model_input_rgb_npy
     
