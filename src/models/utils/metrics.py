@@ -25,17 +25,17 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
         (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
 
     """
+    ground_truth = ground_truth_outputs.clone()
+
     if remove_class_zero:
-        ground_truth = ground_truth_outputs.clone()
         # Save invalids to discount
         invalids = ground_truth == 0  # (batch_size, H, W) gpu
         ground_truth[invalids] = 1
         ground_truth -= 1
     
         # Set invalids in pred to zero
+        test_outputs_categorical = test_outputs_categorical.clone()
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
-    else:
-        ground_truth = ground_truth_outputs.clone()
 
     confusions_batch = torch.zeros(size=(ground_truth.shape[0], num_class, num_class),
                                    dtype=torch.long)
