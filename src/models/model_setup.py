@@ -48,8 +48,6 @@ def get_model_inference_function(model, config, apply_normalization:bool=True) -
 
     Returns: callable function
     """
-    
-    device = handle_device(config.model_params.device)
 
     model_type = config.model_params.hyperparameters.model_type
     module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
@@ -68,8 +66,10 @@ def get_model_inference_function(model, config, apply_normalization:bool=True) -
             return (batch_image - mean_batch) / (std_batch + 1e-6)
     else:
         normalize = None
-    
-    return get_pred_function(model,device,
+
+    device = getattr(model,"device", handle_device(config.model_params.device))
+
+    return get_pred_function(model, device,
                              module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
                              activation_fun=lambda ot: torch.softmax(ot, dim=1),
                              normalization=normalize)
