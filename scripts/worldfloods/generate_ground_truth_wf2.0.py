@@ -62,7 +62,7 @@ def main():
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket) as pbar:
+        with tqdm.tqdm(files_in_bucket[381:]) as pbar:
             for s2_image_path in pbar:
 
                 pbar.set_description("Getting Paths...")
