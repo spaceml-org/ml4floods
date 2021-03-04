@@ -1,9 +1,9 @@
 {
-    "experiment_name": "worldfloods_demo_test",
+    "experiment_name": "worldfloods_demo_test_unet_dropout",
     "seed": 12,
     "model_params": {
-        "device": "cpu",
-        "model_folder": "gs://",
+        "device": "cuda",
+        "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
         "use_pretrained_weights": false,
         "path_to_weights": "checkpoints/",
         "hyperparameters": {
@@ -11,7 +11,7 @@
             "channel_configuration": "all",
             "label_names": ["land", "water", "cloud"],
             "weight_per_class": [0.516942, 0.027322, 0.455787],
-            "model_type": "linear",
+            "model_type": "unet_dropout",
             "num_classes": 3,
             "max_epochs": 10,
             "val_every": 1,
@@ -26,7 +26,7 @@
         "loader_type": "local",
         "image_count": 3,
         "bucket_id": "ml4floods",
-        "path_to_splits": "worldfloods/public",
+        "path_to_splits": "/worldfloods/public",
         "input_folder": "S2",
         "target_folder": "gt",
         "batch_size": 32,

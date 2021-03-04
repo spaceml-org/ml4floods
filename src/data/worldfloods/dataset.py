@@ -161,7 +161,7 @@ class WorldFloodsDatasetTiled(Dataset):
             # Useful when reading from bucket
             self._lock = threading.Lock()
         else:
-            self._lock = contextlib.nullcontext
+            self._lock = contextlib.nullcontext()
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
