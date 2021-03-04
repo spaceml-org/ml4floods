@@ -2,7 +2,6 @@
     "experiment_name": "worldfloods_demo_test",
     "seed": 12,
     "model_params": {
-        "device": "cuda",
         "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
         "use_pretrained_weights": false,
         "path_to_weights": "checkpoints/",
@@ -32,17 +31,15 @@
         "target_folder": "gt",
         "batch_size": 32,
         "window_size": [256, 256],
-        "bands": "all",
+        "channel_configuration": "all",
         "train_transformation": {
             "num_classes": 3,
             "totensor": true,
-            "use_channels": "all",
             "normalize": true
         },
         "test_transformation": {
             "num_classes": 3,
             "totensor": true,
-            "use_channels": "all",
             "normalize": true
         }
     }

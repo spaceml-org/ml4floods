@@ -47,7 +47,7 @@ def get_dataset(data_config):
     
     train_transform, test_transform = get_transformations(data_config)
 
-    bands = CHANNELS_CONFIGURATIONS[data_config.bands]
+    bands = CHANNELS_CONFIGURATIONS[data_config.channel_configuration]
     window_size = WindowSize(height=data_config.window_size[0], width=data_config.window_size[1])
 
     # ======================================================
@@ -173,7 +173,7 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     Function to generate transformations object to pass to dataloader
     TODO: Build from config instead of using default values
     """
-    channel_mean, channel_std = wf_normalization.get_normalisation(data_config.train_transformation.use_channels)
+    channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
 
     train_transform = transformations.Compose([
         transformations.InversePermuteChannels(),

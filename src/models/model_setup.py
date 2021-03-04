@@ -67,9 +67,7 @@ def get_model_inference_function(model, config, apply_normalization:bool=True) -
     else:
         normalize = None
 
-    device = getattr(model,"device", handle_device(config.model_params.device))
-
-    return get_pred_function(model, device,
+    return get_pred_function(model, model.device,
                              module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
                              activation_fun=lambda ot: torch.softmax(ot, dim=1),
                              normalization=normalize)
