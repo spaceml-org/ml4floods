@@ -200,7 +200,6 @@ class Ingestor:
                 register['metadata_floodmap']['area_of_interest_polygon'], 
                 open(os.path.join(self.local_path,register['id']+'_aoi.json'),'w')
             )
-            print (register['metadata_floodmap'])
             json.dump(
                 register['metadata_floodmap'],
                 open(os.path.join(self.local_path,register['id']+'_meta.json'),'w')
@@ -227,7 +226,7 @@ class Ingestor:
         
 if __name__=="__main__":
     ingestor = Ingestor()
-    ingestor.ingest('EMSR501', '2021-01-06')#datetime(2021,1,6,0,0))
+    ingestor.ingest('EMSR480', '2020-11-10')#datetime(2021,1,6,0,0))
     
     
     
