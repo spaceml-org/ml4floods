@@ -67,6 +67,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.train_transform = train_transformations
         self.test_transform = test_transformations
         self.num_workers = num_workers
+        self.num_workers_test = 0
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
@@ -135,12 +136,12 @@ class WorldFloodsDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         """Initializes and returns the validation dataloader"""
         return DataLoader(self.val_dataset, batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=False)
+                          num_workers=1, shuffle=False)
 
-    def test_dataloader(self):
+    def test_dataloader(self, num_workers=1):
         """Initializes and returns the test dataloader"""
         return DataLoader(self.test_dataset, batch_size=1,
-                          num_workers=self.num_workers, shuffle=False)
+                          num_workers=self.num_workers_test, shuffle=False)
 
 
 class WorldFloodsGCPDataModule(pl.LightningDataModule):
