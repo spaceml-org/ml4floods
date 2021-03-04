@@ -59,7 +59,7 @@ def train(config):
     
     early_stop_callback = EarlyStopping(
         monitor='dice_loss',
-        patience=10,
+        patience=4,
         strict=False,
         verbose=False,
         mode='min'
