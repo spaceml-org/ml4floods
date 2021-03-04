@@ -12,10 +12,11 @@ import json
 from src.data.create_gt import (
     _get_image_geocoords,
     generate_land_water_cloud_gt,
+    generate_water_cloud_binary_gt,
 )
 from src.data.io import save_groundtruth_tiff_rasterio
 import os
-from src.data.utils import GCPPath
+from src.data.utils import GCPPath, load_json_from_bucket
 from src.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
 
 import rasterio.windows
@@ -30,7 +31,7 @@ def main():
     # looping through the ML parts
     ml_paths = [
         "test",
-        #     "train",
+        "train",
         "val",
     ]
 
@@ -40,7 +41,7 @@ def main():
     destination_bucket_id = "ml4cc_data_lake"
 
     parent_path = "worldfloods/public"
-    destination_parent_path = "0_DEV/2_Mart/worldfloods_v1_1"
+    destination_parent_path = "0_DEV/2_Mart/worldfloods_v2_0"
 
     demo_image = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
 
@@ -59,7 +60,7 @@ def main():
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket[1:3]) as pbar:
+        with tqdm.tqdm(files_in_bucket) as pbar:
             for s2_image_path in pbar:
 
                 s2_image_path = GCPPath(s2_image_path)
@@ -76,32 +77,43 @@ def main():
                 # Generate GT Image
                 # ==============================
                 pbar.set_description("Generating Ground Truth...")
-                # generate gt and gt meta
-                gt, gt_meta = generate_land_water_cloud_gt(
-                    s2_image_path.full_path, floodmap_path.full_path, keep_streams=True
+
+                # load the meta
+                floodmap_meta = load_json_from_bucket(
+                    meta_path.bucket_id, meta_path.get_file_path()
                 )
 
-                # ==============================
-                # SAVE GT Image
-                # ==============================
-                pbar.set_description("Saving GT data...")
-
-                # replace bucket path
-
-                # get necessary geocoordinates
-                crs, transform = _get_image_geocoords(s2_image_path.full_path)
+                # generate gt and gt meta
+                # Run it through the GT script
+                gt, gt_meta = generate_water_cloud_binary_gt(
+                    s2_image_path.full_path,
+                    floodmap_path.full_path,
+                    floodmap_meta,
+                    keep_streams=True,
+                )
 
                 # ==============================
                 # SAVE S2 Image
                 # ==============================
                 pbar.set_description("Saving S2 image...")
-                # get parent path name
-                s2_image_parent_destination = (
-                    Path(destination_parent_path).joinpath(ipath).joinpath("S2")
+
+                # download file locally
+                local_file_name = s2_image_path.download_file_from_bucket(
+                    str(local_path)
                 )
-                s2_image_path.transfer_file_to_bucket(
-                    destination_bucket_id, s2_image_parent_destination
+                # change file name
+                demo_s2_image_bucket = s2_image_path.replace(
+                    bucket_id, destination_bucket_id
                 )
+                demo_s2_image_bucket = demo_s2_image_bucket.replace(
+                    parent_path, destination_parent_path
+                )
+
+                # save file to bucket
+                save_file_to_bucket(demo_s2_image_bucket.full_path, local_file_name)
+
+                # delete the local file
+                Path(local_file_name).unlink()
 
                 # ==============================
                 # SAVE Meta Data
@@ -118,17 +130,25 @@ def main():
                 # ==============================
                 # SAVE FloodMap Data
                 # ==============================
-                pbar.set_description("Saving meta data...")
+                # special case of multiple files
+                pbar.set_description("Saving floodmap meta data...")
+
                 # get parent path name
                 floodmap_parent_destination = (
                     Path(destination_parent_path).joinpath(ipath).joinpath("floodmap")
                 )
-                floodmap_path.transfer_file_to_bucket(
-                    destination_bucket_id, floodmap_parent_destination
+
+                floodmap_meta_files = (
+                    floodmap_path.get_files_in_parent_directory_with_name()
                 )
 
+                for ifloodmap_meta_file in floodmap_meta_files:
+                    GCPPath(ifloodmap_meta_file).transfer_file_to_bucket(
+                        destination_bucket_id, floodmap_parent_destination
+                    )
+
                 # ==============================
-                # SAVE GT Data
+                # SAVE GT Data (WorldFloods 1.1)
                 # ==============================
                 pbar.set_description("Saving GT data...")
 
@@ -141,19 +161,15 @@ def main():
                 save_groundtruth_tiff_rasterio(
                     gt,
                     str(local_path.joinpath(gt_path.file_name)),
-                    gt_meta=gt_meta,
-                    crs=crs,
-                    transform=transform,
+                    gt_meta=None,
+                    crs=gt_meta["crs"],
+                    transform=gt_meta["transform"],
                 )
                 save_file_to_bucket(
                     gt_path.full_path, str(local_path.joinpath(gt_path.file_name))
                 )
                 # delate local file
                 local_path.joinpath(gt_path.file_name).unlink()
-
-        break
-
-    pass
 
 
 if __name__ == "__main__":

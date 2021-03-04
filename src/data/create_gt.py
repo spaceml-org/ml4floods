@@ -393,15 +393,18 @@ def generate_land_water_cloud_gt(
 
     with rasterio.open(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
+        metadata["crs"] = s2_src.crs
+        metadata["transform"] = s2_src.transform
 
     return gt, metadata
 
 
 def generate_water_cloud_binary_gt(
-    s2tiff: str,
-    floodmap: gpd.GeoDataFrame,
+    s2_image_path: str,
+    floodmap_path: str,
     metadata_floodmap: Dict,
     window: Optional[rasterio.windows.Window] = None,
+    keep_streams: bool = False,
     permanent_water_tiff: Optional[str] = None,
     cloudprob_tiff: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
@@ -425,18 +428,25 @@ def generate_water_cloud_binary_gt(
         meta: dictionary with metadata information
 
     """
+    # open floodmap with geopandas
+    floodmap = gpd.read_file(floodmap_path)
+
+    # =========================================
+    # Generate Cloud Mask given S2 Data
+    # =========================================
     s2_img, cloud_mask = _read_s2img_cloudmask_v1(
-        s2tiff,
+        s2_image_path,
         window=window,
         cloudprob_tiff=cloudprob_tiff,
         cloudprob_in_lastband=cloudprob_in_lastband,
     )
 
     water_mask = compute_water(
-        s2tiff,
+        s2_image_path,
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
         permanent_water_path=permanent_water_tiff,
+        keep_streams=keep_streams
     )
 
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
@@ -461,7 +471,7 @@ def generate_water_cloud_binary_gt(
         {0: "invalid", 1: "land", 2: "water"},
     ]
     metadata["shape"] = list(water_mask.shape)
-    metadata["s2tiff"] = os.path.basename(s2tiff)
+    metadata["s2tiff"] = os.path.basename(s2_image_path)
     metadata["permanent_water_tiff"] = (
         os.path.basename(permanent_water_tiff)
         if permanent_water_tiff is not None
@@ -494,8 +504,10 @@ def generate_water_cloud_binary_gt(
     #     "pixels water S2"
     # ], f'Different number of water pixels than expected {metadata["pixels flood water S2"]} {metadata["pixels hydro water S2"]} {metadata["pixels permanent water S2"]}, {metadata["pixels water S2"]} '
 
-    with rasterio.open(s2tiff) as s2_src:
+    with rasterio.open(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
+        metadata["crs"] = s2_src.crs
+        metadata["transform"] = s2_src.transform
 
     return gt, metadata
 
@@ -641,7 +653,6 @@ def generate_gt_v2(
         permanent_water_path=permanent_water_tiff,
     )
 
-    print(np.unique(water_mask))
 
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
     invalid_clouds_land_pixels = metadata_floodmap["satellite"] == "Sentinel-2"
@@ -778,8 +789,6 @@ def _generate_gt_fromarray(
     watergt[water_mask >= 1] = 2  # only water is 2
     watergt[invalids] = 0
 
-    print(f"Number cloudgt invalids: {np.sum(cloudgt==0)}")
-    print(f"Number watergt invalids: {np.sum(watergt==0)}")
 
     if invalid_clouds_threshold is not None:
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2

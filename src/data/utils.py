@@ -74,6 +74,30 @@ class GCPPath:
         ]
         return files
 
+    def get_files_in_parent_directory_with_name(
+        self, name: Optional[str] = None, **kwargs
+    ):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+
+        if name is None:
+            name = self.get_file_name_stem()
+        # check if it exists
+        files = [
+            "gs://" + str(Path(self.bucket_id).joinpath(x.name))
+            for x in blobs
+            if name in str(Path(x.name))
+        ]
+        return files
+
+    def get_file_name_stem(self):
+        return str(Path(self.file_name).stem)
+
     def transfer_file_to_bucket(
         self, destination_bucket_name: str, destination_file_path: str, **kwargs
     ):
@@ -93,6 +117,25 @@ class GCPPath:
         )
 
         return self
+
+    def download_file_from_bucket(self, destination_path: str):
+
+        client = storage.Client()
+
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+        blob = bucket.get_blob(self.get_file_path())
+
+        # create directory if needed
+        create_folder(destination_path)
+
+        # get full path
+        destination_file_name = Path(destination_path).joinpath(self.file_name)
+
+        # download data
+        blob.download_to_filename(str(destination_file_name))
+
+        return destination_file_name
 
     #         return get_files_in_bucket_directory(self.bucket_id, directory=self.parent_path, suffix=self.suffix)
 
