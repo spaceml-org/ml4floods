@@ -49,7 +49,7 @@ def train(config):
     experiment_path = f"{config.model_params.model_folder}/{config.experiment_name}"
 
     checkpoint_callback = ModelCheckpoint(
-        filepath=f"{experiment_path}/checkpoint",
+        dirpath=f"{experiment_path}/checkpoint",
         save_top_k=True,
         verbose=True,
         monitor='dice_loss',
@@ -222,7 +222,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Set device ids visible to CUDA
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpus
 #     os.environ['GDAL_DISABLE_READDIR_ON_OPEN'] = 'FALSE'
     
     # Setup config
