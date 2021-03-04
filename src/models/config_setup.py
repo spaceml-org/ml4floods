@@ -37,6 +37,10 @@ def setup_config(args):
     config['gpus'] = args.gpus
     config['test'] = args.test
     config['deploy'] = args.deploy
+
+    # TODO check channel_configuration is the same in all the parts. Populate this to transforms!
+    assert config['model_params']['hyperparameters']['channel_configuration'] ==  config['data_params']['bands'],\
+         f"Set the same channel configuration: {config['model_params']['hyperparameters']['channel_configuration']} {config['data_params']['bands']}"
     
     config['model_params']['hyperparameters']['num_channels'] = len(CHANNELS_CONFIGURATIONS[config['model_params']['hyperparameters']['channel_configuration']])
     
