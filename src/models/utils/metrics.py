@@ -8,6 +8,7 @@ import seaborn as sns
 import pandas as pd
 
 
+@torch.no_grad()
 def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
                        remove_class_zero=False) -> torch.Tensor:
     """
@@ -25,17 +26,17 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
         (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
 
     """
+    ground_truth = ground_truth_outputs.clone()
+
     if remove_class_zero:
-        ground_truth = ground_truth_outputs.clone()
         # Save invalids to discount
         invalids = ground_truth == 0  # (batch_size, H, W) gpu
         ground_truth[invalids] = 1
         ground_truth -= 1
     
         # Set invalids in pred to zero
+        test_outputs_categorical = test_outputs_categorical.clone()
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
-    else:
-        ground_truth = ground_truth_outputs.clone()
 
     confusions_batch = torch.zeros(size=(ground_truth.shape[0], num_class, num_class),
                                    dtype=torch.long)
@@ -46,7 +47,7 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
             confusions_batch[:, c1, c] = (pred_c1 & gtc).sum(dim=(1, 2))
     
     if remove_class_zero:
-        inv_substract = torch.sum(invalids dim=(1, 2)).to(confusions_batch.device)
+        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device)
         confusions_batch[:, 0, 0] -= inv_substract
     
     return confusions_batch
@@ -65,7 +66,6 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
       figsize:   the size of the figure plotted.
     """
     import matplotlib.pyplot as plt
-    import pandas as
     import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)
@@ -82,13 +82,10 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
             elif c == 0:
                 annot[i, j] = ''
             else:
-                annot[i, j] = '%.1f%%\n%d' % (p, c)
-    cm = 
-    
-    
-    DataFrame(cm_perc, index=labels, columns=labels)
-    cm.index.name = 'Actual'
-    cm.columns.name = 'Predicted'
+                annot[i, j] = '%.1f%%\n%d' % (p, c)    
+    cm = pd.DataFrame(cm_perc, index=labels, columns=labels)
+    cm.index.name = 'Predicted'
+    cm.columns.name = 'Actual'
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
@@ -128,7 +125,7 @@ def plot_metrics(metrics_dict, label_names):
         
         returns: None
     """
-    confusions = metrics_dict['confusions']
+    confusions = np.array(metrics_dict['confusions']).transpose(0,2,1)
     confusions_thresh = metrics_dict['confusions_thresholded']
     
     cm_analysis(np.sum(np.array(confusions), axis=0), labels=label_names)
@@ -145,8 +142,8 @@ def plot_metrics(metrics_dict, label_names):
 
         tp = cur_conf[1,1]
         tn = cur_conf[0,0]
-        fp = cur_conf[0,1]
-        fn = cur_conf[1,0]
+        fp = cur_conf[1,0]
+        fn = cur_conf[0,1]
 
         tp_rate = tp / (tp+fn)
         fp_rate = fp / (fp+tn)
@@ -191,14 +188,14 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
     
-    for i, (test_inputs, ground_truth_outputs) in tqdm(enumerate(dataloader)):
+    for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
+        test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
         
         test_outputs = pred_fun(test_inputs)
         
         test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
-        print(np.unique(test_outputs_categorical))
-        ground_truth_outputs = ground_truth_outputs.to(test_outputs_categorical.device)
-                
+        ground_truth_outputs = torch.clone(ground_truth_outputs.to(test_outputs_categorical.device))
+        
         # Save invalids to discount
         invalids = ground_truth_outputs == 0
         ground_truth_outputs[invalids] = 1
@@ -207,7 +204,8 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         # Set invalids in pred to zero
         test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
 
-        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical, num_class=num_class, remove_class_zero=False)
+        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical,
+                                              num_class=num_class, remove_class_zero=False)
         # confusions_batch is (batch_size, num_class, num_class)
 
         # Discount invalids
@@ -218,7 +216,8 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         
         # Thresholded version for precision recall curves
         # Set clouds to land
-        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long, device=torch.device("cpu"))
+        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long,
+                                                      device=ground_truth_outputs.device)
 
         ground_truth_outputs[ground_truth_outputs == 2] = 0
 
@@ -234,7 +233,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
                                                   test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]
 
             # Discount invalids
-            confusions_batch[:, 0, 0] -= torch.sum(invalids)
+            confusions_batch[:, 0, 0] -= torch.sum(invalids.to(confusions_batch.device))
 
             results.append(confusions_batch.numpy())
 
@@ -253,7 +252,7 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     }
     
     if plot:
-        plot_metrics(out_dict)
+        plot_metrics(out_dict, label_names)
     
     return out_dict
         

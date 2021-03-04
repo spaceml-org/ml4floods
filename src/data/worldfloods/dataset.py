@@ -2,7 +2,7 @@ import os
 import random
 from datetime import datetime
 from pathlib import Path
-from src.preprocess.tiling import WindowSize
+from src.preprocess.tiling import WindowSlices
 from typing import Callable, Dict, List, Optional, Tuple
 
 
@@ -10,13 +10,11 @@ import numpy as np
 import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
+import contextlib
 
-from src.data.utils import check_path_exists
-from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
-from src.data.worldfloods.prepare_data import prepare_data_func
-from src.preprocess.utils import get_list_of_window_slices
+from src.data.worldfloods.configs import BANDS_S2
 
-
+import threading
 
 
 class WorldFloodsDataset(Dataset):
@@ -39,6 +37,8 @@ class WorldFloodsDataset(Dataset):
         gt_prefix (str): the target folder sub directory
         transforms (Callable): the transformations used within the 
             training data module
+        bands: List[int]
+            0-based list of bands to read from BANDS_S2
     """
 
     def __init__(
@@ -46,13 +46,20 @@ class WorldFloodsDataset(Dataset):
         image_files: List[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        transforms: Optional[List[Callable]] = None,
+        transforms: Optional[Callable] = None,
+        bands: List[int] = list(range(len(BANDS_S2))),
+        lock_read:bool=False
     ) -> None:
 
         self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
         self.transforms = transforms
+        self.bands_read = bands
+        if lock_read:
+            self._lock = threading.Lock()
+        else:
+            self._lock = contextlib.nullcontext()
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
@@ -72,21 +79,18 @@ class WorldFloodsDataset(Dataset):
 
         # get filenames
         image_name = self.image_files[idx]
-        
+
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
-        # Open Image File
-        with rasterio.open(image_name) as f:
-            image_tif = f.read()
+        image_tif = rasterio_read(image_name, self._lock,
+                                  channels=[c + 1 for c in self.bands_read])
 
-        # Open Ground Truth File
-        with rasterio.open(y_name) as f:
-            mask_tif = f.read()
+        mask_tif = rasterio_read(y_name, self._lock)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
 
-        # TODO: Need to check why the 0th index.
+        # The 0-index comes from reading all the bands with f.read()
         mask = np.nan_to_num(mask_tif)
 
         # Apply transformation
@@ -108,8 +112,8 @@ class WorldFloodsDatasetTiled(Dataset):
     This also does the tiling under the hood given the windowsize.
     
     Args:
-        image_files (List[str]): the image files to be loaded into the 
-            dataset
+        list_of_windows (List[WindowSlices]):  a list of
+            namedtuples each consisting of a filename and a rasterio.window
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window sizes (height, width) to be
@@ -118,41 +122,78 @@ class WorldFloodsDatasetTiled(Dataset):
             training data module
             
     Attributes:
-        image_files (List[str]): the image files to be loaded into the 
-            dataset
+        list_of_windows (List[WindowSlices]):  a list of
+            namedtuples each consisting of a filename and a rasterio.window
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
         window_size (namedtuple): a tuple with the height and width
             arguments
         transforms (Callable): the transformations used within the 
             training data module
-        accumulated_list_of_windows_test (List[namedtuple]): a list of
-            namedtuples each consisting of a filename and a rasterio.window
+        bands: List[int]
+            0-based list of bands to read from BANDS_S2
     """
 
     def __init__(
         self,
-        image_files: List[str],
+        list_of_windows: List[WindowSlices],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        window_size: Tuple[int, int] = (64, 64),
-        transforms: Optional[List[Callable]] = None,
+        transforms: Optional[Callable] = None,
+        bands: List[int] = list(range(len(BANDS_S2))),
+        lock_read: bool = False
     ) -> None:
 
-        self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
         self.transforms = transforms
-        self.window_size = WindowSize(height=window_size[0], width=window_size[1])
+        self.channels_read = bands
+
+        if lock_read:
+            # Useful when reading from bucket
+            self._lock = threading.Lock()
+        else:
+            self._lock = contextlib.nullcontext()
+
+        self.list_of_windows = list_of_windows
 
         # sort to make sure that the order is deterministic
         # (order of the flow of data points to the ML model)
-        # TODO: Do this for the list of filepaths at the end as well
-        self.image_files.sort()
         # get the image slices
-        self.accumulated_list_of_windows_test = get_list_of_window_slices(
-            self.image_files, window_size=self.window_size
-        )
+
+
+    # def filter_patches(self, condition_label_function:Callable):
+    #     """
+    #     Keep patches that satisfies certain condition (in their labels)
+    #
+    #     Args:
+    #         condition_label_function:
+    #
+    #     Returns:
+    #
+    #     """
+    #     accumulated_list_of_windows_test = []
+    #     for i in range(self.__len__()):
+    #         if condition_label_function(self.get_label(i)):
+    #             accumulated_list_of_windows_test.append(self.accumulated_list_of_windows_test[i])
+    #
+    #     self.accumulated_list_of_windows_test = accumulated_list_of_windows_test
+
+    def get_label(self, idx: int) -> np.ndarray:
+        """
+        Method to read only the label. This function is useful for filtering the patches of the Dataset
+        Args:
+            idx:
+
+        Returns:
+
+
+        """
+        sub_window = self.list_of_windows[idx]
+        y_name = sub_window.file_name.replace(self.image_prefix, self.gt_prefix, 1)
+        return rasterio_read(y_name, self._lock, channels=None,
+                             kwargs_rasterio={"window": sub_window.window, "boundless": True, "fill_value": 0})
+
 
     def __getitem__(self, idx: int) -> Dict:
         """Index to select an image tile
@@ -165,7 +206,7 @@ class WorldFloodsDatasetTiled(Dataset):
             {"image", "mask"}
         """
         # get filenames from named tuple
-        sub_window = self.accumulated_list_of_windows_test[idx]
+        sub_window = self.list_of_windows[idx]
 
         # get filename
         image_name = sub_window.file_name
@@ -177,17 +218,14 @@ class WorldFloodsDatasetTiled(Dataset):
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
-        with rasterio.open(image_name) as f:
-            image_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
-
-        # Open Ground Truth File
-        with rasterio.open(y_name) as f:
-            mask_tif = f.read(window=sub_window.window, boundless=True, fill_value=0)
+        image_tif = rasterio_read(image_name, self._lock, channels=[c+1 for c in self.channels_read],
+                                  kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
+        mask_tif = rasterio_read(y_name, self._lock, channels=None,
+                                 kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
 
-        # TODO: Need to check why the 0th index.
         mask = np.nan_to_num(mask_tif)
 
         # Apply transformation
@@ -199,4 +237,12 @@ class WorldFloodsDatasetTiled(Dataset):
         return data
 
     def __len__(self) -> int:
-        return len(self.accumulated_list_of_windows_test)
+        return len(self.list_of_windows)
+
+
+def rasterio_read(image_name: str, lock, channels:List[int]=None, kwargs_rasterio:Dict={}) -> np.ndarray:
+    with lock:
+        with rasterio.open(image_name) as f:
+            im_tif = f.read(channels, **kwargs_rasterio)
+
+    return im_tif
