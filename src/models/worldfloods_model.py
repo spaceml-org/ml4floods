@@ -151,7 +151,7 @@ class WorldFloodsModel(pl.LightningModule):
         bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[self.hparams["model_params"]["hyperparameters"]['channel_configuration']]]
         bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
         
-        model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2,3,1) * std[:, -1::-1] + mean[:, -1::-1]
+        model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2,3,1) * std[..., -1::-1] + mean[..., -1::-1]
         model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.)
         return model_input_rgb_npy
     
