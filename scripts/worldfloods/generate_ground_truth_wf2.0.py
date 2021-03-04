@@ -30,9 +30,9 @@ def main():
 
     # looping through the ML parts
     ml_paths = [
-        "test",
+        # "test",
         "train",
-        "val",
+        # "val",
     ]
 
     local_path = Path(root).joinpath("datasets")
@@ -42,13 +42,15 @@ def main():
 
     parent_path = "worldfloods/public"
     destination_parent_path = "0_DEV/2_Mart/worldfloods_v2_0"
+    cloud_prob_parent_path = "worldfloods/tiffimages"
+    save_s2_image = True
 
     demo_image = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
 
-    for ipath in ml_paths:
+    # want the appropate ml path
+    demo_image_gcp = GCPPath(demo_image)
 
-        # want the appropate ml path
-        demo_image_gcp = GCPPath(demo_image)
+    for ipath in ml_paths:
 
         # ensure path name is the same as ipath for the loooop
         demo_image_gcp = demo_image_gcp.replace("test", ipath)
@@ -63,11 +65,35 @@ def main():
         with tqdm.tqdm(files_in_bucket) as pbar:
             for s2_image_path in pbar:
 
+                pbar.set_description("Getting Paths...")
+
                 s2_image_path = GCPPath(s2_image_path)
 
                 # create floodmap path
                 floodmap_path = s2_image_path.replace("/S2/", "/floodmaps/")
                 floodmap_path = floodmap_path.replace(".tif", ".shp")
+
+                # create cloudprob path
+                try:
+
+                    cloudprob_path = GCPPath(
+                        str(
+                            Path(bucket_id)
+                            .joinpath(cloud_prob_parent_path)
+                            .joinpath("cloudprob_edited")
+                            .joinpath(s2_image_path.file_name)
+                        )
+                    )
+                    assert cloudprob_path.check_if_file_exists() is True
+                except AssertionError:
+                    cloudprob_path = GCPPath(
+                        str(
+                            Path(bucket_id)
+                            .joinpath(cloud_prob_parent_path)
+                            .joinpath("cloudprob")
+                            .joinpath(s2_image_path.file_name)
+                        )
+                    )
 
                 # create meta path
                 meta_path = s2_image_path.replace("/S2/", "/meta/")
@@ -90,6 +116,7 @@ def main():
                     floodmap_path.full_path,
                     floodmap_meta,
                     keep_streams=True,
+                    cloudprob_image_path=cloudprob_path.full_path,
                 )
 
                 # ==============================
@@ -97,23 +124,20 @@ def main():
                 # ==============================
                 pbar.set_description("Saving S2 image...")
 
-                # download file locally
-                local_file_name = s2_image_path.download_file_from_bucket(
-                    str(local_path)
-                )
-                # change file name
-                demo_s2_image_bucket = s2_image_path.replace(
-                    bucket_id, destination_bucket_id
-                )
-                demo_s2_image_bucket = demo_s2_image_bucket.replace(
-                    parent_path, destination_parent_path
+                # NEW WAY!!!
+                s2_image_path_dest = GCPPath(
+                    str(
+                        Path(destination_bucket_id)
+                        .joinpath(destination_parent_path)
+                        .joinpath(ipath)
+                        .joinpath("S2")
+                        .joinpath(s2_image_path.file_name)
+                    )
                 )
 
-                # save file to bucket
-                save_file_to_bucket(demo_s2_image_bucket.full_path, local_file_name)
-
-                # delete the local file
-                Path(local_file_name).unlink()
+                s2_image_path.transfer_file_to_bucket_gsutils(
+                    s2_image_path_dest.full_path, file_name=True
+                )
 
                 # ==============================
                 # SAVE Meta Data
@@ -126,7 +150,25 @@ def main():
                 meta_path.transfer_file_to_bucket(
                     destination_bucket_id, meta_parent_destination
                 )
+                # ==============================
+                # SAVE Cloud Probabilities
+                # ==============================
+                pbar.set_description("Saving cloud probs data...")
+                # get parent path name
 
+                cloudprob_path_dest = GCPPath(
+                    str(
+                        Path(destination_bucket_id)
+                        .joinpath(destination_parent_path)
+                        .joinpath(ipath)
+                        .joinpath("cloudprob")
+                        .joinpath(cloudprob_path.file_name)
+                    )
+                )
+
+                cloudprob_path.transfer_file_to_bucket_gsutils(
+                    cloudprob_path_dest.full_path, file_name=True
+                )
                 # ==============================
                 # SAVE FloodMap Data
                 # ==============================
@@ -153,7 +195,7 @@ def main():
                 pbar.set_description("Saving GT data...")
 
                 # replace parent path
-                gt_path = demo_image_gcp.replace(bucket_id, destination_bucket_id)
+                gt_path = s2_image_path.replace(bucket_id, destination_bucket_id)
                 gt_path = gt_path.replace("/S2/", "/gt/")
                 gt_path = gt_path.replace(parent_path, destination_parent_path)
 

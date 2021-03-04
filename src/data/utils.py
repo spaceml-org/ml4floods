@@ -18,6 +18,7 @@ from shapely.ops import cascaded_union
 
 from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 from dataclasses import dataclass, field
+import subprocess
 
 # HOME = str(Path.home())
 
@@ -31,6 +32,8 @@ class GCPPath:
     suffix: str = field(default=None)
 
     def __init__(self, full_path):
+
+        full_path = add_gcp_prefix(remove_gcp_prefix(full_path))
 
         self.full_path = full_path
         #         print(self.full_path)
@@ -101,6 +104,30 @@ class GCPPath:
     def transfer_file_to_bucket(
         self, destination_bucket_name: str, destination_file_path: str, **kwargs
     ):
+        """Transfers using the google-storage package
+
+        Args:
+            destination_file_path (str): the destination to the file path
+            name (bool): flag to check for the name or not
+
+        Returns:
+            None
+
+        Examples:
+            Example with no name attached
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/'
+            >>> my_path_class.transfer_file_to_bucket(dest)
+
+            Another example, except we have the name attached:
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/to/my/file.suffix'
+            >>> my_path_class.transfer_file_to_bucket(dest, name=True)
+        """
 
         storage_client = storage.Client(**kwargs)
         source_bucket = storage_client.get_bucket(self.bucket_id)
@@ -114,6 +141,52 @@ class GCPPath:
         # copy to new destination
         new_blob = source_bucket.copy_blob(
             source_blob, destination_bucket, destination_blob_name
+        )
+
+        return self
+
+    def transfer_file_to_bucket_gsutils(
+        self, destination_file_path: str, file_name: bool = False, **kwargs
+    ):
+        """Transfers using the gsutils package
+        Very useful function when we have files that are quite large.
+        The standard google-storage package doesn't work well with these
+        types of files.
+
+        Args:
+            destination_file_path (str): the destination to the file path
+
+        Returns:
+            None
+
+        Examples:
+            Example with no name attached
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/'
+            >>> my_path_class.transfer_file_to_bucket_gsutils(dest)
+
+            Another example, except we have the name attached:
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/to/my/file.suffix'
+            >>> my_path_class.transfer_file_to_bucket_gsutils(dest, name=True)
+        """
+
+        # remove prefix
+        destination_file_path = remove_gcp_prefix(destination_file_path)
+        # join paths
+        if not file_name:
+            destination_file_path = str(
+                Path(destination_file_path).joinpath(self.file_name)
+            )
+        # add prefix
+        destination_file_path = add_gcp_prefix(destination_file_path)
+
+        subprocess.call(
+            ["gsutil", "cp", f"{self.full_path}", f"{destination_file_path}"]
         )
 
         return self
@@ -136,6 +209,16 @@ class GCPPath:
         blob.download_to_filename(str(destination_file_name))
 
         return destination_file_name
+
+    def check_if_file_exists(self, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+        blob = bucket.blob(self.get_file_path())
+        # check if it exists
+        return blob.exists()
 
     #         return get_files_in_bucket_directory(self.bucket_id, directory=self.parent_path, suffix=self.suffix)
 
@@ -581,7 +664,7 @@ def copy_file_between_gcpbuckets(
     return None
 
 
-def add_gcp_prefix(filepath: str, gcp_prefix: str):
+def add_gcp_prefix(filepath: str, bucket_name: Optional[str] = None):
     """Adds the annoying GCP prefix!!!!!
     Args:
         filepath (str): the filepath within the bucket
@@ -592,7 +675,10 @@ def add_gcp_prefix(filepath: str, gcp_prefix: str):
         >>> add_gcp_prefix("test", "bucket")
         gs://bucket/test
     """
-    return "gs://" + str(Path(gcp_prefix).joinpath(filepath))
+    if bucket_name is not None:
+        return "gs://" + str(Path(bucket_name).joinpath(filepath))
+    else:
+        return "gs://" + filepath
 
 
 def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):

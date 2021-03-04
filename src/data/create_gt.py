@@ -217,7 +217,7 @@ def compute_water(
 def _read_s2img_cloudmask_v1(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
-    cloudprob_tiff: Optional[str] = None,
+    cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -226,7 +226,7 @@ def _read_s2img_cloudmask_v1(
     Args:
         s2tiff:
         window:
-        cloudprob_tiff:
+        cloudprob_image_path:
         cloudprob_in_lastband:
 
     Returns:
@@ -245,15 +245,18 @@ def _read_s2img_cloudmask_v1(
             cloud_mask = (
                 cloud_mask.astype(np.float32) / 100.0
             )  # cloud mask in the last band is from 0 - 100
-    else:
-        if cloudprob_tiff is None:
-            from src.data import cloud_masks
+    elif cloudprob_image_path is None:
+        from src.data import cloud_masks
 
-            # Compute cloud mask
-            cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
-        else:
-            with rasterio.open(cloudprob_tiff, "r") as cld_rst:
-                cloud_mask = cld_rst.read(1, window=window)
+        # Compute cloud mask
+        cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
+
+    elif isinstance(cloudprob_image_path, str):
+        with rasterio.open(cloudprob_image_path, "r") as cld_rst:
+            cloud_mask = cld_rst.read(1, window=window)
+
+    else:
+        raise ValueError(f"Unrecognized input type: {cloudprob_image_path}")
 
     return s2_img, cloud_mask
 
@@ -309,7 +312,7 @@ def generate_land_water_cloud_gt(
     window: Optional[rasterio.windows.Window] = None,
     permanent_water_tiff: Optional[str] = None,
     keep_streams: bool = False,
-    cloudprob_tiff: Optional[str] = None,
+    cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
     """
@@ -337,7 +340,7 @@ def generate_land_water_cloud_gt(
     s2_img, cloud_mask = _read_s2img_cloudmask_v1(
         s2_image_path,
         window=window,
-        cloudprob_tiff=cloudprob_tiff,
+        cloudprob_image_path=cloudprob_image_path,
         cloudprob_in_lastband=cloudprob_in_lastband,
     )
     # =========================================
@@ -365,8 +368,8 @@ def generate_land_water_cloud_gt(
         else "None"
     )
     metadata["cloudprob_tiff"] = (
-        os.path.basename(cloudprob_tiff)
-        if not cloudprob_in_lastband and cloudprob_tiff is not None
+        os.path.basename(cloudprob_image_path)
+        if not cloudprob_in_lastband and cloudprob_image_path is not None
         else "None"
     )
     metadata["method clouds"] = "s2cloudless"
@@ -406,19 +409,19 @@ def generate_water_cloud_binary_gt(
     window: Optional[rasterio.windows.Window] = None,
     keep_streams: bool = False,
     permanent_water_tiff: Optional[str] = None,
-    cloudprob_tiff: Optional[str] = None,
+    cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
     """
     New ground truth generating function for multioutput binary classification
 
     Args:
-        s2tiff:
+        s2_image_path:
         floodmap:
         metadata_floodmap: Metadata of the floodmap (if satellite is optical will mask the land/water GT)
         window:
         permanent_water_tiff:
-        cloudprob_tiff:
+        cloudprob_image_path:
         cloudprob_in_lastband:
 
     Returns:
@@ -437,7 +440,7 @@ def generate_water_cloud_binary_gt(
     s2_img, cloud_mask = _read_s2img_cloudmask_v1(
         s2_image_path,
         window=window,
-        cloudprob_tiff=cloudprob_tiff,
+        cloudprob_image_path=cloudprob_image_path,
         cloudprob_in_lastband=cloudprob_in_lastband,
     )
 
@@ -446,7 +449,7 @@ def generate_water_cloud_binary_gt(
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
         permanent_water_path=permanent_water_tiff,
-        keep_streams=keep_streams
+        keep_streams=keep_streams,
     )
 
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
@@ -471,15 +474,15 @@ def generate_water_cloud_binary_gt(
         {0: "invalid", 1: "land", 2: "water"},
     ]
     metadata["shape"] = list(water_mask.shape)
-    metadata["s2tiff"] = os.path.basename(s2_image_path)
+    metadata["s2_image_path"] = os.path.basename(s2_image_path)
     metadata["permanent_water_tiff"] = (
         os.path.basename(permanent_water_tiff)
         if permanent_water_tiff is not None
         else "None"
     )
-    metadata["cloudprob_tiff"] = (
-        os.path.basename(cloudprob_tiff)
-        if not cloudprob_in_lastband and cloudprob_tiff is not None
+    metadata["cloudprob_image_path"] = (
+        os.path.basename(cloudprob_image_path)
+        if not cloudprob_in_lastband and cloudprob_image_path is not None
         else "None"
     )
     metadata["method clouds"] = "s2cloudless"
@@ -653,7 +656,6 @@ def generate_gt_v2(
         permanent_water_path=permanent_water_tiff,
     )
 
-
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
     invalid_clouds_land_pixels = metadata_floodmap["satellite"] == "Sentinel-2"
 
@@ -788,7 +790,6 @@ def _generate_gt_fromarray(
     watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1
     watergt[water_mask >= 1] = 2  # only water is 2
     watergt[invalids] = 0
-
 
     if invalid_clouds_threshold is not None:
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
