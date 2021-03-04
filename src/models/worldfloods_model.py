@@ -20,7 +20,7 @@ class WorldFloodsModel(pl.LightningModule):
         h_params_dict = model_params.get('hyperparameters', {})
         self.num_class = h_params_dict.get('num_classes', 3)
         self.network = self.configure_architecture(h_params_dict)
-        self.weight_per_class = torch.tensor(h_params_dict.get('weight_per_class', [1 for i in range(self.num_class)]))
+        self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class', [1 for i in range(self.num_class)]), device=self.device)
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
@@ -46,7 +46,7 @@ class WorldFloodsModel(pl.LightningModule):
         """
         x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
-        loss = losses.calc_loss_mask_invalid(logits, y, weight=self.weight_per_class)
+        loss = losses.calc_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
         self.log("loss", loss)
         
         if batch_idx == 0 and self.logger is not None:
@@ -79,7 +79,7 @@ class WorldFloodsModel(pl.LightningModule):
         x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
         
-        bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class)
+        bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
         dice_loss = losses.dice_loss_mask_invalid(logits, y)
         self.log('bce_loss', bce_loss)
         self.log('dice_loss', dice_loss)
