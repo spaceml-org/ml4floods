@@ -13,6 +13,7 @@ import requests
 from io import BytesIO, StringIO
 from typing import Dict
 from zipfile import ZipFile, is_zipfile
+import tqdm
 
 copernicus_ems_webscrape_data  = {"confirmation": 1,
                                   "op":  "Download file",
@@ -54,7 +55,6 @@ def load_ems_zipfiles_to_gcp(url_of_zip: str,
       None
     """
     client = storage.Client()
-    bucket_id = "ml4cc_data_lake"
     bucket = client.get_bucket(bucket_id)
     blob = bucket.blob(path_to_write_to)
     
@@ -73,8 +73,8 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
       file_path_to_zip (str): name of file path in bucket leading to zip file.
       file_path_to_unzip (str): name of file path in bucket leading to extracted files.
     """
-    storage_client = storage.Client()
-    bucket = storage_client.get_bucket(bucket_id)
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_id)
     blob_to_zip = bucket.blob(file_path_to_zip)
     
     zip_file_from_gcpbucket = blob_to_zip.download_as_bytes()
@@ -84,7 +84,7 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     input_zip = ZipFile(f_from_gcp)
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
-            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name:
+            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
                 zipdict[name] = input_zip.read(name)
                 blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
                 blob_to_unzipped.upload_from_string(zipdict[name])
@@ -93,29 +93,34 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
 
 def main():
     bucket_id = 'ml4cc_data_lake'
-    path_to_write_zip = 'ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
-    path_to_write_unzip = 'ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
+    path_to_write_zip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
+    path_to_write_unzip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
+    
     # fetch Copernicus EMSR codes from Copernicus EMS activations page
     # pandas DataFrame of activations table
-    table_activations_ems = activations.table_floods_ems(event_start_date="2020-07-01")
+    table_activations_ems = activations.table_floods_ems(event_start_date="2015-07-01")
+    
     # convert code index to a list
     emsr_codes = table_activations_ems.index.to_list()
-    
+
     # retrieve zipfile urls for each activation EMSR code
-    for emsr in emsr_codes[0:1]:
-        zip_files_activation_url_list = activations.fetch_zip_file_urls(emsr)
-        for zip_url in zip_files_activation_url_list:
-            load_ems_zipfiles_to_gcp(zip_url,
-                                     bucket_id,
-                                     path_to_write_zip,
-                                     copernicus_ems_webscrape_data)
-            extract_ems_zip_files_gcp(bucket_id,
-                                     path_to_write_zip,
-                                     path_to_write_unzip)
-        
+    print(f"Generating Copernicus EMSR codes to fetch:")
+    with tqdm.tqdm(emsr_codes) as pbar:
+        for emsr in pbar:
+            pbar.set_description("Retrieving EMSR zipfiles to extract...")
+            zip_files_activation_url_list = activations.fetch_zip_file_urls(emsr)
+            path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}"
+            for zip_url in zip_files_activation_url_list:
+                aoi = zip_url.split('_')[1]
+                path_to_write_unzip_bucket = f"{path_to_write_unzip}/{emsr}/{aoi}"
+                load_ems_zipfiles_to_gcp(zip_url,
+                                         bucket_id,
+                                         path_to_write_zip_bucket,
+                                         copernicus_ems_webscrape_data)
+                extract_ems_zip_files_gcp(bucket_id,
+                                         path_to_write_zip_bucket,
+                                         path_to_write_unzip_bucket)
     
-    # retrieve zipfiles using activations EMSR codes and making html request
-    # from the individual Copernicus EMSR website
     
     
 if __name__ == "__main__":
