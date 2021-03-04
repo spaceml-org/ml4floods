@@ -16,25 +16,25 @@ from src.preprocess.tiling import WindowSize
 from src.preprocess.utils import get_list_of_window_slices
 
 
-class WorldFloodsDataset(Dataset):
+class RasterioImageDataset(Dataset):
     """A prepackaged WorldFloods PyTorch Dataset
-    This initializes the dataset given a set a set of image files with a 
+    This initializes the dataset given a set a set of image files with a
     subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
-    
+
     Args:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
-            
+
     Attributes:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
     """
 
@@ -58,10 +58,10 @@ class WorldFloodsDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Dict:
         """Index to select an image
-        
+
         Args:
             idx (int): index
-        
+
         Returns:
             a dictionary with the image and mask keys
             {"image", "mask"}
@@ -69,7 +69,7 @@ class WorldFloodsDataset(Dataset):
 
         # get filenames
         image_name = self.image_files[idx]
-        
+
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
@@ -98,30 +98,30 @@ class WorldFloodsDataset(Dataset):
         return len(self.image_files)
 
 
-class WorldFloodsDatasetTiled(Dataset):
+class RasterioImageTilingDataset(Dataset):
     """A prepackaged WorldFloods PyTorch Dataset
-    This initializes the dataset given a set a set of image files with a 
+    This initializes the dataset given a set a set of image files with a
     subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
     This also does the tiling under the hood given the windowsize.
-    
+
     Args:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window sizes (height, width) to be
             used for the tiling
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
-            
+
     Attributes:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
         window_size (namedtuple): a tuple with the height and width
             arguments
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
         accumulated_list_of_windows_test (List[namedtuple]): a list of
             namedtuples each consisting of a filename and a rasterio.window
@@ -153,10 +153,10 @@ class WorldFloodsDatasetTiled(Dataset):
 
     def __getitem__(self, idx: int) -> Dict:
         """Index to select an image tile
-        
+
         Args:
             idx (int): index
-        
+
         Returns:
             a dictionary with the keys to the image tiles and mask tiles
             {"image", "mask"}

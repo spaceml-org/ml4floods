@@ -1,6 +1,6 @@
-from dataclasses import dataclass, asdict
 import json
 import pickle
+from dataclasses import asdict, dataclass
 
 
 def load_dataclass_json(dc: dataclass, file_path: str) -> dataclass:

@@ -1,16 +1,20 @@
-from requests_html import HTMLSession
-import pandas as pd
-import requests
+import datetime
+import json
 import os
 import shutil
-from typing import List, Dict, Optional
 import zipfile
 from glob import glob
-from shapely.ops import cascaded_union
-from src.data.config import RENAME_SATELLITE, ACCEPTED_FIELDS
-import numpy as np
-import datetime
+from typing import Dict, List, Optional
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import requests
+from requests_html import HTMLSession
+from shapely.ops import cascaded_union
+
+from src.data import utils
+from src.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
 import json
 from google.cloud import storage
 import requests
@@ -24,7 +28,7 @@ from src.data.copernicusEMS import utils
 
 
 def is_downloadable(url: str) -> bool:
-    """ 
+    """
     Function that checks if the url contains a downloadable resource.
     Relies on requests_html package. Helper function for download_vector_cems.
 
@@ -38,54 +42,52 @@ def is_downloadable(url: str) -> bool:
 
     h = requests.head(url, allow_redirects=True)
     header = h.headers
-    content_type = header.get('content-type').lower()
-    return ('text' not in content_type or 'html' not in content_type)
+    content_type = header.get("content-type").lower()
+    return "text" not in content_type or "html" not in content_type
 
 
 def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
     """
-    This function reads the list of EMS Rapid Mapping Activations 
+    This function reads the list of EMS Rapid Mapping Activations
     from the Copernicus Emergency Management System for Event type
     'Flood' and 'Storm' and returns a pandas.DataFrame of flood events
     organized in columns {'Code', 'Title', 'CodeDate', 'Type', 'Country'}.
 
     Args:
-      event_start_data (str): The starting date for the span of time until 
+      event_start_data (str): The starting date for the span of time until
         the present that the user would like to retrieve flood events for.
-        
+
     Returns:
-      A pandas.DataFrame of Flood events. 
+      A pandas.DataFrame of Flood events.
 
     """
     ems_web_page = "https://emergency.copernicus.eu/mapping/list-of-activations-rapid"
     tables = pd.read_html(ems_web_page)[0]
     tables_floods = tables[(tables.Type == "Flood") | (tables.Type == "Storm")]
     tables_floods = tables_floods[tables_floods["Event Date"] >= event_start_date]
-    tables_floods = tables_floods.reset_index()[['Act. Code', 
-                                                 'Title', 
-                                                 'Event Date', 
-                                                 'Type', 
-                                                 'Country/Terr.']]
-    
-    tables_floods = tables_floods.rename({"Act. Code": "Code",
-                                          "Country/Terr.": "Country",
-                                          "Event Date": "CodeDate"},
-                                         axis=1)
+    tables_floods = tables_floods.reset_index()[
+        ["Act. Code", "Title", "Event Date", "Type", "Country/Terr."]
+    ]
+
+    tables_floods = tables_floods.rename(
+        {"Act. Code": "Code", "Country/Terr.": "Country", "Event Date": "CodeDate"},
+        axis=1,
+    )
 
     return tables_floods.set_index("Code")
 
 
 def fetch_zip_file_urls(code: str) -> List[str]:
     """
-    This Function takes a unique Copernicus EMS hazard activation code and 
+    This Function takes a unique Copernicus EMS hazard activation code and
     retrieves the url which holds the zip files associated with that code.
-    
+
     e.g. if cod = EMMSR502, the url holding the zip files of interest is:
     https://emergency.copernicus.eu/mapping/list-of-components/EMSR502/aemfeed
-    
+
     Args:
       code (str): The unique Copernicus EMS code for an event of interest.
-      
+
     Returns:
       zip_url_per_code (str): url of the zipfile location for the associated
         input code.
@@ -95,50 +97,58 @@ def fetch_zip_file_urls(code: str) -> List[str]:
     r = session.get(product_url)
 
     zip_url_per_code = []
-    for zipfile in r.html.find('a'):
-        if ("zip" in zipfile.attrs['href']) and ("REFERENCE_MAP" not in zipfile.attrs['href']) and ("RTP01" not in zipfile.attrs['href']):
-            zip_url_per_code.append("https://emergency.copernicus.eu"+zipfile.attrs['href'])
-    
+    for zipfile in r.html.find("a"):
+        if (
+            ("zip" in zipfile.attrs["href"])
+            and ("REFERENCE_MAP" not in zipfile.attrs["href"])
+            and ("RTP01" not in zipfile.attrs["href"])
+        ):
+            zip_url_per_code.append(
+                "https://emergency.copernicus.eu" + zipfile.attrs["href"]
+            )
+
     return zip_url_per_code
 
 
-def write_file_to_bucket(user_gcp_key_file: str, 
-                         bucket_name: str, 
-                         bucket_path: str, 
-                         file_leaf_node: str) -> None:
+def write_file_to_bucket(
+    user_gcp_key_file: str, bucket_name: str, bucket_path: str, file_leaf_node: str
+) -> None:
     """
     Function to write file to the Google Cloud Storage Bucket.
-    
+
     Args:
-      user_gcp_key_file (str): A Google Cloud Storage personal account 
-        and private key json file used to access the GCP Python API to the 
+      user_gcp_key_file (str): A Google Cloud Storage personal account
+        and private key json file used to access the GCP Python API to the
         data storage bucket.
-     
+
     Returns:
       None. File is uploaded to the GCP bucket.
     """
     # TODO this is broken move to utils.py?
     storage_client = storage.Client.from_service_account_json(user_gcp_key_file)
-    
+
     # Create a bucket object
     bucket = storage_client.get_bucket(bucket_name)
-    
+
     # Construct path from bucket to file leaf node in file tree
     filename_w_path = "%s/%s" % (bucket_path, file_leaf_node)
     blob = bucket.blob(filename_w_path)
-    
+
     # Upload file bucket object
     # TODO this is broken
     blob.upload_from_filename(local_file_name)
-    
+
     # Notify user
     print("Upload Complete")
-    
+
+
 # Move to config
-copernicus_ems_webscrape_data  = {"confirmation": 1,
-                                  "op":  "Download file",
-                                  "form_build_id": "xxxx",
-                                  "form_id": "emsmapping_disclaimer_download_form"}
+copernicus_ems_webscrape_data = {
+    "confirmation": 1,
+    "op": "Download file",
+    "form_build_id": "xxxx",
+    "form_id": "emsmapping_disclaimer_download_form",
+}
 
 
 def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
@@ -146,23 +156,23 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
     This function downloads the zip files from the zip file url of each
     Copernicus EMS hazard activation and saves them locally to a file
     directory folder_out under a subdirectory based off the activation code.
-    
+
     Args:
-      zipfile_url (str): Url to retrieve the downloadable zip file from 
-        the Copernicus EMS Rapid Mapping Activations site for a unique hazard 
+      zipfile_url (str): Url to retrieve the downloadable zip file from
+        the Copernicus EMS Rapid Mapping Activations site for a unique hazard
         code of the form 'EMSR[0-9]{3},' where the string EMSR is followed
         by three digits taken from 0-9.
-      
-      folder_out (str): The name of the directory created to hold the Copernicus 
+
+      folder_out (str): The name of the directory created to hold the Copernicus
         EMS zip file download.
-    
+
     Returns:
       file_path_out (str): a filepath built from the folder_out handle and the
         Copernicus EMS activation code name embedded in the file.
-    """  
+    """
     # Activation Code derived from zipfile_url
     act_code = os.path.basename(zipfile_url)
-    
+
     # Create a directory called folder_out to hold zipped EMS activations
     if not os.path.exists(folder_out):
         os.mkdir(folder_out)
@@ -177,58 +187,65 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
     if is_downloadable(zipfile_url):
         r = requests.get(zipfile_url, allow_redirects=True)
     else:
-        r = requests.post(zipfile_url,
-                          allow_redirects=True,
-                          data=copernicus_ems_webscrape_data)
-       
-    open(file_path_out, 'wb').write(r.content) 
+        r = requests.post(
+            zipfile_url, allow_redirects=True, data=copernicus_ems_webscrape_data
+        )
+
+    open(file_path_out, "wb").write(r.content)
     return file_path_out
 
-def load_ems_zipfiles_to_gcp(url_of_zip: str,
-                             bucket_id: str,
-                             path_to_write_to: str,
-                             copernicus_ems_web_structure: Dict):
+
+def load_ems_zipfiles_to_gcp(
+    url_of_zip: str,
+    bucket_id: str,
+    path_to_write_to: str,
+    copernicus_ems_web_structure: Dict,
+):
     """
-    Function to retrieve zipfiles from Copernicus EMS based on 
+    Function to retrieve zipfiles from Copernicus EMS based on
     EMSR code and webpage for each individual code and save it
     to a Google Cloud Storage bucket.
-    
+
     Example:
     https://emergency.copernicus.eu/mapping/list-of-components/EMSR502
-    
+
     is the page for EMSR code = 502, and contains the list of zipfiles
     for this particular code. May include multiple areas of interests
     for the same code.
-    
+
     Requirements:
     requests
     google.cloud.storage
     io.BytesIO
-    
+
     Args:
       url_of_zip (str): url of the zip file for a given ESMR code.
       bucket_id (str): name of Google Cloud Storage bucket
       path_to_write_to (str): path to write to in Google Cloud Storage bucket
-      copernicus_ems_web_structure (Dict): dictionary derived from json of 
+      copernicus_ems_web_structure (Dict): dictionary derived from json of
           Copernicus EMSR url for a single code. Potentially brittle.
-      
+
     Returns:
       None
     """
     client = storage.Client()
     bucket = client.get_bucket(bucket_id)
     blob = bucket.blob(path_to_write_to)
-    
-    r = requests.post(url_of_zip, allow_redirects=True, data=copernicus_ems_web_structure)
+
+    r = requests.post(
+        url_of_zip, allow_redirects=True, data=copernicus_ems_web_structure
+    )
     f = BytesIO(r.content)
     blob.upload_from_string(f.read(), content_type="application/zip")
-    
 
-def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_to_unzip: str):
+
+def extract_ems_zip_files_gcp(
+    bucket_id: str, file_path_to_zip: str, file_path_to_unzip: str
+):
     """
     Function to extract Copernicus EMS zip files from individual EMSR code
     page.
-    
+
     Args:
       bucket_id (str): name of Google Cloud Storage bucket.
       file_path_to_zip (str): name of file path in bucket leading to zip file.
@@ -237,36 +254,41 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     client = storage.Client()
     bucket = client.get_bucket(bucket_id)
     blob_to_zip = bucket.blob(file_path_to_zip)
-    
+
     zip_file_from_gcpbucket = blob_to_zip.download_as_bytes()
     f_from_gcp = BytesIO(zip_file_from_gcpbucket)
-    
+
     zipdict = {}
     input_zip = ZipFile(f_from_gcp)
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
-            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
+            if (
+                "areaOfInterestA" in name
+                or "hydrography" in name
+                or "observed" in name
+                or "source" in name
+            ):
                 zipdict[name] = input_zip.read(name)
                 blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
                 blob_to_unzipped.upload_from_string(zipdict[name])
 
 
-def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw"):
+def unzip_copernicus_ems(file_name: str, folder_out: str = "Copernicus_EMS_raw"):
     """
     This function unzips a single zip file from a Copernicus EMS hazard to a
-    local directory folder_out with a subdirectory derived from the file handle of 
-    the file prior to the extension. Copernicus EMS per code zip file may be retrieved 
-    and downloaded using download_vector_cems locally to access rapid mapping products 
-    as described in: 
-    
+    local directory folder_out with a subdirectory derived from the file handle of
+    the file prior to the extension. Copernicus EMS per code zip file may be retrieved
+    and downloaded using download_vector_cems locally to access rapid mapping products
+    as described in:
+
     https://emergency.copernicus.eu/mapping/ems/online-manual-rapid-mapping-products
-    
+
     Args:
       file_name (str): The zip file to be extracted
-      
+
       folder_out (str): The local directory to store the subdirectories named by the file
         handle naming convention.
-        
+
     Returns:
        directory_to_extract_to (str): a directory based on the file_name within folder_out.
 
@@ -276,10 +298,11 @@ def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw
         os.mkdir(folder_out)
 
     # Create subdirectories to extract zip files to based on file name handle
-    zip_ref = zipfile.ZipFile(file_name, 'r')
-    directory_to_extract_to = os.path.join(folder_out, 
-                                           os.path.basename(os.path.splitext(file_name)[0]))
-    
+    zip_ref = zipfile.ZipFile(file_name, "r")
+    directory_to_extract_to = os.path.join(
+        folder_out, os.path.basename(os.path.splitext(file_name)[0])
+    )
+
     # Check to see if directories exist
     if not os.path.exists(directory_to_extract_to):
         os.mkdir(directory_to_extract_to)
@@ -291,37 +314,40 @@ def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw
     zip_ref.close()
 
     # Remove whitespace with underscores in directory names
-    for fextracted in glob(os.path.join(directory_to_extract_to,"*.*")):
+    for fextracted in glob(os.path.join(directory_to_extract_to, "*.*")):
         if " " not in fextracted:
             continue
-        newname = fextracted.replace(" ","_")
+        newname = fextracted.replace(" ", "_")
         shutil.move(fextracted, newname)
-        
+
     return directory_to_extract_to
 
 
-# move to config later 
-formats = ["%d/%m/%Y T%H:%M:%SZ",
-           "%d/%m/%Y %H:%M:%SZ",
-           "%d/%m/%Y T%H:%M:%S",
-           "%d/%m/%Y T%H:%MZ",
-           "%d/%m/%Y T%H:%M UTC",
-           "%d/%m/%Y %H:%M UTC",
-           "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S",
-           "%Y/%m/%d %H:%M UTC",
-           "%d/%m/%Y %H:%M:%S UTC"]
+# move to config later
+formats = [
+    "%d/%m/%Y T%H:%M:%SZ",
+    "%d/%m/%Y %H:%M:%SZ",
+    "%d/%m/%Y T%H:%M:%S",
+    "%d/%m/%Y T%H:%MZ",
+    "%d/%m/%Y T%H:%M UTC",
+    "%d/%m/%Y %H:%M UTC",
+    "%d/%m/%Y %H:%M",
+    "%d/%m/%Y %H:%M:%S",
+    "%Y/%m/%d %H:%M UTC",
+    "%d/%m/%Y %H:%M:%S UTC",
+]
 
 
 def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> str:
     """
     Helper function that checks whether a file already exists in the parent
     directory.
-    
+
     Args:
       parent_dir_of_files (str): parent directory of the shape files extracted from
         Copernicus EMS.
       string_pattern (str): keyword and file extension for the file of interest.
-      
+
     Returns:
       A string of the file of interest if it exists in the parent directory, returns
       None otherwise.
@@ -331,22 +357,24 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
         return source_file[0]
     else:
         print(f"{file_extension_pattern} not found in directory {parent_dir_of_file}")
-        return 
+        return
 
 
-def post_event_date_difference_is_ok(date_post_event: datetime,
-                                     date_ems_code: datetime,
-                                     max_date_post_event: datetime,
-                                     verbose: bool = False, ) -> bool:
+def post_event_date_difference_is_ok(
+    date_post_event: datetime,
+    date_ems_code: datetime,
+    max_date_post_event: datetime,
+    verbose: bool = False,
+) -> bool:
     """
     Function to print the datetime difference between pre-flood event and post-flood event.
-    
+
     Args:
       date_post_event (datetime): date after a flood event.
       date_ems_code (datetime): date Copernicus EMS activation code was issued.
       max_date_post_event (datetime):
       verbose:
-      
+
     Returns:
       None
     """
@@ -359,14 +387,18 @@ def post_event_date_difference_is_ok(date_post_event: datetime,
         elif diff_dates.days > 35:
             print("difference too big %d" % diff_dates.days)
             return False
-            
-        elif (max_date_post_event-date_post_event).days >= 10:
-            print("difference between max date post event and min date post event too big %d" % (max_date_post_event-date_post_event).days)
+
+        elif (max_date_post_event - date_post_event).days >= 10:
+            print(
+                "difference between max date post event and min date post event too big %d"
+                % (max_date_post_event - date_post_event).days
+            )
             return False
 
     return True
 
-def _check_hydro_ok(shapefile, expected_crs:str)->bool:
+
+def _check_hydro_ok(shapefile, expected_crs: str) -> bool:
     gpd_obj = gpd.read_file(shapefile)
 
     if gpd_obj.crs is None:
@@ -379,8 +411,12 @@ def _check_hydro_ok(shapefile, expected_crs:str)->bool:
         print(f"{shapefile} and observed_event_file have different georreferencing")
         return False
 
-    if not all(notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]):
-        print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}")
+    if not all(
+        notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]
+    ):
+        print(
+            f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}"
+        )
         return False
 
     return True
@@ -389,21 +425,24 @@ def _check_hydro_ok(shapefile, expected_crs:str)->bool:
 COLUMN_W_CLASS_OBSERVED_EVENT = "notation"
 COLUMN_W_CLASS_HYDRO = "obj_type"
 
-def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbose: bool = False) -> Optional[Dict]:
+
+def filter_register_copernicusems(
+    unzipped_directory: str, code_date: str, verbose: bool = False
+) -> Optional[Dict]:
     """
     Function that collects the following files from the unzipped directories for each Copernicus EMS
     activation code and stores them into a dictionary with additional metadata with respect to the source.
     The files of interest are the shapefiles and associated supporting files for the:
-    
+
       1. area of interest
       2. hydrography
       3. observed event
-    
+
     Args:
       unzipped_directory (str): The name of the directory where the extracted EMS files live
       code_date (str): string representation of the EMSR Activation code date of issuance.
       verbose (bool): boolean flag to monitor the difference in pre-event and post-event dates.
-        
+
     Returns:
       A dictionary with the keys 'name', 'ems_code', 'timestamp', 'satellite', 'area_of_interest'
       'timestamp_ems_code', 'observed_event_file', 'area_of_interest_file.'
@@ -418,7 +457,7 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     observed_event_file = is_file_in_directory(unzipped_directory, "*_observed*.shp")
     if not observed_event_file:
         return
-    
+
     area_of_interest_file = is_file_in_directory(unzipped_directory, "*_area*.shp")
     if not area_of_interest_file:
         return
@@ -432,36 +471,61 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
 
     date_post_event = min(pd_source[pd_source.eventphase == "Post-event"]["date"])
     max_date_post_event = max(pd_source[pd_source.eventphase == "Post-event"]["date"])
-    satellite_post_event = np.array(pd_source[(pd_source.eventphase == "Post-event") &
-                                              (pd_source.date == date_post_event)]["source_nam"])[0]
+    satellite_post_event = np.array(
+        pd_source[
+            (pd_source.eventphase == "Post-event") & (pd_source.date == date_post_event)
+        ]["source_nam"]
+    )[0]
 
-    date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-     
-    if not post_event_date_difference_is_ok(date_post_event, date_ems_code, max_date_post_event, verbose):
+    date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(
+        tzinfo=datetime.timezone.utc
+    )
+
+    if not post_event_date_difference_is_ok(
+        date_post_event, date_ems_code, max_date_post_event, verbose
+    ):
         return
-    
+
     # Check if pre-event date precedes post-event date
     content_pre_event = {}
     if np.any(pd_source.eventphase == "Pre-event"):
-        date_pre_event = max(np.array(pd_source[pd_source.eventphase == "Pre-event"]["date"]))
-        satellite_pre_event = np.array(pd_source[(pd_source.eventphase == "Pre-event") &
-                                                 (pd_source.date == date_pre_event)]["source_nam"])[0]
+        date_pre_event = max(
+            np.array(pd_source[pd_source.eventphase == "Pre-event"]["date"])
+        )
+        satellite_pre_event = np.array(
+            pd_source[
+                (pd_source.eventphase == "Pre-event")
+                & (pd_source.date == date_pre_event)
+            ]["source_nam"]
+        )[0]
 
         content_pre_event["satellite_pre_event"] = satellite_pre_event
         content_pre_event["timestamp_pre_event"] = date_pre_event
         if (date_post_event - date_pre_event).days < 0 and verbose:
-            print("Date pre event %s is after date post event %s" % (date_pre_event.strftime("%Y-%m-%d"),
-                                                                     date_post_event.strftime("%Y-%m-%d")))
+            print(
+                "Date pre event %s is after date post event %s"
+                % (
+                    date_pre_event.strftime("%Y-%m-%d"),
+                    date_post_event.strftime("%Y-%m-%d"),
+                )
+            )
             return
 
     # Filter content of shapefile
     pd_geo = gpd.read_file(observed_event_file)
-    if np.any(pd_geo["event_type"] != '5-Flood') and verbose:
-        print(f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}")
+    if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
+        print(
+            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}"
+        )
         return
 
-    if not all(notation in ACCEPTED_FIELDS for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]):
-        print(f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}")
+    if not all(
+        notation in ACCEPTED_FIELDS
+        for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]
+    ):
+        print(
+            f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}"
+        )
         return
 
     if pd_geo.crs is None:
@@ -486,7 +550,9 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
     area_of_interest_crs = str(area_of_interest.crs).lower()
 
     if area_of_interest_crs != str_crs:
-        print(f"{area_of_interest_file} and {observed_event_file} have different georreferencing")
+        print(
+            f"{area_of_interest_file} and {observed_event_file} have different georreferencing"
+        )
         return
 
     if area_of_interest_crs != "epsg:4326":
@@ -494,7 +560,7 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
 
     # Save pol of area of interest in epsg:4326 (lat/lng)
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
-    
+
     if "obj_desc" in pd_geo:
         event_type = np.unique(pd_geo.obj_desc)
         if len(event_type) > 1:
@@ -504,29 +570,26 @@ def filter_register_copernicusems(unzipped_directory: str, code_date: str, verbo
         event_type = "NaN"
 
     crs_code_space, crs_code = str_crs.split(":")
-    
+
     register = {
-        'event id': product_name,
-        'layer name': os.path.basename(os.path.splitext(observed_event_file)[0]),
-        'event type': event_type,
-        'satellite date': date_post_event,
-        'country': "NaN",
-        'satellite': satellite_post_event,
-        'bounding box': get_bbox(pd_geo),
-        'reference system': {
-            'code space': crs_code_space,
-            'code': crs_code
-        },
-        'abstract': "NaN",
-        'purpose': "NaN",
-        'source': 'CopernicusEMS',
-        "area_of_interest_polygon" : area_of_interest_pol,
+        "event id": product_name,
+        "layer name": os.path.basename(os.path.splitext(observed_event_file)[0]),
+        "event type": event_type,
+        "satellite date": date_post_event,
+        "country": "NaN",
+        "satellite": satellite_post_event,
+        "bounding box": get_bbox(pd_geo),
+        "reference system": {"code space": crs_code_space, "code": crs_code},
+        "abstract": "NaN",
+        "purpose": "NaN",
+        "source": "CopernicusEMS",
+        "area_of_interest_polygon": area_of_interest_pol,
         # CopernicusEMS specific fields
         "observed_event_file": os.path.basename(observed_event_file),
         "area_of_interest_file": os.path.basename(area_of_interest_file),
         "ems_code": ems_code,
     }
-    
+
     register.update(content_pre_event)
 
     name_possibilities = ["_hydrographyA_", "_hydrography_a"]
@@ -554,11 +617,15 @@ def parse_date_messy(date_list):
     """
     for fm in formats:
         try:
-            #date_list[0] = date_list[0].replace("119/09", "19/09").replace("05/24", "24/05")
-            time_part = date_list[1].replace(".", ":").replace(";", ":").replace("UCT", "UTC")
+            # date_list[0] = date_list[0].replace("119/09", "19/09").replace("05/24", "24/05")
+            time_part = (
+                date_list[1].replace(".", ":").replace(";", ":").replace("UCT", "UTC")
+            )
             if time_part == "Not Applicable":
                 time_part = "00:00"
-            date_post_event = datetime.datetime.strptime(date_list[0] + ' ' + time_part, fm)
+            date_post_event = datetime.datetime.strptime(
+                date_list[0] + " " + time_part, fm
+            )
             if date_post_event.tzname() is None:
                 date_post_event = date_post_event.replace(tzinfo=datetime.timezone.utc)
             return date_post_event
@@ -577,7 +644,9 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
 
     # pd_source = Dbf5(source_file).to_dataframe()
 
-    if "eventphase" not in pd_source.columns or not np.any(pd_source.eventphase == "Post-event"):
+    if "eventphase" not in pd_source.columns or not np.any(
+        pd_source.eventphase == "Post-event"
+    ):
         if verbose:
             print("\t eventphase not found or not Post-event in source file")
         return
@@ -588,7 +657,10 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
         dates_formated.append(date)
     pd_source["date"] = dates_formated
     if filter_event_dates:
-        pd_source = pd_source[(pd_source.eventphase == "Post-event") | (pd_source.eventphase == "Pre-event")]
+        pd_source = pd_source[
+            (pd_source.eventphase == "Post-event")
+            | (pd_source.eventphase == "Pre-event")
+        ]
 
         if np.any(pd.isna(pd_source.date)):
             if verbose:
@@ -604,29 +676,53 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
     return pd_source
 
 
-def generate_floodmap(metadata_floodmap: Dict, folder_files:str, filterland:bool=True) -> gpd.GeoDataFrame:
+def generate_floodmap(
+    metadata_floodmap: Dict, folder_files: str, filterland: bool = True
+) -> gpd.GeoDataFrame:
     """ Generates a floodmap with the joined info of the hydro and flood. """
 
-    area_of_interest = gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                  metadata_floodmap["area_of_interest_file"]))
+    area_of_interest = gpd.read_file(
+        os.path.join(
+            folder_files,
+            metadata_floodmap["event id"],
+            metadata_floodmap["area_of_interest_file"],
+        )
+    )
 
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
-    mapdf = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                         metadata_floodmap["observed_event_file"])),
-                              area_of_interest_pol)
+    mapdf = utils.filter_pols(
+        gpd.read_file(
+            os.path.join(
+                folder_files,
+                metadata_floodmap["event id"],
+                metadata_floodmap["observed_event_file"],
+            )
+        ),
+        area_of_interest_pol,
+    )
     assert mapdf.shape[0] > 0, f"No polygons within bounds for {metadata_floodmap}"
 
-    floodmap = gpd.GeoDataFrame({"geometry": mapdf.geometry},
-                                crs=mapdf.crs)
+    floodmap = gpd.GeoDataFrame({"geometry": mapdf.geometry}, crs=mapdf.crs)
     floodmap["w_class"] = mapdf[COLUMN_W_CLASS_OBSERVED_EVENT]
     floodmap["source"] = "flood"
 
     if "hydrology_file" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                                   metadata_floodmap["hydrology_file"])),
-                                        area_of_interest_pol)
-        mapdf_hydro = utils.filter_land(mapdf_hydro) if filterland and (mapdf_hydro.shape[0] > 0) else mapdf_hydro
+        mapdf_hydro = utils.filter_pols(
+            gpd.read_file(
+                os.path.join(
+                    folder_files,
+                    metadata_floodmap["event id"],
+                    metadata_floodmap["hydrology_file"],
+                )
+            ),
+            area_of_interest_pol,
+        )
+        mapdf_hydro = (
+            utils.filter_land(mapdf_hydro)
+            if filterland and (mapdf_hydro.shape[0] > 0)
+            else mapdf_hydro
+        )
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro"
             mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
@@ -635,9 +731,16 @@ def generate_floodmap(metadata_floodmap: Dict, folder_files:str, filterland:bool
 
     # Add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
     if "hydrology_file_l" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                                   metadata_floodmap["hydrology_file_l"])),
-                                        area_of_interest_pol)
+        mapdf_hydro = utils.filter_pols(
+            gpd.read_file(
+                os.path.join(
+                    folder_files,
+                    metadata_floodmap["event id"],
+                    metadata_floodmap["hydrology_file_l"],
+                )
+            ),
+            area_of_interest_pol,
+        )
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro_l"
             mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
@@ -654,7 +757,7 @@ def generate_floodmap(metadata_floodmap: Dict, folder_files:str, filterland:bool
 
     # TODO set CRS of floodmap? check it is still OK
 
-    floodmap.loc[floodmap.w_class.isna(), 'w_class'] = "Not Applicable"
+    floodmap.loc[floodmap.w_class.isna(), "w_class"] = "Not Applicable"
 
     return floodmap
 
@@ -663,17 +766,20 @@ def generate_polygon(bbox):
     """
     Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
     """
-    return [[bbox[0],bbox[1]],
-             [bbox[2],bbox[1]],
-             [bbox[2],bbox[3]],
-             [bbox[0],bbox[3]],
-             [bbox[0],bbox[1]]]
+    return [
+        [bbox[0], bbox[1]],
+        [bbox[2], bbox[1]],
+        [bbox[2], bbox[3]],
+        [bbox[0], bbox[3]],
+        [bbox[0], bbox[1]],
+    ]
+
 
 def get_bbox(pd_geo: gpd.GeoDataFrame) -> Dict:
     """
     This function is a helper function of processing_register
-    This function takes a geopandas dataframe 
-    
+    This function takes a geopandas dataframe
+
     """
     bounds = pd_geo.bounds
     minx = np.min(bounds.minx)
@@ -685,9 +791,3 @@ def get_bbox(pd_geo: gpd.GeoDataFrame) -> Dict:
 
 
 COPY_FORMATS = ["dbf", "prj", "shp", "shx"]
-
-
-
-
-
-

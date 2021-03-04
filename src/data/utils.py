@@ -4,20 +4,243 @@ These are mainly used for explorations, testing, and demonstrations.
 """
 
 import argparse
-import subprocess
-import rasterio
 import json
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from google.cloud import storage
-from shapely.ops import cascaded_union
-from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
-import numpy as np
 import geopandas as gpd
+import numpy as np
+import rasterio
+from google.cloud import storage
 from shapely.geometry import Polygon
+from shapely.ops import cascaded_union
+
+from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
+from dataclasses import dataclass, field
+import subprocess
 
 # HOME = str(Path.home())
+
+
+@dataclass
+class GCPPath:
+    full_path: str
+    bucket_id: str = field(default=None)
+    parent_path: str = field(default=None)
+    file_name: str = field(default=None)
+    suffix: str = field(default=None)
+
+    def __init__(self, full_path):
+
+        # trick to ensure the prefix is always there
+        full_path = add_gcp_prefix(remove_gcp_prefix(full_path))
+
+        self.full_path = full_path
+        #         print(self.full_path)
+        self.bucket_id = str(Path(full_path.split("gs://")[1]).parts[0])
+
+        #         print(self.bucket_id)
+        self.parent_path = str(Path(full_path.split(self.bucket_id)[1]).parent)[1:]
+        #         print(self.parent_path)
+        self.file_name = str(Path(full_path).name)
+        #         print(self.file_name)
+        self.suffix = self.file_name.split(".")[1]
+
+    #         print(self.suffix)
+
+    def get_files_in_parent_directory(self, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+        # check if it exists
+
+        files = ["gs://" + str(Path(self.bucket_id).joinpath(x.name)) for x in blobs]
+        return files
+
+    def get_files_in_parent_directory_with_suffix(self, suffix=str, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+        # check if it exists
+        files = [
+            "gs://" + str(Path(self.bucket_id).joinpath(x.name))
+            for x in blobs
+            if str(Path(x.name).suffix) == suffix
+        ]
+        return files
+
+    def get_files_in_parent_directory_with_name(
+        self, name: Optional[str] = None, **kwargs
+    ):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+
+        blobs = bucket.list_blobs(prefix=self.parent_path)
+
+        if name is None:
+            name = self.get_file_name_stem()
+        # check if it exists
+        files = [
+            "gs://" + str(Path(self.bucket_id).joinpath(x.name))
+            for x in blobs
+            if name in str(Path(x.name))
+        ]
+        return files
+
+    def get_file_name_stem(self):
+        return str(Path(self.file_name).stem)
+
+    def transfer_file_to_bucket(
+        self, destination_bucket_name: str, destination_file_path: str, **kwargs
+    ):
+        """Transfers using the google-storage package
+
+        Args:
+            destination_file_path (str): the destination to the file path
+            name (bool): flag to check for the name or not
+
+        Returns:
+            None
+
+        Examples:
+            Example with no name attached
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/'
+            >>> my_path_class.transfer_file_to_bucket(dest)
+
+            Another example, except we have the name attached:
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/to/my/file.suffix'
+            >>> my_path_class.transfer_file_to_bucket(dest, name=True)
+        """
+
+        storage_client = storage.Client(**kwargs)
+        source_bucket = storage_client.get_bucket(self.bucket_id)
+        source_blob = source_bucket.blob(self.get_file_path())
+
+        destination_bucket = storage_client.get_bucket(destination_bucket_name)
+
+        destination_blob_name = str(
+            Path(destination_file_path).joinpath(self.file_name)
+        )
+        # copy to new destination
+        new_blob = source_bucket.copy_blob(
+            source_blob, destination_bucket, destination_blob_name
+        )
+
+        return self
+
+    def transfer_file_to_bucket_gsutils(
+        self, destination_file_path: str, file_name: bool = False, **kwargs
+    ):
+        """Transfers using the gsutils package
+        Very useful function when we have files that are quite large.
+        The standard google-storage package doesn't work well with these
+        types of files.
+
+        Args:
+            destination_file_path (str): the destination to the file path
+
+        Returns:
+            None
+
+        Examples:
+            Example with no name attached
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/'
+            >>> my_path_class.transfer_file_to_bucket_gsutils(dest)
+
+            Another example, except we have the name attached:
+
+            >>> origin = 'gs://bucket/path/to/my/file.suffix'
+            >>> my_path_class = GCPPath(origin)
+            >>> dest = 'gs://newbucket/new/path/to/my/file.suffix'
+            >>> my_path_class.transfer_file_to_bucket_gsutils(dest, name=True)
+        """
+
+        # remove prefix
+        destination_file_path = remove_gcp_prefix(destination_file_path)
+        # join paths
+        if not file_name:
+            destination_file_path = str(
+                Path(destination_file_path).joinpath(self.file_name)
+            )
+        # add prefix
+        destination_file_path = add_gcp_prefix(destination_file_path)
+
+        subprocess.call(
+            ["gsutil", "cp", f"{self.full_path}", f"{destination_file_path}"]
+        )
+
+        return self
+
+    def download_file_from_bucket(self, destination_path: str):
+
+        client = storage.Client()
+
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+        blob = bucket.get_blob(self.get_file_path())
+
+        # create directory if needed
+        create_folder(destination_path)
+
+        # get full path
+        destination_file_name = Path(destination_path).joinpath(self.file_name)
+
+        # download data
+        blob.download_to_filename(str(destination_file_name))
+
+        return destination_file_name
+
+    def check_if_file_exists(self, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+        blob = bucket.blob(self.get_file_path())
+        # check if it exists
+        return blob.exists()
+
+    #         return get_files_in_bucket_directory(self.bucket_id, directory=self.parent_path, suffix=self.suffix)
+
+    def get_file_path(self):
+        return str(Path(self.parent_path).joinpath(self.file_name))
+
+    def replace_bucket(self, bucket_id):
+        self.bucket_id = bucket_id
+        return self
+
+    def replace_file_name(self, file_name):
+        self.file_name = file_name
+        return self
+
+    def replace(self, original: str, replacement: str):
+
+        full_path = self.full_path.replace(original, replacement)
+
+        #         self.__init__(full_path)
+
+        return GCPPath(full_path)
 
 
 def download_data_from_bucket(
@@ -403,3 +626,75 @@ def parse_gcp_path(full_path) -> Tuple[str]:
     file_name = str(Path(full_path).name)
 
     return bucket_id, file_path, file_name
+
+
+def copy_file_between_gcpbuckets(
+    source_bucket_name: str,
+    source_file_path: str,
+    destination_bucket_name: str,
+    destination_blob_name: str,
+    **kwargs,
+) -> None:
+    """
+    Function for copying files between directories or buckets. it will use GCP's copy
+    function.
+
+    Args:
+        source_bucket_name (str): name of SOURCE bucket
+        source_file_path (str): name of SOURCE file path (without bucket name)
+        destination_bucket_name (str): name of DESTINATION bucket
+        destination_blob_name (str): name of DESTINATION file path (without bucket name)
+
+    Examples:
+        >>> source_bucket_name = "bucket_id_source"
+        >>> destination_bucket_name = "destination_bucket_name"
+        >>> file_path_from = "path/to/data.tif"
+        >>> file_path_to = "path/to/data.tif"
+        >>> mv_blob(source_bucket_name, file_path_from, destination_bucket_name, file_path_to)
+    """
+    storage_client = storage.Client(**kwargs)
+    source_bucket = storage_client.get_bucket(source_bucket_name)
+    source_blob = source_bucket.blob(source_file_path)
+    destination_bucket = storage_client.get_bucket(destination_bucket_name)
+
+    # copy to new destination
+    new_blob = source_bucket.copy_blob(
+        source_blob, destination_bucket, destination_blob_name
+    )
+
+    return None
+
+
+def add_gcp_prefix(filepath: str, bucket_name: Optional[str] = None):
+    """Adds the annoying GCP prefix!!!!!
+    Args:
+        filepath (str): the filepath within the bucket
+        gcp_prefix (str): the bucketname
+    Returns:
+        filepath (str): with the gcp prefix
+    Examples:
+        >>> add_gcp_prefix("test", "bucket")
+        gs://bucket/test
+    """
+    if bucket_name is not None:
+        return "gs://" + str(Path(bucket_name).joinpath(filepath))
+    else:
+        return "gs://" + filepath
+
+
+def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
+    """Adds the annoying GCP prefix!!!!!
+    Args:
+        filepath (str): the filepath within the bucket
+        gcp_prefix (str): the bucketname
+    Returns:
+        filepath (str): with the gcp prefix
+    Examples:
+        >>> add_gcp_prefix("test", "bucket")
+        gs://bucket/test
+    """
+    filepath = filepath.replace("gs://", "")
+    if gcp_prefix:
+        return str(Path(*Path(filepath).parts[1:]))
+    else:
+        return filepath

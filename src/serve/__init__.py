@@ -1,7 +1,12 @@
-import os, requests, subprocess, time
 import atexit
-from signal import SIGTERM
 import logging
+import os
+import subprocess
+import time
+from signal import SIGTERM
+
+import requests
+
 logging.basicConfig(level=logging.INFO)
 
 class TileServer:

@@ -1,16 +1,15 @@
 import glob
 import os
+# Helpful trick for loading the directories correction
+import sys
+from collections import namedtuple
+from os import path
+from pathlib import Path
+from typing import List, NamedTuple
+
 import pandas as pd
 from google.cloud import storage
-from os import path
-from typing import NamedTuple, List
-from collections import namedtuple
-import pandas as pd
-
-# Helpful trick for loading the directories correction
-import sys, os
 from pyprojroot import here
-from pathlib import Path
 
 
 def construct_worldfloods_public_filepaths() -> NamedTuple:

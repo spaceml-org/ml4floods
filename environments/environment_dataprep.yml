@@ -26,3 +26,9 @@ dependencies:
   - isort
   - mypy
   - opencv-python
+  # PREPROCESSING
+  - s2cloudless
+  - requests_html
+  - ee
+  - StringIO
+  - geemap
