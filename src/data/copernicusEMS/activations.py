@@ -12,7 +12,15 @@ import numpy as np
 import datetime
 import geopandas as gpd
 import json
+from google.cloud import storage
+import requests
+from io import BytesIO, StringIO
+from typing import Dict
+from zipfile import ZipFile, is_zipfile
+import tqdm
+
 from src.data import utils
+from src.data.copernicusEMS import utils
 
 
 def is_downloadable(url: str) -> bool:
@@ -67,7 +75,7 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
     return tables_floods.set_index("Code")
 
 
-def fetch_zip_files(code: str) -> List[str]:
+def fetch_zip_file_urls(code: str) -> List[str]:
     """
     This Function takes a unique Copernicus EMS hazard activation code and 
     retrieves the url which holds the zip files associated with that code.
@@ -88,7 +96,7 @@ def fetch_zip_files(code: str) -> List[str]:
 
     zip_url_per_code = []
     for zipfile in r.html.find('a'):
-        if ("zip" in zipfile.attrs['href']) and ("REFERENCE_MAP" not in zipfile.attrs['href']):
+        if ("zip" in zipfile.attrs['href']) and ("REFERENCE_MAP" not in zipfile.attrs['href']) and ("RTP01" not in zipfile.attrs['href']):
             zip_url_per_code.append("https://emergency.copernicus.eu"+zipfile.attrs['href'])
     
     return zip_url_per_code
@@ -175,6 +183,72 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
        
     open(file_path_out, 'wb').write(r.content) 
     return file_path_out
+
+def load_ems_zipfiles_to_gcp(url_of_zip: str,
+                             bucket_id: str,
+                             path_to_write_to: str,
+                             copernicus_ems_web_structure: Dict):
+    """
+    Function to retrieve zipfiles from Copernicus EMS based on 
+    EMSR code and webpage for each individual code and save it
+    to a Google Cloud Storage bucket.
+    
+    Example:
+    https://emergency.copernicus.eu/mapping/list-of-components/EMSR502
+    
+    is the page for EMSR code = 502, and contains the list of zipfiles
+    for this particular code. May include multiple areas of interests
+    for the same code.
+    
+    Requirements:
+    requests
+    google.cloud.storage
+    io.BytesIO
+    
+    Args:
+      url_of_zip (str): url of the zip file for a given ESMR code.
+      bucket_id (str): name of Google Cloud Storage bucket
+      path_to_write_to (str): path to write to in Google Cloud Storage bucket
+      copernicus_ems_web_structure (Dict): dictionary derived from json of 
+          Copernicus EMSR url for a single code. Potentially brittle.
+      
+    Returns:
+      None
+    """
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_id)
+    blob = bucket.blob(path_to_write_to)
+    
+    r = requests.post(url_of_zip, allow_redirects=True, data=copernicus_ems_web_structure)
+    f = BytesIO(r.content)
+    blob.upload_from_string(f.read(), content_type="application/zip")
+    
+
+def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_to_unzip: str):
+    """
+    Function to extract Copernicus EMS zip files from individual EMSR code
+    page.
+    
+    Args:
+      bucket_id (str): name of Google Cloud Storage bucket.
+      file_path_to_zip (str): name of file path in bucket leading to zip file.
+      file_path_to_unzip (str): name of file path in bucket leading to extracted files.
+    """
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_id)
+    blob_to_zip = bucket.blob(file_path_to_zip)
+    
+    zip_file_from_gcpbucket = blob_to_zip.download_as_bytes()
+    f_from_gcp = BytesIO(zip_file_from_gcpbucket)
+    
+    zipdict = {}
+    input_zip = ZipFile(f_from_gcp)
+    if is_zipfile(f_from_gcp):
+        for name in input_zip.namelist():
+            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
+                zipdict[name] = input_zip.read(name)
+                blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
+                blob_to_unzipped.upload_from_string(zipdict[name])
 
 
 def unzip_copernicus_ems(file_name : str, folder_out : str = "Copernicus_EMS_raw"):
