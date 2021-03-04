@@ -47,7 +47,8 @@ class WorldFloodsModel(pl.LightningModule):
         x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
         loss = losses.calc_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
-        self.log("loss", loss)
+        if (batch_idx % 100) == 0:
+            self.log("loss", loss)
         
         if batch_idx == 0 and self.logger is not None:
             self.log_images(x, y, logits)
