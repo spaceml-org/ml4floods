@@ -33,6 +33,7 @@ class GCPPath:
 
     def __init__(self, full_path):
 
+        # trick to ensure the prefix is always there
         full_path = add_gcp_prefix(remove_gcp_prefix(full_path))
 
         self.full_path = full_path
