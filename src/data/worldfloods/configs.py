@@ -19,8 +19,8 @@ BANDS_S2 = [
 
 CHANNELS_CONFIGURATIONS = {
     "all": list(range(0,len(BANDS_S2))),
-    "rgb": [1, 2, 3],
-    "rgbi": [1, 2, 3, 7],
+    "bgr": [1, 2, 3],
+    "bgri": [1, 2, 3, 7],
     "sub_20": [1, 2, 3, 4, 5, 6, 7, 8],
     "hyperscout2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }

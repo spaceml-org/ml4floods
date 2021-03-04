@@ -143,7 +143,7 @@ class WorldFloodsModel(pl.LightningModule):
     def batch_to_unnorm_rgb(self, x):
         model_input_npy = x.cpu().numpy()
 
-        mean, std = normalize.get_normalisation("rgb")  # B, R, G!
+        mean, std = normalize.get_normalisation("bgr")  # B, R, G!
         mean = mean[np.newaxis]
         std = std[np.newaxis]
 
