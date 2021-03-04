@@ -1,40 +1,46 @@
 {
-    "name": "WorldFloods ML Pipeline Template Configuration",
-    "task": "segmentation",
-    "data_params": {
-        "data_type": "s2",
-        "bands": "all"
-    },
+    "experiment_name": "worldfloods_demo_test",
+    "seed": 12,
     "model_params": {
-        "model_type": "unet",
-        "num_class": 3,
-        "num_channels": 13,
-        "weight_per_class": [0.516891, 0.027322, 0.455787],
-        "pretrained": true,
-        "model_properties": {
-            "example": "example"
-        }
-    },
-    "train_params": {
-        "seed": 12,
-        "lr": 1e-4,
-        "lr_decay": 0.5,
-        "lr_patience": 2,
-        "max_epochs": 10,
-        "loss": "weighted_bce"
-    },
-    "test_params": {
-        "num_samples": 10,
-        "metrics": ["bce", "dice", "iou", "confusion", "roc", "auc"]
-    },
-    "storage_params": {
-        "local": true,
-        "gcp": false,
-        "wandb": {
-            "project": "ml4floods-test",
-            "entity": "sambuddinc"
+        "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
+        "use_pretrained_weights": false,
+        "path_to_weights": "checkpoints/",
+        "hyperparameters": {
+            "max_tile_size": 256,
+            "channel_configuration": "all",
+            "label_names": ["land", "water", "cloud"],
+            "weight_per_class": [0.516942, 0.027322, 0.455787],
+            "model_type": "linear",
+            "num_classes": 3,
+            "max_epochs": 10,
+            "val_every": 1,
+            "lr": 1e-4,
+            "lr_decay": 0.5,
+            "lr_patience": 2
         },
-        "dvc": false,
-        "sacred": false
+        "train": true,
+        "test": true
+    },
+    "data_params": {
+        "loader_type": "local",
+        "image_count": 3,
+        "bucket_id": "ml4floods",
+        "path_to_splits": "/worldfloods/public",
+        "train_test_split_file": "worldfloods/public/train_test_split.json",
+        "input_folder": "S2",
+        "target_folder": "gt",
+        "batch_size": 32,
+        "window_size": [256, 256],
+        "channel_configuration": "all",
+        "train_transformation": {
+            "num_classes": 3,
+            "totensor": true,
+            "normalize": true
+        },
+        "test_transformation": {
+            "num_classes": 3,
+            "totensor": true,
+            "normalize": true
+        }
     }
 }

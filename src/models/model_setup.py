@@ -1,47 +1,11 @@
+import torch
 import itertools
-import os
-import random
-import time
-from glob import glob
+from src.models.worldfloods_model import WorldFloodsModel
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+import numpy as np
+
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)
-
-import numpy as np
-import torch
-import torch.nn
-
-from src.models.architectures.baselines import SimpleCNN, SimpleLinear
-from src.models.architectures.unets import UNet
-from src.models.utils import configuration
-
-BANDS_S2 = ["B1", "B2", "B3", "B4", "B5",
-            "B6", "B7", "B8", "B8A", "B9",
-            "B10", "B11", "B12"]
-
-
-CHANNELS_CONFIGURATIONS = {
-    'all': list(range(len(BANDS_S2))),
-    'rgb': [1, 2, 3],
-    'rgbi': [1, 2, 3, 7],
-    'sub_20': [1, 2, 3, 4, 5, 6, 7, 8],
-    'hyperscout2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-}
-
-# TODO this is specific of worldfloods!
-SENTINEL2_NORMALIZATION = np.array([
-    [3787.0604973, 2634.44474043],
-    [3758.07467509, 2794.09579088],
-    [3238.08247208, 2549.4940614],
-    [3418.90147615, 2811.78109878],
-    [3450.23315812, 2776.93269704],
-    [4030.94700446, 2632.13814197],
-    [4164.17468251, 2657.43035126],
-    [3981.96268494, 2500.47885249],
-    [4226.74862547, 2589.29159887],
-    [1868.29658114, 1820.90184704],
-    [399.3878948,  761.3640411],
-    [2391.66101119, 1500.02533014],
-    [1790.32497137, 1241.9817628]], dtype=np.float32)
 
 
 # U-Net inputs must be divisible by 8
@@ -49,26 +13,64 @@ SUBSAMPLE_MODULE = {
     "unet": 8
 }
 
-
-def load_model_weights(model: torch.nn.Module, model_file: str):
-    # TODO: Just load the final_weights
-    print('Using latest model: {}'.format(model_file))
-    model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
-    return model_file
-
-
-def load_model_architecture(model_name: str, num_class: int, num_channels: int) -> torch.nn.Module:
-    if model_name == "linear":
-        model = SimpleLinear(num_channels, num_class)
-    elif model_name == "unet":
-        model = UNet(num_channels, num_class)
-    elif model_name == "simplecnn":
-        model = SimpleCNN(num_channels, num_class)
+def get_model(model_config):
+    """
+    Function to setup WorldFloodsModel
+    """
+    if model_config.get("test", False):
+        
+        # TODO: Load final model state dict into model for testing
+        
+        return WorldFloodsModel(model_config)
+    
+    elif model_config.get("train", False):
+        
+        return WorldFloodsModel(model_config)
+    
     else:
-        raise ModuleNotFoundError("model {} not found".format(model_name))
+        raise Exception("No model type set in config e.g model_params.test == True")
+        
+        
+        
+def get_channel_configuration_bands(channel_configuration):
+    return CHANNELS_CONFIGURATIONS[channel_configuration]
+        
+        
+def get_model_inference_function(model, config, apply_normalization:bool=True) -> Callable:
+    """
+    Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
+    prediction does not break bc of memory errors when predicting large tiles.
 
-    print('Model  : {}'.format(model_name))
-    return model
+    Args:
+        model :LightingModule
+        config:
+        apply_normalization:
+
+    Returns: callable function
+    """
+
+    model_type = config.model_params.hyperparameters.model_type
+    module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
+
+    if apply_normalization:
+        channel_configuration_bands = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
+
+        mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
+        mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
+
+        std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
+        std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
+
+        def normalize(batch_image):
+            assert batch_image.ndim == 4, "Expected 4d tensor"
+            return (batch_image - mean_batch) / (std_batch + 1e-6)
+    else:
+        normalize = None
+
+    return get_pred_function(model, model.device,
+                             module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
+                             activation_fun=lambda ot: torch.softmax(ot, dim=1),
+                             normalization=normalize)
 
 
 def handle_device(device='cuda:0'):
@@ -78,73 +80,8 @@ def handle_device(device='cuda:0'):
         for c in range(torch.cuda.device_count()):
             print("Using device %s" % torch.cuda.get_device_name(c))
     return torch.device(device)
-
-
-def set_random_seed(seed=None):
-    """
-    Sets the random seed
-
-    Args:
-        seed:
-
-    Returns:
-
-    """
-    if seed is None:
-        seed = int((time.time()*1e6) % 1e8)
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-
-        
-def model_inference_fun(opt: configuration.AttrDict) -> Callable:
-    """
-    Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
-    prediction does not break bc of memory errors when predicting large tiles.
-
-    Args:
-        opt:
-
-    Returns: callable function
-    """
-    device = handle_device(opt.device)
-
-    model = load_model_architecture(opt.model, opt.num_class, opt.num_channels)
-
-    if device.type.startswith('cuda'):
-        model = model.to(device)
-
-    model_weights = os.path.join(opt.model_folder, opt.model + "_final_weights.pt")
-
-    assert os.path.exists(model_weights), f"Model weights file: {model_weights} not found"
-
-    load_model_weights(model, model_weights)
-
-    module_shape = SUBSAMPLE_MODULE[opt.model] if opt.model in SUBSAMPLE_MODULE else 1
-
-    # This does not work because it expects 3 dim images (without the batch dim)
-    # norm = Normalize(mean=SENTINEL2_NORMALIZATION[CHANNELS_CONFIGURATIONS[channel_configuration_name], 0], 
-    #                  std=SENTINEL2_NORMALIZATION[CHANNELS_CONFIGURATIONS[channel_configuration_name], 1])
     
-    channel_configuration_bands = CHANNELS_CONFIGURATIONS[opt.channel_configuration]
-    mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
-    mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
-    std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
-    std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
-
-    def normalize(batch_image):
-        assert batch_image.ndim == 4, "Expected 4d tensor"
-        return (batch_image - mean_batch) / (std_batch + 1e-6)
-
-    return get_pred_function(model,device=device,
-                             module_shape=module_shape, max_tile_size=opt.max_tile_size,
-                             activation_fun=lambda ot: torch.softmax(ot, dim=1),
-                             normalization=normalize)
-
-        
 def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=1280,
                       normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None) -> Callable:
     """

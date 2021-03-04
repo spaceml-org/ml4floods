@@ -18,9 +18,9 @@ BANDS_S2 = [
 
 
 CHANNELS_CONFIGURATIONS = {
-    "all": list(range(1,len(BANDS_S2)+1)),
-    "rgb": [1, 2, 3],
-    "rgbi": [1, 2, 3, 7],
+    "all": list(range(0,len(BANDS_S2))),
+    "bgr": [1, 2, 3],
+    "bgri": [1, 2, 3, 7],
     "sub_20": [1, 2, 3, 4, 5, 6, 7, 8],
     "hyperscout2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }
@@ -43,3 +43,8 @@ SENTINEL2_NORMALIZATION = np.array(
     ],
     dtype=np.float32,
 )
+
+COLORS_WORLDFLOODS = np.array([[0, 0, 0],
+                               [139, 64, 0],
+                               [0, 0, 139],
+                               [220, 220, 220]], dtype=np.float32) / 255
