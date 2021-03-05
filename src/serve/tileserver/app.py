@@ -1,12 +1,75 @@
-import os, mercantile, time, sys
+import os, mercantile, time, sys, json
+from datetime import datetime as dt
 import io
 from signal import SIGTERM
 from PIL import Image
 import numpy as np
+import pandas as pd
 import rasterio
 import rasterio.warp as warp
-from flask import Flask, jsonify, url_for, send_file
+from flask import Flask, jsonify, url_for, send_file, request
+
+from src.data.copernicusEMS import activations
+from src.serve.tileserver import helpers
+
 app = Flask(__name__)
+
+
+### on startup grab copernicus events -> might want to periodically rerun this
+events_df = activations.table_floods_ems()
+countries_df = pd.DataFrame(json.load(open(os.path.join(os.getcwd(),'src','serve','tileserver','static','countries.json'),'r')))
+events_df = helpers.postprocess_floodtable(events_df, countries_df)
+
+client = storage.Client()
+bucket=client.bucket()
+
+"""
+@app.route('/ingest/', methods=['GET'])
+
+
+@app.route('/custom/', methods=['POST'])
+"""
+
+@app.route('/get/isavailable/', methods=['GET'])
+def get_isavailable():
+    ems_code = request.args.get('ems_code')
+    client = storage.Client()
+    bucket=client.bucket()
+    
+    
+    blob = bucket.blob(filename)
+    return jsonify({'exists':blob.exists()})
+    
+
+@app.route('/get/catalog/',methods=['GET'])
+def refresh_catalog():
+    
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    iso2 = request.args.get('iso2')
+    
+    start_date_object=dt.fromisoformat(start_date)
+    end_date_object=dt.fromisoformat(end_date)
+    
+    updated_df = helpers.walk_bucket(events_df, check_available=False)
+    print ('updated df')
+    print (updated_df)
+    
+    # filter the df
+    if iso2:
+        idxs = (updated_df['CodeDate']>=start_date_object) & (updated_df['CodeDate']<end_date_object)  & updated_df['value'].str.contains(iso2) #< this broken for now because iso2 is list from multi -> change to np.prod.any in list
+    else:
+        idxs = (updated_df['CodeDate']>=start_date_object) & (updated_df['CodeDate']<end_date_object)
+        
+    print ('params')
+    print ('start date',start_date)
+    print ('end_date',end_date)
+    print ('iso2',iso2)
+    print (idxs.sum())
+    print(updated_df.loc[idxs,['Title','CodeDate']])
+    updated_df['CodeDate'] = updated_df['CodeDate'].apply(lambda el: el.isoformat())
+    
+    return updated_df.loc[idxs,['Code','Title','CodeDate']].to_json()
 
 
 @app.route("/")
