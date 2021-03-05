@@ -29,6 +29,7 @@ COUNTRIES_MAP = {
 }
 
 def postprocess_floodtable(events_df, countries_df):
+    events_df = events_df.reset_index()
     countries_df['label_lower'] = countries_df['label'].str.lower()
     events_df['country_lower'] = events_df['Country'].str.lower()
     events_df['CodeDate'] = pd.to_datetime(events_df['CodeDate'])
@@ -37,7 +38,7 @@ def postprocess_floodtable(events_df, countries_df):
     return events_df
     
 
-def walk_bucket(events_df):
+def walk_bucket(events_df, check_available=True):
     """
     Walk the google buckets and verify the status of the events. The ground truth (GT) and S2 RGB should be available for the image to be 'available', elif there's a token, it is 'pending', else unavailable.    
     """
@@ -53,11 +54,15 @@ def walk_bucket(events_df):
     # if all the tiffs are there, then the 
     s2_recs = [{'PATH':b,'EXT':os.path.splitext(b)[1],'EVENTCODE':os.path.split(b)[1].split('_')[0],'AOI':os.path.split(b)[1].split('_')[1]} for b in s2_blobs if os.path.splitext(b)[1]!='']
     gt_recs = [{'PATH':b,'EXT':os.path.splitext(b)[1],'EVENTCODE':os.path.split(b)[1].split('_')[0],'AOI':os.path.split(b)[1].split('_')[1]} for b in gt_blobs if os.path.splitext(b)[1]!='']
-    custom_events = [{'Code':os.path.split(b)[1].split('_')[0],'CodeDate':os.path.split(b)[1].split('_')[2]} for b in s2_blobs if os.path.split(b)[1][0:6]=='CUSTOM']
+    custom_events = [{'Code':os.path.split(b)[1].split('_')[0],'Title':os.path.split(b)[1].split('_')[0],'CodeDate':os.path.split(b)[1].split('_')[2]} for b in s2_blobs if os.path.split(b)[1][0:6]=='CUSTOM']
     
     custom_df = pd.DataFrame(custom_events)
     custom_df['CodeDate'] = pd.to_datetime(custom_df['CodeDate'])
     update_df = events_df.append(custom_df)
+    update_df.index = range(len(update_df))
+    
+    if not check_available:
+        return update_df
     
     s2_df = pd.DataFrame(s2_recs)
     gt_df = pd.DataFrame(gt_recs)

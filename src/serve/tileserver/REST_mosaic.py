@@ -89,7 +89,7 @@ class RESTMosaic:
     def __init__(self,bands = ['B4','B3','B2'], patch_size=256, scale=10,days_offset=20, save_path='./tmp.tif',s2_tiles_path=None,google_key_path=None,verbose=False,cloud_dest=None):
         # start the authorized session, load the S2_tiles, and set the parameters
         
-        # set the scale and patch_size
+        # set the parameters
         self.PATCH_SIZE=patch_size
         self.SCALE=scale
         self.days_offset=days_offset
@@ -204,10 +204,10 @@ class RESTMosaic:
         Dx = int((aoi_utm.bounds[2]-aoi_utm.bounds[0])//self.SCALE)
         Dy = int((aoi_utm.bounds[3]-aoi_utm.bounds[1])//self.SCALE)
         
-        a=e=1/10
+        a=e=1/self.SCALE
         b=d=0
-        x_off= -aoi_utm.bounds[0]/10
-        y_off = -aoi_utm.bounds[1]/10
+        x_off= -aoi_utm.bounds[0]/self.SCALE
+        y_off = -aoi_utm.bounds[1]/self.SCALE
         GT = [a,b,d,e,x_off,y_off]
         
         return aoi_utm, GT, Dx, Dy, reproject, UTM_EPSG
