@@ -9,7 +9,7 @@
             "max_tile_size": 256,
             "channel_configuration": "all",
             "label_names": ["land", "water", "cloud"],
-            "weight_per_class": [0.516942, 0.027322, 0.455787],
+            "weight_per_class": [1.93445299, 36.60054169, 2.19400729],
             "model_type": "linear",
             "num_classes": 3,
             "max_epochs": 10,

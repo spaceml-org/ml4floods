@@ -20,7 +20,9 @@ class WorldFloodsModel(pl.LightningModule):
         h_params_dict = model_params.get('hyperparameters', {})
         self.num_class = h_params_dict.get('num_classes', 3)
         self.network = self.configure_architecture(h_params_dict)
-        self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class', [1 for i in range(self.num_class)]), device=self.device)
+        self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class',
+                                                               [1 for i in range(self.num_class)]),
+                                             device=self.device)
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
