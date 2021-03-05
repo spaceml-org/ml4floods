@@ -621,15 +621,15 @@ def filter_register_copernicusems_gcp(unzipped_directory: str, code_date: str, v
             crs_code_space, crs_code = str_crs.split(":")
 
             register = {
-                'event id': product_name,
-                'layer name': os.path.basename(os.path.splitext(observed_event_file)[0]),
-                'event type': event_type,
-                'satellite date': date_post_event,
+                'event_id': product_name,
+                'layer_name': os.path.basename(os.path.splitext(observed_event_file)[0]),
+                'event_type': event_type,
+                'satellite_date': date_post_event,
                 'country': "NaN",
                 'satellite': satellite_post_event,
-                'bounding box': get_bbox(pd_geo),
-                'reference system': {
-                    'code space': crs_code_space,
+                'bounding_box': get_bbox(pd_geo),
+                'reference_system': {
+                    'code_space': crs_code_space,
                     'code': crs_code
                 },
                 'abstract': "NaN",
@@ -640,6 +640,7 @@ def filter_register_copernicusems_gcp(unzipped_directory: str, code_date: str, v
                 "observed_event_file": os.path.basename(observed_event_file),
                 "area_of_interest_file": os.path.basename(area_of_interest_file),
                 "ems_code": ems_code,
+                "aoi_code": product_name.split("_")[1],
             }
 
             register.update(content_pre_event)
@@ -649,14 +650,14 @@ def filter_register_copernicusems_gcp(unzipped_directory: str, code_date: str, v
             if hydrology_file_a is not None:
                 if not _check_hydro_ok(hydrology_file_a, expected_crs=str_crs):
                     continue
-                register["hydrology_file"] = os.path.basename(hydrology_file_a)
+                register["hydrology_file_a"] = os.path.basename(hydrology_file_a)
             
             hydrology_file_l = [f for f in hydrology_file_l if i_source_file.split("_source")[0] in f]
             hydrology_file_l = None if len(hydrology_file_l) < 1 else hydrology_file_l[0]
             if hydrology_file_l is not None:
                 if not _check_hydro_ok(hydrology_file_l, expected_crs=str_crs):
                     continue
-                register["hydrology_file"] = os.path.basename(hydrology_file_l)
+                register["hydrology_file_l"] = os.path.basename(hydrology_file_l)
             
             register_list.append(register)
             
@@ -720,45 +721,58 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
 
 
 def generate_floodmap_gcp(metadata_floodmap: Dict, folder_files:str, filterland:bool=True) -> gpd.GeoDataFrame:
-    """ Generates a floodmap with the joined info of the hydro and flood. """
-
-    area_of_interest = gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                  metadata_floodmap["area_of_interest_file"]))
-
+    """ Generates a floodmap with the joined info of the hydro and flood. 
+    Works the same way as the generate_floodmap() function but reads files from the bucket."""
+    
+    area_of_interest_file = os.path.join(folder_files, 
+                                         metadata_floodmap["ems_code"], 
+                                         metadata_floodmap["aoi_code"], 
+                                         metadata_floodmap["area_of_interest_file"])
+    area_of_interest = gpd.read_file(area_of_interest_file)
+    
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
-    mapdf = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                         metadata_floodmap["observed_event_file"])),
-                              area_of_interest_pol)
+    observed_event_file = os.path.join(folder_files, 
+                                       metadata_floodmap["ems_code"], 
+                                       metadata_floodmap["aoi_code"], 
+                                       metadata_floodmap["observed_event_file"])
+    mapdf = utils.filter_pols(gpd.read_file(observed_event_file), area_of_interest_pol)
     assert mapdf.shape[0] > 0, f"No polygons within bounds for {metadata_floodmap}"
-
+    
     floodmap = gpd.GeoDataFrame({"geometry": mapdf.geometry},
                                 crs=mapdf.crs)
     floodmap["w_class"] = mapdf[COLUMN_W_CLASS_OBSERVED_EVENT]
     floodmap["source"] = "flood"
-
-    if "hydrology_file" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                                   metadata_floodmap["hydrology_file"])),
-                                        area_of_interest_pol)
+    
+    if "hydrology_file_a" in metadata_floodmap:
+        hydrology_file_a = os.path.join(folder_files, 
+                                        metadata_floodmap["ems_code"], 
+                                        metadata_floodmap["aoi_code"],  
+                                        metadata_floodmap["hydrology_file_a"])
+        
+        mapdf_hydro = utils.filter_pols(gpd.read_file(hydrology_file_a), area_of_interest_pol)
         mapdf_hydro = utils.filter_land(mapdf_hydro) if filterland and (mapdf_hydro.shape[0] > 0) else mapdf_hydro
+        
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro"
             mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
             mapdf_hydro = mapdf_hydro[["geometry", "w_class", "source"]].copy()
             floodmap = pd.concat([floodmap, mapdf_hydro], axis=0, ignore_index=True)
-
+        
     # Add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
     if "hydrology_file_l" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(gpd.read_file(os.path.join(folder_files, metadata_floodmap["event id"] ,
-                                                                   metadata_floodmap["hydrology_file_l"])),
-                                        area_of_interest_pol)
+        hydrology_file_l = os.path.join(folder_files, 
+                                        metadata_floodmap["ems_code"], 
+                                        metadata_floodmap["aoi_code"],  
+                                        metadata_floodmap["hydrology_file_l"])
+        
+        mapdf_hydro = utils.filter_pols(gpd.read_file(hydrology_file_l), area_of_interest_pol)
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro_l"
             mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
             mapdf_hydro = mapdf_hydro[["geometry", "w_class", "source"]].copy()
             floodmap = pd.concat([floodmap, mapdf_hydro], axis=0, ignore_index=True)
-
+    
     # Concat area of interest
     area_of_interest["source"] = "area_of_interest"
     area_of_interest["w_class"] = "area_of_interest"
@@ -766,9 +780,7 @@ def generate_floodmap_gcp(metadata_floodmap: Dict, folder_files:str, filterland:
     floodmap = pd.concat([floodmap, area_of_interest], axis=0, ignore_index=True)
 
     assert floodmap.crs is not None, "Unexpected error. floodmap is not georreferenced!"
-
-    # TODO set CRS of floodmap? check it is still OK
-
+    
     floodmap.loc[floodmap.w_class.isna(), 'w_class'] = "Not Applicable"
 
     return floodmap
