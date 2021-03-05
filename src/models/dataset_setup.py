@@ -1,8 +1,9 @@
 from src.preprocess.worldfloods import normalize as wf_normalization
 import src.preprocess.transformations as transformations
-from src.preprocess.tiling import WindowSize, save_tiles
+from src.preprocess.tiling import WindowSize, WindowSlices, save_tiles, load_windows, save_windows
 from src.data import utils
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
+from src.data.worldfloods.dataset import WorldFloodsDatasetTiled
 import os
 from pyprojroot import here
 # spyder up to find the root
@@ -10,6 +11,7 @@ root = here(project_files=[".here"])
 import io
 import json
 from typing import Dict, List, Callable, Tuple, Optional
+from src.preprocess.worldfloods import prepare_patches
 
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
@@ -78,7 +80,8 @@ def get_dataset(data_config):
             bands=bands,
             num_workers=data_config.num_workers,
             window_size=data_config.window_size,
-            batch_size=data_config.batch_size
+            batch_size=data_config.batch_size,
+            filter_windows= filter_windows_fun("v1", local_destination_dir) if data_config.filter_windows else None
         )
         dataset.setup()
             
@@ -145,6 +148,26 @@ def get_dataset(data_config):
     
     return dataset
 
+def filter_windows_fun(data_version, local_destination_dir, threshold_clouds=.5) -> Callable:
+    windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
+    def filter_windows(tiledDataset: WorldFloodsDatasetTiled) -> List[WindowSlices]:
+        if os.path.exists(windows_file):
+            selected_windows = load_windows(windows_file)
+        else:
+            if data_version == "v1":
+                selected_windows =  prepare_patches.filter_windows_v1(tiledDataset,
+                                                                      threshold_clouds=threshold_clouds)
+            elif data_version == "v2":
+                selected_windows = prepare_patches.filter_windows_v2(tiledDataset,
+                                                                     threshold_clouds=threshold_clouds)
+            else:
+                raise NotImplementedError(f"Unknown data version {data_version} expected v1 or v2")
+
+            save_windows(selected_windows, windows_file)
+
+        return selected_windows
+
+    return filter_windows
 
 def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local_destination_dir, verbose=False):
     for split in filenames.keys():

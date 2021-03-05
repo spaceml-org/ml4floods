@@ -60,7 +60,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
-        num_workers:int = 4
+        num_workers:int = 4,
+        filter_windows:Callable = None
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -77,6 +78,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # Prefixes
         self.image_prefix = input_folder
         self.gt_prefix = target_folder
+        self.filter_windows = filter_windows
         self.window_size = WindowSize(height=window_size[0], width=window_size[1])
 
     def prepare_data(self):
@@ -104,21 +106,32 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.val_files = files["val"]
         self.test_files = files["test"]
 
-        # create datasets
-        # TODO cache the list of window_slices
-        self.train_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
-            image_prefix=self.image_prefix,
-            gt_prefix=self.gt_prefix,
-            bands=self.bands,
-            transforms=self.train_transform,
-        )
+        if self.filter_windows is not None:
+            self.train_dataset = WorldFloodsDatasetTiled(
+                list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
+                image_prefix=self.image_prefix,
+                gt_prefix=self.gt_prefix,
+                bands=self.bands,
+                transforms=self.train_transform,
+            )
+            self.train_dataset.list_of_windows = self.filter_windows(self.train_dataset)
+
+        else:
+            # create datasets
+            self.train_dataset = WorldFloodsDatasetTiled(
+                list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
+                image_prefix=self.image_prefix,
+                gt_prefix=self.gt_prefix,
+                bands=self.bands,
+                transforms=self.train_transform,
+            )
+
         self.val_dataset = WorldFloodsDatasetTiled(
             list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            transforms=self.test_transform, 
+            transforms=self.test_transform,
         )
         self.test_dataset = WorldFloodsDataset(
             image_files=self.test_files,
