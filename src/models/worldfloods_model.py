@@ -64,7 +64,7 @@ class WorldFloodsModel(pl.LightningModule):
         img_data = self.batch_to_unnorm_rgb(x)
 
         self.logger.experiment.log(
-            {"f{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+            {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
 
         self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
         self.logger.experiment.log({f"{prefix}y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
