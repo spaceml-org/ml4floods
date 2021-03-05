@@ -22,7 +22,7 @@ def _filter_windows(fun_clouds_invalids:Callable,
 def filter_windows_v1(dataset: WorldFloodsDatasetTiled, threshold_clouds: float = .5) -> List[WindowSlices]:
     """ filter windows from the dataset with more that threshold_clouds * 100 of clouds or invalids """
 
-    return _filter_windows(lambda label: (label == 0) | (label == 2),
+    return _filter_windows(lambda label: (label == 0) | (label == 3),
                            dataset, threshold_clouds=threshold_clouds)
 
 
