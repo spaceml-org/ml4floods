@@ -51,24 +51,24 @@ class WorldFloodsModel(pl.LightningModule):
             self.log("loss", loss)
         
         if batch_idx == 0 and self.logger is not None:
-            self.log_images(x, y, logits)
+            self.log_images(x, y, logits,prefix="train_")
             
         return loss
     
     def forward(self, x):
         return self.network(x)
 
-    def log_images(self, x, y, logits):
+    def log_images(self, x, y, logits,prefix=""):
         mask_data = y.cpu().numpy()
         pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
         img_data = self.batch_to_unnorm_rgb(x)
 
         self.logger.experiment.log(
-            {"overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+            {"f{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
 
-        self.logger.experiment.log({"image": [wandb.Image(img) for img in img_data]})
-        self.logger.experiment.log({"y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
-        self.logger.experiment.log({"pred": [wandb.Image(self.mask_to_rgb(img + 1)) for img in pred_data]})
+        self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
+        self.logger.experiment.log({f"{prefix}y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
+        self.logger.experiment.log({f"{prefix}pred": [wandb.Image(self.mask_to_rgb(img + 1)) for img in pred_data]})
 
     def validation_step(self, batch: Dict, batch_idx):
         """
@@ -82,8 +82,8 @@ class WorldFloodsModel(pl.LightningModule):
         
         bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
         dice_loss = losses.dice_loss_mask_invalid(logits, y)
-        self.log('bce_loss', bce_loss)
-        self.log('dice_loss', dice_loss)
+        self.log('val_bce_loss', bce_loss)
+        self.log('val_dice_loss', dice_loss)
 
         pred_categorical = torch.argmax(logits, dim=1).long()
 
@@ -96,10 +96,10 @@ class WorldFloodsModel(pl.LightningModule):
         # Log IoU per class
         iou_dict = metrics.calculate_iou(cm_batch, self.label_names)
         for k in iou_dict.keys():
-            self.log(f"iou {k}", iou_dict[k])
+            self.log(f"val_iou {k}", iou_dict[k])
             
         if batch_idx == 0 and self.logger is not None:
-            self.log_images(x, y, logits)
+            self.log_images(x, y, logits,prefix="val_")
         
     def on_val_epoch_end(self):
         self.log('images', self.image_grid)
