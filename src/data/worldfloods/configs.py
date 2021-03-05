@@ -48,3 +48,6 @@ COLORS_WORLDFLOODS = np.array([[0, 0, 0],
                                [139, 64, 0],
                                [0, 0, 139],
                                [220, 220, 220]], dtype=np.float32) / 255
+
+
+CLASS_FREQUENCY_WORLDFLOODSV1 = [0.516942, 0.027322, 0.455787]

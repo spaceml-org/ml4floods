@@ -20,7 +20,9 @@ class WorldFloodsModel(pl.LightningModule):
         h_params_dict = model_params.get('hyperparameters', {})
         self.num_class = h_params_dict.get('num_classes', 3)
         self.network = self.configure_architecture(h_params_dict)
-        self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class', [1 for i in range(self.num_class)]), device=self.device)
+        self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class',
+                                                               [1 for i in range(self.num_class)]),
+                                             device=self.device)
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
@@ -31,11 +33,11 @@ class WorldFloodsModel(pl.LightningModule):
         self.label_names = h_params_dict.get('label_names', [i for i in range(self.num_class)])
         
         
-        ###### IF PRETRAINED WEIGHTS ######
-        if model_params.use_pretrained_weights:
-            filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type,
-                                    model_params.hyperparameters.model_type  + "_final_weights.pt")
-            self.load_pretrained_architecture(filepath)
+        ###### IF PRETRAINED WEIGHTS ###### TODO: Decide if to implement or not (this loads weights of just self.network rather than the whole pytorch lightning module)
+#         if model_params.use_pretrained_weights:
+#             filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type,
+#                                     model_params.hyperparameters.model_type  + "_final_weights.pt")
+#             self.load_pretrained_architecture(filepath)
 
     def training_step(self, batch: Dict, batch_idx) -> float:
         """
@@ -47,27 +49,28 @@ class WorldFloodsModel(pl.LightningModule):
         x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
         loss = losses.calc_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
-        self.log("loss", loss)
+        if (batch_idx % 100) == 0:
+            self.log("loss", loss)
         
         if batch_idx == 0 and self.logger is not None:
-            self.log_images(x, y, logits)
+            self.log_images(x, y, logits,prefix="train_")
             
         return loss
     
     def forward(self, x):
         return self.network(x)
 
-    def log_images(self, x, y, logits):
+    def log_images(self, x, y, logits,prefix=""):
         mask_data = y.cpu().numpy()
         pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
         img_data = self.batch_to_unnorm_rgb(x)
 
         self.logger.experiment.log(
-            {"overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+            {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
 
-        self.logger.experiment.log({"image": [wandb.Image(img) for img in img_data]})
-        self.logger.experiment.log({"y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
-        self.logger.experiment.log({"pred": [wandb.Image(self.mask_to_rgb(img + 1)) for img in pred_data]})
+        self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
+        self.logger.experiment.log({f"{prefix}y": [wandb.Image(self.mask_to_rgb(img)) for img in mask_data]})
+        self.logger.experiment.log({f"{prefix}pred": [wandb.Image(self.mask_to_rgb(img + 1)) for img in pred_data]})
 
     def validation_step(self, batch: Dict, batch_idx):
         """
@@ -81,8 +84,8 @@ class WorldFloodsModel(pl.LightningModule):
         
         bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class.to(self.device))
         dice_loss = losses.dice_loss_mask_invalid(logits, y)
-        self.log('bce_loss', bce_loss)
-        self.log('dice_loss', dice_loss)
+        self.log('val_bce_loss', bce_loss)
+        self.log('val_dice_loss', dice_loss)
 
         pred_categorical = torch.argmax(logits, dim=1).long()
 
@@ -95,15 +98,11 @@ class WorldFloodsModel(pl.LightningModule):
         # Log IoU per class
         iou_dict = metrics.calculate_iou(cm_batch, self.label_names)
         for k in iou_dict.keys():
-            self.log(f"iou {k}", iou_dict[k])
+            self.log(f"val_iou {k}", iou_dict[k])
             
         if batch_idx == 0 and self.logger is not None:
-            self.log_images(x, y, logits)
-        
-    def on_val_epoch_end(self):
-        self.log('images', self.image_grid)
-        self.log('masks', self.mask_grid)
-        self.log('preds', self.pred_grid)
+            self.log_images(x, y, logits,prefix="val_")
+            
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.network.parameters(), self.lr)
@@ -111,7 +110,7 @@ class WorldFloodsModel(pl.LightningModule):
                                                                factor=self.lr_decay, verbose=True,
                                                                patience=self.lr_patience)
 
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "dice_loss"}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_dice_loss"}
     
                                              
     def configure_architecture(self, h_params):
