@@ -31,11 +31,11 @@ class WorldFloodsModel(pl.LightningModule):
         self.label_names = h_params_dict.get('label_names', [i for i in range(self.num_class)])
         
         
-        ###### IF PRETRAINED WEIGHTS ######
-        if model_params.use_pretrained_weights:
-            filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type,
-                                    model_params.hyperparameters.model_type  + "_final_weights.pt")
-            self.load_pretrained_architecture(filepath)
+        ###### IF PRETRAINED WEIGHTS ###### TODO: Decide if to implement or not (this loads weights of just self.network rather than the whole pytorch lightning module)
+#         if model_params.use_pretrained_weights:
+#             filepath = os.path.join(model_params.path_to_weights, model_params.hyperparameters.model_type,
+#                                     model_params.hyperparameters.model_type  + "_final_weights.pt")
+#             self.load_pretrained_architecture(filepath)
 
     def training_step(self, batch: Dict, batch_idx) -> float:
         """
@@ -100,11 +100,7 @@ class WorldFloodsModel(pl.LightningModule):
             
         if batch_idx == 0 and self.logger is not None:
             self.log_images(x, y, logits,prefix="val_")
-        
-    def on_val_epoch_end(self):
-        self.log('images', self.image_grid)
-        self.log('masks', self.mask_grid)
-        self.log('preds', self.pred_grid)
+            
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.network.parameters(), self.lr)
@@ -112,7 +108,7 @@ class WorldFloodsModel(pl.LightningModule):
                                                                factor=self.lr_decay, verbose=True,
                                                                patience=self.lr_patience)
 
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "dice_loss"}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_dice_loss"}
     
                                              
     def configure_architecture(self, h_params):
