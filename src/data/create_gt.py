@@ -310,7 +310,7 @@ def generate_land_water_cloud_gt(
     s2_image_path: str,
     floodmap_path: str,
     window: Optional[rasterio.windows.Window] = None,
-    permanent_water_tiff: Optional[str] = None,
+    permanent_water_image_path: Optional[str] = None,
     keep_streams: bool = False,
     cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
@@ -322,9 +322,9 @@ def generate_land_water_cloud_gt(
         s2_image_path:
         floodmap:
         window:
-        permanent_water_tiff:
+        permanent_water_image_path:
         keep_streams: A boolean flag to indicate whether to include streams in the water mask
-        cloudprob_tiff:
+        cloudprob_image_path:
         cloudprob_in_lastband:
 
     Returns:
@@ -350,7 +350,7 @@ def generate_land_water_cloud_gt(
         s2_image_path,
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
-        permanent_water_path=permanent_water_tiff,
+        permanent_water_path=permanent_water_image_path,
         keep_streams=keep_streams,
     )
 
@@ -362,9 +362,9 @@ def generate_land_water_cloud_gt(
     metadata["encoding_values"] = {-1: "invalid", 0: "land", 1: "water", 2: "cloud"}
     metadata["shape"] = list(water_mask.shape)
     metadata["s2_image_path"] = os.path.basename(s2_image_path)
-    metadata["permanent_water_tiff"] = (
-        os.path.basename(permanent_water_tiff)
-        if permanent_water_tiff is not None
+    metadata["permanent_water_image_path"] = (
+        os.path.basename(permanent_water_image_path)
+        if permanent_water_image_path is not None
         else "None"
     )
     metadata["cloudprob_tiff"] = (
@@ -408,7 +408,7 @@ def generate_water_cloud_binary_gt(
     metadata_floodmap: Dict,
     window: Optional[rasterio.windows.Window] = None,
     keep_streams: bool = False,
-    permanent_water_tiff: Optional[str] = None,
+    permanent_water_image_path: Optional[str] = None,
     cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
@@ -420,7 +420,7 @@ def generate_water_cloud_binary_gt(
         floodmap:
         metadata_floodmap: Metadata of the floodmap (if satellite is optical will mask the land/water GT)
         window:
-        permanent_water_tiff:
+        permanent_water_image_path:
         cloudprob_image_path:
         cloudprob_in_lastband:
 
@@ -448,7 +448,7 @@ def generate_water_cloud_binary_gt(
         s2_image_path,
         floodmap[floodmap["w_class"] != "area_of_interest"],
         window=window,
-        permanent_water_path=permanent_water_tiff,
+        permanent_water_path=permanent_water_image_path,
         keep_streams=keep_streams,
     )
 
@@ -475,9 +475,9 @@ def generate_water_cloud_binary_gt(
     ]
     metadata["shape"] = list(water_mask.shape)
     metadata["s2_image_path"] = os.path.basename(s2_image_path)
-    metadata["permanent_water_tiff"] = (
-        os.path.basename(permanent_water_tiff)
-        if permanent_water_tiff is not None
+    metadata["permanent_water_image_path"] = (
+        os.path.basename(permanent_water_image_path)
+        if permanent_water_image_path is not None
         else "None"
     )
     metadata["cloudprob_image_path"] = (

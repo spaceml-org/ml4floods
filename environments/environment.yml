@@ -39,8 +39,6 @@ dependencies:
   - pytest
   - flake8
   - s2cloudless
-  - s2cloudless
   - requests_html
   - ee
-  - StringIO
   - geemap
