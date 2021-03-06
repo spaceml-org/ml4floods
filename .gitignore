@@ -134,3 +134,11 @@ dmypy.json
 /datasets/
 /data/
 /.vscode/
+
+*.geojson
+*.data
+*.pickle
+*.pkl
+*.json
+*.csv
+*.tif
