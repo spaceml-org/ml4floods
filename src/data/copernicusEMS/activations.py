@@ -26,6 +26,10 @@ import tqdm
 from src.data import utils
 from src.data.copernicusEMS import utils
 
+from src.data.utils import filter_land, filter_pols
+
+from src.data.utils import get_files_in_bucket_directory_gs
+
 
 def is_downloadable(url: str) -> bool:
     """
@@ -636,7 +640,7 @@ def filter_register_copernicusems_gcp(
     """
     #   sample path: gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip/EMSR340/09UNTERGREUTH
 
-    aoi_files = utils.get_files_in_bucket_directory_gs(gs_path=unzipped_directory)
+    aoi_files = get_files_in_bucket_directory_gs(gs_path=unzipped_directory)
 
     source_files = []
     observed_event_files = []
@@ -935,7 +939,7 @@ def generate_floodmap_gcp(
         metadata_floodmap["aoi_code"],
         metadata_floodmap["observed_event_file"],
     )
-    mapdf = utils.filter_pols(gpd.read_file(observed_event_file), area_of_interest_pol)
+    mapdf = filter_pols(gpd.read_file(observed_event_file), area_of_interest_pol)
     assert mapdf.shape[0] > 0, f"No polygons within bounds for {metadata_floodmap}"
 
     floodmap = gpd.GeoDataFrame({"geometry": mapdf.geometry}, crs=mapdf.crs)
@@ -950,12 +954,10 @@ def generate_floodmap_gcp(
             metadata_floodmap["hydrology_file_a"],
         )
 
-        mapdf_hydro = utils.filter_pols(
-            gpd.read_file(hydrology_file_a), area_of_interest_pol
-        )
+        mapdf_hydro = filter_pols(gpd.read_file(hydrology_file_a), area_of_interest_pol)
 
         mapdf_hydro = (
-            utils.filter_land(mapdf_hydro)
+            filter_land(mapdf_hydro)
             if filterland and (mapdf_hydro.shape[0] > 0)
             else mapdf_hydro
         )
@@ -975,9 +977,7 @@ def generate_floodmap_gcp(
             metadata_floodmap["hydrology_file_l"],
         )
 
-        mapdf_hydro = utils.filter_pols(
-            gpd.read_file(hydrology_file_l), area_of_interest_pol
-        )
+        mapdf_hydro = filter_pols(gpd.read_file(hydrology_file_l), area_of_interest_pol)
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro_l"
             mapdf_hydro = mapdf_hydro.rename({COLUMN_W_CLASS_HYDRO: "w_class"}, axis=1)
@@ -1012,7 +1012,7 @@ def generate_floodmap(
 
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
-    mapdf = utils.filter_pols(
+    mapdf = filter_pols(
         gpd.read_file(
             os.path.join(
                 folder_files,
@@ -1029,7 +1029,7 @@ def generate_floodmap(
     floodmap["source"] = "flood"
 
     if "hydrology_file" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(
+        mapdf_hydro = filter_pols(
             gpd.read_file(
                 os.path.join(
                     folder_files,
@@ -1040,7 +1040,7 @@ def generate_floodmap(
             area_of_interest_pol,
         )
         mapdf_hydro = (
-            utils.filter_land(mapdf_hydro)
+            filter_land(mapdf_hydro)
             if filterland and (mapdf_hydro.shape[0] > 0)
             else mapdf_hydro
         )
@@ -1052,7 +1052,7 @@ def generate_floodmap(
 
     # Add "hydrology_file_l"?? must be handled in later in create_gt.compute_water function
     if "hydrology_file_l" in metadata_floodmap:
-        mapdf_hydro = utils.filter_pols(
+        mapdf_hydro = filter_pols(
             gpd.read_file(
                 os.path.join(
                     folder_files,
