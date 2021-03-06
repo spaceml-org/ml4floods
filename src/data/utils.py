@@ -19,7 +19,8 @@ from shapely.ops import cascaded_union
 from src.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 from dataclasses import dataclass, field
 import subprocess
-
+from io import BytesIO
+import pickle
 # HOME = str(Path.home())
 
 
@@ -756,3 +757,63 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
         return str(Path(*Path(filepath).parts[1:]))
     else:
         return filepath
+
+    
+def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
+    """
+    This function takes a GeoPandas DataFrame and writes it to the Google Cloud Storage bucket as a GeoJSON file.
+    Args:
+      bucket_id (str): the name of the Google Cloud Storage Bucket (GCP).
+      file_directory_path_gcp (str): the name of the destination directory path in the GCP bucket.
+      geojson_file_name (str): the name of the geojson file.
+      floodmap (gpd.GeoDataFrame): the GeoPandas DataFrame containing the flood, area of interest,
+        hydrography, and observed event polygons derived from Copernicus EMS.
+    Returns:
+      None
+    """
+    client = storage.Client()
+    
+    f = BytesIO()
+    geojson_val.to_file(f, driver = "GeoJSON")
+    f.seek(0)
+    
+    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
+    bucket = client.get_bucket(bucket_id)
+    
+    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
+    blob = bucket.blob(filename_full_path)
+    
+    blob.upload_from_file(f)
+
+    
+def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
+    client = storage.Client()
+    
+    f = BytesIO()
+    pickle.dump(dict_val, f)
+    f.seek(0)
+    
+    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
+    bucket = client.get_bucket(bucket_id)
+    
+    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
+    blob = bucket.blob(filename_full_path)
+    
+    blob.upload_from_file(f)
+
+
+def read_pickle_from_gcp(gs_path) -> dict:
+    from google.cloud import storage
+
+    client = storage.Client()
+    
+    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
+    bucket = client.get_bucket(bucket_id)
+    
+    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
+    blob = bucket.blob(filename_full_path)
+
+    pickle_in = blob.download_as_string()
+    my_dictionary = pickle.loads(pickle_in)
+    
+    return my_dictionary
