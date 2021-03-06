@@ -308,7 +308,9 @@ def _check_hydro_ok(shapefile, expected_crs:str)->bool:
         return False
 
     if not all(notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]):
-        print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}")
+#         print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}")
+        not_None_gpd_obj = [row for row in gpd_obj[COLUMN_W_CLASS_HYDRO] if row is not None]
+        print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(np.array(not_None_gpd_obj))}")
         return False
 
     return True
