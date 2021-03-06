@@ -370,12 +370,15 @@ def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     land_geometries = gpddats.geometry[~isnot_land]
     land_geometries = cascaded_union(land_geometries.tolist())
-
-    gpddats_notland["geometry"] = gpddats_notland.geometry.apply(
+    
+    # Not all polygons are valid: filter to valid gpddats_notland
+    gpddats_notland_valid = gpddats_notland[gpddats_notland['geometry'].is_valid]
+    
+    gpddats_notland_valid["geometry"] = gpddats_notland_valid.geometry.apply(
         lambda g: g.difference(land_geometries)
     )
 
-    return gpddats_notland
+    return gpddats_notland_valid
 
 
 def filter_pols(gpddats: gpd.GeoDataFrame, pol_shapely: Polygon) -> gpd.GeoDataFrame:
