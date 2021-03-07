@@ -103,9 +103,9 @@ def calculate_iou(confusions, labels):
     """
     confusions = np.array(confusions)
     conf_matrix = np.sum(confusions, axis=0)
-    true_positive = np.diag(conf_matrix)
-    false_positive = np.sum(conf_matrix, 0) - true_positive
-    false_negative = np.sum(conf_matrix, 1) - true_positive
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_negative = np.sum(conf_matrix, 0) - true_positive
+    false_positive = np.sum(conf_matrix, 1) - true_positive
     iou = true_positive / (true_positive + false_positive + false_negative)
     
     iou_dict = {}
