@@ -1,0 +1,37 @@
+{
+    "experiment_name": "worldfloods_demo_test",
+    "seed": 12,
+    "model_params": {
+        "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
+        "hyperparameters": {
+            "max_tile_size": 256,
+            "metric_monitor": "val_dice_loss",
+            "channel_configuration": "all",
+            "label_names": [["invalid", "land", "water"],
+                            ["invalid","clear", "cloud"]],
+            "model_type": "linear",
+            "num_classes": 2,
+            "max_epochs": 10,
+            "val_every": 1,
+            "lr": 1e-4,
+            "lr_decay": 0.5,
+            "lr_patience": 2
+        },
+        "train": true,
+        "test": true
+    },
+    "data_params": {
+        "loader_type": "local",
+        "num_workers": 4,
+        "filter_windows": true,
+        "filter_windows_version": "v2",
+        "bucket_id": "ml4floods",
+        "path_to_splits": "/worldfloods/public",
+        "train_test_split_file": "worldfloods/public/train_test_split.json",
+        "input_folder": "S2",
+        "target_folder": "gtv2",
+        "batch_size": 32,
+        "window_size": [256, 256],
+        "channel_configuration": "all"
+    }
+}
