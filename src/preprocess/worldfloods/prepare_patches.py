@@ -29,8 +29,8 @@ def filter_windows_v1(dataset: WorldFloodsDatasetTiled, threshold_clouds: float 
 def filter_windows_v2(dataset: WorldFloodsDatasetTiled, threshold_clouds: float = .5) -> List[WindowSlices]:
     """ filter windows from the dataset with more that threshold_clouds * 100 of clouds or invalids """
 
-    # Assumes first channel is water second channel is cloud
-    return _filter_windows(lambda label: (label[0] == 0) | (label[1] == 2),
+    # Assumes first channel is cloud second channel is water
+    return _filter_windows(lambda label: (label[1] == 0) | (label[0] == 2),
                            dataset, threshold_clouds=threshold_clouds)
 
 

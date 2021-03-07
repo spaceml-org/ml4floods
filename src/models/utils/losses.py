@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from typing import Optional
+from typing import Optional, List
 
 
 def dice_loss_mask_invalid(logits: torch.Tensor, target:torch.Tensor, smooth=1.) -> float:
@@ -119,14 +119,14 @@ def binary_cross_entropy_loss_mask_invalid(logits: torch.Tensor, target: torch.T
     return torch.sum(pixelwise_bce / (torch.sum(valid) + 1e-6))
 
 def calc_loss_multioutput_logistic_mask_invalid(logits: torch.Tensor, target: torch.Tensor,
-                                                pos_weight_problem:Optional[torch.Tensor]=None,
-                                                weight_problem:Optional[torch.Tensor]=None) -> float:
+                                                pos_weight_problem:Optional[List[float]]=None,
+                                                weight_problem:Optional[List[float]]=None) -> float:
 
     assert logits.dim() == 4, "Unexpected shape of logits"
     assert target.dim() == 4, "Unexpected shape of target"
 
     if weight_problem is None:
-        weight_problem = torch.ones(logits.shape[1], dtype=logits.dtype) / logits.shape[1]
+        weight_problem = [ 1/logits.shape[1] for _ in range(logits.shape[1])]
 
     total_loss = 0
     for i in range(logits.shape[1]):

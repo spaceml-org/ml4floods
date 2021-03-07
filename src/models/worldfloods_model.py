@@ -132,6 +132,10 @@ class ML4FloodsModel(pl.LightningModule):
         self.num_class = h_params_dict.get('num_classes', 2)
         assert self.num_class == 2, "Expected 2 output classes"
 
+        self.pos_weight = h_params_dict.get('pos_weight',
+                                            [1 for i in range(self.num_class)])
+        self.weight_problem = [1 / self.num_class for _ in range(self.num_class)]
+
         self.network = configure_architecture(h_params_dict)
 
         # learning rate params
@@ -141,10 +145,10 @@ class ML4FloodsModel(pl.LightningModule):
 
         # label names setup
         self.label_names = np.array(h_params_dict['label_names'])
-        assert self.label_names.shape == (2, 3), "Unexpected label names, expected: {}".format([["invalid", "land", "water"],
-                                                                                                ["invalid","clear", "cloud"]])
+        assert self.label_names.shape == (2, 3), "Unexpected label names, expected: {}".format([["invalid","clear", "cloud"],
+                                                                                                ["invalid", "land", "water"]])
 
-        self.colormaps = {0 : COLORS_WORLDFLOODS_INVLANDWATER, 1: COLORS_WORLDFLOODS_INVCLEARCLOUD}
+        self.colormaps = {0 : COLORS_WORLDFLOODS_INVCLEARCLOUD, 1: COLORS_WORLDFLOODS_INVLANDWATER}
 
 
     def training_step(self, batch: Dict, batch_idx) -> float:
@@ -156,7 +160,9 @@ class ML4FloodsModel(pl.LightningModule):
         """
         x, y = batch['image'], batch['mask']
         logits = self.network(x)
-        loss = losses.calc_loss_multioutput_logistic_mask_invalid(logits, y)
+        loss = losses.calc_loss_multioutput_logistic_mask_invalid(logits, y,
+                                                                  pos_weight_problem=self.pos_weight,
+                                                                  weight_problem=self.weight_problem)
 
         if (batch_idx % 100) == 0:
             self.log("loss", loss)
