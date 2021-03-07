@@ -53,13 +53,13 @@ def train(config):
         dirpath=checkpoint_path,
         save_top_k=True,
         verbose=True,
-        monitor='val_dice_loss',
+        monitor=config.model_params.hyperparameters.metric_monitor,
         mode='min',
         prefix=''
     )
     
     early_stop_callback = EarlyStopping(
-        monitor='val_dice_loss',
+        monitor=config.model_params.hyperparameters.metric_monitor,
         patience=4,
         strict=False,
         verbose=False,

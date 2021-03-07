@@ -21,7 +21,9 @@ CHANNELS_CONFIGURATIONS = {
     "all": list(range(0,len(BANDS_S2))),
     "bgr": [1, 2, 3],
     "bgri": [1, 2, 3, 7],
-    "sub_20": [1, 2, 3, 4, 5, 6, 7, 8],
+    "riswir" : [3, 7, 11],
+    "bgriswir" : [1, 2, 3, 7, 11],
+    "sub_20": [1, 2, 3, 4, 5, 6, 7, 8, 11, 12],
     "hyperscout2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }
 
@@ -48,6 +50,10 @@ COLORS_WORLDFLOODS = np.array([[0, 0, 0],
                                [139, 64, 0],
                                [0, 0, 139],
                                [220, 220, 220]], dtype=np.float32) / 255
+
+
+COLORS_WORLDFLOODS_INVLANDWATER = COLORS_WORLDFLOODS[[0, 1, 2],...]
+COLORS_WORLDFLOODS_INVCLEARCLOUD = COLORS_WORLDFLOODS[[0, 1, 3],...]
 
 
 CLASS_FREQUENCY_WORLDFLOODSV1 = [0.516942, 0.027322, 0.455787]

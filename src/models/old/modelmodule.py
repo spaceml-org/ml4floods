@@ -47,7 +47,7 @@ class WorldFloodsModel(pl.LightningModule):
         x, y = batch
         logits = self.network(x)
 
-        bce_loss = losses.bce_loss_mask_invalid(logits, y, weight=self.weight_per_class)
+        bce_loss = losses.cross_entropy_loss_mask_invalid(logits, y, weight=self.weight_per_class)
         dice_loss = losses.dice_loss_mask_invalid(logits, y)
         self.log('bce_loss', bce_loss)
         self.log('dice_loss', dice_loss)

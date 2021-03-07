@@ -3,10 +3,9 @@
     "seed": 12,
     "model_params": {
         "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
-        "use_pretrained_weights": false,
-        "path_to_weights": "checkpoints/",
         "hyperparameters": {
             "max_tile_size": 256,
+            "metric_monitor": "val_dice_loss",
             "channel_configuration": "all",
             "label_names": ["land", "water", "cloud"],
             "weight_per_class": [1.93445299, 36.60054169, 2.19400729],
@@ -25,6 +24,7 @@
         "loader_type": "local",
         "num_workers": 4,
         "filter_windows": false,
+        "filter_windows_version": "v1",
         "bucket_id": "ml4floods",
         "path_to_splits": "/worldfloods/public",
         "train_test_split_file": "worldfloods/public/train_test_split.json",
@@ -32,16 +32,6 @@
         "target_folder": "gt",
         "batch_size": 32,
         "window_size": [256, 256],
-        "channel_configuration": "all",
-        "train_transformation": {
-            "num_classes": 3,
-            "totensor": true,
-            "normalize": true
-        },
-        "test_transformation": {
-            "num_classes": 3,
-            "totensor": true,
-            "normalize": true
-        }
+        "channel_configuration": "all"
     }
 }

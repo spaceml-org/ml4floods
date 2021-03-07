@@ -16,14 +16,15 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
     element in the batch
 
     Args:
-        ground_truth_outputs: BCHW tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
-        test_outputs_categorical: BCHW tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
-        num_class: Number of classes.
+        ground_truth_outputs: (B,H,W) tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
+        test_outputs_categorical: (B,H,W) tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
+        num_class: Number of classes. Must be equal to number of channels of test_outputs_categorical
         remove_class_zero: if true the value zero in ground_truth_outputs is considered a masked value;
         thus removed from the final prediction.
 
     Returns:
         (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
+        cm[a, b, c] is the number of elements predicted `b` that belonged to class `c` in the image `a` of the batch
 
     """
     ground_truth = ground_truth_outputs.clone()
@@ -89,8 +90,24 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
-    
-    
+
+def binary_accuracy(cm_agg):
+    tp = cm_agg[1, 1]
+    tn = cm_agg[0, 0]
+
+    return (tp+tn) / cm_agg.sum()
+
+def binary_precision(cm_agg):
+    tp = cm_agg[1, 1]
+    fp = cm_agg[1, 0]
+    return tp / (tp + fp)
+
+def binary_recall(cm_agg):
+    tp = cm_agg[1, 1]
+    fn = cm_agg[0, 1]
+    return tp / (tp + fn)
+
+
 def calculate_iou(confusions, labels):
     """
     Caculate IoU for a list of confusion matrices 
@@ -113,6 +130,31 @@ def calculate_iou(confusions, labels):
         iou_dict[l] = iou[i]
     return iou_dict
 
+
+def calculate_recall(confusions, labels):
+    confusions = np.array(confusions)
+    conf_matrix = np.sum(confusions, axis=0)
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_negative = np.sum(conf_matrix, 0) - true_positive
+    recall = true_positive / (true_positive + false_negative)
+
+    recall_dict = {}
+    for i, l in enumerate(labels):
+        recall_dict[l] = recall[i]
+    return recall_dict
+
+
+def calculate_precision(confusions, labels):
+    confusions = np.array(confusions)
+    conf_matrix = np.sum(confusions, axis=0)
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_positive = np.sum(conf_matrix, 1) - true_positive
+    precision = true_positive / (true_positive + false_positive)
+
+    precision_dict = {}
+    for i, l in enumerate(labels):
+        precision_dict[l] = precision[i]
+    return precision_dict
 
 
 def plot_metrics(metrics_dict, label_names):
@@ -243,12 +285,14 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     confusions_thresh = np.concatenate(confusions_thresh, axis=1)
     
     iou = calculate_iou(confusions, labels=label_names)
+    recall = calculate_recall(confusions, labels=label_names)
     
     out_dict = {
         'confusions': confusions,
         'confusions_thresholded': confusions_thresh,
         'thresholds': thresholds_water,
-        'iou': iou
+        'iou': iou,
+        "recall": recall
     }
     
     if plot:

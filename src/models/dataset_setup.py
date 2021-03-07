@@ -81,7 +81,8 @@ def get_dataset(data_config):
             num_workers=data_config.num_workers,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size,
-            filter_windows= filter_windows_fun("v1", local_destination_dir) if data_config.filter_windows else None
+            filter_windows= filter_windows_fun(data_config.filter_windows_version,
+                                               local_destination_dir) if data_config.filter_windows else None
         )
         dataset.setup()
             
