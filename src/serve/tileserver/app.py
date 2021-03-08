@@ -8,6 +8,7 @@ import pandas as pd
 import rasterio
 import rasterio.warp as warp
 from flask import Flask, jsonify, url_for, send_file, request
+from google.cloud import storage
 
 from src.data.copernicusEMS import activations
 from src.serve.tileserver import helpers
@@ -20,9 +21,6 @@ events_df = activations.table_floods_ems()
 countries_df = pd.DataFrame(json.load(open(os.path.join(os.getcwd(),'src','serve','tileserver','static','countries.json'),'r')))
 events_df = helpers.postprocess_floodtable(events_df, countries_df)
 
-client = storage.Client()
-bucket=client.bucket()
-
 """
 @app.route('/ingest/', methods=['GET'])
 
@@ -34,10 +32,9 @@ bucket=client.bucket()
 def get_isavailable():
     ems_code = request.args.get('ems_code')
     client = storage.Client()
-    bucket=client.bucket()
-    
-    
-    blob = bucket.blob(filename)
+    bucket=client.bucket('ml4floods')
+    fname = os.path.join('worldfloods','lk-dev','S2','_'.join([ems_code,'AOI01','S2.tif'])) #<- need to check this
+    blob = bucket.blob(fname)
     return jsonify({'exists':blob.exists()})
     
 
@@ -141,7 +138,7 @@ def servexyz(layer_name,image_name,z,x,y):
                 return send_file(os.path.join(os.getcwd(),'static','border.png')) 
 
             # use rasterio to read the pixel window from the cloud bucket
-            rst_arr = rst.read(READBANDS, window=window, out_shape=valid_shape, boundless=True, fill_value=0)
+            rst_arr = rst.read(READBANDS, window=window, out_shape=OUTPUT_SHAPE, boundless=True, fill_value=0)
 
 
         ####################################

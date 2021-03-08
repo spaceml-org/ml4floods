@@ -125,7 +125,7 @@ class RESTMosaic:
             self.logger.info('Successfully started google REST session')
             
     
-    def mosaic(self, aoi_wgs, start_date):
+    def mosaic(self, aoi_wgs, start_date, end_date=None):
         # get utm repoj and affine_transform for aoi
         if self.verbose:
             self.logger.info('Getting UTM reprojection data')
@@ -134,7 +134,8 @@ class RESTMosaic:
         # get ids
         if self.verbose:
             self.logger.info('Getting S2 ids')
-        end_date = start_date+timedelta(days=self.days_offset)
+        if end_date==None:
+            end_date = start_date+timedelta(days=self.days_offset)
         self.image_ids = _get_GEE_ids(self.session,start_date,end_date, aoi_wgs)
 
         # make two arrays for px_ix and px_iy
