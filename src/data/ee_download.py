@@ -9,6 +9,15 @@ from google.cloud import storage
 from src.data.config import BANDS_S2
 
 
+def download_permanent_water(date, bounds):
+    
+    year = date.year    
+    # permananet water files are only available pre-2019
+    if year >= 2019:
+        year = 2019
+    return ee.Image(f"JRC/GSW1_2/YearlyHistory/{year}").clip(bounds)
+
+
 def get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
     collection_filtered = collection.filterDate(date_start, date_end) \
