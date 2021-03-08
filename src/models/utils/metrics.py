@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any, Callable
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import json
 import seaborn as sns
 import pandas as pd
+from collections import OrderedDict
 
 
 @torch.no_grad()
@@ -299,4 +300,20 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
         plot_metrics(out_dict, label_names)
     
     return out_dict
+
+
+def group_confusion(confusions:torch.Tensor, cems_code:str,fun:Callable,
+                   label_names:List[str]) ->List[Dict[str, Any]]:
+    CMs = OrderedDict({c:[] for c in sorted(np.unique(cems_code))})
+
+    for code, cms in zip(cems_code,confusions):
+        CMs[code].append(cms)
+    
+    data_out = []
+    for k, v in CMs.items():
+        ious = fun(v, label_names)
+        ious["code"] = k
+        data_out.append(ious)
+    
+    return data_out
         
