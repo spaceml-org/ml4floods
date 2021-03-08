@@ -12,11 +12,12 @@ import rasterio
 from src.data import ee_download, create_gt
 from src.data.copernicusEMS import activations
 from src.data import utils
+from src.serve.tileserver.REST_mosaic import RESTMosaic
 
 
 class Ingestor:
     
-    def __init__(self, local_path='tmp', bucket='ml4floods', cloud_path={'S2':'worldfloods/lk-dev/S2','GT':'worldfloods/lk-dev/gt','meta':'worldfloods/lk-dev/meta'}, wait=False):
+    def __init__(self, local_path='tmp', bucket='ml4floods', cloud_path={'S2-pre':'worldfloods/lk-dev/S2-pre', 'S2-post':'worldfloods/lk-dev/S2-post','GT':'worldfloods/lk-dev/gt','meta':'worldfloods/lk-dev/meta'}, include=['S2-pre','S2-post','GT','ML'], async_ingest=False, source='REST'):
         """
         An ingestion class to obtain, for a Copernicus EMS event, the S2 imagery and ground truth (GT) floodmap.
         """
@@ -25,11 +26,14 @@ class Ingestor:
             os.makedirs(self.local_path)
         self.bucket = bucket
         self.cloud_path = cloud_path
-        self.wait=wait
+        self.include=include
+        self.source=source  # either 'EE' or 'REST'
+        self.async_ingest=False
+        self.BANDS_EXPORT= ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B10', 'B11', 'B12', 'QA60', 'probability']
         self.logger = logging.getLogger('Ingestor')
 
         
-    def ingest(self,ems_code,code_date):
+    def ingest(self,ems_code,code_date, aoi=None):
         """
         Main ingestion pipeline
         """
@@ -39,13 +43,47 @@ class Ingestor:
         self.logger.info(f'Ingesting {ems_code}, {code_date}')
         
         # ingest the vector data
-        self._ingest_vector()
+        if aoi!=None and 'GT' in self.include:
+            raise ValueError('Specify EITHER an aoi or include "GT"')
+        elif 'GT' in self.include:
+            # ingest an EMS event
+            self._ingest_vector()
         
-        # ingest the S2 data
-        self._ingest_S2_registers()
+            # ingest the S2 data
+            self._ingest_S2_registers()
         
-        # build the floodmap raster
-        self._construct_GT()
+            # build the floodmap raster
+            self._construct_GT()
+            
+        elif aoi!=None:
+            # ingest a custom event
+            if 'S2-pre' in self.include:
+                save_dest = os.path.join(self.cloud_path['S2-pre'],f'{self.ems_code}_AOI01_S2')
+                end_date = code_date - timedelta(days=1)
+                start_date = end_date - timedelta(days=21)
+                self._ingest_S2_REST(
+                    _id='AOI01', 
+                    aoi=aoi,
+                    start_date=start_date, 
+                    end_date=end_date, 
+                    save_dest=save_dest)
+                
+            if 'S2-post' in self.include:
+                save_dest = os.path.join(self.cloud_path['S2-post'],f'{self.ems_code}_AOI01_S2')
+                end_date = code_date + timedelta(days=20)
+                start_date = code_date
+                self._ingest_S2_REST(
+                    _id='AOI01', 
+                    aoi=aoi,
+                    start_date=start_date, 
+                    end_date=end_date, 
+                    save_dest=save_dest)
+                
+        else:
+            raise ValueError('Include either the GT or a custom AOI')
+            
+        if 'ML' in self.include:
+            pass
         
         self.logger.info('DONE!')
         
@@ -103,47 +141,73 @@ class Ingestor:
         except:
             raise ValueError('Error initializing EE')
             
+        if self.source='EE':
+            ingest_fn = self._ingest_S2_EE
+        elif self.source='REST':
+            ingest_fn = self._ingest_S2_REST
+            
         for register in self.registers:
-            self.logger.info(f'Ingesting Sentinel-2 {register["metadata_floodmap"]["event id"]} geotiff')
-            self._ingest_S2(register)
+            register_aoi_id = register['metadata_floodmap']['event id'].split('_')[1]            
+            self.logger.info(f'Ingesting Sentinel-2 {register_aoi_id} geotiff Pre-event')
+            aoi = register['metadata_floodmap']['area_of_interest_polygon']
             
-    def _ingest_S2_REST(self,register):
+            if 'S2-pre' in self.include:
+                save_dest = os.path.join(self.cloud_path['S2-pre'],f'{self.ems_code}_{register_aoi_id}_S2')
+                end_date = datetime.utcfromtimestamp(register['metadata_floodmap']["satellite date"].timestamp()) - timedelta(days=1)
+                start_date = end_date - timedelta(days=21)
+                
+                ingest_fn(
+                    _id=register_aoi_id, 
+                    aoi=aoi,
+                    start_date=start_date, 
+                    end_date=end_date, 
+                    save_dest=save_dest)
+                
+            if 'S2-post' in self.include:
+                save_dest = os.path.join(self.cloud_path['S2-post'],f'{self.ems_code}_{register_aoi_id}_S2')
+                start_date = datetime.utcfromtimestamp(register['metadata_floodmap']["satellite date"].timestamp())
+                end_date = start_date + timedelta(days=20)
+                         
+                ingest_fn(
+                    _id=register_aoi_id, 
+                    aoi=aoi,
+                    start_date=start_date, 
+                    end_date=end_date, 
+                    save_dest=save_dest)
+            
+    def _ingest_S2_REST(self,_id, aoi, start_date, end_date, save_dest):
         """Use the REST API..."""
-        pass
+        cloud_dest = os.path.join('gs://'+self.bucket,save_dest)
+        mosaicer = RESTMosaic(bands=self.BANDS_EXPORT, verbose=True)
+        mosaicer.mosaic(aoi,start_date,end_date, cloud_dest=cloud_dest)
             
-    def _ingest_S2(self,register):
-        register_aoi_id = register['metadata_floodmap']['event id'].split('_')[1]
+    def _ingest_S2_EE(self, _id, aoi, start_date, end_date, save_dest):
         
-        boundary = geometry.box(*register['metadata_floodmap']['area_of_interest_polygon'].bounds)
+        boundary = geometry.box(*aoi.bounds)
         ee_boundary = ee.Geometry.Polygon(list(boundary.exterior.coords))
-        ee_aoi = ee.Geometry.Polygon(list(register['metadata_floodmap']['area_of_interest_polygon'].exterior.coords))
+        ee_aoi = ee.Geometry.Polygon(list(aoi.exterior.coords))
 
-        date_event = datetime.utcfromtimestamp(register['metadata_floodmap']["satellite date"].timestamp())
-
-        date_end_search = date_event + timedelta(days=20)
-
-        img_col = ee_download.get_s2_collection(date_event, date_end_search, ee_aoi)
+        img_col = ee_download.get_s2_collection(start_date, end_date, ee_aoi)
         n_images = img_col.size().getInfo()
         imgs_list = img_col.toList(n_images, 0)
         
-        self.logger.info(f'For {self.ems_code} {register_aoi_id} found {n_images} images, exporting to bucket')
+        self.logger.info(f'For {self.ems_code} {_id} found {n_images} images, exporting to bucket')
         
         # export to bucket
-        BANDS_EXPORT = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B10', 'B11', 'B12', 'QA60', 'probability']
+
         img_export = ee.Image(imgs_list.get(1))
-        img_export = img_export.select(BANDS_EXPORT).toFloat().clip(ee_boundary) # .reproject(crs,scale=10).resample('bicubic') resample cannot be used on composites
+        img_export = img_export.select(self.BANDS_EXPORT).toFloat().clip(ee_boundary) # .reproject(crs,scale=10).resample('bicubic') resample cannot be used on composites
         
         export_task_fun_img = ee_download.export_task_image(bucket=self.bucket)
 
-        filename = os.path.join(self.cloud_path['S2'],f'{self.ems_code}_{register_aoi_id}_S2')
-        desc = os.path.basename(filename)
-        task = ee_download.mayberun(filename, desc,
+        desc = os.path.basename(save_dest)
+        task = ee_download.mayberun(save_dest, desc,
                                     lambda : img_export,
                                     export_task_fun_img,
                                     overwrite=False, dry_run=False,
                                     bucket_name=self.bucket, verbose=2)
         
-        if task!=None and self.wait:
+        if task!=None:
             task_status_code = task.status()['state']
             while task_status_code!='COMPLETED':
                 self.logger.info(f'task: {task_status_code}, sleeping 10s')
@@ -158,7 +222,7 @@ class Ingestor:
         ### walk through registers
         for register in self.registers:
             
-            tiff_address = os.path.join('gs://'+self.bucket,self.cloud_path['S2'],register['id']+'_S2.tif')
+            tiff_address = os.path.join('gs://'+self.bucket,self.cloud_path['S2-post'],register['id']+'_S2.tif')
             
             # get the floodmask raster for each
             mask = create_gt.compute_water(
