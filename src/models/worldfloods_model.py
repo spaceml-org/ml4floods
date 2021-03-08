@@ -264,7 +264,6 @@ def configure_architecture(h_params):
     architecture = h_params.get('model_type', 'linear')
     num_channels = h_params.get('num_channels', 3)
     num_classes = h_params.get('num_classes', 2)
-    print(num_channels, num_classes)
 
     if architecture == 'unet':
         model = UNet(num_channels, num_classes)
