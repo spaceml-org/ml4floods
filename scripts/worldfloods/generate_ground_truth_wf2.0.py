@@ -30,8 +30,8 @@ def main():
 
     # looping through the ML parts
     ml_paths = [
-        "test",
-        "val",
+        # "val",
+        # "test",
         "train",
     ]
 
@@ -53,13 +53,13 @@ def main():
     demo_image = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
 
     # want the appropate ml path
-    demo_image_gcp = GCPPath(demo_image)
 
     problem_files = []
 
     for ipath in ml_paths:
 
         # ensure path name is the same as ipath for the loooop
+        demo_image_gcp = GCPPath(demo_image)
         demo_image_gcp = demo_image_gcp.replace("test", ipath)
 
         # get all files in the parent directory
@@ -69,7 +69,7 @@ def main():
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket[1:]) as pbar:
+        with tqdm.tqdm(files_in_bucket[:102]) as pbar:
             for s2_image_path in pbar:
 
                 try:
@@ -255,6 +255,7 @@ def main():
                     # ==============================
                     # SAVE GT Data (WorldFloods 1.1)
                     # ==============================
+                    print("here!")
                     pbar.set_description("Saving GT data...")
 
                     # replace parent path
@@ -276,6 +277,8 @@ def main():
                     # delate local file
                     local_path.joinpath(gt_path.file_name).unlink()
 
+                except KeyboardInterrupt:
+                    break
                 except:
                     problem_files.append(s2_image_path.full_path)
 

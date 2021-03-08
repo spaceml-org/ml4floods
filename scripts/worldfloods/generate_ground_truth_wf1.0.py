@@ -37,7 +37,11 @@ def save_permanent_water_image():
 def main():
 
     # looping through the ML parts
-    ml_paths = ["test", "val", "train"]
+    ml_paths = [
+        # "test",
+        # "val",
+        "train"
+    ]
 
     local_path = Path(root).joinpath("datasets")
 
@@ -66,6 +70,8 @@ def main():
         # ensure path name is the same as ipath for the loooop
         demo_image_gcp = GCPPath(demo_image)
         demo_image_gcp = demo_image_gcp.replace("test", ipath)
+        demo_image_gcp = demo_image_gcp.replace("train", ipath)
+        demo_image_gcp = demo_image_gcp.replace("val", ipath)
 
         # get all files in the parent directory
         files_in_bucket = demo_image_gcp.get_files_in_parent_directory_with_suffix(
@@ -74,7 +80,7 @@ def main():
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}, {len(files_in_bucket)} files")
-        with tqdm.tqdm(files_in_bucket) as pbar:
+        with tqdm.tqdm(files_in_bucket[207:]) as pbar:
             for s2_image_path in pbar:
 
                 try:
@@ -270,6 +276,8 @@ def main():
                     # delate local file
                     local_path.joinpath(gt_path.file_name).unlink()
 
+                except KeyboardInterrupt:
+                    break
                 except:
                     problem_files.append(s2_image_path.full_path)
 

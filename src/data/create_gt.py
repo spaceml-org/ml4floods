@@ -206,7 +206,7 @@ def compute_water(
         permament_water = rasterio.open(permanent_water_path).read(1, window=window)
 
         # Set to permanent water
-        water_mask[(water_mask != -1) & (permament_water == 3)] = 3
+        water_mask[(water_mask != -1) | (permament_water == 3)] = 3
 
         # Seasonal water (permanent_water == 2) will not be used
 
@@ -777,7 +777,7 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.all(s2_img == 0, axis=0) & (water_mask == -1)
+    invalids = np.all(s2_img == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
@@ -793,7 +793,7 @@ def _generate_gt_fromarray(
 
     if invalid_clouds_threshold is not None:
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
-        watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
+        watergt[(water_mask == 0) | (cloudprob > invalid_clouds_threshold)] = 0
 
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 
