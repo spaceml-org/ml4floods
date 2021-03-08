@@ -1,4 +1,5 @@
 import json
+import io
 
 
 class AttrDict(dict):
@@ -19,6 +20,19 @@ class AttrDict(dict):
             return AttrDict({key: AttrDict.from_nested_dicts(data[key])
                              for key in data})
 
+def load_json(filename):
+    if filename.startswith("gs://"):
+        from google.cloud import storage
+        client = storage.Client()
+        with io.BytesIO() as file_obj:
+            client.download_blob_to_file(filename, file_obj)
+            file_obj.seek(0)
+            return json.load(file_obj)
+    else:
+        with open(filename) as json_file:
+            return json.load(json_file)
+
+
 def setup_config(args):
     # ======================================================
     # WORLD FLOODS FLOOD EXTENT SEGMENTATION CONFIG SETUP 
@@ -27,8 +41,7 @@ def setup_config(args):
     pp = pprint.PrettyPrinter(indent=4)
     
     # 1. Load config json from argparse input
-    with open(args.config)as json_file:
-        config = json.load(json_file)
+    config = load_json(args.config)
     
     # 2. Add additional fields to config using worldfloods constants etc
     from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
