@@ -63,13 +63,17 @@ def main():
         demo_image_gcp = demo_image_gcp.replace("test", ipath)
 
         # get all files in the parent directory
-        files_in_bucket = demo_image_gcp.get_files_in_parent_directory_with_suffix(
-            ".tif"
-        )
+        # files_in_bucket = demo_image_gcp.get_files_in_parent_directory_with_suffix(
+        #     ".tif"
+        # )
+        # TESTINGGGGGGG
+        files_in_bucket = [
+            "gs://ml4floods/worldfloods/public/train/S2/EMSR261_03WOLFSBURG_DEL_MONIT05_v2_observed_event_a.tif"
+        ]
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket[:102]) as pbar:
+        with tqdm.tqdm(files_in_bucket) as pbar:
             for s2_image_path in pbar:
 
                 try:
@@ -112,7 +116,7 @@ def main():
                     # OPEN PERMANENT WATER TIFF
                     # ==============================
                     try:
-
+                        pbar.set_description("Grabbing Permanent Water Tiff...")
                         permenant_water_path = GCPPath(
                             str(
                                 Path(bucket_id)
@@ -124,6 +128,7 @@ def main():
                         permenant_water_path = permenant_water_path.full_path
 
                     except AssertionError:
+                        pbar.set_description("Didnt Find...")
                         permenant_water_path = None
 
                     # ==============================
@@ -262,6 +267,15 @@ def main():
                     gt_path = s2_image_path.replace(bucket_id, destination_bucket_id)
                     gt_path = gt_path.replace("/S2/", "/gt/")
                     gt_path = gt_path.replace(parent_path, destination_parent_path)
+                    ##################################
+                    # PLOTTING
+                    ##################################
+                    import matplotlib.pyplot as plt
+                    from rasterio import plot as rasterioplt
+
+                    fig, ax = plt.subplots()
+                    rasterioplt.show(gt[1], transform=gt_meta["transform"], ax=ax)
+                    fig.savefig("./temp_water.png")
 
                     # save ground truth
                     save_groundtruth_tiff_rasterio(
@@ -283,6 +297,11 @@ def main():
                     problem_files.append(s2_image_path.full_path)
 
     print(problem_files)
+
+    import pickle
+
+    with open("./momoney_moprobs_v2.pickle", "wb") as fp:
+        pickle.dump(problem_files, fp)
 
 
 if __name__ == "__main__":
