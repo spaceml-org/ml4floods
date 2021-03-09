@@ -180,16 +180,16 @@ class ML4FloodsModel(pl.LightningModule):
         pred_data = torch.sigmoid(logits).long().cpu().numpy()
         img_data = batch_to_unnorm_rgb(x,
                                        self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
-        
+
 
         self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
 
         for i in range(self.num_class):
             problem_name = "/".join(self.label_names[i, 1:])
             self.logger.experiment.log({f"{problem_name} {prefix}pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
-            self.logger.experiment.log({f"{problem_name} {prefix}pred": [wandb.Image(mask_to_rgb(img.round().astype(np.int64) + 1,
+            self.logger.experiment.log({f"{problem_name} {prefix}pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
                                                                                                  values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in pred_data]})
-            self.logger.experiment.log({f"{prefix}y": [wandb.Image(mask_to_rgb(img, values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
+            self.logger.experiment.log({f"{prefix}y": [wandb.Image(mask_to_rgb(img[i], values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
 
     def validation_step(self, batch: Dict, batch_idx):
         """
@@ -250,6 +250,7 @@ def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
     """
     assert len(values) == len(
         colors_cmap), f"Values and colors should have same length {len(values)} {len(colors_cmap)}"
+    assert len(mask.shape), f"Unexpected shape {mask.shape}"
     mask_return = np.zeros(mask.shape[:2] + (3,), dtype=np.uint8)
     colores = np.array(np.round(colors_cmap * 255), dtype=np.uint8)
     for i, c in enumerate(colores):
