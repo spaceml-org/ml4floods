@@ -34,6 +34,25 @@ python -u scripts/worldfloods/generate_ground_truth_wf1.0.py
 ## WorldFloods 2.0
 
 
+### `generate_ground_truth_wf2.0.py`
+
+> Create Ground Truth from Images in the Bucket
+
+In this case the ground truth are dual channel binary classification files: 1) the cloud vs no cloud and 2) the water vs land.
+
+This will download the following:
+
+* Ground truth for a given Sentinel-2 Image, `.tif`
+* Floodmap for the, `.json`
+
+
+
+```python
+python -u scripts/worldfloods/generate_ground_truth_wf2.0.py 
+```
+
+
+
 ---
 ## WorldFloods 2.1
 

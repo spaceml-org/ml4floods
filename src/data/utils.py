@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 import subprocess
 from io import BytesIO
 import pickle
+
 # HOME = str(Path.home())
 
 
@@ -271,11 +272,11 @@ def download_data_from_bucket(
             bucket_id, file_name=file_name, destination_file_path=destination_dir
         )
 
-        
+
 def check_file_in_bucket_exists_gs(gs_path: str, **kwargs) -> bool:
     """
     Function to check if the file in the bucket exist utilizing Google Cloud Storage
-    (GCP) blobs. Same as the check_file_in_bucket_exists() function but it takes as  
+    (GCP) blobs. Same as the check_file_in_bucket_exists() function but it takes as
     input the complete gcp gs path.
 
     Args:
@@ -287,15 +288,15 @@ def check_file_in_bucket_exists_gs(gs_path: str, **kwargs) -> bool:
     """
     # initialize client
     client = storage.Client(**kwargs)
-    
+
     # get bucket
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
-    
+
     # get blob
     filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
     blob = bucket.blob(filename_full_path)
-    
+
     # check if it exists
     return blob.exists()
 
@@ -370,10 +371,10 @@ def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     land_geometries = gpddats.geometry[~isnot_land]
     land_geometries = cascaded_union(land_geometries.tolist())
-    
+
     # Not all polygons are valid: filter to valid gpddats_notland
-    gpddats_notland_valid = gpddats_notland[gpddats_notland['geometry'].is_valid]
-    
+    gpddats_notland_valid = gpddats_notland[gpddats_notland["geometry"].is_valid]
+
     gpddats_notland_valid["geometry"] = gpddats_notland_valid.geometry.apply(
         lambda g: g.difference(land_geometries)
     )
@@ -540,6 +541,7 @@ def create_folder(directory: str) -> None:
     else:
         print(f"Folder '{directory}' is created.")
 
+
 def get_files_in_directory_gcp(bucket_id: str, directory: str, **kwargs) -> List[str]:
     """Function to return the list of files within a given directory.
 
@@ -561,10 +563,11 @@ def get_files_in_directory_gcp(bucket_id: str, directory: str, **kwargs) -> List
 
     # for
     files = [
-        str(Path(bucket_id).joinpath(x.name)) for x in blobs
-    #     if str(Path(x.name).suffix) == suffix
+        str(Path(bucket_id).joinpath(x.name))
+        for x in blobs
+        #     if str(Path(x.name).suffix) == suffix
     ]
-    
+
     return files
 
 
@@ -611,7 +614,9 @@ def get_filenames_in_directory(directory: str, suffix: str) -> List[str]:
 #     return files
 
 
-def get_files_in_bucket_directory_gs(gs_path: str, suffix: str=None, substring: str=None, **kwargs) -> List[str]:
+def get_files_in_bucket_directory_gs(
+    gs_path: str, suffix: str = None, substring: str = None, **kwargs
+) -> List[str]:
     """Function to return a list of files in gcp bucket path.
     This function is different from the `get_files_in_bucket_directory()` function
     because this function takes the entire gcp path as input instead of components of the path.
@@ -624,25 +629,29 @@ def get_files_in_bucket_directory_gs(gs_path: str, suffix: str=None, substring: 
 
     # initialize client
     client = storage.Client(**kwargs)
-    
+
     # get bucket
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
-    
+
     # get blob
     directory = gs_path.replace(f"gs://{bucket_id}/", "")
     blobs = bucket.list_blobs(prefix=directory)
-    
+
     # check if it exists
-    files = [f"gs://{x.bucket.name}/{str(x.name)}" for x in blobs if ((suffix is None) or (str(Path(x.name).suffix) == suffix))]
+    files = [
+        f"gs://{x.bucket.name}/{str(x.name)}"
+        for x in blobs
+        if ((suffix is None) or (str(Path(x.name).suffix) == suffix))
+    ]
     if substring is not None:
         files = [f for f in files if substring in os.path.basename(f)]
-    
+
     return files
 
 
 def get_files_in_bucket_directory(
-    bucket_id: str, directory: str, suffix: str=None, **kwargs
+    bucket_id: str, directory: str, suffix: str = None, **kwargs
 ) -> List[str]:
     """Function to return a list of files in bucket directory
     Args:
@@ -662,7 +671,11 @@ def get_files_in_bucket_directory(
     blobs = bucket.list_blobs(prefix=directory)
     # check if it exists
 
-    files = [str(x.name) for x in blobs if ((suffix is None) or (str(Path(x.name).suffix) == suffix))]
+    files = [
+        str(x.name)
+        for x in blobs
+        if ((suffix is None) or (str(Path(x.name).suffix) == suffix))
+    ]
     return files
 
 
@@ -788,7 +801,7 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
     else:
         return filepath
 
-    
+
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
     """
     This function takes a GeoPandas DataFrame and writes it to the Google Cloud Storage bucket as a GeoJSON file.
@@ -802,33 +815,33 @@ def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
       None
     """
     client = storage.Client()
-    
+
     f = BytesIO()
-    geojson_val.to_file(f, driver = "GeoJSON")
+    geojson_val.to_file(f, driver="GeoJSON")
     f.seek(0)
-    
+
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
-    
+
     filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
     blob = bucket.blob(filename_full_path)
-    
+
     blob.upload_from_file(f)
 
-    
+
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
     client = storage.Client()
-    
+
     f = BytesIO()
     pickle.dump(dict_val, f)
     f.seek(0)
-    
+
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
-    
+
     filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
     blob = bucket.blob(filename_full_path)
-    
+
     blob.upload_from_file(f)
 
 
@@ -836,14 +849,14 @@ def read_pickle_from_gcp(gs_path) -> dict:
     from google.cloud import storage
 
     client = storage.Client()
-    
+
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
-    
+
     filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
     blob = bucket.blob(filename_full_path)
 
     pickle_in = blob.download_as_string()
     my_dictionary = pickle.loads(pickle_in)
-    
+
     return my_dictionary

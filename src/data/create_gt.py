@@ -204,12 +204,12 @@ def compute_water(
     if permanent_water_path is not None:
         logging.info("\t Adding permanent water")
         permanent_water = rasterio.open(permanent_water_path).read(1, window=window)
-        
+
         # Set to permanent water
         # Only interested in permanent water labelled as 3 and valid water masks.
         # Adding the third label for permanent water in water mask.
         water_mask[(water_mask != -1) & (permanent_water == 3)] = 3
-        
+
         # Seasonal water (permanent_water == 2) will not be used
 
     return water_mask
@@ -455,6 +455,7 @@ def generate_water_cloud_binary_gt(
     )
 
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
+    print(metadata_floodmap["satellite"])
     if metadata_floodmap["satellite"] == "Sentinel-2":
 
         invalid_clouds_threshold = 0.5

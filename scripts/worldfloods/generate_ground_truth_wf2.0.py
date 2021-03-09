@@ -68,16 +68,15 @@ def main():
         )
         # # TESTINGGGGGGG
         # files_in_bucket = [
-        #     "gs://ml4floods/worldfloods/public/train/S2/EMSR261_03WOLFSBURG_DEL_MONIT05_v2_observed_event_a.tif"
+        #     "gs://ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v2_0/train/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
         # ]
-
         # # HACK FOR SLICING
-        # last_x_slices = slice(-285, -190)
+        last_x_slices = slice(-50, None)
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
 
-        with tqdm.tqdm(files_in_bucket) as pbar:
+        with tqdm.tqdm(list(reversed(files_in_bucket[last_x_slices]))) as pbar:
             for s2_image_path in pbar:
 
                 try:
