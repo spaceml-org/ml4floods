@@ -1,6 +1,6 @@
 import torch
 import itertools
-from src.models.worldfloods_model import WorldFloodsModel
+from src.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 import numpy as np
 
@@ -21,11 +21,17 @@ def get_model(model_config):
     if model_config.get("test", False):
         
         # TODO: Load final model state dict into model for testing
-        
+
+        if model_config.get("model_version","v1") == "v2":
+            return ML4FloodsModel(model_config)
+
         return WorldFloodsModel(model_config)
     
     elif model_config.get("train", False):
-        
+
+        if model_config.get("model_version", "v1") == "v2":
+            return ML4FloodsModel(model_config)
+
         return WorldFloodsModel(model_config)
     
     else:
