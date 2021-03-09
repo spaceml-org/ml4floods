@@ -9,9 +9,12 @@ import rasterio
 import rasterio.warp as warp
 from flask import Flask, jsonify, url_for, send_file, request
 from google.cloud import storage
+import multiprocessing as mp
+import geopandas as gpd
 
 from src.data.copernicusEMS import activations
 from src.serve.tileserver import helpers
+from src.serve.tileserver.ingest import Ingestor
 
 app = Flask(__name__)
 
@@ -20,20 +23,77 @@ app = Flask(__name__)
 events_df = activations.table_floods_ems()
 countries_df = pd.DataFrame(json.load(open(os.path.join(os.getcwd(),'src','serve','tileserver','static','countries.json'),'r')))
 events_df = helpers.postprocess_floodtable(events_df, countries_df)
+updated_df = helpers.walk_bucket(events_df, check_available=False)
+base_gj = gpd.read_file(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg'))
+base_gj = helpers.refresh_geojson(base_gj, updated_df)
 
 """
-@app.route('/ingest/', methods=['GET'])
+if os.path.exists(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg')):
+    print ('found local gj_gdf')
+    gj_gdf = gpd.read_file(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg'))
+else:
+    gj_gdf = gpd.GeoDataFrame(pd.DataFrame(columns=['CODE','AOI','geometry']), geometry='geometry')
+    
+gj_gdf = helpers.refresh_geojson(gj_gdf, updated_df)
+if not os.path.exists(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg')):
+    gj_gdf.to_file(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg'), driver='GPKG', overwrite=True)
+""" 
+    
+print (base_gj)
 
 
+"""
 @app.route('/custom/', methods=['POST'])
 """
+
+@app.route('/get/geojson/', methods=['GET'])
+def get_geojson():
+
+    updated_df = helpers.walk_bucket(events_df, check_available=False) # update any custom events
+    gj_gdf = helpers.refresh_geojson(base_gj, updated_df)
+    #gj_gdf['event-date'] = gj_gdf['event-date'].dt.strftime('%Y-%m-%d')
+    #gj_gdf['CODE-AOI-DATE'] = gj_gdf['CODE']+'_'+gj_gdf['AOI']+'_'+gj_gdf['event-date']
+    #gj_gdf = gj_gdf.drop(columns=['CODE','event-date','AOI'])
+    gj_gdf.to_file(os.path.join(os.getcwd(),'tmp','gj_gdf.geojson'),driver='GeoJSON')
+    
+    return send_file(os.path.join(os.getcwd(),'tmp','gj_gdf.geojson'))  
+    
+
+@app.route('/get/ingest/', methods=['GET'])
+def get_runingest():
+    code = request.args.get('code')
+    event_date = request.args.get('event-date')
+    print ('ingesting code:',code)
+    
+    
+    ingestor = Ingestor(
+        local_path='tmp',
+        bucket='ml4floods',
+        cloud_path = {
+            'S2-pre':'worldfloods/lk-dev/S2-pre',
+            'S2-post':'worldfloods/lk-dev/S2-post',
+            'GT':'worldfloods/lk-dev/gt',
+            'meta':'worldfloods/lk-dev/meta'
+        },
+        include=['S2-pre','S2-post','GT','ML'],
+        workers=3,
+        source='REST'
+    )
+    
+    ingestor.ingest(ems_code=code,
+                    code_date=event_date, 
+                    aoi=None)
+
+    return jsonify({'result':True})
+    
+    
 
 @app.route('/get/isavailable/', methods=['GET'])
 def get_isavailable():
     ems_code = request.args.get('ems_code')
     client = storage.Client()
     bucket=client.bucket('ml4floods')
-    fname = os.path.join('worldfloods','lk-dev','S2','_'.join([ems_code,'AOI01','S2.tif'])) #<- need to check this
+    fname = os.path.join('worldfloods','lk-dev','S2-post','_'.join([ems_code,'AOI01','S2.tif'])) #<- need to check this
     blob = bucket.blob(fname)
     return jsonify({'exists':blob.exists()})
     
@@ -135,7 +195,7 @@ def servexyz(layer_name,image_name,z,x,y):
             ## if out-of-range, return empty
             if (window.col_off<=-window.width) or ((window.col_off-rst.shape[0])>=window.width) or (window.row_off<=-window.height) or ((window.row_off-rst.shape[1])>=window.height) :
                 print ('out of range')
-                return send_file(os.path.join(os.getcwd(),'static','border.png')) 
+                return send_file(os.path.join(os.getcwd(),'src','serve','tileserver','static','border.png'))  
 
             # use rasterio to read the pixel window from the cloud bucket
             rst_arr = rst.read(READBANDS, window=window, out_shape=OUTPUT_SHAPE, boundless=True, fill_value=0)

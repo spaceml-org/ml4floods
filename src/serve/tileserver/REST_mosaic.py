@@ -7,6 +7,7 @@ from datetime import datetime as dt
 from datetime import timedelta
 import urllib
 logging.basicConfig(level=logging.INFO)
+import multiprocessing as mp
 
 import geopandas as gpd
 from shapely import geometry, ops
@@ -51,14 +52,20 @@ def _get_GEE_ids(session,start_date,end_date, aoi_wgs):
         'startTime': start_date.isoformat()+'.000Z',
         'endTime': end_date.isoformat()+'.000Z',
         'region': json.dumps(geometry.mapping(aoi_wgs)),
-        'filter': 'CLOUDY_PIXEL_PERCENTAGE < 25',
+        'filter': 'CLOUDY_PIXEL_PERCENTAGE < 99',
     }))
 
     response = session.get(url)
     content = response.content
 
-    ids = [asset['id'] for asset in json.loads(content)['images']]
-    return ids
+    try:
+        ids = [asset['id'] for asset in json.loads(content)['images']]
+        cloud_coverages = [image['properties']['CLOUD_COVERAGE_ASSESSMENT'] for image in json.loads(content)['images']]
+        return ids, cloud_coverages
+    except:
+        print('ERROR!')
+        print (content)
+        raise
 
 def _get_GEE_arr(session, name, bands, x_off, y_off, patch_size, crs_code):
     url = 'https://earthengine.googleapis.com/v1alpha/{}:getPixels'.format(name)
@@ -80,13 +87,45 @@ def _get_GEE_arr(session, name, bands, x_off, y_off, patch_size, crs_code):
     pixels_response = session.post(url, body)
     pixels_content = pixels_response.content
 
-    arr =  np.load(io.BytesIO(pixels_content))
+    try:
+        arr =  np.load(io.BytesIO(pixels_content))
 
-    return np.dstack([arr[el] for el in arr.dtype.names]).astype(np.float32)
+        return np.dstack([arr[el] for el in arr.dtype.names]).astype(np.int16)
+    except:
+        print ('ERROR!')
+        print (pixels_content)
+        raise
+        
+# define a worker for multiprocessing
+def _fill_worker(args, google_key_path, logger):
+    
+    credentials = service_account.Credentials.from_service_account_file(google_key_path)
+    scoped_credentials = credentials.with_scopes(['https://www.googleapis.com/auth/cloud-platform'])
+    session = AuthorizedSession(scoped_credentials)
+    
+    if logger !=None:
+        logger.info('created session')
+    
+    results = []
+    for ii,ii_x,ii_y,w_NAME,w_BANDS,w_x_off,w_y_off,w_PATCH_SIZE,w_UTM_EPSG in args:
+        logger.info(f'retrieving {ii},{ii_x},{ii_y}')
+
+        arr = _get_GEE_arr(
+                        session=session, 
+                        name=w_NAME, 
+                        bands=w_BANDS, 
+                        x_off=w_x_off, 
+                        y_off=w_y_off, 
+                        patch_size=w_PATCH_SIZE,
+                        crs_code=w_UTM_EPSG
+                    )
+        results.append((ii, ii_x, ii_y, arr))
+        
+    return results
 
 class RESTMosaic:
     
-    def __init__(self,bands = ['B4','B3','B2'], patch_size=256, scale=10,days_offset=20, save_path='./tmp.tif',s2_tiles_path=None,google_key_path=None,verbose=False,cloud_dest=None):
+    def __init__(self,bands = ['B4','B3','B2'], patch_size=256, scale=10,days_offset=20, workers=1, save_path='./tmp.tif',s2_tiles_path=None,google_key_path=None,verbose=False):
         # start the authorized session, load the S2_tiles, and set the parameters
         
         # set the parameters
@@ -96,20 +135,25 @@ class RESTMosaic:
         self.verbose=verbose
         self.BANDS=bands
         self.save_path=save_path
-        self.cloud_dest=cloud_dest
+        self.workers=workers
+
         self.logger = logging.getLogger('RESTMosaic')
         
         # load the S2 UTM tile geometries
-        if self.verbose:
-            self.logger.info('Loading S2 tile geometries')
-        if not s2_tiles_path:
+
+        if s2_tiles_path:
+            if self.verbose:
+                self.logger.info('Loading S2 tile geometries')
             self.s2_tiles = gpd.read_file(os.path.join(os.getcwd(),'assets','S2_tiles.gpkg')).set_index('Name')
         else:
-            self.s2_tiles = gpd.read_file(s2_tiles_path).set_index('Name')
+            if self.verbose:
+                self.logger.info('Get S2 tile geometries from cloud')
+            self.s2_tiles = None
             
         # initialise google session
         if not google_key_path:
             google_key_path = os.path.join(os.getcwd(),'gcp-credentials.json')
+        self.google_key_path=google_key_path
             
         credentials = service_account.Credentials.from_service_account_file(google_key_path)
         scoped_credentials = credentials.with_scopes(['https://www.googleapis.com/auth/cloud-platform'])
@@ -125,22 +169,38 @@ class RESTMosaic:
             self.logger.info('Successfully started google REST session')
             
     
-    def mosaic(self, aoi_wgs, start_date, end_date=None):
+    def mosaic(self, aoi_wgs, start_date, end_date=None, cloud_dest=None):
+        
+        if cloud_dest:
+            self.cloud_dest=cloud_dest
+        
         # get utm repoj and affine_transform for aoi
         if self.verbose:
             self.logger.info('Getting UTM reprojection data')
-        self.aoi_utm, self.GT, self.Dx, self.Dy, self.reproject, self.UTM_EPSG = self._get_proj_and_affine(aoi_wgs)
+        self.aoi_utm, self.GT, self.Dx, self.Dy, self.reproject, self.reverse_proj, self.UTM_EPSG = self._get_proj_and_affine(aoi_wgs)
         
         # get ids
         if self.verbose:
             self.logger.info('Getting S2 ids')
         if end_date==None:
             end_date = start_date+timedelta(days=self.days_offset)
-        self.image_ids = _get_GEE_ids(self.session,start_date,end_date, aoi_wgs)
+            
+        _ids, cloud_coverages = _get_GEE_ids(self.session,start_date,end_date, geometry.box(*aoi_wgs.exterior.bounds))
+        _ids = [x for _,x in sorted(zip(cloud_coverages,_ids))]
+        
+        self.image_ids = []
+        utm_codes = []
+        for _id in _ids:
+            if not _id[-5:] in utm_codes:
+                utm_codes.append(_id[-5:])
+                self.image_ids.append(_id)
+                
+        print ('utm codes',utm_codes)
+        print ('image_ids',self.image_ids)
 
         # make two arrays for px_ix and px_iy
         if self.verbose:
-            self.logger.info('Making pixel indexer')
+            self.logger.info(f'Found {len(self.image_ids)} images. Making pixel indexer')
         self.px_x, self.px_y = self._make_pixel_indexer(self.Dx, self.Dy)
         
         # sum forward through alpha stack to get max available 
@@ -149,7 +209,8 @@ class RESTMosaic:
         self.mask_arr, self.fills = self._mask_by_id()
         
         # if there's a single scene with more than 95% availability, just use this.
-        if (np.array(self.fills)>0.95).sum()>=1:
+        if False:
+            #if (np.array(self.fills)>0.95).sum()>=1:
             do_id = self.image_ids[np.where(np.array(self.fills)>0.95)[0].min()]
             if self.verbose:
                 self.logger.info(f'found image with >95% fill, using id: {do_id}. Filling image.')
@@ -174,16 +235,11 @@ class RESTMosaic:
                 self.logger.info(f'Filling mosaic')
             self.im_arr = self._fill_mosaic()
             
-        
-        fig,ax = plt.subplots(1,1,figsize=(16,16))
-        ax.imshow((self.im_arr/2500).clip(0,1))
-        fig.savefig('./tmp.png')
-            
         ## do output raster stuff
         self._write_rio()
         
         if self.cloud_dest:
-            self.logger.info(f'to cloud: {src} -> {dst}')
+            self.logger.info(f'to cloud: {self.save_path} -> {self.cloud_dest}')
             utils.save_file_to_bucket(self.cloud_dest, self.save_path)
             
         
@@ -199,6 +255,7 @@ class RESTMosaic:
         proj_utm = pyproj.CRS(UTM_EPSG)
         
         reproject = pyproj.Transformer.from_crs(proj_wgs84, proj_utm, always_xy=True).transform
+        reverse_proj = pyproj.Transformer.from_crs(proj_utm,proj_wgs84, always_xy=True).transform
         
         aoi_utm = ops.transform(reproject,aoi_wgs)
         
@@ -211,7 +268,7 @@ class RESTMosaic:
         y_off = -aoi_utm.bounds[1]/self.SCALE
         GT = [a,b,d,e,x_off,y_off]
         
-        return aoi_utm, GT, Dx, Dy, reproject, UTM_EPSG
+        return aoi_utm, GT, Dx, Dy, reproject, reverse_proj, UTM_EPSG
         
     def _make_pixel_indexer(self,Dx, Dy):
         px_x = np.zeros((Dy,Dx))
@@ -231,10 +288,15 @@ class RESTMosaic:
 
         fills = []
         for ii,_id in enumerate(self.image_ids):
-            granule = self.s2_tiles.loc[_id[-5:],'geometry'] # get the granule from the geodataframe
-
-            granule_utm = ops.transform(self.reproject,ops.unary_union(granule)) # flatten and transform the granule to utm
-            granule_utm = ops.transform(lambda x, y, z=None: (x, y), granule_utm) # remove the z coordinates
+            if type(self.s2_tiles)==gpd.GeoDataFrame:
+                granule = self.s2_tiles.loc[_id[-5:],'geometry'] # get the granule from the geodataframe
+                granule_utm = ops.transform(self.reproject,ops.unary_union(granule)) # flatten and transform the granule to utm
+                granule_utm = ops.transform(lambda x, y, z=None: (x, y), granule_utm) # remove the z coordinates
+            else:
+                granule_ft = utils.load_json_from_bucket('ml4floods',f'worldfloods/s2_tiles/{_id[-5:]}.json')
+                granule = geometry.shape(granule_ft['geometry'])
+                granule_utm = ops.transform(self.reproject,granule) # transform the granule to utm
+                
             granule_px = affine_transform(granule_utm,self.GT) # get the granule shape into the pixel coordinates
 
             im = Image.fromarray(np.zeros((mask_arr.shape[0], mask_arr.shape[1])),mode='L')
@@ -247,7 +309,7 @@ class RESTMosaic:
     
     def _fill_single_id(self, _id):
         # fill the mosaic
-        im_arr = np.ones((self.Dy,self.Dx,len(self.BANDS)))*-1
+        im_arr = np.ones((self.Dy,self.Dx,len(self.BANDS)), dtype=np.int16)*-1
         for ii_x in range(self.Dx//self.PATCH_SIZE+1):
             for ii_y in range(self.Dy//self.PATCH_SIZE+1):
 
@@ -290,31 +352,76 @@ class RESTMosaic:
 
         
     def _fill_mosaic(self):
-        im_arr = np.ones((self.Dy,self.Dx,len(self.BANDS)))*-1
-        for ii, (_id, vv) in enumerate(self.run_idx.items()):
-            for ii_x, ii_y in vv:
+        im_arr = np.ones((self.Dy,self.Dx,len(self.BANDS)), np.int16)*-1
+        
+        if self.workers==1:
+            
+            for ii, (_id, vv) in enumerate(self.run_idx.items()):
+                for ii_x, ii_y in vv:
 
-                NAME = 'projects/earthengine-public/assets/'+_id
+                    NAME = 'projects/earthengine-public/assets/'+_id
 
-                x_off = self.aoi_utm.bounds[0] + ii_x*self.PATCH_SIZE*self.SCALE
-                y_off = self.aoi_utm.bounds[3] - ii_y*self.PATCH_SIZE*self.SCALE
+                    x_off = self.aoi_utm.bounds[0] + ii_x*self.PATCH_SIZE*self.SCALE
+                    y_off = self.aoi_utm.bounds[3] - ii_y*self.PATCH_SIZE*self.SCALE
 
-                arr = _get_GEE_arr(
-                            session=self.session, 
-                            name=NAME, 
-                            bands=self.BANDS, 
-                            x_off=x_off, 
-                            y_off=y_off, 
-                            patch_size=self.PATCH_SIZE,
-                            crs_code=self.UTM_EPSG
-                        )
+                    arr = _get_GEE_arr(
+                                session=self.session, 
+                                name=NAME, 
+                                bands=self.BANDS, 
+                                x_off=x_off, 
+                                y_off=y_off, 
+                                patch_size=self.PATCH_SIZE,
+                                crs_code=self.UTM_EPSG
+                            )
+
+                    if self.verbose:
+                        self.logger.info(f'Getting {_id} {ii_x} {ii_y}')
+
+                    im_mask = self.alpha_mask[ii_y*self.PATCH_SIZE:(ii_y+1)*self.PATCH_SIZE,ii_x*self.PATCH_SIZE:(ii_x+1)*self.PATCH_SIZE,ii]>0
+
+                    im_arr[ii_y*self.PATCH_SIZE:(ii_y+1)*self.PATCH_SIZE,ii_x*self.PATCH_SIZE:(ii_x+1)*self.PATCH_SIZE,:][im_mask,:]=arr[:im_arr.shape[0]-ii_y*self.PATCH_SIZE,:im_arr.shape[1]-ii_x*self.PATCH_SIZE,:][im_mask,:]
+                    
+        elif self.workers>1:
+        
+            
+            args = []
+            for ii, (_id, vv) in enumerate(self.run_idx.items()):
+                for ii_x, ii_y in vv:
+
+                    NAME = 'projects/earthengine-public/assets/'+_id
+
+                    x_off = self.aoi_utm.bounds[0] + ii_x*self.PATCH_SIZE*self.SCALE
+                    y_off = self.aoi_utm.bounds[3] - ii_y*self.PATCH_SIZE*self.SCALE
+                    
+                    args.append((ii,ii_x,ii_y,NAME, self.BANDS, x_off, y_off, self.PATCH_SIZE, self.UTM_EPSG))
+            
+            if self.verbose:
+                self.logger.info(f'Calling REST API for {len(args)} patches with {self.workers} workers')
                 
-                if self.verbose:
-                    self.logger.info(f'Getting {_id} {ii_x} {ii_y}')
-
+            CHUNK = len(args)//self.workers +1
+            if self.verbose:
+                loggers = {ii_w:logging.getLogger(str(ii_w)) for ii_w in range(self.workers)}
+            else:
+                loggers = {ii_w:None}
+                
+            chunk_args = [
+                (
+                    args[ii_w*CHUNK:(ii_w+1)*CHUNK],
+                    self.google_key_path,
+                    loggers[ii_w]
+                )
+            for ii_w in range(self.workers)]
+            
+            pool = mp.Pool(self.workers)
+            results = pool.starmap(_fill_worker, chunk_args)
+            results = [item for sublist in results for item in sublist] # flatten list
+            
+            for ii, ii_x, ii_y, arr in results:
+                
                 im_mask = self.alpha_mask[ii_y*self.PATCH_SIZE:(ii_y+1)*self.PATCH_SIZE,ii_x*self.PATCH_SIZE:(ii_x+1)*self.PATCH_SIZE,ii]>0
 
-                im_arr[ii_y*self.PATCH_SIZE:(ii_y+1)*self.PATCH_SIZE,ii_x*self.PATCH_SIZE:(ii_x+1)*self.PATCH_SIZE,:][im_mask,:]=arr[:im_arr.shape[0]-ii_y*self.PATCH_SIZE,:im_arr.shape[1]-ii_x*self.PATCH_SIZE,:][im_mask,:]
+                im_arr[ii_y*self.PATCH_SIZE:(ii_y+1)*self.PATCH_SIZE,ii_x*self.PATCH_SIZE:(ii_x+1)*self.PATCH_SIZE,:][im_mask,:]=arr[:im_arr.shape[0]-ii_y*self.PATCH_SIZE,:im_arr.shape[1]-ii_x*self.PATCH_SIZE,:][im_mask,:]                   
+        
                 
         return im_arr
         
