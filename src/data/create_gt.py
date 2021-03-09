@@ -515,14 +515,6 @@ def generate_water_cloud_binary_gt(
     return gt, metadata
 
 
-def generate_binary_water_gt():
-    return None
-
-
-def generate_binary_cloud_gt():
-    return None
-
-
 def generate_gt_v1(
     s2tiff: str,
     floodmap: gpd.GeoDataFrame,
