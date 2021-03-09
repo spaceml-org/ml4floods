@@ -17,7 +17,7 @@ from src.serve.tileserver.REST_mosaic import RESTMosaic
 
 class Ingestor:
     
-    def __init__(self, local_path='tmp', bucket='ml4floods', cloud_path={'S2-pre':'worldfloods/lk-dev/S2-pre', 'S2-post':'worldfloods/lk-dev/S2-post','GT':'worldfloods/lk-dev/gt','meta':'worldfloods/lk-dev/meta'}, include=['S2-pre','S2-post','GT','ML'], async_ingest=False, source='REST'):
+    def __init__(self, local_path='tmp', bucket='ml4floods', cloud_path={'S2-pre':'worldfloods/lk-dev/S2-pre', 'S2-post':'worldfloods/lk-dev/S2-post','GT':'worldfloods/lk-dev/gt','meta':'worldfloods/lk-dev/meta'}, include=['S2-pre','S2-post','GT','ML'], workers=1, async_ingest=False, source='REST'):
         """
         An ingestion class to obtain, for a Copernicus EMS event, the S2 imagery and ground truth (GT) floodmap.
         """
@@ -29,7 +29,8 @@ class Ingestor:
         self.include=include
         self.source=source  # either 'EE' or 'REST'
         self.async_ingest=False
-        self.BANDS_EXPORT= ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B10', 'B11', 'B12', 'QA60', 'probability']
+        self.workers=workers
+        self.BANDS_EXPORT= ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B10', 'B11', 'B12', 'QA60']#, 'probability']
         self.logger = logging.getLogger('Ingestor')
 
         
@@ -141,9 +142,9 @@ class Ingestor:
         except:
             raise ValueError('Error initializing EE')
             
-        if self.source='EE':
+        if self.source=='EE':
             ingest_fn = self._ingest_S2_EE
-        elif self.source='REST':
+        elif self.source=='REST':
             ingest_fn = self._ingest_S2_REST
             
         for register in self.registers:
@@ -177,8 +178,14 @@ class Ingestor:
             
     def _ingest_S2_REST(self,_id, aoi, start_date, end_date, save_dest):
         """Use the REST API..."""
-        cloud_dest = os.path.join('gs://'+self.bucket,save_dest)
-        mosaicer = RESTMosaic(bands=self.BANDS_EXPORT, verbose=True)
+        cloud_dest = os.path.join('gs://'+self.bucket,save_dest+'.tif')
+        mosaicer = RESTMosaic(
+            bands=self.BANDS_EXPORT, 
+            #s2_tiles_path = os.path.join(os.getcwd(),'assets','s2_tiles.gpkg'), 
+            patch_size=1024,
+            verbose=True,
+            workers=self.workers
+        )
         mosaicer.mosaic(aoi,start_date,end_date, cloud_dest=cloud_dest)
             
     def _ingest_S2_EE(self, _id, aoi, start_date, end_date, save_dest):
@@ -290,7 +297,9 @@ class Ingestor:
         
 if __name__=="__main__":
     ingestor = Ingestor()
-    ingestor.ingest('EMSR480', '2020-11-10')#datetime(2021,1,6,0,0))
+    #ingestor.ingest('EMSR480', '2020-11-10')#datetime(2021,1,6,0,0))
+    
+    ingestor.ingest('EMSR497', '2021-02-01')
     
     
     
