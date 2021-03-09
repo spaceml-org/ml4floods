@@ -185,9 +185,9 @@ class ML4FloodsModel(pl.LightningModule):
         self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
 
         for i in range(self.num_class):
-            problem_name = "/".join(self.label_names[i, 1:])
-            self.logger.experiment.log({f"{problem_name} {prefix}pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
-            self.logger.experiment.log({f"{problem_name} {prefix}pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
+            problem_name = "_".join(self.label_names[i, 1:])
+            self.logger.experiment.log({f"{prefix}_{problem_name}_pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
+            self.logger.experiment.log({f"{prefix}_{problem_name}_pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
                                                                                                  values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in pred_data]})
             self.logger.experiment.log({f"{prefix}y": [wandb.Image(mask_to_rgb(img[i], values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
 
