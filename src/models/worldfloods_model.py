@@ -212,20 +212,20 @@ class ML4FloodsModel(pl.LightningModule):
             cm_batch = metrics.compute_confusions(y[:, i], pred_categorical[:, i],
                                                   num_class=2, remove_class_zero=True)
 
-            problem_name = "/".join(self.label_names[i, 1:])
+            problem_name = "_".join(self.label_names[i, 1:])
 
             cm_agg = torch.sum(cm_batch, dim=0)
-            self.log(f"val_Acc {problem_name}", metrics.binary_accuracy(cm_agg))
-            self.log(f"val_Precision {problem_name}", metrics.binary_precision(cm_agg))
-            self.log(f"val_Recall {problem_name}", metrics.binary_recall(cm_agg))
+            self.log(f"val_Acc_{problem_name}", metrics.binary_accuracy(cm_agg))
+            self.log(f"val_Precision_{problem_name}", metrics.binary_precision(cm_agg))
+            self.log(f"val_Recall_{problem_name}", metrics.binary_recall(cm_agg))
 
             bce = losses.binary_cross_entropy_loss_mask_invalid(logits[:, i], y[:, i], pos_weight=None)
-            self.log(f"val_bce {problem_name}", bce)
+            self.log(f"val_bce_{problem_name}", bce)
 
             # Log IoU per class
             iou_dict = metrics.calculate_iou(cm_batch, self.label_names[i, 1:])
             for k in iou_dict.keys():
-                self.log(f"val_iou {problem_name} {k}", iou_dict[k])
+                self.log(f"val_iou_{problem_name} {k}", iou_dict[k])
 
         if batch_idx == 0 and self.logger is not None:
             self.log_images(x, y, logits, prefix="val_")
