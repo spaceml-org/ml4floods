@@ -10,7 +10,8 @@ from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
 
 # U-Net inputs must be divisible by 8
 SUBSAMPLE_MODULE = {
-    "unet": 8
+    "unet": 8,
+    "unet_dropout": 8
 }
 
 def get_model(model_config):
@@ -36,7 +37,7 @@ def get_channel_configuration_bands(channel_configuration):
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
-def get_model_inference_function(model, config, apply_normalization:bool=True) -> Callable:
+def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True) -> Callable:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -48,7 +49,7 @@ def get_model_inference_function(model, config, apply_normalization:bool=True) -
 
     Returns: callable function
     """
-
+    print("GEtting model inference function")
     model_type = config.model_params.hyperparameters.model_type
     module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
 
@@ -70,7 +71,7 @@ def get_model_inference_function(model, config, apply_normalization:bool=True) -
     return get_pred_function(model, model.device,
                              module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
                              activation_fun=lambda ot: torch.softmax(ot, dim=1),
-                             normalization=normalize)
+                             normalization=normalize, eval_mode=eval_mode)
 
 
 def handle_device(device='cuda:0'):
@@ -82,8 +83,8 @@ def handle_device(device='cuda:0'):
     return torch.device(device)
     
 
-def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=1280,
-                      normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None) -> Callable:
+def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=128,
+                      normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None, eval_mode: bool = True) -> Callable:
     """
     Given a model it returns a callable function to make inferences that:
     1) Normalize the input tensor if provided a callable normalization fun
@@ -103,8 +104,10 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
         Function to make inferences
 
     """
-
-    model.eval()
+    if eval_mode:
+        model.eval()
+    else:
+        model.train()
     
     if normalization is None:
         normalization = lambda ti: ti
@@ -119,6 +122,7 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
     else:
         pred_fun = lambda ti: activation_fun(model(ti.to(device)))
 
+    print('Max tile size:', max_tile_size)
     def pred_fun_final(ti):
         with torch.no_grad():
             ti_norm = normalization(ti)
