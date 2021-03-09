@@ -30,8 +30,8 @@ def main():
 
     # looping through the ML parts
     ml_paths = [
-        "val",
-        "test",
+        # "val",
+        # "test",
         "train",
     ]
 
@@ -73,7 +73,8 @@ def main():
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket) as pbar:
+        last_x_slices = slice(-285, -190)
+        with tqdm.tqdm(files_in_bucket[last_x_slices]) as pbar:
             for s2_image_path in pbar:
 
                 try:
