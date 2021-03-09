@@ -540,6 +540,33 @@ def create_folder(directory: str) -> None:
     else:
         print(f"Folder '{directory}' is created.")
 
+def get_files_in_directory_gcp(bucket_id: str, directory: str, **kwargs) -> List[str]:
+    """Function to return the list of files within a given directory.
+
+    Args:
+        directory (str): Directory path to get the file list from.
+        suffix (str): file extension to be listed
+
+    Returns:
+        List[str]: Returns the list of files that match the given extension
+            within the given directory.
+    """
+    client = storage.Client(**kwargs)
+    # get bucket
+    bucket = client.get_bucket(bucket_id)
+    # get blob
+
+    blobs = bucket.list_blobs(prefix=directory)
+    # check if it exists
+
+    # for
+    files = [
+        str(Path(bucket_id).joinpath(x.name)) for x in blobs
+    #     if str(Path(x.name).suffix) == suffix
+    ]
+    
+    return files
+
 
 def get_files_in_directory(directory: str, suffix: str) -> List[str]:
     """Function to return the list of files within a given directory.
