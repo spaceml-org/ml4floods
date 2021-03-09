@@ -203,11 +203,13 @@ def compute_water(
 
     if permanent_water_path is not None:
         logging.info("\t Adding permanent water")
-        permament_water = rasterio.open(permanent_water_path).read(1, window=window)
-
+        permanent_water = rasterio.open(permanent_water_path).read(1, window=window)
+        
         # Set to permanent water
-        water_mask[(water_mask != -1) | (permament_water == 3)] = 3
-
+        # Only interested in permanent water labelled as 3 and valid water masks.
+        # Adding the third label for permanent water in water mask.
+        water_mask[(water_mask != -1) & (permanent_water == 3)] = 3
+        
         # Seasonal water (permanent_water == 2) will not be used
 
     return water_mask
