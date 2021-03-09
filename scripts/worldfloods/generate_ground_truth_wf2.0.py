@@ -71,10 +71,13 @@ def main():
         #     "gs://ml4floods/worldfloods/public/train/S2/EMSR261_03WOLFSBURG_DEL_MONIT05_v2_observed_event_a.tif"
         # ]
 
+        # # HACK FOR SLICING
+        # last_x_slices = slice(-285, -190)
+
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        last_x_slices = slice(-285, -190)
-        with tqdm.tqdm(files_in_bucket[last_x_slices]) as pbar:
+
+        with tqdm.tqdm(files_in_bucket) as pbar:
             for s2_image_path in pbar:
 
                 try:
