@@ -158,9 +158,7 @@ def main():
                         )
                     )
                     filename = str(filename)
-                    filename = os.path.join("testingcrap", "crap2", "s2")
                     desc = os.path.basename(filename)
-
                     # DOWNLOAD!!!!
                     task = ee_download.mayberun(
                         filename,
@@ -174,10 +172,6 @@ def main():
                     )
                     if task is not None:
                         print(task.status())
-
-                    break
-
-            break
 
     pass
 
