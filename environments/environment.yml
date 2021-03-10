@@ -8,6 +8,7 @@ dependencies:
 - conda-forge::ipython
 - conda-forge::ipykernel
 - conda-forge::libgdal>=3.1
+- pandas==1.2.3
 - pip
 - pip:
   # PYTORCH ECOSYSTEM
@@ -18,7 +19,7 @@ dependencies:
   - matplotlib
   - seaborn
   - scipy
-  - pandas
+  - pandas==1.2.3
   - rasterio
   - geopandas
   - fastprogress
