@@ -105,13 +105,13 @@ def binary_cross_entropy_loss_mask_invalid(logits: torch.Tensor, target: torch.T
     Returns:
 
     """
-    assert logits.dim() == 3, "Unexpected shape of logits"
-    assert target.dim() == 3, "Unexpected shape of target"
+    assert logits.dim() == 3, f"Unexpected shape of logits. Logits: {logits.shape} target: {target.shape}"
+    assert target.dim() == 3, f"Unexpected shape of target. Logits: {logits.shape} target: {target.shape}"
 
     valid = (target != 0)
     target_without_invalids = (target - 1) * valid
 
-    pixelwise_bce = F.binary_cross_entropy_with_logits(logits, target_without_invalids, reduction='none',
+    pixelwise_bce = F.binary_cross_entropy_with_logits(logits, target_without_invalids.float(), reduction='none',
                                                        pos_weight=pos_weight)
 
     pixelwise_bce *= valid  # mask out invalid pixels
@@ -130,7 +130,7 @@ def calc_loss_multioutput_logistic_mask_invalid(logits: torch.Tensor, target: to
 
     total_loss = 0
     for i in range(logits.shape[1]):
-        pos_weight = pos_weight_problem[i] if pos_weight_problem is not None else None
+        pos_weight = torch.tensor(pos_weight_problem[i], device=logits.device) if pos_weight_problem is not None else None
         curr_loss = binary_cross_entropy_loss_mask_invalid(logits[:, i], target[:, i], pos_weight=pos_weight)
         total_loss += curr_loss*weight_problem[i]
 
