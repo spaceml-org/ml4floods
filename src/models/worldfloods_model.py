@@ -177,7 +177,7 @@ class ML4FloodsModel(pl.LightningModule):
 
     def log_images(self, x, y, logits, prefix=""):
         mask_data = y.cpu().numpy()
-        pred_data = torch.sigmoid(logits).long().cpu().numpy()
+        pred_data = torch.round(torch.sigmoid(logits)).long().cpu().numpy()
         img_data = batch_to_unnorm_rgb(x,
                                        self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
 
