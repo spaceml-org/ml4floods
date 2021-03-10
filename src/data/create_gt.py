@@ -455,7 +455,6 @@ def generate_water_cloud_binary_gt(
     )
 
     # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
-    print(metadata_floodmap["satellite"])
     if metadata_floodmap["satellite"] == "Sentinel-2":
 
         invalid_clouds_threshold = 0.5
