@@ -34,29 +34,30 @@ class Ingestor:
         self.logger = logging.getLogger('Ingestor')
 
         
-    def ingest(self,ems_code,code_date, aoi=None):
+    def ingest(self,ems_code,code_date,aoi_code, aoi_geom=None):
         """
         Main ingestion pipeline
         """
         
         self.ems_code = ems_code
         self.code_date = code_date
+        self.aoi_code = aoi_code
         self.logger.info(f'Ingesting {ems_code}, {code_date}')
         
         # ingest the vector data
-        if aoi!=None and 'GT' in self.include:
+        if aoi_geom!=None and 'GT' in self.include:
             raise ValueError('Specify EITHER an aoi or include "GT"')
         elif 'GT' in self.include:
             # ingest an EMS event
             self._ingest_vector()
         
             # ingest the S2 data
-            self._ingest_S2_registers()
+            self._ingest_S2_register()
         
             # build the floodmap raster
             self._construct_GT()
             
-        elif aoi!=None:
+        elif aoi_geom!=None:
             # ingest a custom event
             if 'S2-pre' in self.include:
                 save_dest = os.path.join(self.cloud_path['S2-pre'],f'{self.ems_code}_AOI01_S2')
@@ -102,40 +103,44 @@ class Ingestor:
             } for z in zip_files_activation
         ])
         
+        print (zip_df)
+        zip_df = zip_df.loc[zip_df['aoi']==self.aoi_code,:]
+        print (zip_df)
+        
         # prefer product and vectors
         zip_df['pref_monprod'] = zip_df['monprod'].map({'PROD':0,'MONI':1}).fillna(2) # prefer PRODUCT to MONITOR0X to NaN
         zip_df['pref_vecrtp'] = zip_df['vecrtp'].map({'VEC':0,'RTP':1}).fillna(2) # prefer VECTOR to RTP (ready-to-print) to NaN
         
         # dump back to list of paths
-        zip_file_paths = zip_df.sort_values(['pref_monprod','pref_vecrtp'])[['aoi','z']].groupby('aoi').nth(0)['z'].values.tolist()
+        zip_file_path = zip_df.sort_values(['pref_monprod','pref_vecrtp']).iloc[0]['z'] # [['aoi','z']].groupby('aoi').nth(0)['z'].values.tolist()
 
-        unzip_files_activation = []
-        for zip_path in zip_file_paths:
-            aoi_id = os.path.split(zip_path)[1].split('_')[1]
-            folder_out = os.path.join(self.local_path,self.ems_code)
-            if not os.path.exists(folder_out):
-                os.makedirs(folder_out)
+        #unzip_files_activation = []
+        #for zip_path in zip_file_paths:
+        #    aoi_id = os.path.split(zip_path)[1].split('_')[1]
+        folder_out = os.path.join(self.local_path,self.ems_code)
+        if not os.path.exists(folder_out):
+            os.makedirs(folder_out)
 
-            local_zip_file = activations.download_vector_cems(zip_path)
-            unzipped_file = activations.unzip_copernicus_ems(local_zip_file, folder_out=folder_out)
-            unzip_files_activation.append(unzipped_file)
-            self.logger.info(f'unzipped {zip_path}')
+        local_zip_file = activations.download_vector_cems(zip_file_path)
+        unzipped_file = activations.unzip_copernicus_ems(local_zip_file, folder_out=folder_out)
+        #unzip_files_activation.append(unzipped_file)
+        self.logger.info(f'unzipped {zip_file_path}')
 
 
         # filter for number of aois
 
-        self.registers = []
-        for unzip_folder in unzip_files_activation:
-            metadata_floodmap = activations.filter_register_copernicusems(unzip_folder, self.code_date)
-            aoi_id = os.path.split(unzip_folder)[1].split('_')[1]
-            if metadata_floodmap is not None:
-                floodmap = activations.generate_floodmap(metadata_floodmap, folder_files=folder_out)
-                self.registers.append({'id':'_'.join([self.ems_code,aoi_id]),"metadata_floodmap": metadata_floodmap, "floodmap": floodmap})
-                self.logger.info(f'{unzip_folder} processed successfully.')
-            else:
-                self.logger.info(f'{unzip_folder} - Error!')
+        #self.registers = []
+        #for unzip_folder in unzip_files_activation:
+        metadata_floodmap = activations.filter_register_copernicusems(unzipped_file, self.code_date)
+        #    aoi_id = os.path.split(unzip_folder)[1].split('_')[1]
+        if metadata_floodmap is not None:
+            floodmap = activations.generate_floodmap(metadata_floodmap, folder_files=folder_out)
+            self.register = {'id':'_'.join([self.ems_code,self.aoi_code]),"metadata_floodmap": metadata_floodmap, "floodmap": floodmap}
+            self.logger.info(f'{unzipped_file} processed successfully.')
+        else:
+            self.logger.info(f'{unzipped_file} - Error!')
         
-    def _ingest_S2_registers(self):
+    def _ingest_S2_register(self):
         ### can also into multiprocess...
         try:
             ee.Initialize()
@@ -147,34 +152,33 @@ class Ingestor:
         elif self.source=='REST':
             ingest_fn = self._ingest_S2_REST
             
-        for register in self.registers:
-            register_aoi_id = register['metadata_floodmap']['event id'].split('_')[1]            
-            self.logger.info(f'Ingesting Sentinel-2 {register_aoi_id} geotiff Pre-event')
-            aoi = register['metadata_floodmap']['area_of_interest_polygon']
-            
-            if 'S2-pre' in self.include:
-                save_dest = os.path.join(self.cloud_path['S2-pre'],f'{self.ems_code}_{register_aoi_id}_S2')
-                end_date = datetime.utcfromtimestamp(register['metadata_floodmap']["satellite date"].timestamp()) - timedelta(days=1)
-                start_date = end_date - timedelta(days=21)
-                
-                ingest_fn(
-                    _id=register_aoi_id, 
-                    aoi=aoi,
-                    start_date=start_date, 
-                    end_date=end_date, 
-                    save_dest=save_dest)
-                
-            if 'S2-post' in self.include:
-                save_dest = os.path.join(self.cloud_path['S2-post'],f'{self.ems_code}_{register_aoi_id}_S2')
-                start_date = datetime.utcfromtimestamp(register['metadata_floodmap']["satellite date"].timestamp())
-                end_date = start_date + timedelta(days=20)
-                         
-                ingest_fn(
-                    _id=register_aoi_id, 
-                    aoi=aoi,
-                    start_date=start_date, 
-                    end_date=end_date, 
-                    save_dest=save_dest)
+          
+        self.logger.info(f'Ingesting Sentinel-2 {self.aoi_code} geotiff Pre-event')
+        aoi = self.register['metadata_floodmap']['area_of_interest_polygon']
+
+        if 'S2-pre' in self.include:
+            save_dest = os.path.join(self.cloud_path['S2-pre'],f'{self.ems_code}_{self.aoi_code}_S2')
+            end_date = datetime.utcfromtimestamp(self.register['metadata_floodmap']["satellite date"].timestamp()) - timedelta(days=1)
+            start_date = end_date - timedelta(days=21)
+
+            ingest_fn(
+                _id=self.aoi_code, 
+                aoi=aoi,
+                start_date=start_date, 
+                end_date=end_date, 
+                save_dest=save_dest)
+
+        if 'S2-post' in self.include:
+            save_dest = os.path.join(self.cloud_path['S2-post'],f'{self.ems_code}_{self.aoi_code}_S2')
+            start_date = datetime.utcfromtimestamp(self.register['metadata_floodmap']["satellite date"].timestamp())
+            end_date = start_date + timedelta(days=20)
+
+            ingest_fn(
+                _id=self.aoi_code, 
+                aoi=aoi,
+                start_date=start_date, 
+                end_date=end_date, 
+                save_dest=save_dest)
             
     def _ingest_S2_REST(self,_id, aoi, start_date, end_date, save_dest):
         """Use the REST API..."""
@@ -226,80 +230,91 @@ class Ingestor:
         
         self.logger.info('Constructing flood masks')
         
-        ### walk through registers
-        for register in self.registers:
-            
-            tiff_address = os.path.join('gs://'+self.bucket,self.cloud_path['S2-post'],register['id']+'_S2.tif')
-            
-            # get the floodmask raster for each
-            mask = create_gt.compute_water(
-                tiffs2=tiff_address, 
-                floodmap=register['floodmap'], 
-                window=None,
-                permanent_water_path=None
-            ) 
-            
-            # grab the crs and transform from the S2 source
-            with rasterio.open(tiff_address) as src_s2:
-                crs = src_s2.crs
-                transform = src_s2.transform
-                
-            # write the GT mask
-            with rasterio.open(
-                        os.path.join(self.local_path,f'{register["id"]}_GT.tif'), 
-                        'w', 
-                        driver='COG', 
-                        width=mask.shape[0], 
-                        height=mask.shape[1], 
-                        count=1,
-                        dtype=mask.dtype, 
-                        crs=crs, 
-                        transform=transform) as dst:
-                
-                dst.write(mask, indexes=1)
-            
-            # also save the floodmask_vector.geojson, meta, and aoi.geojson            
-            register['floodmap'].to_file(os.path.join(self.local_path,register['id']+'_vector.geojson'),driver='GeoJSON')
-            
-            ### prep meta for json
-            register['metadata_floodmap']['area_of_interest_polygon'] = geometry.mapping(register['metadata_floodmap']['area_of_interest_polygon']) 
-            register['metadata_floodmap']['satellite date'] = register['metadata_floodmap']['satellite date'].isoformat()    
-            register['metadata_floodmap']['timestamp_pre_event'] = register['metadata_floodmap']['timestamp_pre_event'].isoformat()  
-            register['metadata_floodmap']['register_id'] = register['id']
 
-            json.dump(
-                register['metadata_floodmap']['area_of_interest_polygon'], 
-                open(os.path.join(self.local_path,register['id']+'_aoi.json'),'w')
-            )
-            json.dump(
-                register['metadata_floodmap'],
-                open(os.path.join(self.local_path,register['id']+'_meta.json'),'w')
-            )
-            
-            # move all to cloud
-            to_cloud = {
-                os.path.join(self.local_path,register['id']+'_vector.geojson'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],register['id']+'_vector.geojson'),
-                os.path.join(self.local_path,register['id']+'_aoi.json'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],register['id']+'_aoi.json'),
-                os.path.join(self.local_path,register['id']+'_meta.json'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],register['id']+'_meta.json'),
-                os.path.join(self.local_path,register['id']+'_GT.tif'):os.path.join('gs://'+self.bucket,self.cloud_path['GT'],register['id']+'_GT.tif'),
-            }
-            
-            for src,dst in to_cloud.items():
-                self.logger.info(f'to cloud: {src} -> {dst}')
-                utils.save_file_to_bucket(dst, src)
-                
-            # remove local files
-            for kk in to_cloud.keys():
-                os.remove(kk)
+        tiff_address = os.path.join('gs://'+self.bucket,self.cloud_path['S2-post'],f'{self.ems_code}_{self.aoi_code}_S2.tif')
+
+        # get the floodmask raster for each
+        mask = create_gt.compute_water(
+            tiffs2=tiff_address, 
+            floodmap=self.register['floodmap'], 
+            window=None,
+            permanent_water_path=None
+        ) 
+
+        # grab the crs and transform from the S2 source
+        with rasterio.open(tiff_address) as src_s2:
+            crs = src_s2.crs
+            transform = src_s2.transform
+
+        # write the GT mask
+        with rasterio.open(
+                    os.path.join(self.local_path,f'{self.register["id"]}_GT.tif'), 
+                    'w', 
+                    driver='COG', 
+                    width=mask.shape[0], 
+                    height=mask.shape[1], 
+                    count=1,
+                    dtype=mask.dtype, 
+                    crs=crs, 
+                    transform=transform) as dst:
+
+            dst.write(mask, indexes=1)
+
+        # also save the floodmask_vector.geojson, meta, and aoi.geojson            
+        self.register['floodmap'].to_file(os.path.join(self.local_path,self.register['id']+'_vector.geojson'),driver='GeoJSON')
+
+        ### prep meta for json
+        self.register['metadata_floodmap']['area_of_interest_polygon'] = geometry.mapping(self.register['metadata_floodmap']['area_of_interest_polygon']) 
+        self.register['metadata_floodmap']['satellite date'] = self.register['metadata_floodmap']['satellite date'].isoformat()    
+        self.register['metadata_floodmap']['timestamp_pre_event'] = self.register['metadata_floodmap']['timestamp_pre_event'].isoformat()  
+        self.register['metadata_floodmap']['register_id'] = self.register['id']
+
+        json.dump(
+            self.register['metadata_floodmap']['area_of_interest_polygon'], 
+            open(os.path.join(self.local_path,self.register['id']+'_aoi.json'),'w')
+        )
+        json.dump(
+            self.register['metadata_floodmap'],
+            open(os.path.join(self.local_path,self.register['id']+'_meta.json'),'w')
+        )
+
+        # move all to cloud
+        to_cloud = {
+            os.path.join(self.local_path,self.register['id']+'_vector.geojson'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],self.register['id']+'_vector.geojson'),
+            os.path.join(self.local_path,self.register['id']+'_aoi.json'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],self.register['id']+'_aoi.json'),
+            os.path.join(self.local_path,self.register['id']+'_meta.json'):os.path.join('gs://'+self.bucket,self.cloud_path['meta'],self.register['id']+'_meta.json'),
+            os.path.join(self.local_path,self.register['id']+'_GT.tif'):os.path.join('gs://'+self.bucket,self.cloud_path['GT'],self.register['id']+'_GT.tif'),
+        }
+
+        for src,dst in to_cloud.items():
+            self.logger.info(f'to cloud: {src} -> {dst}')
+            utils.save_file_to_bucket(dst, src)
+
+        # remove local files
+        for kk in to_cloud.keys():
+            os.remove(kk)
             
         
         
         
 if __name__=="__main__":
-    ingestor = Ingestor()
-    #ingestor.ingest('EMSR480', '2020-11-10')#datetime(2021,1,6,0,0))
-    
-    ingestor.ingest('EMSR497', '2021-02-01')
+    ingestor = Ingestor(
+        local_path='tmp',
+        bucket='ml4floods',
+        cloud_path = {
+            'S2-pre':'worldfloods/lk-dev/S2-pre',
+            'S2-post':'worldfloods/lk-dev/S2-post',
+            'GT':'worldfloods/lk-dev/gt',
+            'meta':'worldfloods/lk-dev/meta'
+        },
+        include=['S2-pre','S2-post','GT','ML'],
+        workers=3,
+        source='REST'
+    )
+    ingestor.ingest(ems_code='EMSR267',
+                    aoi_code='01RUSNE',
+                    code_date='2018-01-31', 
+                    aoi_geom=None)
     
     
     

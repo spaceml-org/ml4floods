@@ -61,9 +61,10 @@ def get_geojson():
 
 @app.route('/get/ingest/', methods=['GET'])
 def get_runingest():
-    code = request.args.get('code')
+    ems_code = request.args.get('CODE')
+    aoi_code = request.args.get('AOI')
     event_date = request.args.get('event-date')
-    print ('ingesting code:',code)
+    print ('ingesting aoi code:',ems_code, aoi_code)
     
     
     ingestor = Ingestor(
@@ -80,9 +81,10 @@ def get_runingest():
         source='REST'
     )
     
-    ingestor.ingest(ems_code=code,
+    ingestor.ingest(ems_code=ems_code,
+                    aoi_code=aoi_code,
                     code_date=event_date, 
-                    aoi=None)
+                    aoi_geom=None)
 
     return jsonify({'result':True})
     
@@ -90,12 +92,18 @@ def get_runingest():
 
 @app.route('/get/isavailable/', methods=['GET'])
 def get_isavailable():
-    ems_code = request.args.get('ems_code')
+    ems_code = request.args.get('CODE')
+    AOI = request.args.get('AOI')
     client = storage.Client()
     bucket=client.bucket('ml4floods')
-    fname = os.path.join('worldfloods','lk-dev','S2-post','_'.join([ems_code,'AOI01','S2.tif'])) #<- need to check this
+    fname = os.path.join('worldfloods','lk-dev','S2-post','_'.join([ems_code,AOI,'S2.tif'])) #<- need to check this
     blob = bucket.blob(fname)
     return jsonify({'exists':blob.exists()})
+
+"""
+@app.route('/get/geometry/', methods=['GET'])
+def get_geometry():
+""" 
     
 
 @app.route('/get/catalog/',methods=['GET'])
@@ -109,14 +117,19 @@ def refresh_catalog():
     end_date_object=dt.fromisoformat(end_date)
     
     updated_df = helpers.walk_bucket(events_df, check_available=False)
-    print ('updated df')
-    print (updated_df)
+    gj_gdf = helpers.refresh_geojson(base_gj, updated_df)
+    gj_gdf['event-date']=pd.to_datetime(gj_gdf['event-date'])
+    
+    
+    print ('updated gdf')
+    print (gj_gdf)
     
     # filter the df
     if iso2:
-        idxs = (updated_df['CodeDate']>=start_date_object) & (updated_df['CodeDate']<end_date_object)  & updated_df['value'].str.contains(iso2) #< this broken for now because iso2 is list from multi -> change to np.prod.any in list
+        gj_gdf = pd.merge(gj_gdf,updated_df[['Code','value']], how='left',left_on='CODE',right_on='Code').drop(columns=['Code'])
+        idxs = (gj_gdf['event-date']>=start_date_object) & (gj_gdf['event-date']<end_date_object)  & gj_gdf['value'].str.contains(iso2) # change to np.prod.any in list for multi
     else:
-        idxs = (updated_df['CodeDate']>=start_date_object) & (updated_df['CodeDate']<end_date_object)
+        idxs = (gj_gdf['event-date']>=start_date_object) & (gj_gdf['event-date']<end_date_object)
         
     print ('params')
     print ('start date',start_date)
@@ -124,9 +137,10 @@ def refresh_catalog():
     print ('iso2',iso2)
     print (idxs.sum())
     print(updated_df.loc[idxs,['Title','CodeDate']])
-    updated_df['CodeDate'] = updated_df['CodeDate'].apply(lambda el: el.isoformat())
+    #updated_df['CodeDate'] = updated_df['CodeDate'].apply(lambda el: el.isoformat())
+    gj_gdf['event-date'] = gj_gdf['event-date'].apply(lambda el: el.isoformat())
     
-    return updated_df.loc[idxs,['Code','Title','CodeDate']].to_json()
+    return pd.DataFrame(gj_gdf.loc[idxs,['CODE','AOI','TITLE','event-date']]).to_json()
 
 
 @app.route("/")

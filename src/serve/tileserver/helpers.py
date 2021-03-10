@@ -89,34 +89,47 @@ def walk_bucket(events_df, check_available=True):
     
     return update_df
 
-def _get_event_mp(ems_code):
+def _get_event_aois(ems_code):
     
     url = f'https://emergency.copernicus.eu/mapping/list-of-components/{ems_code}/aemfeed'
     r = requests.get(url)
-    tmp_path = os.path.join(os.getcwd(),'tmp.txt')
+    tmp_path = os.path.join(os.getcwd(),f'{ems_code}.txt')
     
     with open(tmp_path,'w') as f:
         f.write(r.text)
         
     xmldoc = minidom.parse(tmp_path)
-    items = xmldoc.getElementsByTagName('georss:polygon')
+    items = xmldoc.getElementsByTagName('item')
     
-    polys = []
+    records = []
     for item in items:
-        t = item.firstChild.data.split(' ') # lat lon
-        polys.append(geometry.Polygon([(float(el[0]),float(el[1])) for el in list(zip(t[1::2], t[::2]))])) # lon, lat
+        thumbs = item.getElementsByTagName('gdacs:thumbnail')
+        polys = item.getElementsByTagName('georss:polygon')
 
-    os.remove(tmp_path)
-    return geometry.MultiPolygon(polys)
+        if len(thumbs)>0:
+            t = polys[0].firstChild.data.split(' ') # lat lon
+            records.append(
+                {
+                    'CODE':ems_code,
+                    'AOI':os.path.split(thumbs[0].firstChild.data)[1].split('_')[1],
+                    'geometry':geometry.mapping(geometry.Polygon([(float(el[0]),float(el[1])) for el in list(zip(t[1::2], t[::2]))])) # lon, lat
+                }
+            )
+
+    if len(records)>0:
+        return pd.DataFrame(records).groupby('AOI').nth(0).reset_index().to_dict(orient='records')
+    else: 
+        return []
 
 def _ingest_event_aoi(ems_code):
     
-    multipolygon = _get_event_mp(ems_code)
-    ft = geojson.Feature(geometry=multipolygon, properties={'CODE':ems_code,'AOI':None})
-    tmp_path = os.path.join(os.getcwd(),'tmp',f'{ems_code}.json')
-    cloud_path = os.path.join('gs://ml4floods','worldfloods','lk-dev','ems-aoi',ems_code+'.json')
-    json.dump(ft, open(tmp_path,'w'))
-    utils.save_file_to_bucket(cloud_path, tmp_path)
+    records = _get_event_aois(ems_code)
+    for record in records:
+        ft = geojson.Feature(geometry=record['geometry'], properties={'CODE':record['CODE'],'AOI':record['AOI']})
+        tmp_path = os.path.join(os.getcwd(),'tmp',f'{ems_code}_{record["AOI"]}.json')
+        cloud_path = os.path.join('gs://ml4floods','worldfloods','lk-dev','ems-aoi',f'{ems_code}_{record["AOI"]}.json')
+        json.dump(ft, open(tmp_path,'w'))
+        utils.save_file_to_bucket(cloud_path, tmp_path)
     
 
 def refresh_geojson(gj_gdf, updated_df):
@@ -126,53 +139,51 @@ def refresh_geojson(gj_gdf, updated_df):
     """
     client = storage.Client()
 
-    aoi_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta')) if blob.name.split('_')[-1]=='aoi.json']
-    ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json']
+    aoi_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta')) if blob.name.split('_')[-1]=='aoi.json'] # includes custom
+    ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
     
     # for any codes in updated_df but not in blobs, run grab those aois
     aoi_codes = list(set([os.path.split(b)[1].split('_')[0] for b in aoi_blobs]))
-    ems_codes = list(set([os.path.split(b)[1][:-5] for b in ems_blobs]))
+    ems_codes = list(set([os.path.split(b)[1].split('_')[0] for b in ems_blobs]))
     done_codes = list(set([cc for cc in aoi_codes+ems_codes if cc!='']))
     do_codes = updated_df.loc[~updated_df['Code'].isin(done_codes),'Code'].values.tolist()
     do_codes = [cc for cc in do_codes if 'CUSTOM' not in cc]
-    print ('do_codes')
-    print (do_codes)
-    for ems_code in do_codes:
-        _ingest_event_aoi(ems_code)
     
-    ### supercede any non-ingested ems aois with new aoi_blobs
-    # new aoi_codes -> codes that are 'none' in the gdf but are in aoi codes
-    new_aoi_codes = set(gj_gdf.loc[gj_gdf['AOI']=='none','CODE'].values.tolist()).intersection(set(aoi_codes))
-    print ('interseciton codes')
-    print (new_aoi_codes)
+    if len(do_codes)>0:
+        for ems_code in do_codes:
+            _ingest_event_aoi(ems_code)
+            
+        ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
     
-    # drop these from the gdf
-    gj_gdf = gj_gdf.loc[~gj_gdf['CODE'].isin(new_aoi_codes),:]
     
+    gj_gdf['idx'] = gj_gdf['CODE']+'_'+gj_gdf['AOI']
+     
     # ... and add any missing aoi_blobs back in
-    new_blobs = [b for b in aoi_blobs if os.path.split(b)[1].split('_')[0] not in gj_gdf['CODE'].values.tolist()]
-    print ('new_blobs 1', len(new_blobs))
-    records = [
-        {
-            'CODE':os.path.split(b)[1].split('_')[0],
-            'AOI':os.path.split(b)[1].split('_')[1],
-            'geometry':geometry.shape(utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','meta',os.path.split(b)[1]))),
-        } 
-        for b in new_blobs]
-    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['CODE','AOI','geometry']), geometry='geometry'))
+    #new_blobs = [b for b in aoi_blobs if '_'.join(os.path.split(b)[1].split('_')[0:2]) not in gj_gdf['idx'].values.tolist()]
+    #print ('new_blobs 1', len(new_blobs))
+    #records = [
+    #    {
+    #        'idx':'_'.join(os.path.split(b)[1].split('_')[0:2]),
+    #        'CODE':os.path.split(b)[1].split('_')[0],
+    #        'AOI':os.path.split(b)[1].split('_')[1],   # further extensions
+    #        'geometry':geometry.shape(utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','meta',os.path.split(b)[1]))),
+    #    } 
+    #    for b in new_blobs]
+    #gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['CODE','AOI','geometry']), geometry='geometry'))
     
     # add any missing ems blobs
-    new_blobs = [b for b in ems_blobs if os.path.split(b)[1][:-5] not in gj_gdf['CODE'].values.tolist() and 'CUSTOM' not in b]
-    print ('new blobs 2')
-    print (new_blobs)
+    new_blobs = [b for b in ems_blobs if os.path.split(b)[1].split('_')[0]+'_'+os.path.split(b)[1].split('_')[1][:-5] not in gj_gdf['idx'].values.tolist() and 'CUSTOM' not in b]
+    print ('new blobs 2:', len(new_blobs))
+    #print (new_blobs)
     records = [
         {
-            'CODE':os.path.split(b)[1][:-5],
-            'AOI':'none',
+            'idx':'_'.join(os.path.split(b)[1].split('_')[0:2]),
+            'CODE':os.path.split(b)[1].split('_')[0],
+            'AOI':os.path.split(b)[1].split('_')[1][:-5],
             'geometry':geometry.shape(utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','ems-aoi',os.path.split(b)[1]))['geometry']),
         } 
         for b in new_blobs]
-    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['CODE','AOI','geometry']), geometry='geometry'))
+    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['idx','CODE','AOI','geometry']), geometry='geometry'))
     
     # merge on the date
     for col in ['Title','TITLE','label']:
@@ -180,7 +191,7 @@ def refresh_geojson(gj_gdf, updated_df):
             gj_gdf =gj_gdf.drop(columns=[col])
     
     gj_gdf = pd.merge(gj_gdf.drop(columns=['event-date']), updated_df[['Code','CodeDate','Title']], how='left',left_on='CODE',right_on='Code').rename(columns={'CodeDate':'event-date','Title':'TITLE'})
-    gj_gdf = gj_gdf.drop(columns=['Code'])
+    gj_gdf = gj_gdf.drop(columns=['Code','idx'])
     
     return gj_gdf
     
