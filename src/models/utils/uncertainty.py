@@ -20,11 +20,11 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, label_n
         
         returns: dictionary of metrics + prediction samples
     """
-    all_samples = []
-    all_images = []
-    all_predictions = []
-    all_gts = []
-    all_logits = []
+#     all_samples = []
+#     all_images = []
+#     all_predictions = []
+#     all_gts = []
+#     all_logits = []
     
     with torch.no_grad():
         for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
@@ -46,23 +46,23 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, label_n
                 prediction_samples[s] = sample_prediction.cpu().numpy()
 
 
-            all_samples.append(prediction_samples)
-            all_images.append(test_inputs.cpu().numpy())
-            all_gts.append(ground_truth_outputs.cpu().numpy())
-            all_predictions.append(torch.argmax(d_pred_fun(test_inputs), dim=1).long().cpu().numpy())
+            samples = prediction_samples
+            images = test_inputs.cpu().numpy()
+            gts = ground_truth_outputs.cpu().numpy()
+            predictions = torch.argmax(d_pred_fun(test_inputs), dim=1).long().cpu().numpy()
 
         
 #         if plot:
             
-            optical = s1_to_unnormed_rgb(all_images[i], config)[0]
-            gt = mask_to_rgb(all_gts[i][0])
-            prediction = mask_to_rgb(all_predictions[i][0] + 1)
-            diff = (all_predictions[i][0] - all_gts[i][0])
+            optical = s1_to_unnormed_rgb(images, config)[0]
+            gt = mask_to_rgb(gts[0])
+            prediction = mask_to_rgb(predictions[0] + 1)
+            diff = (predictions[0] - gts[0])
             
-            water_prob = water_probability(all_samples[i])
-            water_bound = water_bounds(all_samples[i])
-            water_ent = water_entropy(all_samples[i])
-            class_var = variance_map(all_samples[i])
+            water_prob = water_probability(samples)
+            water_bound = water_bounds(samples)
+            water_ent = water_entropy(samples)
+            class_var = variance_map(samples)
         
             fig, ax = plt.subplots(2, 4, figsize=(40, 20))
 
@@ -92,9 +92,6 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, label_n
             ax[1,3].set_title('Class Variance',fontweight="bold", size=40)
             
             plt.show()
-        
-        
-    return all_samples, all_images, all_gts, all_predictions
 
 
 def water_probability(samples):
