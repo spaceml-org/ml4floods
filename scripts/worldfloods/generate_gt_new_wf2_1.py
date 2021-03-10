@@ -47,7 +47,7 @@ PARENT_DIR_FLOODS = "0_DEV/1_Staging/WorldFloods/floodmap"
 PARENT_DIR_FLOOD_META = "0_DEV/1_Staging/WorldFloods/flood_meta"
 
 # TODO: change this to be more robust
-ALL_JRC_FILES = get_files_in_directory_gcp(BUCKET_NAME, PARENT_DIR_JRC)
+ALL_S2_FILES = get_files_in_directory_gcp(BUCKET_NAME, PARENT_DIR_S2)
 
 # predefined target directories
 LOCAL_PATH = Path(root).joinpath("datasets")
@@ -82,108 +82,132 @@ def main():
     problem_files = []
 
     # 2. Loop Through Activation Codes
-    with tqdm.tqdm(ALL_JRC_FILES) as pbar_files:
+    with tqdm.tqdm(ALL_S2_FILES[24:]) as pbar_files:
 
-        for i_jrc_file in pbar_files:
+        for i_file in pbar_files:
 
-            aoi_meta = find_leaf_nodes(i_jrc_file)
+            try:
 
-            # update progress bar
-            pbar_files.set_description(
-                f"ESMR Code: {aoi_meta.event_activation}, AOI: {aoi_meta.directory_aoi}"
-            )
+                aoi_meta = find_leaf_nodes(i_file)
 
-            # ======================
-            # LOAD S2 IMAGE PATH
-            # ======================
-            pbar_files.set_description("Getting S2 Image Path...")
-            s2_image_filepath = "gs://" + str(
-                Path(BUCKET_NAME)
-                .joinpath(PARENT_DIR_S2)
-                .joinpath(aoi_meta.event_activation)
-                .joinpath(aoi_meta.directory_aoi)
-                .joinpath(aoi_meta.file_name)
-            )
+                # update progress bar
+                pbar_files.set_description(
+                    f"ESMR Code: {aoi_meta.event_activation}, AOI: {aoi_meta.directory_aoi}"
+                )
 
-            if not GCPPath(s2_image_filepath).check_if_file_exists():
+                # ======================
+                # LOAD S2 IMAGE PATH
+                # ======================
+                pbar_files.set_description("Getting S2 Image Path...")
+                s2_image_filepath = "gs://" + str(
+                    Path(BUCKET_NAME)
+                    .joinpath(PARENT_DIR_S2)
+                    .joinpath(aoi_meta.event_activation)
+                    .joinpath(aoi_meta.directory_aoi)
+                    .joinpath(aoi_meta.file_name)
+                )
 
-                # problem file
-                problem_files.append("gs://" + i_jrc_file)
-                continue
+                if not GCPPath(s2_image_filepath).check_if_file_exists():
 
-            # =======================
-            # LOAD FLOODMAP, geojson
-            # =======================
+                    # problem file
+                    problem_files.append("gs://" + i_file)
+                    continue
 
-            # Load Floodmap geojson
-            pbar_files.set_description("Getting Floodmap...")
-            floodmap_geojson_path = "gs://" + str(
-                Path(BUCKET_NAME)
-                .joinpath(PARENT_DIR_FLOODS)
-                .joinpath(aoi_meta.event_activation)
-                .joinpath(aoi_meta.directory_aoi)
-                .joinpath(aoi_meta.core_name + "_floodmap.geojson")
-            )
+                # ======================
+                # LOAD JRC IMAGE PATH
+                # ======================
+                pbar_files.set_description("Getting JRC Image Path...")
+                jrc_image_filepath = "gs://" + str(
+                    Path(BUCKET_NAME)
+                    .joinpath(PARENT_DIR_JRC)
+                    .joinpath(aoi_meta.event_activation)
+                    .joinpath(aoi_meta.directory_aoi)
+                    .joinpath(aoi_meta.file_name)
+                )
 
-            # ======================
-            # LOAD FLOODMAP META
-            # ======================
-            pbar_files.set_description("Getting Floodmap meta...")
-            meta_floodmap_filepath = "gs://" + str(
-                Path(BUCKET_NAME)
-                .joinpath(PARENT_DIR_FLOOD_META)
-                .joinpath(aoi_meta.event_activation)
-                .joinpath(aoi_meta.directory_aoi)
-                .joinpath(aoi_meta.core_name + "_metadata_floodmap.pickle")
-            )
-            floodmap_meta = read_pickle_from_gcp(meta_floodmap_filepath)
+                if not GCPPath(jrc_image_filepath).check_if_file_exists():
 
-            # ======================
-            # LOAD GT
-            # ======================
-            pbar_files.set_description("Load Groundtruth...")
+                    # problem file
+                    problem_files.append("gs://" + i_file)
+                    continue
+                # =======================
+                # LOAD FLOODMAP, geojson
+                # =======================
 
-            gt_binary, gt_meta_binary = generate_water_cloud_binary_gt(
-                s2_image_filepath,
-                floodmap_geojson_path,
-                metadata_floodmap=floodmap_meta,
-                keep_streams=True,
-                cloudprob_in_lastband=True,
-                permanent_water_image_path="gs://" + i_jrc_file,
-            )
+                # Load Floodmap geojson
+                pbar_files.set_description("Getting Floodmap...")
+                floodmap_geojson_path = "gs://" + str(
+                    Path(BUCKET_NAME)
+                    .joinpath(PARENT_DIR_FLOODS)
+                    .joinpath(aoi_meta.event_activation)
+                    .joinpath(aoi_meta.directory_aoi)
+                    .joinpath(aoi_meta.core_name + "_floodmap.geojson")
+                )
 
-            # ======================
-            # SAVE GT (LOCALLY)
-            # ======================
-            pbar_files.set_description("Saving GT Locally...")
-            LOCAL_DIR = LOCAL_PATH.joinpath(Path(s2_image_filepath).name)
+                # ======================
+                # LOAD FLOODMAP META
+                # ======================
+                pbar_files.set_description("Getting Floodmap meta...")
+                meta_floodmap_filepath = "gs://" + str(
+                    Path(BUCKET_NAME)
+                    .joinpath(PARENT_DIR_FLOOD_META)
+                    .joinpath(aoi_meta.event_activation)
+                    .joinpath(aoi_meta.directory_aoi)
+                    .joinpath(aoi_meta.core_name + "_metadata_floodmap.pickle")
+                )
+                floodmap_meta = read_pickle_from_gcp(meta_floodmap_filepath)
 
-            # save ground truth
-            save_groundtruth_tiff_rasterio(
-                gt_binary,
-                str(LOCAL_DIR),
-                gt_meta=None,
-                crs=gt_meta_binary["crs"],
-                transform=gt_meta_binary["transform"],
-            )
-            # ======================
-            # UPLOAD GT (GCP)
-            # ======================
-            pbar_files.set_description("Upload GT to bucket...")
-            TARGET_DIR = "gs://" + str(
-                Path(BUCKET_NAME)
-                .joinpath(PARENT_DIR_GT)
-                .joinpath(aoi_meta.event_activation)
-                .joinpath(aoi_meta.directory_aoi)
-                .joinpath(aoi_meta.file_name)
-            )
+                # ======================
+                # LOAD GT
+                # ======================
+                pbar_files.set_description("Load Groundtruth...")
 
-            save_file_to_bucket(
-                TARGET_DIR,
-                str(LOCAL_DIR),
-            )
-            # delate local file
-            LOCAL_DIR.unlink()
+                gt_binary, gt_meta_binary = generate_water_cloud_binary_gt(
+                    s2_image_filepath,
+                    floodmap_geojson_path,
+                    metadata_floodmap=floodmap_meta,
+                    keep_streams=True,
+                    cloudprob_in_lastband=True,
+                    permanent_water_image_path=jrc_image_filepath,
+                )
+
+                # ======================
+                # SAVE GT (LOCALLY)
+                # ======================
+                pbar_files.set_description("Saving GT Locally...")
+                LOCAL_DIR = LOCAL_PATH.joinpath(Path(s2_image_filepath).name)
+
+                # save ground truth
+                save_groundtruth_tiff_rasterio(
+                    gt_binary,
+                    str(LOCAL_DIR),
+                    gt_meta=None,
+                    crs=gt_meta_binary["crs"],
+                    transform=gt_meta_binary["transform"],
+                )
+                # ======================
+                # UPLOAD GT (GCP)
+                # ======================
+                pbar_files.set_description("Upload GT to bucket...")
+                TARGET_DIR = "gs://" + str(
+                    Path(BUCKET_NAME)
+                    .joinpath(PARENT_DIR_GT)
+                    .joinpath(aoi_meta.event_activation)
+                    .joinpath(aoi_meta.directory_aoi)
+                    .joinpath(aoi_meta.file_name)
+                )
+
+                save_file_to_bucket(
+                    TARGET_DIR,
+                    str(LOCAL_DIR),
+                )
+                # delate local file
+                LOCAL_DIR.unlink()
+
+            except KeyboardInterrupt:
+                break
+            except:
+                problem_files.append(i_file)
 
     import pickle
 
