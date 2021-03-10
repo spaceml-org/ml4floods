@@ -189,7 +189,7 @@ class ML4FloodsModel(pl.LightningModule):
             self.logger.experiment.log({f"{prefix}_{problem_name}_pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
             self.logger.experiment.log({f"{prefix}_{problem_name}_pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
                                                                                                  values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in pred_data]})
-            self.logger.experiment.log({f"{prefix}y": [wandb.Image(mask_to_rgb(img[i], values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
+            self.logger.experiment.log({f"{prefix}y_{problem_name}": [wandb.Image(mask_to_rgb(img[i], values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
 
     def validation_step(self, batch: Dict, batch_idx):
         """
