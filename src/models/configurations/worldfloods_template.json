@@ -24,8 +24,6 @@
     "data_params": {
         "loader_type": "local",
         "num_workers": 4,
-        "filter_windows": false,
-        "filter_windows_version": "v1",
         "bucket_id": "ml4floods",
         "path_to_splits": "/worldfloods/public",
         "train_test_split_file": "worldfloods/public/train_test_split.json",
@@ -33,6 +31,12 @@
         "target_folder": "gt",
         "batch_size": 32,
         "window_size": [256, 256],
-        "channel_configuration": "all"
+        "channel_configuration": "all",
+        "train_transformation": {
+            "normalize": true
+        },
+        "test_transformation": {
+            "normalize": true
+        }
     }
 }

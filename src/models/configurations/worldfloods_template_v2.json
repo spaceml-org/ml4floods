@@ -26,8 +26,10 @@
     "data_params": {
         "loader_type": "local",
         "num_workers": 4,
-        "filter_windows": true,
-        "filter_windows_version": "v2",
+        "filter_windows": {
+            "threshold_clouds": 80,
+            "data_version": "v2"
+        },
         "bucket_id": "ml4cc_data_lake",
         "path_to_splits": "/worldfloods/v2",
         "train_test_split_file": "0_DEV/2_Mart/worldfloods_v2_0/train_test_split.json",
@@ -35,6 +37,12 @@
         "target_folder": "gt",
         "batch_size": 32,
         "window_size": [256, 256],
-        "channel_configuration": "all"
+        "channel_configuration": "all",
+        "train_transformation": {
+            "normalize": true
+        },
+        "test_transformation": {
+            "normalize": true
+        }
     }
 }
