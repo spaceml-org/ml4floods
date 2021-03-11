@@ -76,6 +76,7 @@ def get_dataset(data_config):
             test_transformations=test_transform,
             data_dir=local_destination_dir,
             bands=bands,
+            num_workers=data_config.num_workers,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size
         )
@@ -129,7 +130,8 @@ def get_dataset(data_config):
             bands=bands,
             train_transformations=train_transform,
             test_transformations=test_transform,
-            batch_size=data_config.batch_size
+            batch_size=data_config.batch_size,
+            num_workers=data_config.num_workers,
         )
         dataset.setup()
         

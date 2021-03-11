@@ -48,17 +48,18 @@ def train(config):
     from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
     experiment_path = f"{config.model_params.model_folder}/{config.experiment_name}"
 
+    checkpoint_path = f"{experiment_path}/checkpoint"
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"{experiment_path}/checkpoint",
+        dirpath=checkpoint_path,
         save_top_k=True,
         verbose=True,
-        monitor='dice_loss',
+        monitor='val_dice_loss',
         mode='min',
         prefix=''
     )
     
     early_stop_callback = EarlyStopping(
-        monitor='dice_loss',
+        monitor='val_dice_loss',
         patience=4,
         strict=False,
         verbose=False,
@@ -86,7 +87,7 @@ def train(config):
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
         log_gpu_memory=None,
-        resume_from_checkpoint=None
+        resume_from_checkpoint=checkpoint_path if config.resume_from_checkpoint else None
     )
     
     trainer.fit(model, dataset)
@@ -213,6 +214,7 @@ if __name__ == "__main__":
     parser.add_argument('--gpus', default='', type=str)
     # Mode: train, test or deploy
     parser.add_argument('--train', default=False, action='store_true')
+    parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
     parser.add_argument('--deploy', default=False, action='store_true')
     # WandB fields TODO

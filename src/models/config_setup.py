@@ -32,7 +32,8 @@ def setup_config(args):
     
     # 2. Add additional fields to config using worldfloods constants etc
     from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
-    
+
+    config['resume_from_checkpoint'] = args.resume_from_checkpoint
     config['train'] = args.train
     config['gpus'] = args.gpus
     config['test'] = args.test
@@ -58,6 +59,7 @@ def get_default_config(config_fp):
     parser = argparse.ArgumentParser('WorldFloods 1.0')
     parser.add_argument('--config', default=config_fp)
     parser.add_argument('--gpus', default='0', type=str)
+    parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
     # Mode: train, test or deploy
     parser.add_argument('--train', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
