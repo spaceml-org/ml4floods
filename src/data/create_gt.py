@@ -203,10 +203,12 @@ def compute_water(
 
     if permanent_water_path is not None:
         logging.info("\t Adding permanent water")
-        permament_water = rasterio.open(permanent_water_path).read(1, window=window)
+        permanent_water = rasterio.open(permanent_water_path).read(1, window=window)
 
         # Set to permanent water
-        water_mask[(water_mask != -1) & (permament_water == 3)] = 3
+        # Only interested in permanent water labelled as 3 and valid water masks.
+        # Adding the third label for permanent water in water mask.
+        water_mask[(water_mask != -1) & (permanent_water == 3)] = 3
 
         # Seasonal water (permanent_water == 2) will not be used
 
@@ -515,14 +517,6 @@ def generate_water_cloud_binary_gt(
     return gt, metadata
 
 
-def generate_binary_water_gt():
-    return None
-
-
-def generate_binary_cloud_gt():
-    return None
-
-
 def generate_gt_v1(
     s2tiff: str,
     floodmap: gpd.GeoDataFrame,
@@ -777,7 +771,7 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.all(s2_img == 0, axis=0) & (water_mask == -1)
+    invalids = np.all(s2_img == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
@@ -793,7 +787,7 @@ def _generate_gt_fromarray(
 
     if invalid_clouds_threshold is not None:
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
-        watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
+        watergt[(water_mask == 0) | (cloudprob > invalid_clouds_threshold)] = 0
 
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 

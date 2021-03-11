@@ -8,6 +8,9 @@ dependencies:
 - conda-forge::ipython
 - conda-forge::ipykernel
 - conda-forge::libgdal>=3.1
+- pandas==1.2.3
+- conda-forge::geopandas==0.9
+- conda-forge::rasterio
 - pip
 - pip:
   # PYTORCH ECOSYSTEM
@@ -18,9 +21,6 @@ dependencies:
   - matplotlib
   - seaborn
   - scipy
-  - pandas
-  - rasterio
-  - geopandas
   - fastprogress
   - tqdm
   - black
@@ -40,5 +40,9 @@ dependencies:
   - flake8
   - s2cloudless
   - requests_html
-  - ee
+  - gcsfs
+  - earthengine-api
   - geemap
+  # from bug  in GEE, see https://github.com/google/earthengine-api/issues/157
+  - google-api-python-client==1.12.8 
+  - corner

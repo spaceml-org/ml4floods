@@ -30,8 +30,8 @@ def main():
 
     # looping through the ML parts
     ml_paths = [
-        "test",
-        "val",
+        # "val",
+        # "test",
         "train",
     ]
 
@@ -53,23 +53,30 @@ def main():
     demo_image = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
 
     # want the appropate ml path
-    demo_image_gcp = GCPPath(demo_image)
 
     problem_files = []
 
     for ipath in ml_paths:
 
         # ensure path name is the same as ipath for the loooop
+        demo_image_gcp = GCPPath(demo_image)
         demo_image_gcp = demo_image_gcp.replace("test", ipath)
 
         # get all files in the parent directory
         files_in_bucket = demo_image_gcp.get_files_in_parent_directory_with_suffix(
             ".tif"
         )
+        # # TESTINGGGGGGG
+        # files_in_bucket = [
+        #     "gs://ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v2_0/train/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
+        # ]
+        # # HACK FOR SLICING
+        last_x_slices = slice(-50, None)
 
         # loop through files in the bucket
         print(f"Generating ML GT for {ipath.title()}")
-        with tqdm.tqdm(files_in_bucket[1:]) as pbar:
+
+        with tqdm.tqdm(list(reversed(files_in_bucket[last_x_slices]))) as pbar:
             for s2_image_path in pbar:
 
                 try:
@@ -112,7 +119,7 @@ def main():
                     # OPEN PERMANENT WATER TIFF
                     # ==============================
                     try:
-
+                        pbar.set_description("Grabbing Permanent Water Tiff...")
                         permenant_water_path = GCPPath(
                             str(
                                 Path(bucket_id)
@@ -124,6 +131,7 @@ def main():
                         permenant_water_path = permenant_water_path.full_path
 
                     except AssertionError:
+                        pbar.set_description("Didnt Find...")
                         permenant_water_path = None
 
                     # ==============================
@@ -255,12 +263,22 @@ def main():
                     # ==============================
                     # SAVE GT Data (WorldFloods 1.1)
                     # ==============================
+                    # print("here!")
                     pbar.set_description("Saving GT data...")
 
                     # replace parent path
                     gt_path = s2_image_path.replace(bucket_id, destination_bucket_id)
                     gt_path = gt_path.replace("/S2/", "/gt/")
                     gt_path = gt_path.replace(parent_path, destination_parent_path)
+                    ##################################
+                    # PLOTTING (FOR DEBUGGING)
+                    ##################################
+                    # import matplotlib.pyplot as plt
+                    # from rasterio import plot as rasterioplt
+
+                    # fig, ax = plt.subplots()
+                    # rasterioplt.show(gt[1], transform=gt_meta["transform"], ax=ax)
+                    # fig.savefig("./temp_water.png")
 
                     # save ground truth
                     save_groundtruth_tiff_rasterio(
@@ -276,10 +294,17 @@ def main():
                     # delate local file
                     local_path.joinpath(gt_path.file_name).unlink()
 
+                except KeyboardInterrupt:
+                    break
                 except:
                     problem_files.append(s2_image_path.full_path)
 
     print(problem_files)
+
+    import pickle
+
+    with open("./momoney_moprobs_v2.pickle", "wb") as fp:
+        pickle.dump(problem_files, fp)
 
 
 if __name__ == "__main__":
