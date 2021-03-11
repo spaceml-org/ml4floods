@@ -1,13 +1,16 @@
 import io
 import json
-import torch
-from PIL import Image
-from flask import Flask, jsonify, request, send_file, Response
+
 import numpy as np
-#import zlib
+import torch
+from flask import Flask, Response, jsonify, request, send_file
+from PIL import Image
 
 from src.models.utils import model_setup
 from src.models.utils.configuration import AttrDict
+
+#import zlib
+
 
 app = Flask(__name__)
 

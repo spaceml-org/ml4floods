@@ -1,6 +1,7 @@
+from typing import Optional
+
 import torch
 import torch.nn.functional as F
-from typing import Optional
 
 
 def dice_loss_mask_invalid(logits: torch.Tensor, target:torch.Tensor, smooth=1.) -> float:

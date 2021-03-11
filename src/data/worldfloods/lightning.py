@@ -1,3 +1,12 @@
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple
+
+import albumentations
+import pytorch_lightning as pl
+from torch.utils.data import DataLoader, random_split
+
+from src.data.utils import get_files_in_bucket_directory, get_files_in_directory
+from src.data.worldfloods.dataset import WorldFloodsDatasetTiled
 from src.data.utils import get_files_in_directory
 from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
@@ -16,13 +25,13 @@ class WorldFloodsDataModule(pl.LightningDataModule):
     creates the train, val and test datasets which then can be used to initialize
     the dataloaders. This is pytorch lightning compatible which can be used with
     the training fit framework.
-    
+
     Args:
         data_dir: (str): the top level directory where the input
             and target folder directories are found
         input_folder (str): the input folder sub_directory
         target_folder (str): the target folder sub directory
-        train_transformations (Callable): the transformations used within the 
+        train_transformations (Callable): the transformations used within the
             training data module
         test_transformations (Callable): the transformations used within the
             testing data module
@@ -30,11 +39,11 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             for training
         batch_size (int): the batchsize used for the dataloader
         bands (List(int)): the bands to be selected from the images
-        
+
     Attributes:
         data_dir: (str): the top level directory where the input
             and target folder directories are found
-        train_transform (Callable): the transformations used within the 
+        train_transform (Callable): the transformations used within the
             training data module
         test_transform (Callable): the transformations used within the
             testing data module
@@ -50,6 +59,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         >>> wf_dm.setup()
         >>> train_dl = wf_dm.train_dataloader()
     """
+
     def __init__(
         self,
         data_dir: str = "./",
@@ -107,18 +117,22 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # create datasets
         # TODO cache the list of window_slices
         self.train_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
+            list_of_windows=get_list_of_window_slices(
+                self.train_files, window_size=self.window_size
+            ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
             transforms=self.train_transform,
         )
         self.val_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
+            list_of_windows=get_list_of_window_slices(
+                self.val_files, window_size=self.window_size
+            ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            transforms=self.test_transform, 
+            transforms=self.test_transform,
         )
         self.test_dataset = WorldFloodsDataset(
             image_files=self.test_files,
@@ -147,19 +161,19 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 class WorldFloodsGCPDataModule(pl.LightningDataModule):
     """A prepackaged WorldFloods Pytorch-Lightning data module
     This initializes a module given a GCP bucket. We define a bucket and a
-    top level directory followed by subdirectories for the training and 
+    top level directory followed by subdirectories for the training and
     testing data ("image_folder" and "target_folder").
     Then we can search through the directory and load the images found. It
     creates the train, val and test datasets which then can be used to initialize
     the dataloaders. This is pytorch lightning compatible which can be used with
     the training fit framework.
-    
+
     Args:
         bucket_id (str): the GCP bucket name
         filenames_train_test: (str): Dict with the train, test and validation images
         input_folder (str): the input folder sub_directory
         target_folder (str): the target folder sub directory
-        train_transformations (Callable): the transformations used within the 
+        train_transformations (Callable): the transformations used within the
             training data module
         test_transformations (Callable): the transformations used within the
             testing data module
@@ -167,11 +181,11 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             for training
         batch_size (int): the batchsize used for the dataloader
         bands (List(int)): the bands to be selected from the images
-        
+
     Attributes:
         data_dir: (str): the top level directory where the input
             and target folder directories are found
-        train_transform (Callable): the transformations used within the 
+        train_transform (Callable): the transformations used within the
             training data module
         test_transform (Callable): the transformations used within the
             testing data module
@@ -180,7 +194,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         target_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window size used to tile the images
                     for training
-                    
+
     Example:
         >>> from src.data.worldfloods.lightning import WorldFloodsGCPDataModule
         >>> wf_dm = WorldFloodsGCPDataModule()
@@ -188,6 +202,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         >>> wf_dm.setup()
         >>> train_dl = wf_dm.train_dataloader()
     """
+
     def __init__(
         self,
         bucket_id: str = "ml4floods",
@@ -242,20 +257,24 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
 
         # create datasets
         self.train_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
+            list_of_windows=get_list_of_window_slices(
+                self.train_files, window_size=self.window_size
+            ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             transforms=self.train_transform,
             bands=self.bands,
-            lock_read=True
+            lock_read=True,
         )
         self.val_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
+            list_of_windows=get_list_of_window_slices(
+                self.val_files, window_size=self.window_size
+            ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             transforms=self.test_transform,
             bands=self.bands,
-            lock_read=True
+            lock_read=True,
         )
         self.test_dataset = WorldFloodsDataset(
             image_files=self.test_files,
@@ -263,7 +282,7 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
             gt_prefix=self.gt_prefix,
             transforms=self.test_transform,
             bands=self.bands,
-            lock_read=True
+            lock_read=True,
         )
 
     def train_dataloader(self):

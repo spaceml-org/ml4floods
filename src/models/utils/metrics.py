@@ -1,11 +1,12 @@
+import json
 from typing import List
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import json
-import seaborn as sns
-import pandas as pd
 
 
 @torch.no_grad()
@@ -65,7 +66,9 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                  with shape (nclass,).
       figsize:   the size of the figure plotted.
     """
+    import as
     import matplotlib.pyplot as plt
+    import pandas
     import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)

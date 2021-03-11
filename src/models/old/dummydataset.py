@@ -1,8 +1,11 @@
-import torch
 from typing import Optional, Tuple, Union
-import rasterio
+
 import numpy as np
+import rasterio
+import torch
+
 from src.models.utils import model_setup
+
 
 def load_datasets(opt):
     layer_names = ["EMSR333_02PORTOPALO_DEL_MONIT01_v1_observed_event_a", "EMSR347_07ZOMBA_DEL_v2_observed_event_a"]
