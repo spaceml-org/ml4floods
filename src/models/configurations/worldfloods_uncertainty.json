@@ -12,7 +12,7 @@
             "weight_per_class": [1.93445299, 36.60054169, 2.19400729],
             "model_type": "unet_dropout",
             "num_classes": 3,
-            "max_epochs": 30,
+            "max_epochs": 40,
             "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
