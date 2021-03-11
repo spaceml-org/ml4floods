@@ -26,72 +26,77 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, label_n
 #     all_gts = []
 #     all_logits = []
     
+    for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
+
+        test_inputs, ground_truth_outputs = batch['image'], batch['mask'].squeeze(1)
+        compute_uncertainties_for_image_pair(test_inputs, ground_truth_outputs, p_pred_fun, d_pred_fun, num_samples, num_class, config)
+            
+            
+            
+def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config):
+    
     with torch.no_grad():
-        for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
-
-            test_inputs, ground_truth_outputs = batch['image'], batch['mask'].squeeze(1)
-
-            prediction_samples = np.zeros([num_samples] + list(ground_truth_outputs.shape))
-            prediction_logits = np.zeros([num_samples] + [1, num_class] + list(ground_truth_outputs.squeeze().shape))
+        prediction_samples = np.zeros([num_samples] + list(targets.shape))
+        prediction_logits = np.zeros([num_samples] + [1, num_class] + list(targets.squeeze().shape))
     #         print(ground_truth_outputs.squeeze().shape)
 
-            for s in range(num_samples):
-                sample_logits = p_pred_fun(test_inputs)
+        for s in range(num_samples):
+            sample_logits = p_pred_fun(inputs)
 
     #             print('logits', sample_logits.shape)
-                prediction_logits[s] = sample_logits.cpu().numpy()
+            prediction_logits[s] = sample_logits.cpu().numpy()
 
-                sample_prediction = torch.argmax(sample_logits, dim=1).long()
+            sample_prediction = torch.argmax(sample_logits, dim=1).long()
 
-                prediction_samples[s] = sample_prediction.cpu().numpy()
+            prediction_samples[s] = sample_prediction.cpu().numpy()
 
 
-            samples = prediction_samples
-            images = test_inputs.cpu().numpy()
-            gts = ground_truth_outputs.cpu().numpy()
-            predictions = torch.argmax(d_pred_fun(test_inputs), dim=1).long().cpu().numpy()
+        samples = prediction_samples
+        images = inputs.cpu().numpy()
+        gts = targets.cpu().numpy()
+        predictions = torch.argmax(d_pred_fun(inputs), dim=1).long().cpu().numpy()
 
-        
-#         if plot:
-            
-            optical = s1_to_unnormed_rgb(images, config)[0]
-            gt = mask_to_rgb(gts[0])
-            prediction = mask_to_rgb(predictions[0] + 1)
-            diff = (predictions[0] - gts[0])
-            
-            water_prob = water_probability(samples)
-            water_bound = water_bounds(samples)
-            water_ent = water_entropy(samples)
-            class_var = variance_map(samples)
-        
-            fig, ax = plt.subplots(2, 4, figsize=(40, 20))
 
-            # Optical Image
-            ax[0,0].imshow(optical)
-            ax[0,0].set_title('Input',fontweight="bold", size=40)
-            # Ground Truth
-            ax[0,1].imshow(gt, interpolation='nearest')
-            ax[0,1].set_title('Ground Truth',fontweight="bold", size=40)
-            # Prediction
-            ax[0,2].imshow(prediction, interpolation='nearest')
-            ax[0,2].set_title('Prediction',fontweight="bold", size=40)
-            # Diff Map
-            ax[0,3].imshow(diff)
-            ax[0,3].set_title('Difference Map',fontweight="bold", size=40)
-            # Uncertainty 1: Water probability
-            ax[1,0].imshow(water_prob, cmap='Blues')
-            ax[1,0].set_title('Water Probability',fontweight="bold", size=40)
-            # Uncertainty 2: Water bounds
-            ax[1,1].imshow(water_bound, cmap='Blues')
-            ax[1,1].set_title('Water Bounds',fontweight="bold", size=40)
-            # Uncertainty 3: Water Entropy
-            ax[1,2].imshow(water_ent)
-            ax[1,2].set_title('Water Entropy',fontweight="bold", size=40)
-            # Uncertainty 4: All Class Variance (TODO: Replace with Mutual Information)
-            ax[1,3].imshow(class_var)
-            ax[1,3].set_title('Class Variance',fontweight="bold", size=40)
-            
-            plt.show()
+    #         if plot:
+
+        optical = s1_to_unnormed_rgb(images, config)[0]
+        gt = mask_to_rgb(gts[0])
+        prediction = mask_to_rgb(predictions[0] + 1)
+        diff = (predictions[0] - gts[0])
+
+        water_prob = water_probability(samples)
+        water_bound = water_bounds(samples)
+        water_ent = water_entropy(samples)
+        class_var = variance_map(samples)
+
+        fig, ax = plt.subplots(2, 4, figsize=(40, 20))
+
+        # Optical Image
+        ax[0,0].imshow(optical)
+        ax[0,0].set_title('Input',fontweight="bold", size=40)
+        # Ground Truth
+        ax[0,1].imshow(gt, interpolation='nearest')
+        ax[0,1].set_title('Ground Truth',fontweight="bold", size=40)
+        # Prediction
+        ax[0,2].imshow(prediction, interpolation='nearest')
+        ax[0,2].set_title('Prediction',fontweight="bold", size=40)
+        # Diff Map
+        ax[0,3].imshow(diff)
+        ax[0,3].set_title('Difference Map',fontweight="bold", size=40)
+        # Uncertainty 1: Water probability
+        ax[1,0].imshow(water_prob, cmap='Blues')
+        ax[1,0].set_title('Water Probability',fontweight="bold", size=40)
+        # Uncertainty 2: Water bounds
+        ax[1,1].imshow(water_bound, cmap='Blues')
+        ax[1,1].set_title('Water Bounds',fontweight="bold", size=40)
+        # Uncertainty 3: Water Entropy
+        ax[1,2].imshow(water_ent)
+        ax[1,2].set_title('Water Entropy',fontweight="bold", size=40)
+        # Uncertainty 4: All Class Variance (TODO: Replace with Mutual Information)
+        ax[1,3].imshow(class_var)
+        ax[1,3].set_title('Class Variance',fontweight="bold", size=40)
+
+        plt.show()
 
 
 def water_probability(samples):
