@@ -43,7 +43,8 @@ def get_channel_configuration_bands(channel_configuration):
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
-def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True) -> Callable:
+def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True,
+                                 activation:Optional[str]="softmax") -> Callable:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -52,10 +53,12 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
         model :LightingModule
         config:
         apply_normalization:
+        eval_mode: set for predicting model.eval()
+        activation: activation function to apply on inference time (softmax|sigmoid)
 
     Returns: callable function
     """
-    print("GEtting model inference function")
+    print("Getting model inference function")
     model_type = config.model_params.hyperparameters.model_type
     module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
 
@@ -74,9 +77,18 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
     else:
         normalize = None
 
+    if activation is None:
+        activation_fun = lambda ot: ot
+    elif activation == "softmax":
+        activation_fun = lambda ot: torch.softmax(ot, dim=1)
+    elif activation == "sigmoid":
+        activation_fun = lambda ot: torch.sigmoid(ot)
+    else:
+        raise NotImplementedError(f"Activation function {activation} not implemented")
+
     return get_pred_function(model, model.device,
                              module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
-                             activation_fun=lambda ot: torch.softmax(ot, dim=1),
+                             activation_fun=activation_fun,
                              normalization=normalize, eval_mode=eval_mode)
 
 
