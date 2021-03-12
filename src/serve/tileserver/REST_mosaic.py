@@ -61,7 +61,8 @@ def _get_GEE_ids(session,start_date,end_date, aoi_wgs):
     try:
         ids = [asset['id'] for asset in json.loads(content)['images']]
         cloud_coverages = [image['properties']['CLOUD_COVERAGE_ASSESSMENT'] for image in json.loads(content)['images']]
-        return ids, cloud_coverages
+        geometries = [image['geometry'] for image in json.loads(content)['images']]
+        return ids, cloud_coverages, geometries
     except:
         print('ERROR!')
         print (content)
@@ -185,18 +186,12 @@ class RESTMosaic:
         if end_date==None:
             end_date = start_date+timedelta(days=self.days_offset)
             
-        _ids, cloud_coverages = _get_GEE_ids(self.session,start_date,end_date, geometry.box(*aoi_wgs.exterior.bounds))
+        _ids, cloud_coverages, geometries = _get_GEE_ids(self.session,start_date,end_date, geometry.box(*aoi_wgs.exterior.bounds))
+        self.image_geometries = dict(zip(_ids,geometries))
         _ids = [x for _,x in sorted(zip(cloud_coverages,_ids))]
         
-        self.image_ids = []
-        utm_codes = []
-        for _id in _ids:
-            if not _id[-5:] in utm_codes:
-                utm_codes.append(_id[-5:])
-                self.image_ids.append(_id)
-                
-        print ('utm codes',utm_codes)
-        print ('image_ids',self.image_ids)
+        self.image_ids = _ids
+
 
         # make two arrays for px_ix and px_iy
         if self.verbose:
@@ -290,11 +285,14 @@ class RESTMosaic:
         for ii,_id in enumerate(self.image_ids):
             if type(self.s2_tiles)==gpd.GeoDataFrame:
                 granule = self.s2_tiles.loc[_id[-5:],'geometry'] # get the granule from the geodataframe
-                granule_utm = ops.transform(self.reproject,ops.unary_union(granule)) # flatten and transform the granule to utm
+                granule = ops.unary_union(granule) # reduce geometries
+                granule = granule.intersection(geometry.shape(self.image_geometries[_id])) # get intersection with image pixels
+                granule_utm = ops.transform(self.reproject,granule) # flatten and transform the granule to utm
                 granule_utm = ops.transform(lambda x, y, z=None: (x, y), granule_utm) # remove the z coordinates
             else:
                 granule_ft = utils.load_json_from_bucket('ml4floods',f'worldfloods/s2_tiles/{_id[-5:]}.json')
                 granule = geometry.shape(granule_ft['geometry'])
+                granule = granule.intersection(geometry.shape(self.image_geometries[_id])) # get intersection with image pixels
                 granule_utm = ops.transform(self.reproject,granule) # transform the granule to utm
                 
             granule_px = affine_transform(granule_utm,self.GT) # get the granule shape into the pixel coordinates
@@ -431,8 +429,8 @@ class RESTMosaic:
             os.path.join(self.save_path), 
             'w', 
             driver='COG', 
-            width=self.im_arr.shape[0], 
-            height=self.im_arr.shape[1], 
+            width=self.im_arr.shape[1], 
+            height=self.im_arr.shape[0], 
             count=len(self.BANDS),
             dtype=self.im_arr.dtype, 
             crs=rasterio.crs.CRS.from_string(self.UTM_EPSG), 

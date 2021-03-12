@@ -42,53 +42,6 @@ def postprocess_floodtable(events_df, countries_df):
     return events_df
     
 
-def walk_bucket(events_df, check_available=True):
-    """
-    Walk the google buckets and verify the status of the events. The ground truth (GT) and S2 RGB should be available for the image to be 'available', elif there's a token, it is 'pending', else unavailable.    
-    """
-    
-    client = storage.Client()
-    s2_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','S2'))]
-    meta_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta'))]
-    gt_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','gt'))]
-    ### images: EVENTCODE_AOI_<S2,GT>.tiff
-    ### meta: EVENTCODE_AOI.json>
-    ### custom: CUSTOM-<utc_timestamp>_AOI_<codedate>_<S2,GT>.<tiff,json>
-    
-    # if all the tiffs are there, then the 
-    s2_recs = [{'PATH':b,'EXT':os.path.splitext(b)[1],'EVENTCODE':os.path.split(b)[1].split('_')[0],'AOI':os.path.split(b)[1].split('_')[1]} for b in s2_blobs if os.path.splitext(b)[1]!='']
-    gt_recs = [{'PATH':b,'EXT':os.path.splitext(b)[1],'EVENTCODE':os.path.split(b)[1].split('_')[0],'AOI':os.path.split(b)[1].split('_')[1]} for b in gt_blobs if os.path.splitext(b)[1]!='']
-    custom_events = [{'Code':os.path.split(b)[1].split('_')[0],'Title':os.path.split(b)[1].split('_')[0],'CodeDate':os.path.split(b)[1].split('_')[2]} for b in s2_blobs if os.path.split(b)[1][0:6]=='CUSTOM']
-    
-    custom_df = pd.DataFrame(custom_events)
-    custom_df['CodeDate'] = pd.to_datetime(custom_df['CodeDate'])
-    update_df = events_df.append(custom_df)
-    update_df.index = range(len(update_df))
-    
-    if not check_available:
-        return update_df
-    
-    s2_df = pd.DataFrame(s2_recs)
-    gt_df = pd.DataFrame(gt_recs)
-    s2_df['READY'] = s2_df['EXT']=='.tiff'
-    gt_df['READY'] = gt_df['EXT']=='.tiff'
-    s2_df['PROCESSING'] = s2_df['EXT']=='.token'
-    gt_df['PROCESSING'] = gt_df['EXT']=='.token'
-    
-    # add the READY column -> prod() for AND condition
-    update_df = pd.merge(update_df, s2_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'S2_READY'})
-    update_df = pd.merge(update_df, gt_df[['EVENTCODE','READY']].groupby('EVENTCODE').prod().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'READY':'GT_READY'})
-    update_df['S2_READY'] = update_df['S2_READY'].fillna(0)
-    update_df['GT_READY'] = update_df['GT_READY'].fillna(0)
-    
-    # add the PROCESSING column -> sum() for OR condition
-    update_df = pd.merge(update_df, s2_df[['EVENTCODE','PROCESSING']].groupby('EVENTCODE').sum().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'PROCESSING':'S2_PROCESSING'})
-    update_df = pd.merge(update_df, gt_df[['EVENTCODE','PROCESSING']].groupby('EVENTCODE').sum().astype(bool), how='left', left_on='Code',right_index=True).rename(columns={'PROCESSING':'GT_PROCESSING'})
-    update_df['S2_READY'] = update_df['S2_READY'].fillna(0)
-    update_df['GT_READY'] = update_df['GT_READY'].fillna(0)
-    
-    return update_df
-
 def _get_event_aois(ems_code):
     
     url = f'https://emergency.copernicus.eu/mapping/list-of-components/{ems_code}/aemfeed'
@@ -131,49 +84,94 @@ def _ingest_event_aoi(ems_code):
         json.dump(ft, open(tmp_path,'w'))
         utils.save_file_to_bucket(cloud_path, tmp_path)
     
+def walk_bucket(events_df):
+    """
+    Walk the google buckets and do two things: 1. ingest any new ems events that are not in the bucket, and 2. add any user-made events to the dataframe.
+    if NOT check_available, all this does is add any custom events to the df.
+    """
+    
+    client = storage.Client()
+    
+    # 1. ingest any new ems blobs
+    ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
+    ems_codes = list(set([os.path.split(b)[1].split('_')[0] for b in ems_blobs]))
+    do_codes = events_df.loc[~events_df['Code'].isin(ems_codes),'Code'].values.tolist()
+    
+    print ('walk bucket -> do_codes:', len(do_codes))
+    for ems_code in do_codes:
+        try:
+            _ingest_event_aoi(ems_code)
+        except:
+            pass
+    
+    
+    # 2. Add custom aois
+    custom_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta')) if 'CUSTOM' in blob.name and blob.name[-5:]=='.json']
+    
+    print ('walk bucket -> custom blobs:', len(custom_blobs))
+    custom_events = []
+    for b in custom_blobs:
+        blob_json = utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','meta',os.path.split(b)[1]))
+        custom_events.append(
+            {
+                'Code':os.path.split(b)[1].split('_')[0],
+                'Title':os.path.split(b)[1].split('_')[0],
+                'CodeDate':blob_json['properties']['event-date'],
+                'value':'CUSTOM',
+            }
+        )
+    
+    custom_df = pd.DataFrame(custom_events, columns=['Code','Title','CodeDate','value'])
+    custom_df['CodeDate'] = pd.to_datetime(custom_df['CodeDate'])
+    update_df = events_df.append(custom_df)
+    update_df.index = range(len(update_df))
+
+    return update_df
 
 def refresh_geojson(gj_gdf, updated_df):
     """
-    geojson has some mixture of custom, event, and processed aois, updated_df has all events + custom events.
-    Want all events in updated_df to be in geosjon. 
+    Want all events in updated_df to be in geosjon -> 1. add in any custom aois; and 2. any new ems events.
     """
     client = storage.Client()
 
-    aoi_blobs = [blob.name for blob in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta')) if blob.name.split('_')[-1]=='aoi.json'] # includes custom
+    # 1. add custom aois
+    # get any missing custom events
+    missing_custom_events = updated_df.loc[updated_df['Code'].str.contains('CUSTOM') & ~updated_df['Code'].isin(gj_gdf['CODE']),'Code'].values.tolist()
+    print ('refresh geojson -> missing_custom_events', missing_custom_events)
+    
+    #... and add them to the geojson
+    missing_blobs = [b.name for b in client.list_blobs('ml4floods', prefix=os.path.join('worldfloods','lk-dev','meta')) if os.path.split(b.name)[1].split('_')[0] in missing_custom_events]
+    missing_records = []
+    for b in missing_blobs:
+        blob_json = utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','meta',os.path.split(b)[1]))
+        missing_records.append(
+            {
+                'CODE':os.path.split(b)[1].split('_')[0],
+                'AOI':os.path.split(b)[1].split('_')[1],
+                'TITLE':os.path.split(b)[1].split('_')[0]+'_'+blob_json['properties']['event-date'],
+                'event-date':blob_json['properties']['event-date'],
+                'geometry':geometry.shape(blob_json['geometry']),
+                'value':'CUSTOM'
+            }
+        )
+    
+    custom_df = pd.DataFrame(missing_records, columns=['CODE','AOI','TITLE','event-date','geometry','value'])
+    custom_df['event-date'] = pd.to_datetime(custom_df['event-date'])
+    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(custom_df,geometry='geometry'))
+    gj_gdf.index = range(len(gj_gdf))
+    
+    
+    #2. add any new ems events
+    # get any missing new ems events
+    gj_gdf['idx'] = gj_gdf['CODE']+'_'+gj_gdf['AOI']
     ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
     
-    # for any codes in updated_df but not in blobs, run grab those aois
-    aoi_codes = list(set([os.path.split(b)[1].split('_')[0] for b in aoi_blobs]))
-    ems_codes = list(set([os.path.split(b)[1].split('_')[0] for b in ems_blobs]))
-    done_codes = list(set([cc for cc in aoi_codes+ems_codes if cc!='']))
-    do_codes = updated_df.loc[~updated_df['Code'].isin(done_codes),'Code'].values.tolist()
-    do_codes = [cc for cc in do_codes if 'CUSTOM' not in cc]
     
-    if len(do_codes)>0:
-        for ems_code in do_codes:
-            _ingest_event_aoi(ems_code)
-            
-        ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
+    # ... and add them to the geojosn
+    ems_blobs = [blob.name for blob in client.list_blobs('ml4floods',prefix=os.path.join('worldfloods','lk-dev','ems-aoi')) if blob.name[-5:]=='.json'] # .json -> filter root
+    new_blobs = [b for b in ems_blobs if os.path.split(b)[1].split('_')[0]+'_'+os.path.split(b)[1].split('_')[1][:-5] not in gj_gdf['idx'].values.tolist()]
     
-    
-    gj_gdf['idx'] = gj_gdf['CODE']+'_'+gj_gdf['AOI']
-     
-    # ... and add any missing aoi_blobs back in
-    #new_blobs = [b for b in aoi_blobs if '_'.join(os.path.split(b)[1].split('_')[0:2]) not in gj_gdf['idx'].values.tolist()]
-    #print ('new_blobs 1', len(new_blobs))
-    #records = [
-    #    {
-    #        'idx':'_'.join(os.path.split(b)[1].split('_')[0:2]),
-    #        'CODE':os.path.split(b)[1].split('_')[0],
-    #        'AOI':os.path.split(b)[1].split('_')[1],   # further extensions
-    #        'geometry':geometry.shape(utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','meta',os.path.split(b)[1]))),
-    #    } 
-    #    for b in new_blobs]
-    #gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['CODE','AOI','geometry']), geometry='geometry'))
-    
-    # add any missing ems blobs
-    new_blobs = [b for b in ems_blobs if os.path.split(b)[1].split('_')[0]+'_'+os.path.split(b)[1].split('_')[1][:-5] not in gj_gdf['idx'].values.tolist() and 'CUSTOM' not in b]
-    print ('new blobs 2:', len(new_blobs))
+    print ('refresh_gejosn -> new ems_blobs', len(new_blobs))
     #print (new_blobs)
     records = [
         {
@@ -183,15 +181,17 @@ def refresh_geojson(gj_gdf, updated_df):
             'geometry':geometry.shape(utils.load_json_from_bucket('ml4floods',os.path.join('worldfloods','lk-dev','ems-aoi',os.path.split(b)[1]))['geometry']),
         } 
         for b in new_blobs]
-    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(pd.DataFrame(records, columns=['idx','CODE','AOI','geometry']), geometry='geometry'))
     
-    # merge on the date
-    for col in ['Title','TITLE','label']:
-        if col in gj_gdf.columns:
-            gj_gdf =gj_gdf.drop(columns=[col])
     
-    gj_gdf = pd.merge(gj_gdf.drop(columns=['event-date']), updated_df[['Code','CodeDate','Title']], how='left',left_on='CODE',right_on='Code').rename(columns={'CodeDate':'event-date','Title':'TITLE'})
-    gj_gdf = gj_gdf.drop(columns=['Code','idx'])
+    new_df = pd.DataFrame(records, columns=['idx','CODE','AOI','geometry'])
+    new_df = pd.merge(new_df, updated_df[['Code','CodeDate','Title']], how='left',left_on='CODE',right_on='Code').rename(columns={'CodeDate':'event-date','Title':'TITLE'}).drop(columns=['Code'])
+    gj_gdf = gj_gdf.append(gpd.GeoDataFrame(new_df, geometry='geometry'))
+    if 'value' in gj_gdf.columns:
+        gj_gdf = gj_gdf.drop(columns=['value'])
+    gj_gdf = pd.merge(gj_gdf,updated_df[['Code','value']], how='left',left_on='CODE',right_on='Code').drop(columns=['Code'])
+    gj_gdf['event-date'] = pd.to_datetime(gj_gdf['event-date'])
+    gj_gdf.drop(columns=['idx'])
+    gj_gdf.index = range(len(gj_gdf))
     
     return gj_gdf
     
