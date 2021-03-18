@@ -6,6 +6,7 @@ import numpy as np
 import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
 from src.preprocess.worldfloods import normalize
+from src.models.config_setup import  AttrDict
 
 from src.models.utils import losses, metrics
 from src.models.architectures.baselines import SimpleLinear, SimpleCNN
@@ -14,6 +15,11 @@ from src.data.worldfloods.configs import COLORS_WORLDFLOODS, CHANNELS_CONFIGURAT
 
 
 class WorldFloodsModel(pl.LightningModule):
+    """
+    Model to do multiclass classification.
+    It expects ground truths y (B, H, W) tensors to be encoded as: {0: invalid, 1: clear, 2:water, 3: cloud}
+    The preds (model.forward(x)) will produce a tensor with shape (B, 3, H, W)
+    """
     def __init__(self, model_params: dict):
         super().__init__()
         self.save_hyperparameters()
@@ -50,7 +56,15 @@ class WorldFloodsModel(pl.LightningModule):
             
         return loss
     
-    def forward(self, x):
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        """
+
+        Args:
+            x: (B, num_channels, H, W) input tensor
+
+        Returns:
+            (B, 3, H, W) prediction of the network
+        """
         return self.network(x)
 
     def log_images(self, x, y, logits,prefix=""):
@@ -125,7 +139,13 @@ class WorldFloodsModel(pl.LightningModule):
 
 
 class ML4FloodsModel(pl.LightningModule):
-    def __init__(self, model_params: dict):
+    """
+    Model to do multioutput binary classification.
+    It expects ground truths y (B, 2, H, W) tensors to be encoded as:
+    - Channel 0: {0: invalid, 1: clear, 2: cloud}
+    - Channel 1: {0: invalid, 1: land, 2: water}
+    """
+    def __init__(self, model_params: AttrDict):
         super().__init__()
         self.save_hyperparameters()
         h_params_dict = model_params.get('hyperparameters', {})
@@ -173,9 +193,21 @@ class ML4FloodsModel(pl.LightningModule):
         return loss
 
     def forward(self, x):
+        """
+
+        Args:
+            x: (B, num_channels, H, W) input tensor
+
+        Returns:
+            (B, 2, H, W) prediction of the network:
+            - channel 0: probability of pixel being cloud
+            - channel 1: probability of pixel being cwater
+
+        """
         return self.network(x)
 
     def log_images(self, x, y, logits, prefix=""):
+        """ Log batch images and preds using wandb """
         mask_data = y.cpu().numpy()
         pred_data = torch.round(torch.sigmoid(logits)).long().cpu().numpy()
         img_data = batch_to_unnorm_rgb(x,
@@ -258,7 +290,7 @@ def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
     return mask_return
 
 
-def configure_architecture(h_params):
+def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
     architecture = h_params.get('model_type', 'linear')
     num_channels = h_params.get('num_channels', 3)
     num_classes = h_params.get('num_classes', 2)
@@ -281,7 +313,17 @@ def configure_architecture(h_params):
     return model
 
 
-def batch_to_unnorm_rgb(x, channel_configuration):
+def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str) -> np.ndarray:
+    """
+    Unnorm x images and get rgb channels for visualization
+
+    Args:
+        x: (B, C, H, W) image
+        channel_configuration: one of CHANNELS_CONFIGURATIONS.keys()
+
+    Returns:
+        (B, H, W, 3) np.array with values between 0-1 ready to be used in imshow/PIL.from_array()
+    """
     model_input_npy = x.cpu().numpy()
 
     mean, std = normalize.get_normalisation("bgr")  # B, R, G!
