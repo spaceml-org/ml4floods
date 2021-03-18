@@ -87,19 +87,11 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
         raise NotImplementedError(f"Activation function {activation} not implemented")
 
     return get_pred_function(model, model.device,
-                             module_shape=module_shape, max_tile_size=config.model_params.hyperparameters.max_tile_size,
+                             module_shape=module_shape,
+                             max_tile_size=config.model_params.hyperparameters.max_tile_size,
                              activation_fun=activation_fun,
                              normalization=normalize, eval_mode=eval_mode)
 
-
-def handle_device(device='cuda:0'):
-    if device.startswith('cuda'):
-        if not torch.cuda.is_available():
-            raise RuntimeError('CUDA is not available. use --device cpu')
-        for c in range(torch.cuda.device_count()):
-            print("Using device %s" % torch.cuda.get_device_name(c))
-    return torch.device(device)
-    
 
 def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=128,
                       normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None, eval_mode: bool = True) -> Callable:
@@ -113,6 +105,7 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
 
     Args:
         model:
+        device:
         module_shape:
         max_tile_size:
         normalization:
