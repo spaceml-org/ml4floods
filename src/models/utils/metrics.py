@@ -209,15 +209,13 @@ def plot_metrics(metrics_dict, label_names):
     
     print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
         
-def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_water=np.arange(0,1,.05), plot=False):
+def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), plot=False):
     """
     Run inference on a dataloader and compute metrics for that data
     
     Args:
         dataloader: pytorch Dataloader for test set
         pred_fun: function to perform inference using a model
-        num_class: number of classes
-        label_names: list of label names
         thresholds: list of threshold for precision/recall curves
         plot: flag for calling plot method with metrics
         
@@ -229,6 +227,9 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     thresholds_water = np.sort(thresholds_water)
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
+
+    # This is constant: we're using that
+    num_class, label_names = 3, ["land", "water", "cloud"]
     
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
         test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
