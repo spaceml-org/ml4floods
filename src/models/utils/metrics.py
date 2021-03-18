@@ -216,7 +216,7 @@ def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), p
     Args:
         dataloader: pytorch Dataloader for test set
         pred_fun: function to perform inference using a model
-        thresholds: list of threshold for precision/recall curves
+        thresholds_water: list of threshold for precision/recall curves
         plot: flag for calling plot method with metrics
         
         returns: dictionary of metrics
@@ -228,7 +228,7 @@ def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), p
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
 
-    # This is constant: we're using that
+    # This is constant: we're using this class convention to compute the PR curve
     num_class, label_names = 3, ["land", "water", "cloud"]
     
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
