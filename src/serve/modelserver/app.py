@@ -6,11 +6,10 @@ import torch
 from flask import Flask, Response, jsonify, request, send_file
 from PIL import Image
 
-from src.models.utils import model_setup
-from src.models.utils.configuration import AttrDict
-
-#import zlib
-
+from src.models.config_setup import get_default_config
+from src.models.worldfloods_model import WorldFloodsModel
+from src.models.model_setup import get_model_inference_function
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 
 app = Flask(__name__)
 
@@ -18,20 +17,28 @@ app = Flask(__name__)
 channel_configuration_name = 'all'
 inference_funcs = {}
 
-for model_name in ['linear','unet','simplecnn']:
-    opt = {
-        'model': model_name,
-        'device': 'cpu',
-        'model_folder': f'src/models/checkpoints/{model_name}/', # TODO different channel configuration means different model
-        'max_tile_size': 256,
-        'num_class': 3,
-        'channel_configuration' : channel_configuration_name,
-        'num_channels': len(model_setup.CHANNELS_CONFIGURATIONS[channel_configuration_name]),
+models_conf = {
+    "simplecnn": {
+        "experiment_name" : "WFV1_scnn20",
+        "checkpoint_name" : "epoch=5-step=24581.ckpt",
+    },
+    "unet": {
+        "experiment_name": "WFV1_unet",
+        "checkpoint_name": "epoch=24-step=153649.ckpt",
     }
-    opt = AttrDict.from_nested_dicts(opt)
-    inference_funcs[model_name] = model_setup.model_inference_fun(opt)
-    
-N_CHANNELS = len(model_setup.CHANNELS_CONFIGURATIONS[opt.channel_configuration])
+}
+
+for model_name, conf in models_conf.items():
+    opt = get_default_config(f"gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart/{conf['experiment_name']}/config.json")
+    checkpoint_path = f"gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart/{conf['experiment_name']}/checkpoint/{conf['checkpoint_name']}"
+    model = WorldFloodsModel.load_from_checkpoint(checkpoint_path)
+
+    # Set up to control the max size of the tiles to predict
+    opt["model_params"]["hyperparameters"]["max_tile_size"] = 256
+    inference_function = get_model_inference_function(model, opt, apply_normalization=True)
+
+    inference_funcs[model_name] = inference_function
+    N_CHANNELS = len(CHANNELS_CONFIGURATIONS[opt.channel_configuration])
 
 
 def get_prediction(image_bytes,model):
