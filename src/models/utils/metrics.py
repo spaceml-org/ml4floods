@@ -100,12 +100,12 @@ def binary_accuracy(cm_agg):
 def binary_precision(cm_agg):
     tp = cm_agg[1, 1]
     fp = cm_agg[1, 0]
-    return tp / (tp + fp)
+    return tp / (tp + fp + 1e-6)
 
 def binary_recall(cm_agg):
     tp = cm_agg[1, 1]
     fn = cm_agg[0, 1]
-    return tp / (tp + fn)
+    return tp / (tp + fn + 1e-6)
 
 
 def calculate_iou(confusions, labels):
@@ -136,7 +136,7 @@ def calculate_recall(confusions, labels):
     conf_matrix = np.sum(confusions, axis=0)
     true_positive = np.diag(conf_matrix) + 1e-6
     false_negative = np.sum(conf_matrix, 0) - true_positive
-    recall = true_positive / (true_positive + false_negative)
+    recall = true_positive / (true_positive + false_negative  + 1e-6)
 
     recall_dict = {}
     for i, l in enumerate(labels):
@@ -149,7 +149,7 @@ def calculate_precision(confusions, labels):
     conf_matrix = np.sum(confusions, axis=0)
     true_positive = np.diag(conf_matrix) + 1e-6
     false_positive = np.sum(conf_matrix, 1) - true_positive
-    precision = true_positive / (true_positive + false_positive)
+    precision = true_positive / (true_positive + false_positive  + 1e-6)
 
     precision_dict = {}
     for i, l in enumerate(labels):
