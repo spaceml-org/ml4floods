@@ -24,7 +24,11 @@
     "data_params": {
         "loader_type": "local",
         "num_workers": 8,
-        "filter_windows": false,
+        "filter_windows": {
+            "version" : "v1",
+            "threshold_clouds" : 0.8,
+            "apply" : false
+        },
         "bucket_id": "ml4floods",
         "path_to_splits": "/worldfloods/public",
         "train_test_split_file": "worldfloods/public/train_test_split.json",
@@ -34,13 +38,9 @@
         "window_size": [256, 256],
         "channel_configuration": "all",
         "train_transformation": {
-            "num_classes": 3,
-            "totensor": true,
             "normalize": true
         },
         "test_transformation": {
-            "num_classes": 3,
-            "totensor": true,
             "normalize": true
         }
     }

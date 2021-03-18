@@ -27,8 +27,9 @@
         "loader_type": "local",
         "num_workers": 4,
         "filter_windows": {
-            "threshold_clouds": 80,
-            "data_version": "v2"
+            "version" : "v2",
+            "threshold_clouds" : 0.8,
+            "apply" : false
         },
         "bucket_id": "ml4cc_data_lake",
         "path_to_splits": "/worldfloods/v2",

@@ -24,6 +24,11 @@
     "data_params": {
         "loader_type": "local",
         "num_workers": 4,
+        "filter_windows": {
+            "version" : "v1",
+            "threshold_clouds" : 0.5,
+            "apply" : false
+        },
         "bucket_id": "ml4floods",
         "path_to_splits": "/worldfloods/public",
         "train_test_split_file": "worldfloods/public/train_test_split.json",
