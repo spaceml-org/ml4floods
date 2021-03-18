@@ -5,12 +5,18 @@ from pathlib import Path
 from src.preprocess.tiling import WindowSlices
 from typing import Callable, Dict, List, Optional, Tuple
 
-
 import numpy as np
 import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
 import contextlib
+
+from src.data.utils import check_path_exists
+from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
+from src.data.worldfloods.prepare_data import prepare_data_func
+from src.preprocess.tiling import WindowSize
+from src.preprocess.utils import get_list_of_window_slices
+
 
 from src.data.worldfloods.configs import BANDS_S2
 
@@ -19,23 +25,23 @@ import threading
 
 class WorldFloodsDataset(Dataset):
     """A prepackaged WorldFloods PyTorch Dataset
-    This initializes the dataset given a set a set of image files with a 
+    This initializes the dataset given a set a set of image files with a
     subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
-    
+
     Args:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
-            
+
     Attributes:
-        image_files (List[str]): the image files to be loaded into the 
+        image_files (List[str]): the image files to be loaded into the
             dataset
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
         bands: List[int]
             0-based list of bands to read from BANDS_S2
@@ -48,7 +54,7 @@ class WorldFloodsDataset(Dataset):
         gt_prefix: str = "/gt_files/",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
-        lock_read:bool=False
+        lock_read: bool = False,
     ) -> None:
 
         self.image_files = image_files
@@ -68,10 +74,10 @@ class WorldFloodsDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Dict:
         """Index to select an image
-        
+
         Args:
             idx (int): index
-        
+
         Returns:
             a dictionary with the image and mask keys
             {"image", "mask"}
@@ -82,8 +88,9 @@ class WorldFloodsDataset(Dataset):
 
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
-        image_tif = rasterio_read(image_name, self._lock,
-                                  channels=[c + 1 for c in self.bands_read])
+        image_tif = rasterio_read(
+            image_name, self._lock, channels=[c + 1 for c in self.bands_read]
+        )
 
         mask_tif = rasterio_read(y_name, self._lock)
 
@@ -107,10 +114,10 @@ class WorldFloodsDataset(Dataset):
 
 class WorldFloodsDatasetTiled(Dataset):
     """A prepackaged WorldFloods PyTorch Dataset
-    This initializes the dataset given a set a set of image files with a 
+    This initializes the dataset given a set a set of image files with a
     subdirectory for the training and testing data ("image_prefix" and "gt_prefix").
     This also does the tiling under the hood given the windowsize.
-    
+
     Args:
         list_of_windows (List[WindowSlices]):  a list of
             namedtuples each consisting of a filename and a rasterio.window
@@ -118,9 +125,9 @@ class WorldFloodsDatasetTiled(Dataset):
         gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window sizes (height, width) to be
             used for the tiling
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
-            
+
     Attributes:
         list_of_windows (List[WindowSlices]):  a list of
             namedtuples each consisting of a filename and a rasterio.window
@@ -128,7 +135,7 @@ class WorldFloodsDatasetTiled(Dataset):
         gt_prefix (str): the target folder sub directory
         window_size (namedtuple): a tuple with the height and width
             arguments
-        transforms (Callable): the transformations used within the 
+        transforms (Callable): the transformations used within the
             training data module
         bands: List[int]
             0-based list of bands to read from BANDS_S2
@@ -141,7 +148,7 @@ class WorldFloodsDatasetTiled(Dataset):
         gt_prefix: str = "/gt_files/",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
-        lock_read: bool = False
+        lock_read: bool = False,
     ) -> None:
 
         self.image_prefix = image_prefix
@@ -169,16 +176,23 @@ class WorldFloodsDatasetTiled(Dataset):
         """
         sub_window = self.list_of_windows[idx]
         y_name = sub_window.file_name.replace(self.image_prefix, self.gt_prefix, 1)
-        return rasterio_read(y_name, self._lock, channels=None,
-                             kwargs_rasterio={"window": sub_window.window, "boundless": True, "fill_value": 0})
-
+        return rasterio_read(
+            y_name,
+            self._lock,
+            channels=None,
+            kwargs_rasterio={
+                "window": sub_window.window,
+                "boundless": True,
+                "fill_value": 0,
+            },
+        )
 
     def __getitem__(self, idx: int) -> Dict:
         """Index to select an image tile
-        
+
         Args:
             idx (int): index
-        
+
         Returns:
             a dictionary with the keys to the image tiles and mask tiles
             {"image", "mask"}
@@ -196,10 +210,26 @@ class WorldFloodsDatasetTiled(Dataset):
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
         # Open Image File
-        image_tif = rasterio_read(image_name, self._lock, channels=[c+1 for c in self.channels_read],
-                                  kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
-        mask_tif = rasterio_read(y_name, self._lock, channels=None,
-                                 kwargs_rasterio={"window": sub_window.window, "boundless":True, "fill_value": 0})
+        image_tif = rasterio_read(
+            image_name,
+            self._lock,
+            channels=[c + 1 for c in self.channels_read],
+            kwargs_rasterio={
+                "window": sub_window.window,
+                "boundless": True,
+                "fill_value": 0,
+            },
+        )
+        mask_tif = rasterio_read(
+            y_name,
+            self._lock,
+            channels=None,
+            kwargs_rasterio={
+                "window": sub_window.window,
+                "boundless": True,
+                "fill_value": 0,
+            },
+        )
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
@@ -218,7 +248,9 @@ class WorldFloodsDatasetTiled(Dataset):
         return len(self.list_of_windows)
 
 
-def rasterio_read(image_name: str, lock, channels:List[int]=None, kwargs_rasterio:Dict={}) -> np.ndarray:
+def rasterio_read(
+    image_name: str, lock, channels: List[int] = None, kwargs_rasterio: Dict = {}
+) -> np.ndarray:
     with lock:
         with rasterio.open(image_name) as f:
             im_tif = f.read(channels, **kwargs_rasterio)

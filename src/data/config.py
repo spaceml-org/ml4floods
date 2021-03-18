@@ -28,6 +28,7 @@ CODES_FLOODMAP = {
     'BH141-River Bank': 2,
     'BH130-Reservoir': 2,
     'BH141-Stream': 2,
+    'BA010-Coastline': 1,
     # UNOSAT
     "preflood water": 2,
     # "Flooded area": 1,  # 'flood water' DUPLICATED

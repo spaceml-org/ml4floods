@@ -3,9 +3,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-
 from src.data.utils import download_data_from_bucket, save_file_from_bucket
-
 
 BUCKET_ID = "ml4floods"
 DIR = "worldfloods/public/"

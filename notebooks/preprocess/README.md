@@ -49,3 +49,21 @@ In this series of demo notebooks, we demonstrate how to use the PyTorch-Lightnin
 In this notebook, we generalize the above notebooks to provide an all inclusive pipeline showcase how we go from data to dataloader for the WorldFloods dataset. This features a configuration file which will drive all subsequent steps including the downloading (optional), the tiling (optional), the dataset and ML-ready dataloader.
 
 **Notebook**: [`4.0_demo_preprocess_pipeline.ipynb`](4.0_demo_preprocess_pipeline.ipynb)
+
+
+
+---
+
+## 5 - GroundTruth Generation
+
+In this notebook, we showcase how one can generate groundtruth given a Sentinel-2 Image and some floodmap meta data that we have preprocessed within the bucket. We demonstrate the two types of groundtruth that we have available: 
+
+* 3-Class: water, land, cloud
+* Binary:
+  * Water/Land
+  * Cloud/No Cloud
+
+**Notebook**: [`demo_S2_floodmap_gt.ipynb`](./groundtruth/demo_S2_floodmap_gt.ipynb)
+
+
+> This notebook reads files directly from the GCP bucket.

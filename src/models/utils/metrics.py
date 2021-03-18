@@ -1,3 +1,4 @@
+
 from typing import List, Dict, Any, Callable
 import numpy as np
 import torch
@@ -67,8 +68,6 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                  with shape (nclass,).
       figsize:   the size of the figure plotted.
     """
-    import matplotlib.pyplot as plt
-    import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)
     cm_perc = cm / cm_sum.astype(float) * 100

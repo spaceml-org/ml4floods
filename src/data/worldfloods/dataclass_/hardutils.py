@@ -2,13 +2,14 @@
 Examples:
 
 """
+import json
 from dataclasses import dataclass
 from typing import Dict, List
-import json
-import geojson
 
+import geojson
 import numpy as np
 import rasterio
+
 from src.data.utils import open_file_from_bucket, parse_gcp_path
 
 

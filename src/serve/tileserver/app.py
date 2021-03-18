@@ -1,11 +1,16 @@
-import os, mercantile, time, sys
 import io
+import os
+import sys
+import time
 from signal import SIGTERM
-from PIL import Image
+
+import mercantile
 import numpy as np
 import rasterio
 import rasterio.warp as warp
-from flask import Flask, jsonify, url_for, send_file
+from flask import Flask, jsonify, send_file, url_for
+from PIL import Image
+
 app = Flask(__name__)
 
 

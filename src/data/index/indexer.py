@@ -1,14 +1,14 @@
-import os
 import json
-from dateutil import parser
-from datetime import datetime
-import math
 import logging
+import math
+import os
+from datetime import datetime
+
+from dateutil import parser
 from fs import open_fs
 
 from src.data.index.geographic_index import GeographicIndex
 from src.data.index.indexer_arg_parser import IndexerArgParser
-
 
 LOGGER = logging.getLogger(__name__)
 

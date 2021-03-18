@@ -1,11 +1,13 @@
-from glob import glob
-import os
-import re
 import json
 import logging
+import os
+import re
+from glob import glob
+
 import geopandas as gpd
-from src.data import create_gt
 import rasterio
+
+from src.data import create_gt
 
 
 def get_layer_name(tiffile:str) -> str:
