@@ -1,0 +1,109 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.10.21
+    framework: lightning
+    is_jupyter_run: true
+    is_kaggle_kernel: false
+    mask/class_labels:
+      train_overlay_wandb_delimeter_ground truth:
+        key: train_overlay_wandb_delimeter_ground truth
+        type: mask/class_labels
+        value:
+          '0': invalid
+          '1': land
+          '2': water
+          '3': cloud
+      train_overlay_wandb_delimeter_prediction:
+        key: train_overlay_wandb_delimeter_prediction
+        type: mask/class_labels
+        value:
+          '0': invalid
+          '1': land
+          '2': water
+          '3': cloud
+      val_overlay_wandb_delimeter_ground truth:
+        key: val_overlay_wandb_delimeter_ground truth
+        type: mask/class_labels
+        value:
+          '0': invalid
+          '1': land
+          '2': water
+          '3': cloud
+      val_overlay_wandb_delimeter_prediction:
+        key: val_overlay_wandb_delimeter_prediction
+        type: mask/class_labels
+        value:
+          '0': invalid
+          '1': land
+          '2': water
+          '3': cloud
+    python_version: 3.8.8
+    t:
+      1:
+      - 1
+      - 9
+      4: 3.8.8
+      5: 0.10.21
+      8:
+      - 1
+      - 5
+model_params/hyperparameters/channel_configuration:
+  desc: null
+  value: all
+model_params/hyperparameters/label_names:
+  desc: null
+  value:
+  - land
+  - water
+  - cloud
+model_params/hyperparameters/lr:
+  desc: null
+  value: 0.0001
+model_params/hyperparameters/lr_decay:
+  desc: null
+  value: 0.5
+model_params/hyperparameters/lr_patience:
+  desc: null
+  value: 2
+model_params/hyperparameters/max_epochs:
+  desc: null
+  value: 10
+model_params/hyperparameters/max_tile_size:
+  desc: null
+  value: 256
+model_params/hyperparameters/model_type:
+  desc: null
+  value: linear
+model_params/hyperparameters/num_channels:
+  desc: null
+  value: 13
+model_params/hyperparameters/num_classes:
+  desc: null
+  value: 3
+model_params/hyperparameters/val_every:
+  desc: null
+  value: 1
+model_params/hyperparameters/weight_per_class:
+  desc: null
+  value:
+  - 1.93445299
+  - 36.60054169
+  - 2.19400729
+model_params/model_folder:
+  desc: null
+  value: gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart
+model_params/path_to_weights:
+  desc: null
+  value: checkpoints/
+model_params/test:
+  desc: null
+  value: false
+model_params/train:
+  desc: null
+  value: true
+model_params/use_pretrained_weights:
+  desc: null
+  value: false

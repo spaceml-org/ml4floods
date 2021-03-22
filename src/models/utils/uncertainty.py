@@ -17,14 +17,16 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, config,
     :param num_class: number of classes
     :param focus_label: name of class we're interested in finding uncertainty around
     :param num_samples: number of samples to take from network to calculate uncertainty from
+    :return: None
     """
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset) / dataloader.batch_size)):
         test_inputs, ground_truth_outputs = batch['image'], batch['mask'].squeeze(1)
-        compute_uncertainties_for_image_pair(test_inputs, ground_truth_outputs, p_pred_fun, d_pred_fun, num_samples,
-                                             num_class, config)
+        compute_uncertainties_for_image_pair(test_inputs, ground_truth_outputs, p_pred_fun, d_pred_fun, num_samples, num_class, config)
+        
+        
 
 
-def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config, denorm=False):
+def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config, denorm=True):
     """
     Runs probabilistic inference on image pair - takes multiple samples from network and computes uncertainty maps, generates a plot of those maps
 
