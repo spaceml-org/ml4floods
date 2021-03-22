@@ -1,3 +1,13 @@
 # Table of contents
 # Learn more at https://jupyterbook.org/customize/toc.html
 - file: content/overview.md
+
+- part: Tutorials
+  chapters: 
+  - file: content/ml_overview.md
+    sections:
+    - file: ../notebooks/models/HOWTO_Train_models.ipynb
+    - file: ../notebooks/models/HOWTO_Run_Inference_on_new_data.ipynb
+    - file: ../notebooks/models/HOWTO_Run Inference_multioutput_binary.ipynb
+    - file: ../notebooks/models/HOWTO_Calculate_uncertainty_maps.ipynb
+    - file: ../notebooks/models/HOWTO_performance_metrics_workflow.ipynb
