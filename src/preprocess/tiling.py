@@ -1,14 +1,46 @@
 from collections import namedtuple
 from itertools import product
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Dict
 
 import rasterio
 from rasterio import windows
 from rasterio.io import DatasetReader
+import json
 
 WindowSize = namedtuple("WindowSize", ["height", "width"])
 WindowSlices = namedtuple("WindowSlices", ["file_name", "window"])
+
+
+def load_windows(filename:str) -> List[WindowSlices]:
+    with open(filename, "r") as fh:
+        list_of_windows = [Dict_to_WindowSlices(dictio) for dictio in json.load(fh)["slices"]]
+    return list_of_windows
+
+def save_windows(list_windows:List[WindowSlices], filename:str) -> None:
+    list_save = [WindowSlices_to_Dict(ws) for ws in list_windows]
+    with open(filename, "w") as fh:
+        json.dump({"slices": list_save}, fh)
+
+
+def WindowSlices_to_Dict(ws: WindowSlices) -> Dict:
+    return {
+        "file_name" : ws.file_name,
+        "window": {
+            "col_off" : ws.window.col_off,
+            "row_off": ws.window.row_off,
+            "width": ws.window.width,
+            "height": ws.window.height,
+        }
+    }
+
+def Dict_to_WindowSlices(ds: Dict) -> WindowSlices:
+    return WindowSlices(file_name=ds["file_name"],
+                        window=windows.Window(col_off=ds["window"]["col_off"],
+                                              row_off=ds["window"]["row_off"],
+                                              width=ds["window"]["width"],
+                                              height=ds["window"]["height"]))
+
 
 
 def yield_window_tiles(

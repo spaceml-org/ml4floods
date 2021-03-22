@@ -1,20 +1,20 @@
 from src.preprocess.worldfloods import normalize as wf_normalization
 import src.preprocess.transformations as transformations
-from src.preprocess.tiling import WindowSize, save_tiles
+from src.preprocess.tiling import WindowSize, WindowSlices, save_tiles, load_windows, save_windows
 from src.data import utils
 from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
+from src.data.worldfloods.dataset import WorldFloodsDatasetTiled
+import pytorch_lightning as pl
 import os
-from pyprojroot import here
-# spyder up to find the root
-root = here(project_files=[".here"])
 import io
 import json
 from typing import Dict, List, Callable, Tuple, Optional
+from src.preprocess.worldfloods import prepare_patches
 
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
     """
-    Read train test split file from remote
+    Read train test split json file from remote if needed.
 
     Args:
         bucket_name:
@@ -35,7 +35,7 @@ def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:
             return json.load(fh)
 
 
-def get_dataset(data_config):
+def get_dataset(data_config) -> pl.LightningDataModule:
     """
     Function to set up dataloaders for model training
     option 1: Local
@@ -67,7 +67,12 @@ def get_dataset(data_config):
         download_tiffs_from_bucket(data_config.bucket_id,
                                    [data_config.input_folder, data_config.target_folder],
                                    filenames_train_test, local_destination_dir)
-                        
+
+        filter_windows_config = data_config.get("filter_windows", None)
+        if filter_windows_config is not None:
+            filter_windows_config = filter_windows_fun(data_config.filter_windows.version,
+                                                       threshold_clouds=data_config.filter_windows.threshold_clouds,
+                                                       local_destination_dir=local_destination_dir)
         # CREATE DATAMODULE
         dataset = WorldFloodsDataModule(
             input_folder=data_config.input_folder,
@@ -78,7 +83,8 @@ def get_dataset(data_config):
             bands=bands,
             num_workers=data_config.num_workers,
             window_size=data_config.window_size,
-            batch_size=data_config.batch_size
+            batch_size=data_config.batch_size,
+            filter_windows= filter_windows_config
         )
         dataset.setup()
             
@@ -145,8 +151,59 @@ def get_dataset(data_config):
     
     return dataset
 
+def filter_windows_fun(data_version:str, local_destination_dir:str, threshold_clouds=.5) -> Callable:
+    """
+    Returns a function to filter the windows in the  WorldFloodsDatasetTiled dataset. This is used for pre-filtering
+    the training images to discard patches with high cloud content.
 
-def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local_destination_dir, verbose=False):
+    Args:
+        data_version: "v1" or "v2"
+        local_destination_dir: local destination to save the json file with the windows to use
+        threshold_clouds: threshold to use to filter the window (window will be filtered if it has more than threshold_clouds
+        clouds)
+
+    Returns:
+        function to filter windows
+
+    """
+    windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
+    def filter_windows(tiledDataset: WorldFloodsDatasetTiled) -> List[WindowSlices]:
+        if os.path.exists(windows_file):
+            selected_windows = load_windows(windows_file)
+        else:
+            if data_version == "v1":
+                selected_windows =  prepare_patches.filter_windows_v1(tiledDataset,
+                                                                      threshold_clouds=threshold_clouds)
+            elif data_version == "v2":
+                selected_windows = prepare_patches.filter_windows_v2(tiledDataset,
+                                                                     threshold_clouds=threshold_clouds)
+            else:
+                raise NotImplementedError(f"Unknown data version {data_version} expected v1 or v2")
+
+            save_windows(selected_windows, windows_file)
+
+        return selected_windows
+
+    return filter_windows
+
+def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames:Dict[str,Dict[str,List[str]]],
+                               local_destination_dir, verbose=False):
+    """
+    Given files in the filenames dict. It downloads all to the local_destination_dir.
+    Specifically if input_target_folders is ["S2", "gt"] the data will be downloaded to:
+
+    local_destination_dir/(train|val|test)/(S2|gt)/***.tif
+    Args:
+        bucket_id:
+        input_target_folders: folders to download ["S2", "gt"] for training
+        filenames: Dict object with files to use for train/val/test from the bucket
+        local_destination_dir: path to download the data locally
+        verbose:
+
+    Returns:
+
+    """
+    bucket_obj = None
     for split in filenames.keys():
         for input_target_folder in input_target_folders:
             folder_local = os.path.join(local_destination_dir, split, input_target_folder)
@@ -155,7 +212,11 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local
                 basename = os.path.basename(fp)
                 file_dest = os.path.join(folder_local, basename)
                 if not os.path.isfile(file_dest):
-                    save_file(bucket_id, fp, file_dest)
+                    if bucket_obj is None:
+                        from google.cloud import storage
+                        bucket_obj = storage.Client().get_bucket(bucket_id)
+
+                    save_file(bucket_obj, fp, file_dest)
                     if verbose:
                         print(f"Loaded {fp}")
                 else:
@@ -163,10 +224,9 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames, local
                         print(f"{file_dest} already exists")
 
 
-def save_file(bucket_id, remote_blob_name, local_file):
-    from google.cloud import storage
+def save_file(bucket_obj, remote_blob_name, local_file):
     # get blob
-    blob = storage.Client().get_bucket(bucket_id).get_blob(remote_blob_name)
+    blob = bucket_obj.get_blob(remote_blob_name)
     blob.download_to_filename(local_file)
 
 
