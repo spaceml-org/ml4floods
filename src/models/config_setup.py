@@ -1,34 +1,40 @@
 import json
+import io
+from typing import Dict
+from src.models.utils.configuration import AttrDict
 
 
-class AttrDict(dict):
-    """ Dictionary subclass whose entries can be accessed like attributes
-        (as well as normally).
+def load_json(filename) ->Dict:
+    """Loads a json file possibly from the gcp bucket if name start with gs:// """
+    if filename.startswith("gs://"):
+        from google.cloud import storage
+        client = storage.Client()
+        with io.BytesIO() as file_obj:
+            client.download_blob_to_file(filename, file_obj)
+            file_obj.seek(0)
+            return json.load(file_obj)
+    else:
+        with open(filename) as json_file:
+            return json.load(json_file)
+
+
+def setup_config(args) -> AttrDict:
     """
+    Loads a config file from disk/bucket. Check channel configuration is consistent and set up the number of channels
+    to load the models
 
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+    Args:
+        args: args to populate the config
 
-    @staticmethod
-    def from_nested_dicts(data):
-        """ Construct nested AttrDicts from nested dictionaries. """
-        if not isinstance(data, dict):
-            return data
-        else:
-            return AttrDict({key: AttrDict.from_nested_dicts(data[key])
-                             for key in data})
+    Returns:
+        config: config object
 
-def setup_config(args):
-    # ======================================================
-    # WORLD FLOODS FLOOD EXTENT SEGMENTATION CONFIG SETUP 
-    # ======================================================  
+    """
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
     
     # 1. Load config json from argparse input
-    with open(args.config)as json_file:
-        config = json.load(json_file)
+    config = load_json(args.config)
     
     # 2. Add additional fields to config using worldfloods constants etc
     from src.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
@@ -54,9 +60,19 @@ def setup_config(args):
     return config
 
 
-def get_default_config(config_fp):
+def get_default_config(config_fp) -> AttrDict:
+    """
+    Loads a config json file (e.g. from src/models/configurations/worldfloods_template.json) as a config object
+    with defaults on gpus
+
+    Args:
+        config_fp: path to config file
+
+    Returns:
+        config: config object
+    """
     import argparse
-    parser = argparse.ArgumentParser('WorldFloods 1.0')
+    parser = argparse.ArgumentParser('WorldFloods')
     parser.add_argument('--config', default=config_fp)
     parser.add_argument('--gpus', default='0', type=str)
     parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
@@ -69,3 +85,30 @@ def get_default_config(config_fp):
     
     config = setup_config(args)
     return config
+
+
+def save_json(config:AttrDict, config_file_path:str) -> None:
+    """
+    Saves a config file posibly in the google bucket
+
+    Args:
+        config: config dict to save
+        config_file_path: location to save it
+
+    Returns:
+
+    """
+    if config_file_path.startswith("gs://"):
+        from google.cloud import storage
+        splitted_path = config_file_path.replace("gs://", "").split("/")
+        bucket_name = splitted_path[0]
+        blob_name = "/".join(splitted_path[1:])
+        bucket = storage.Client().get_bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(
+            data=json.dumps(config),
+            content_type='application/json'
+        )
+    else:
+        with open(config_file_path, "w") as fh:
+            json.dump(config, fh)

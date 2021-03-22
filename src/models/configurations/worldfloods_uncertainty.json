@@ -12,7 +12,7 @@
             "weight_per_class": [1.93445299, 36.60054169, 2.19400729],
             "model_type": "unet_dropout",
             "num_classes": 3,
-            "max_epochs": 30,
+            "max_epochs": 40,
             "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
@@ -24,6 +24,11 @@
     "data_params": {
         "loader_type": "local",
         "num_workers": 8,
+        "filter_windows": {
+            "version" : "v1",
+            "threshold_clouds" : 0.8,
+            "apply" : false
+        },
         "bucket_id": "ml4floods",
         "path_to_splits": "/worldfloods/public",
         "train_test_split_file": "worldfloods/public/train_test_split.json",
@@ -33,13 +38,9 @@
         "window_size": [256, 256],
         "channel_configuration": "all",
         "train_transformation": {
-            "num_classes": 3,
-            "totensor": true,
             "normalize": true
         },
         "test_transformation": {
-            "num_classes": 3,
-            "totensor": true,
             "normalize": true
         }
     }
