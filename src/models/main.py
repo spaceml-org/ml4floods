@@ -1,5 +1,6 @@
 import torch
 import json
+from src.models.config_setup import save_json
 
 
 def train(config):
@@ -53,13 +54,13 @@ def train(config):
         dirpath=checkpoint_path,
         save_top_k=True,
         verbose=True,
-        monitor='val_dice_loss',
+        monitor=config.model_params.hyperparameters.metric_monitor,
         mode='min',
         prefix=''
     )
     
     early_stop_callback = EarlyStopping(
-        monitor='val_dice_loss',
+        monitor=config.model_params.hyperparameters.metric_monitor,
         patience=4,
         strict=False,
         verbose=False,
@@ -104,26 +105,14 @@ def train(config):
     wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.finish()
 
+
     # Save cofig file in experiment_path
     config_file_path = f"{experiment_path}/config.json"
 
-    if config_file_path.startswith("gs://"):
-        from google.cloud import storage
-        splitted_path = config_file_path.replace("gs://", "").split("/")
-        bucket_name = splitted_path[0]
-        blob_name = "/".join(splitted_path[1:])
-        bucket = storage.Client().get_bucket(bucket_name)
-        blob = bucket.blob(blob_name)
-        blob.upload_from_string(
-            data=json.dumps(config),
-            content_type='application/json'
-        )
-    else:
-        with open(config_file_path, "w") as fh:
-            json.dump(config, fh)
+    save_json(config, config_file_path)
     
     return 1
-    
+
 
 def test(config):
     """
@@ -145,37 +134,7 @@ def test(config):
         
     6. Serve metrics to Visualisation Dashboards
     """
-    # ======================================================
-    # EXPERIMENT SETUP
-    # ====================================================== 
-    from pytorch_lightning import seed_everything
-    # Seed
-    seed_everything(config.seed)
-    
-    # Device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    
-    # DATASET SETUP
-    print("======================================================")
-    print("SETTING UP DATASET")
-    print("======================================================")
-    from src.models.dataset_setup import get_dataset
-    dataset = get_dataset(config.data_params)
-    
-    
-    # MODEL SETUP 
-    print("======================================================")
-    print("SETTING UP MODEL")
-    print("======================================================")
-    from src.models.model_setup import get_model
-    config.model_params.test = True
-    config.model_params.train = False
-    config.model_params.model_path = f"{config.model_params.model_folder}/latest-run/files/model.pt"
-    model = get_model(config.model_params)
-    
-    
-#     trainer.test(model, datamodule=mnist)
+    print('Not yet implemented - please see notebook tutorials instead')
     return 0
 
 
@@ -193,6 +152,7 @@ def deploy(opt):
     
     5. Serve predictions to Visualisation Dashboards
     """
+    print('Not yet implemented - please see notebook tutorials instead')
     return 0
 
 
