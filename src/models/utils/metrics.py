@@ -1,12 +1,13 @@
-import json
-from typing import List
 
-import matplotlib.pyplot as plt
+from typing import List, Dict, Any, Callable
 import numpy as np
-import pandas as pd
-import seaborn as sns
 import torch
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import json
+import seaborn as sns
+import pandas as pd
+from collections import OrderedDict
 
 
 @torch.no_grad()
@@ -17,14 +18,15 @@ def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categori
     element in the batch
 
     Args:
-        ground_truth_outputs: BCHW tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
-        test_outputs_categorical: BCHW tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
-        num_class: Number of classes.
+        ground_truth_outputs: (B,H,W) tensor with discrete values in [0, num_class] if remove_class_zero else [0,num_class-1]
+        test_outputs_categorical: (B,H,W) tensor with discrete values in [0,num_class-1] (expected output of torch.argmax())
+        num_class: Number of classes. Must be equal to number of channels of test_outputs_categorical
         remove_class_zero: if true the value zero in ground_truth_outputs is considered a masked value;
         thus removed from the final prediction.
 
     Returns:
         (B,num_class,num_class) torch.Tensor with a confusion matrix for each image in the batch
+        cm[a, b, c] is the number of elements predicted `b` that belonged to class `c` in the image `a` of the batch
 
     """
     ground_truth = ground_truth_outputs.clone()
@@ -66,10 +68,6 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
                  with shape (nclass,).
       figsize:   the size of the figure plotted.
     """
-    import as
-    import matplotlib.pyplot as plt
-    import pandas
-    import seaborn as sns
     
     cm_sum = np.sum(cm, axis=1, keepdims=True)
     cm_perc = cm / cm_sum.astype(float) * 100
@@ -92,8 +90,24 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
     fig, ax = plt.subplots(figsize=figsize)
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
-    
-    
+
+def binary_accuracy(cm_agg):
+    tp = cm_agg[1, 1]
+    tn = cm_agg[0, 0]
+
+    return (tp+tn) / cm_agg.sum()
+
+def binary_precision(cm_agg):
+    tp = cm_agg[1, 1]
+    fp = cm_agg[1, 0]
+    return tp / (tp + fp + 1e-6)
+
+def binary_recall(cm_agg):
+    tp = cm_agg[1, 1]
+    fn = cm_agg[0, 1]
+    return tp / (tp + fn + 1e-6)
+
+
 def calculate_iou(confusions, labels):
     """
     Caculate IoU for a list of confusion matrices 
@@ -106,9 +120,9 @@ def calculate_iou(confusions, labels):
     """
     confusions = np.array(confusions)
     conf_matrix = np.sum(confusions, axis=0)
-    true_positive = np.diag(conf_matrix)
-    false_positive = np.sum(conf_matrix, 0) - true_positive
-    false_negative = np.sum(conf_matrix, 1) - true_positive
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_negative = np.sum(conf_matrix, 0) - true_positive
+    false_positive = np.sum(conf_matrix, 1) - true_positive
     iou = true_positive / (true_positive + false_positive + false_negative)
     
     iou_dict = {}
@@ -116,6 +130,31 @@ def calculate_iou(confusions, labels):
         iou_dict[l] = iou[i]
     return iou_dict
 
+
+def calculate_recall(confusions, labels):
+    confusions = np.array(confusions)
+    conf_matrix = np.sum(confusions, axis=0)
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_negative = np.sum(conf_matrix, 0) - true_positive
+    recall = true_positive / (true_positive + false_negative  + 1e-6)
+
+    recall_dict = {}
+    for i, l in enumerate(labels):
+        recall_dict[l] = recall[i]
+    return recall_dict
+
+
+def calculate_precision(confusions, labels):
+    confusions = np.array(confusions)
+    conf_matrix = np.sum(confusions, axis=0)
+    true_positive = np.diag(conf_matrix) + 1e-6
+    false_positive = np.sum(conf_matrix, 1) - true_positive
+    precision = true_positive / (true_positive + false_positive  + 1e-6)
+
+    precision_dict = {}
+    for i, l in enumerate(labels):
+        precision_dict[l] = precision[i]
+    return precision_dict
 
 
 def plot_metrics(metrics_dict, label_names):
@@ -170,16 +209,14 @@ def plot_metrics(metrics_dict, label_names):
     
     print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
         
-def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_water=np.arange(0,1,.05), plot=False):
+def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), plot=False):
     """
     Run inference on a dataloader and compute metrics for that data
     
     Args:
         dataloader: pytorch Dataloader for test set
         pred_fun: function to perform inference using a model
-        num_class: number of classes
-        label_names: list of label names
-        thresholds: list of threshold for precision/recall curves
+        thresholds_water: list of threshold for precision/recall curves
         plot: flag for calling plot method with metrics
         
         returns: dictionary of metrics
@@ -190,6 +227,9 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     thresholds_water = np.sort(thresholds_water)
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
+
+    # This is constant: we're using this class convention to compute the PR curve
+    num_class, label_names = 3, ["land", "water", "cloud"]
     
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
         test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
@@ -246,16 +286,34 @@ def compute_metrics(dataloader, pred_fun, num_class, label_names, thresholds_wat
     confusions_thresh = np.concatenate(confusions_thresh, axis=1)
     
     iou = calculate_iou(confusions, labels=label_names)
+    recall = calculate_recall(confusions, labels=label_names)
     
     out_dict = {
         'confusions': confusions,
         'confusions_thresholded': confusions_thresh,
         'thresholds': thresholds_water,
-        'iou': iou
+        'iou': iou,
+        "recall": recall
     }
     
     if plot:
         plot_metrics(out_dict, label_names)
     
     return out_dict
+
+
+def group_confusion(confusions:torch.Tensor, cems_code:str,fun:Callable,
+                   label_names:List[str]) ->List[Dict[str, Any]]:
+    CMs = OrderedDict({c:[] for c in sorted(np.unique(cems_code))})
+
+    for code, cms in zip(cems_code,confusions):
+        CMs[code].append(cms)
+    
+    data_out = []
+    for k, v in CMs.items():
+        ious = fun(v, label_names)
+        ious["code"] = k
+        data_out.append(ious)
+    
+    return data_out
         

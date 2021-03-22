@@ -164,27 +164,6 @@ class WorldFloodsDatasetTiled(Dataset):
 
         self.list_of_windows = list_of_windows
 
-        # sort to make sure that the order is deterministic
-        # (order of the flow of data points to the ML model)
-        # get the image slices
-
-    # def filter_patches(self, condition_label_function:Callable):
-    #     """
-    #     Keep patches that satisfies certain condition (in their labels)
-    #
-    #     Args:
-    #         condition_label_function:
-    #
-    #     Returns:
-    #
-    #     """
-    #     accumulated_list_of_windows_test = []
-    #     for i in range(self.__len__()):
-    #         if condition_label_function(self.get_label(i)):
-    #             accumulated_list_of_windows_test.append(self.accumulated_list_of_windows_test[i])
-    #
-    #     self.accumulated_list_of_windows_test = accumulated_list_of_windows_test
-
     def get_label(self, idx: int) -> np.ndarray:
         """
         Method to read only the label. This function is useful for filtering the patches of the Dataset
