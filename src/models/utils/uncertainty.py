@@ -24,7 +24,7 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, config,
                                              num_class, config)
 
 
-def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config):
+def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config, denorm=False):
     """
     Runs probabilistic inference on image pair - takes multiple samples from network and computes uncertainty maps, generates a plot of those maps
 
@@ -55,7 +55,11 @@ def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun
         gts = targets.cpu().numpy()
         predictions = torch.argmax(d_pred_fun(inputs), dim=1).long().cpu().numpy()
 
-        optical = s1_to_unnormed_rgb(images, config)[0]
+        if denorm:
+            optical = s1_to_unnormed_rgb(images, config)[0]
+        else:
+            optical = s1_to_rgb(images, config)[0]
+
         gt = mask_to_rgb(gts[0])
         prediction = mask_to_rgb(predictions[0] + 1)
         diff = (predictions[0] - gts[0])
@@ -171,7 +175,18 @@ def s1_to_unnormed_rgb(image, config):
     return model_input_rgb_npy
 
 
-def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
+def s1_to_rgb(image, config):
+
+    # Find the RGB indexes within the S2 bands
+    bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[config["model_params"]["hyperparameters"]['channel_configuration']]]
+    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+
+    model_input_rgb_npy = image[:, bands_index_rgb].transpose(0, 2,3,1) 
+    model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.)
+    return model_input_rgb_npy
+
+
+def mask_to_rgb(mask, values=[0,1,2,3], colors_cmap=COLORS_WORLDFLOODS):
     """
     Given a 2D mask it assign each value of the mask the corresponding color
     :param mask:
