@@ -33,7 +33,7 @@ def compute_uncertainties(dataloader, p_pred_fun, d_pred_fun, num_class, label_n
             
             
             
-def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config):
+def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun, num_samples, num_class, config, denorm=True):
     
     with torch.no_grad():
         prediction_samples = np.zeros([num_samples] + list(targets.shape))
@@ -58,8 +58,13 @@ def compute_uncertainties_for_image_pair(inputs, targets, p_pred_fun, d_pred_fun
 
 
     #         if plot:
-
-        optical = s1_to_unnormed_rgb(images, config)[0]
+        print(images.shape)
+        if denorm:
+            optical = s1_to_unnormed_rgb(images, config)[0]
+        else:
+            print("s1_to_rgb")
+            optical = s1_to_rgb(images, config)[0]
+        print(optical.shape)
         gt = mask_to_rgb(gts[0])
         prediction = mask_to_rgb(predictions[0] + 1)
         diff = (predictions[0] - gts[0])
@@ -165,6 +170,16 @@ def s1_to_unnormed_rgb(image, config):
     bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
 
     model_input_rgb_npy = image[:, bands_index_rgb].transpose(0, 2,3,1) * std[..., -1::-1] + mean[..., -1::-1]
+    model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.)
+    return model_input_rgb_npy
+
+def s1_to_rgb(image, config):
+
+    # Find the RGB indexes within the S2 bands
+    bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[config["model_params"]["hyperparameters"]['channel_configuration']]]
+    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+
+    model_input_rgb_npy = image[:, bands_index_rgb].transpose(0, 2,3,1) 
     model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.)
     return model_input_rgb_npy
 
