@@ -134,37 +134,7 @@ def test(config):
         
     6. Serve metrics to Visualisation Dashboards
     """
-    # ======================================================
-    # EXPERIMENT SETUP
-    # ====================================================== 
-    from pytorch_lightning import seed_everything
-    # Seed
-    seed_everything(config.seed)
-    
-    # Device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    
-    # DATASET SETUP
-    print("======================================================")
-    print("SETTING UP DATASET")
-    print("======================================================")
-    from src.models.dataset_setup import get_dataset
-    dataset = get_dataset(config.data_params)
-    
-    
-    # MODEL SETUP 
-    print("======================================================")
-    print("SETTING UP MODEL")
-    print("======================================================")
-    from src.models.model_setup import get_model
-    config.model_params.test = True
-    config.model_params.train = False
-    config.model_params.model_path = f"{config.model_params.model_folder}/latest-run/files/model.pt"
-    model = get_model(config.model_params)
-    
-    
-#     trainer.test(model, datamodule=mnist)
+    print('Not yet implemented - please see notebook tutorials instead')
     return 0
 
 
@@ -182,6 +152,7 @@ def deploy(opt):
     
     5. Serve predictions to Visualisation Dashboards
     """
+    print('Not yet implemented - please see notebook tutorials instead')
     return 0
 
 
