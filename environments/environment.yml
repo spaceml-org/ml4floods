@@ -46,3 +46,6 @@ dependencies:
   # from bug  in GEE, see https://github.com/google/earthengine-api/issues/157
   - google-api-python-client==1.12.8 
   - corner
+  # documentation
+  - jupyter-book
+  - ghp-import

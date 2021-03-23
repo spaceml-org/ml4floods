@@ -77,3 +77,11 @@ test:  ## Test code using pytest.
 		pytest -v tests
 		@printf "\033[1;34mPyTest passes!\033[0m\n\n"
 
+
+
+# DOCS
+build-jupyterbook:
+	jupyter-book build jupyterbook --all
+
+clean-jupyterbook:
+	jupyter-book clean jupyterbook
