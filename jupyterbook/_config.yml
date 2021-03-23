@@ -5,9 +5,9 @@
 
 #######################################################################################
 # Book settings
-title                       : Ml4Floods  # The title of the book. Will be placed in the left navbar.
+title                       : ML4Floods  # The title of the book. Will be placed in the left navbar.
 author                      : spaceml  # The author of the book
 copyright                   : "2021"  # Copyright year to be placed in the footer
-# logo                        : book.png  # A path to the book logo
+logo                        : ml4cc_logo.png  # A path to the book logo
 execute:
   execute_notebooks: cache
