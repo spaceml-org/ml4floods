@@ -23,3 +23,10 @@ This demo notebook demonstrates how we can create a dataclass given an image and
 In this short demo notebook, we showcase a simple query followed by constructing a dataclass.
 
 [Source](./query_2_dataclass.ipynb)
+
+---
+## 4.0 Full Ingeston from CopernicusEMS and Sentinel-2
+
+This demo shows how to query Copernicus EMS to download floodmaps, how later we could visualize those and query the closest in time Sentinel-2 images and display them using interactive folium maps.
+
+[Source](https://github.com/spaceml-org/ml4floods/blob/main/notebooks/data/full_data_ingest.ipynb)
