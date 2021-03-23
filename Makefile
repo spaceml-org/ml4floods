@@ -80,8 +80,8 @@ test:  ## Test code using pytest.
 
 
 # DOCS
-build:
-	jupyter-book build docs --all
+build-jupyterbook:
+	jupyter-book build jupyterbook --all
 
-clean:
-	jupyter-book clean docs
+clean-jupyterbook:
+	jupyter-book clean jupyterbook
