@@ -5,7 +5,8 @@
 #    - file: ../notebooks/models/HOWTO_Run Inference_multioutput_binary.ipynb
 #    - file: ../notebooks/models/HOWTO_Calculate_uncertainty_maps.ipynb
 #    - file: ../notebooks/models/HOWTO_performance_metrics_workflow.ipynb
-- file: content/overview.md
+#    - file: content/overview.md
+- file: content/intro/introduction.md
 
 - part: Install
   chapters:
