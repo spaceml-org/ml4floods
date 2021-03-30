@@ -2,8 +2,8 @@ import unittest
 import os
 from dateutil import parser
 
-from src.data.index.geographic_index import GeographicIndex
-from src.data.index.map_data_factory import MapDataFactory
+from ml4floods.data.index.geographic_index import GeographicIndex
+from ml4floods.data.index.map_data_factory import MapDataFactory
 
 class TestMapData(unittest.TestCase):
 

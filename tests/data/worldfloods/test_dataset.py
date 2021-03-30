@@ -5,8 +5,8 @@ sys.dont_write_bytecode = True
 
 from pprint import pprint
 
-from src.data.worldfloods.dataset import WorldFloodsDataset, WorldFloodsImage
-from src.data.worldfloods.test_download import data_download
+from ml4floods.data.worldfloods.dataset import WorldFloodsDataset, WorldFloodsImage
+from ml4floods.data.worldfloods.test_download import data_download
 
 
 def test_toy_data():

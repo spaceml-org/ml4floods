@@ -7,7 +7,7 @@ import rasterio.warp as warp
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('TEST-MODELSERVER')
 
-from src.serve import ModelServer
+from ml4floods.serve import ModelServer
 
 logger.info('initialising modelserver object')
 server = ModelServer()

@@ -2,7 +2,7 @@
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
 import argparse
-from src.data.utils import create_folder
+from ml4floods.data.utils import create_folder
 from dataclasses import dataclass, field
 from datetime import datetime
 import subprocess
@@ -17,7 +17,7 @@ from pyprojroot import here
 root = here(project_files=[".here"])
 
 HOME = root
-from src.data.worldfloods.download import download_image, download_worldfloods_data
+from ml4floods.data.worldfloods.download import download_image, download_worldfloods_data
 
 
 @dataclass

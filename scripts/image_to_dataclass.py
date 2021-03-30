@@ -18,27 +18,27 @@ import rasterio
 # ====================================================
 # Utils for getting filenames and directories
 # ====================================================
-from src.data.utils import (
+from ml4floods.data.utils import (
     get_files_in_directory,
     get_filenames_in_directory,
     get_files_in_bucket_directory,
 )
-from src.data.worldfloods.dataclass_.baseclass import WorldFloodsS2ImageSaved
-from src.data.worldfloods.dataclass_.hardutils import (
+from ml4floods.data.worldfloods.dataclass_.baseclass import WorldFloodsS2ImageSaved
+from ml4floods.data.worldfloods.dataclass_.hardutils import (
     parse_gcp_files_dataclass,
     open_source_tiff_meta,
     open_source_meta,
     open_source_tiff,
 )
-from src.data.utils import open_file_from_bucket
+from ml4floods.data.utils import open_file_from_bucket
 import tqdm
-from src.data.worldfloods.dataclass_.utils import (
+from ml4floods.data.worldfloods.dataclass_.utils import (
     load_dataclass_pickle,
     save_dataclass_pickle,
 )
-from src.data.utils import create_folder
+from ml4floods.data.utils import create_folder
 import pickle
-from src.data.utils import save_file_to_bucket
+from ml4floods.data.utils import save_file_to_bucket
 
 # ====================================================
 # Standard Packages
@@ -47,7 +47,7 @@ from src.data.utils import save_file_to_bucket
 import numpy as np
 
 
-from src.data.utils import get_files_in_bucket_directory
+from ml4floods.data.utils import get_files_in_bucket_directory
 
 # define initial parameters
 bucket_id = "ml4floods"
