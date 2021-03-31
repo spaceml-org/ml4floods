@@ -15,7 +15,7 @@ isort
 mypy
 opencv-python
 seaborn
-ipykernel
 google-cloud-storage
 pyprojroot
 fsspec
+gcsfs
