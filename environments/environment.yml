@@ -41,6 +41,7 @@ dependencies:
   - s2cloudless
   - requests_html
   - gcsfs
+  - fsspec
   - earthengine-api
   - geemap
   # from bug  in GEE, see https://github.com/google/earthengine-api/issues/157
