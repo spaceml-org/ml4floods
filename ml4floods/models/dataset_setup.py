@@ -63,11 +63,13 @@ def get_dataset(data_config) -> pl.LightningDataModule:
                                    [data_config.input_folder, data_config.target_folder],
                                    filenames_train_test, local_destination_dir)
 
-        filter_windows_config = data_config.get("filter_windows", None)
-        if filter_windows_config is not None and filter_windows_config.get("apply", False):
+        filter_windows_attr = data_config.get("filter_windows", None)
+        if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
             filter_windows_config = filter_windows_fun(data_config.filter_windows.version,
                                                        threshold_clouds=data_config.filter_windows.threshold_clouds,
                                                        local_destination_dir=local_destination_dir)
+        else:
+            filter_windows_config = None
         # CREATE DATAMODULE
         dataset = WorldFloodsDataModule(
             input_folder=data_config.input_folder,
