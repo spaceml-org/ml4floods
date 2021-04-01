@@ -9,21 +9,21 @@ sys.path.append(str(here()))
 
 import logging
 import json
-from src.data.create_gt import (
+from ml4floods.data.create_gt import (
     _get_image_geocoords,
     generate_land_water_cloud_gt,
     generate_water_cloud_binary_gt,
 )
-from src.data.io import save_groundtruth_tiff_rasterio
+from ml4floods.data.io import save_groundtruth_tiff_rasterio
 import os
-from src.data.utils import GCPPath
-from src.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
+from ml4floods.data.utils import GCPPath
+from ml4floods.data.config import BANDS_S2, CODES_FLOODMAP, UNOSAT_CLASS_TO_TXT
 
 import rasterio.windows
 from pathlib import Path
 
 import tqdm
-from src.data.utils import save_file_to_bucket
+from ml4floods.data.utils import save_file_to_bucket
 
 
 def save_s2_image():

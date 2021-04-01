@@ -14,11 +14,11 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 import ee
-from src.data import ee_download
-from src.data.copernicusEMS import activations
+from ml4floods.data import ee_download
+from ml4floods.data.copernicusEMS import activations
 
 
-from src.data.utils import (
+from ml4floods.data.utils import (
     remove_gcp_prefix,
     get_files_in_directory_gcp,
     read_pickle_from_gcp,
@@ -26,7 +26,7 @@ from src.data.utils import (
 from typing import Tuple
 from collections import namedtuple
 import tqdm
-
+from shapely.geometry import mapping
 
 ActivationFile = namedtuple(
     "ActivationFile", ["directory_aoi", "event_activation", "file_name"]
@@ -83,6 +83,10 @@ from time import sleep
 def main():
 
     # 2. Loop Through Activation Codes
+
+    # initialize the GEE
+    ee.Initialize()
+
     with tqdm.tqdm(ESMR_CODES, position=0) as pbar_codes:
         for i_esmr_code in pbar_codes:
 
@@ -94,17 +98,9 @@ def main():
 
             with tqdm.tqdm(i_esmr_files, position=1) as pbar_files:
                 for i_file in pbar_files:
-
-                    # update progress bar
-                    #                     pbar_files.set_description(f"AOI: {i_file}")
-
                     activation_aoi_meta = find_leaf_nodes(i_file)
 
-                    # Load Floodmap geojson
-                    floodmap_geojson = "gs://" + str(Path(i_file))
-                    floodmap = gpd.read_file(floodmap_geojson)
-
-                    # Load Floodmap geojson
+                    # Load metadata Floodmap
                     meta_floodmap_filepath = "gs://" + str(
                         Path(
                             i_file.replace("/floodmap/", "/flood_meta/")
@@ -115,20 +111,16 @@ def main():
 
                     metadata_floodmap = read_pickle_from_gcp(meta_floodmap_filepath)
 
-                    # initialize the GEE
-                    ee.Initialize()
-
                     bounds_pol = activations.generate_polygon(
                         metadata_floodmap["area_of_interest_polygon"].bounds
                     )
                     pol_2_clip = ee.Geometry.Polygon(bounds_pol)
 
                     # pol with the real area of interest
-                    x, y = metadata_floodmap[
+                    geojson_dict = mapping(metadata_floodmap[
                         "area_of_interest_polygon"
-                    ].exterior.coords.xy
-                    pol_list = list(zip(x, y))
-                    pol = ee.Geometry.Polygon(pol_list)
+                    ])
+                    pol = ee.Geometry(geojson_dict)
 
                     date_event = datetime.utcfromtimestamp(
                         metadata_floodmap["satellite_date"].timestamp()
@@ -140,18 +132,15 @@ def main():
                         date_event, date_end_search, pol
                     )
 
-                    n_images_col = img_col.size().getInfo()
-
-                    imgs_list = img_col.toList(n_images_col, 0)
-
-                    img_export = ee.Image(imgs_list.get(1))
+                    img_export = ee.Image(img_col.first())
+                    date_first_image = img_export.get("system:time_start").getInfo()
+                    # TODO save date as S2 metadata!
 
                     img_export = (
                         img_export.select(BANDS_EXPORT).toFloat().clip(pol_2_clip)
                     )  # .reproject(crs,scale=10).resample('bicubic') resample cannot be used on composites
 
                     # TODO in the future, change to export to drive and mount the Google drive in colab!
-
                     bucket_name = "ml4cc_data_lake"
 
                     export_task_fun_img = ee_download.export_task_image(
@@ -184,10 +173,6 @@ def main():
                     )
                     if task is not None:
                         print(task.status())
-
-    #                     break
-
-    #             break
 
     pass
 

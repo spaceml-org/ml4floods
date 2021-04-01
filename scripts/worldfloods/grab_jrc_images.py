@@ -14,11 +14,11 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 import ee
-from src.data import ee_download
-from src.data.copernicusEMS import activations
+from ml4floods.data import ee_download
+from ml4floods.data.copernicusEMS import activations
 
 
-from src.data.utils import (
+from ml4floods.data.utils import (
     remove_gcp_prefix,
     get_files_in_directory_gcp,
     read_pickle_from_gcp,
@@ -139,7 +139,7 @@ def main():
                         date_event, pol_2_clip
                     )
 
-                    img_export = ee.Image(permanent_water_img)
+                    img_export = permanent_water_img
 
                     bucket_name = "ml4cc_data_lake"
 

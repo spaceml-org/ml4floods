@@ -22,8 +22,8 @@ sys.path.append(str(here()))
 import geopandas as gpd
 import pickle
 import pandas as pd
-from src.data.copernicusEMS import activations
-from src.data import utils
+from ml4floods.data.copernicusEMS import activations
+from ml4floods.data import utils
 
 from pprint import pprint
 from google.cloud import storage
@@ -33,7 +33,7 @@ import json
 import geopandas as gpd
 import subprocess
 from tqdm import tqdm
-from src.data import utils
+from ml4floods.data import utils
 
 def main():
     # ===== Fetch ESMR Codes ==========

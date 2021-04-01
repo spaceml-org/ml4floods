@@ -14,17 +14,17 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 import ee
-from src.data import ee_download
-from src.data.copernicusEMS import activations
-from src.data.create_gt import generate_water_cloud_binary_gt
-from src.data.io import save_groundtruth_tiff_rasterio
-from src.data.utils import (
+from ml4floods.data import ee_download
+from ml4floods.data.copernicusEMS import activations
+from ml4floods.data.create_gt import generate_water_cloud_binary_gt
+from ml4floods.data.io import save_groundtruth_tiff_rasterio
+from ml4floods.data.utils import (
     remove_gcp_prefix,
     get_files_in_directory_gcp,
     read_pickle_from_gcp,
     save_file_to_bucket,
 )
-from src.data.utils import GCPPath
+from ml4floods.data.utils import GCPPath
 from typing import Tuple
 from collections import namedtuple
 import tqdm

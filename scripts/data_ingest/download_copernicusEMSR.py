@@ -5,7 +5,7 @@ import os
 sys.path.append(str(here()))
 
 from google.cloud import storage
-from src.data.copernicusEMS import activations
+from ml4floods.data.copernicusEMS import activations
 
 # import importlib
 # importlib.reload(activations)

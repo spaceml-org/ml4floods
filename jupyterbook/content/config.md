@@ -12,27 +12,36 @@
 ---
 ## Installation Instructions
 
-This repo uses the most updated `jax` library on github so this is absolutely essential, e.g. it uses the latest `np.interp` function which isn't on the `pip` distribution yet. The `environment.yml` file will have the most updated distribution.
-
 1. Clone the repository.
 
 ```bash
 git clone https://github.com/spaceml-org/ml4floods/
 ```
 
-2. Install using conda.
+2. Create a new virtual environment using conda.
 
 ```bash
 conda env create -f environments/environment.yml
 ```
 
-3. If you already have the environment installed, you can update it.
+3. Or... if you already have the environment, you can update it.
 
 ```bash
-conda activate jaxrbig
+conda activate ml4fl_py38
 conda env update --file environments/environment.yml
 ```
 
+4. Install the `ml4floods` package
+
+```bash
+conda activate ml4fl_py38
+
+# Option a using setup.y
+python setup.py install
+
+# Option b) directly with pip
+pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
+```
 
 ---
 ## JupyterLab

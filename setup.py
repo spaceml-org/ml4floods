@@ -22,16 +22,15 @@ EXTRAS = {
     ],
 }
 
-setup(
-    name="ml4floods",
-    version="0.0.1",
-    author="SpaceML-org",
-    # author_email="t.pinder2@lancaster.ac.uk",
-    packages=find_packages(".", exclude=["tests"]),
-    # license="LICENSE",
-    description="Machine learning methods for floods.",
-    # long_description="",
-    install_requires=parse_requirements_file("requirements.txt"),
-    extras_require=EXTRAS,
-    keywords=["floods pytorch machine-learning earth"],
+setup(name="ml4floods",
+      version="0.0.1",
+      author="SpaceML-org",
+      packages=find_packages(".", exclude=["tests"]),
+      package_data={
+        "ml4floods" : ["models/configurations/*.json"]  # Add json files from configuration dir.
+      },
+      description="Machine learning methods for flood extent segmentation.",
+      install_requires=parse_requirements_file("requirements.txt"),
+      extras_require=EXTRAS,
+      keywords=["floods pytorch machine-learning earth"],
 )
