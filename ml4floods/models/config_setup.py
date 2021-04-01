@@ -1,5 +1,4 @@
 import json
-import io
 from typing import Dict
 from ml4floods.models.utils.configuration import AttrDict
 from typing import Union

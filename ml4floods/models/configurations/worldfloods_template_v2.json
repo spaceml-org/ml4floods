@@ -32,7 +32,7 @@
             "apply" : false
         },
         "bucket_id": "ml4cc_data_lake",
-        "path_to_splits": "/worldfloods/v2",
+        "path_to_splits": "worldfloods_v2",
         "train_test_split_file": "0_DEV/2_Mart/worldfloods_v2_0/train_test_split.json",
         "input_folder": "S2",
         "target_folder": "gt",

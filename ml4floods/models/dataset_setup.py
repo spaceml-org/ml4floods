@@ -6,11 +6,11 @@ from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled
 import pytorch_lightning as pl
 import os
-import io
 import json
 from typing import Dict, List, Callable, Tuple, Optional
 from ml4floods.preprocess.worldfloods import prepare_patches
-
+from ml4floods.models.config_setup import load_json
+import fsspec
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
     """
@@ -24,12 +24,7 @@ def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:
 
     """
     if bucket_name != "" and bucket_name is not None:
-        from google.cloud import storage
-        client = storage.Client()
-        with io.BytesIO() as file_obj:
-            client.download_blob_to_file(f"gs://{bucket_name}/{train_test_split_file}", file_obj)
-            file_obj.seek(0)
-            return json.load(file_obj)
+        return load_json(f"gs://{bucket_name}/{train_test_split_file}")
     else:
         with open(train_test_split_file, "r") as fh:
             return json.load(fh)
@@ -203,31 +198,21 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames:Dict[s
     Returns:
 
     """
-    bucket_obj = None
+    fs = fsspec.filesystem("gs")
     for split in filenames.keys():
         for input_target_folder in input_target_folders:
             folder_local = os.path.join(local_destination_dir, split, input_target_folder)
+            print(f"Downloading {folder_local} if needed")
             os.makedirs(folder_local, exist_ok=True)
-            for fp in filenames[split][input_target_folder]:
+            for _i, fp in enumerate(filenames[split][input_target_folder]):
                 basename = os.path.basename(fp)
                 file_dest = os.path.join(folder_local, basename)
                 if not os.path.isfile(file_dest):
-                    if bucket_obj is None:
-                        from google.cloud import storage
-                        bucket_obj = storage.Client().get_bucket(bucket_id)
-
-                    save_file(bucket_obj, fp, file_dest)
-                    if verbose:
-                        print(f"Loaded {fp}")
+                    fs.get_file(f"gs://{bucket_id}/{fp}", file_dest)
+                    print(f"Downloaded ({_i}/{len(filenames[split][input_target_folder])}) {fp}")
                 else:
                     if verbose:
                         print(f"{file_dest} already exists")
-
-
-def save_file(bucket_obj, remote_blob_name, local_file):
-    # get blob
-    blob = bucket_obj.get_blob(remote_blob_name)
-    blob.download_to_filename(local_file)
 
 
 def get_transformations(data_config) -> Tuple[Callable, Callable]:
