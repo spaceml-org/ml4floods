@@ -19,3 +19,4 @@ google-cloud-storage
 pyprojroot
 fsspec
 gcsfs
+requests_html
