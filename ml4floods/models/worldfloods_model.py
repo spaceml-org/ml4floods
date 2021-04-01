@@ -1,7 +1,4 @@
-import os
 import torch
-import wandb
-import torchvision
 import numpy as np
 import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
@@ -68,6 +65,7 @@ class WorldFloodsModel(pl.LightningModule):
         return self.network(x)
 
     def log_images(self, x, y, logits,prefix=""):
+        import wandb
         mask_data = y.cpu().numpy()
         pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
         img_data = batch_to_unnorm_rgb(x,
@@ -125,6 +123,7 @@ class WorldFloodsModel(pl.LightningModule):
                 "monitor": self.hparams["model_params"]["hyperparameters"]["metric_monitor"]}
 
     def wb_mask(self, bg_img, pred_mask, true_mask):
+        import wandb
         return wandb.Image(bg_img, masks={
             "prediction" : {"mask_data" : pred_mask, "class_labels" : self.labels()},
             "ground truth" : {"mask_data" : true_mask, "class_labels" : self.labels()}})
@@ -207,6 +206,7 @@ class ML4FloodsModel(pl.LightningModule):
         return self.network(x)
 
     def log_images(self, x, y, logits, prefix=""):
+        import wandb
         """ Log batch images and preds using wandb """
         mask_data = y.cpu().numpy()
         pred_data = torch.round(torch.sigmoid(logits)).long().cpu().numpy()
