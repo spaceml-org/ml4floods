@@ -29,6 +29,11 @@
             "threshold_clouds" : 0.5,
             "apply" : false
         },
+        "download": {
+            "train": true,
+            "val": true,
+            "test": true
+        },
         "bucket_id": "ml4cc_data_lake",
         "path_to_splits": "worldfloods",
         "train_test_split_file": "2_PROD/2_Mart/worldfloods_v1_0/train_test_split.json",

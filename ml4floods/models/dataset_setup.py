@@ -61,7 +61,8 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         # Read Files from bucket and copy them in local_destination_dir
         download_tiffs_from_bucket(data_config.bucket_id,
                                    [data_config.input_folder, data_config.target_folder],
-                                   filenames_train_test, local_destination_dir)
+                                   filenames_train_test, local_destination_dir,
+                                   download=data_config.get("download", None))
 
         filter_windows_attr = data_config.get("filter_windows", None)
         if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
@@ -184,7 +185,7 @@ def filter_windows_fun(data_version:str, local_destination_dir:str, threshold_cl
     return filter_windows
 
 def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames:Dict[str,Dict[str,List[str]]],
-                               local_destination_dir, verbose=False):
+                               local_destination_dir, verbose=False, download=None):
     """
     Given files in the filenames dict. It downloads all to the local_destination_dir.
     Specifically if input_target_folders is ["S2", "gt"] the data will be downloaded to:
@@ -196,12 +197,18 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames:Dict[s
         filenames: Dict object with files to use for train/val/test from the bucket
         local_destination_dir: path to download the data locally
         verbose:
+        download: dictionary with splits to download
 
     Returns:
 
     """
+    if download is None:
+        download = {"train": True, "val": True, "test": True}
+
     fs = fsspec.filesystem("gs")
     for split in filenames.keys():
+        if not download[split]:
+            continue
         for input_target_folder in input_target_folders:
             folder_local = os.path.join(local_destination_dir, split, input_target_folder)
             print(f"Downloading {folder_local} if needed")

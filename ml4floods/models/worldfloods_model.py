@@ -313,13 +313,14 @@ def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
     return model
 
 
-def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str) -> np.ndarray:
+def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_clip_val=3000.) -> np.ndarray:
     """
     Unnorm x images and get rgb channels for visualization
 
     Args:
         x: (B, C, H, W) image
         channel_configuration: one of CHANNELS_CONFIGURATIONS.keys()
+        max_clip_val: value to saturate the image
 
     Returns:
         (B, H, W, 3) np.array with values between 0-1 ready to be used in imshow/PIL.from_array()
@@ -336,7 +337,84 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str) -> np.ndarray
 
     model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2, 3, 1) * std[..., -1::-1] + mean[...,
                                                                                                          -1::-1]
-    model_input_rgb_npy = np.clip(model_input_rgb_npy / 3000., 0., 1.)
+    model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
+
     return model_input_rgb_npy
+
+
+def unnorm_batch(x:torch.Tensor, channel_configuration:str="all", max_clip_val:float=3000.) ->torch.Tensor:
+    model_input_npy = x.cpu().numpy()
+
+    mean, std = normalize.get_normalisation(channel_configuration, channels_first=True)
+    mean = mean[np.newaxis] # (1, nchannels, 1, 1)
+    std = std[np.newaxis]  # (1, nchannels, 1, 1)
+    out = model_input_npy * std + mean
+    if max_clip_val is not None:
+        out = np.clip(out/max_clip_val, 0, 1)
+    return out
+
+
+def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None, axs=None, max_clip_val=3000.):
+    """
+
+    Args:
+        x:
+        channel_configuration:
+        bands_show: RGB ["B4", "B3", "B2"] SWIR/NIR/RED ["B11", "B8", "B4"]
+        axs:
+        max_clip_val: value to saturate the image
+
+    Returns:
+
+    """
+    import matplotlib.pyplot as plt
+
+    if bands_show is None:
+        bands_show = ["B4", "B3", "B2"]
+
+    if axs is None:
+        axs = plt.subplots(1, len(x))
+
+    x = unnorm_batch(x, channel_configuration, max_clip_val=max_clip_val)
+    bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    bands_index_rgb = [bands_read_names.index(b) for b in bands_show]
+    x = x[:, bands_index_rgb]
+
+    for xi, ax in zip(x, axs):
+        xi = np.transpose(xi, (1, 2, 0))
+        ax.imshow(xi)
+
+
+def plot_batch_output_v1(outputv1: torch.Tensor, axs=None, legend=True):
+    """
+
+    Args:
+        outputv1:  (B, W, H) Tensor encoded as {0: invalid, 1: land, 2: water, 3: cloud}
+        axs:
+        legend: whether to show the legend or not
+
+    Returns:
+
+    """
+    import matplotlib.pyplot as plt
+    from ml4floods.visualization import plot_utils
+
+    if axs is None:
+        axs = plt.subplots(1, len(outputv1))
+
+    cmap_preds, norm_preds, patches_preds = plot_utils.get_cmap_norm_colors(plot_utils.COLORS_WORLDFLOODS,
+                                                                            plot_utils.INTERPRETATION_WORLDFLOODS)
+
+    for _i, (xi, ax) in enumerate(zip(outputv1, axs)):
+        ax.imshow(xi, cmap=cmap_preds, norm=norm_preds,
+                  interpolation='nearest')
+
+        if _i == (len(outputv1)-1) and legend:
+            ax.legend(handles=patches_preds,
+                      loc='upper right')
+
+
+
+
 
 
