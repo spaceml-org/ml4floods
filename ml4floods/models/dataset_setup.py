@@ -208,6 +208,7 @@ def download_tiffs_from_bucket(bucket_id, input_target_folders, filenames:Dict[s
     fs = fsspec.filesystem("gs")
     for split in filenames.keys():
         if not download[split]:
+            print(f"Skip download {split}")
             continue
         for input_target_folder in input_target_folders:
             folder_local = os.path.join(local_destination_dir, split, input_target_folder)
