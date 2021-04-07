@@ -354,7 +354,7 @@ def unnorm_batch(x:torch.Tensor, channel_configuration:str="all", max_clip_val:f
     return out
 
 
-def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None, axs=None, max_clip_val=3000.):
+def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None, axs=None, max_clip_val=3000.,show_axis=False):
     """
 
     Args:
@@ -373,7 +373,7 @@ def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None,
         bands_show = ["B4", "B3", "B2"]
 
     if axs is None:
-        axs = plt.subplots(1, len(x))
+        fig, axs = plt.subplots(1, len(x))
 
     x = unnorm_batch(x, channel_configuration, max_clip_val=max_clip_val)
     bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
@@ -383,6 +383,9 @@ def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None,
     for xi, ax in zip(x, axs):
         xi = np.transpose(xi, (1, 2, 0))
         ax.imshow(xi)
+        if not show_axis:
+            ax.axis("off")
+        
 
 
 def plot_batch_output_v1(outputv1: torch.Tensor, axs=None, legend=True):

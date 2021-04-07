@@ -15,7 +15,7 @@ import seaborn as sns
 sns.set_context(context='talk',font_scale=0.7)
 
 
-COLORS_WORLDFLOODS = list(configs.COLORS_WORLDFLOODS)
+COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
 
 COLORS_WORLDFLOODS_V1_1 = np.array([[0, 0, 0], # invalid
                                [139, 64, 0], # land
