@@ -28,3 +28,7 @@
   - file: content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb
   - file: content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
+
+- part: About
+  chapters:
+    - file: content/about.md
