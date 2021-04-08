@@ -6,7 +6,7 @@
 #######################################################################################
 # Book settings
 title                       : ML4Floods  # The title of the book. Will be placed in the left navbar.
-author                      : SpaceML  # The author of the book
+author                      : <a href="http://spaceml.org/" target="_blank">SpaceML</a>  # The author of the book
 copyright                   : "2021"  # Copyright year to be placed in the footer
 logo                        : ml4cc_logo.png  # A path to the book logo
 execute:
@@ -15,7 +15,7 @@ execute:
 repository:
   url                       : https://github.com/spaceml-org/ml4floods  # Online location of your book
   path_to_book              : jupyterbook  # Optional path to your book, relative to the repository root
-  branch                    : master  # Which branch of the repository should be used when creating links (optional)
+  branch                    : main  # Which branch of the repository should be used when creating links (optional)
 
 html:
   use_repository_button: true
