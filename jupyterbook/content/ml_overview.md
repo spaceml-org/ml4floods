@@ -3,8 +3,8 @@
 * **Authors**: Sam Budd, Gonzalo Mateo-García
 ---
 
-The ML4Ops section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2. 
-Models are trained in the *WorldFloods*[1] dataset which can be downloaded at `gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/`. 
+The MLOps section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2. 
+Models are trained in the *WorldFloods*[1] dataset which is freely accessible at `gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/`. 
 Each of the tutorials is self-contained and can be run on Google Colab. 
 
 ```{image} ./ml4ops/diagram_mlops.png
