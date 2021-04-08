@@ -22,6 +22,7 @@
 
 - part: MLOps
   chapters:
+  - file: content/ml_overview.md
   - file: content/ml4ops/HOWTO_Train_models.ipynb
   - file: content/ml4ops/HOWTO_performance_metrics_workflow.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb
