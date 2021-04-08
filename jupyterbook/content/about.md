@@ -9,7 +9,7 @@
 
 ML4Floods is an open-source project funded by the United Kingdom Space Agency (UKSA) and led by [Trillium Technologies](http://trillium.tech/).
  The project is hosted in [GitHub](https://github.com/spaceml-org/ml4floods), it contains a python package with all the necessary tools for training and deploying flood extent
- segmentation models for Sentinel-2. These tools include: image downloading, flood map acquisition, training, testing and visualizing the results in a map. 
+ segmentation models for Sentinel-2. These tools include: image downloading, flood map acquisition, neural network training, testing and the visualization of the results in an interactive map. 
  See the [introduction](./intro/introduction.md) for a more detailed explanation.
  
 This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) work published in:
