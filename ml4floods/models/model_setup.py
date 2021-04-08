@@ -4,6 +4,7 @@ from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 import numpy as np
 from pytorch_lightning.utilities.cloud_io import load
+import os
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)
@@ -27,8 +28,9 @@ def get_model(model_config, experiment_name=None):
         else:
             model = WorldFloodsModel(model_config)
 
-        path_to_models = f"{model_config.model_folder}/{experiment_name}/model.pt"
+        path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt")
         model.load_state_dict(load(path_to_models))
+        print(f"Loaded model weights: {path_to_models}")
         return model
 
     elif model_config.get("train", False):
