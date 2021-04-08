@@ -354,7 +354,8 @@ def unnorm_batch(x:torch.Tensor, channel_configuration:str="all", max_clip_val:f
     return out
 
 
-def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None, axs=None, max_clip_val=3000.,show_axis=False):
+def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None, axs=None, max_clip_val=3000.,
+               show_axis=False):
     """
 
     Args:
@@ -363,6 +364,7 @@ def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None,
         bands_show: RGB ["B4", "B3", "B2"] SWIR/NIR/RED ["B11", "B8", "B4"]
         axs:
         max_clip_val: value to saturate the image
+        show_axis: Whether to show axis of the image or not
 
     Returns:
 
@@ -380,6 +382,9 @@ def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None,
     bands_index_rgb = [bands_read_names.index(b) for b in bands_show]
     x = x[:, bands_index_rgb]
 
+    if hasattr(x, "cpu"):
+        x = x.cpu()
+
     for xi, ax in zip(x, axs):
         xi = np.transpose(xi, (1, 2, 0))
         ax.imshow(xi)
@@ -388,19 +393,23 @@ def plot_batch(x:torch.Tensor, channel_configuration:str="all", bands_show=None,
         
 
 
-def plot_batch_output_v1(outputv1: torch.Tensor, axs=None, legend=True):
+def plot_batch_output_v1(outputv1: torch.Tensor, axs=None, legend=True, show_axis=False):
     """
 
     Args:
         outputv1:  (B, W, H) Tensor encoded as {0: invalid, 1: land, 2: water, 3: cloud}
         axs:
         legend: whether to show the legend or not
+        show_axis:  Whether to show axis of the image or not
 
     Returns:
 
     """
     import matplotlib.pyplot as plt
     from ml4floods.visualization import plot_utils
+
+    if hasattr(outputv1, "cpu"):
+        outputv1 = outputv1.cpu()
 
     if axs is None:
         axs = plt.subplots(1, len(outputv1))
@@ -411,6 +420,9 @@ def plot_batch_output_v1(outputv1: torch.Tensor, axs=None, legend=True):
     for _i, (xi, ax) in enumerate(zip(outputv1, axs)):
         ax.imshow(xi, cmap=cmap_preds, norm=norm_preds,
                   interpolation='nearest')
+
+        if not show_axis:
+            ax.axis("off")
 
         if _i == (len(outputv1)-1) and legend:
             ax.legend(handles=patches_preds,

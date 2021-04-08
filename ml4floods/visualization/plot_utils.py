@@ -10,11 +10,6 @@ from ml4floods.data.worldfloods import configs
 import matplotlib.pyplot as plt
 
 
-# SEABORN SETTINGS
-import seaborn as sns
-sns.set_context(context='talk',font_scale=0.7)
-
-
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
 
 COLORS_WORLDFLOODS_V1_1 = np.array([[0, 0, 0], # invalid
