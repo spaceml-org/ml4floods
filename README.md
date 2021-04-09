@@ -1,29 +1,25 @@
-# ML4Floods: _an ML pipeline to tackle flooding_
-
-This repository contains an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
 
 <p align="center">
-    <img src="images/ml4floods_logo_black.png" alt="awesome ml4floods" width="300">
+    <img src="jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
+
+_ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML_
+
+This repository contains an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
 
 Install the package:
 
 ```bash
-
 pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
-
-# alternatively use
-python setup.py install
-
 ```
 
-These notebooks may help you explore the datasets and models:
+These tutorials may help you explore the datasets and models:
+* [Project rationale](http://trillium.tech/ml4floods/content/intro/introduction.html).
 * [Data Preprocessing](https://github.com/spaceml-org/ml4floods/tree/main/notebooks/data/preprocessing)
-* Models
-    * [Training](https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
-    * Inference on [new data](https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb) (a Sentinel-2 image)
-    * [Perf metrics](https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
-    * [Uncertainty visualisation](https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb)  
+* [ML-based flood segmentation models](http://trillium.tech/ml4floods/content/ml_overview.html)
+    * [Training](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Train_models.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
+    * Inference on [new data](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Run_Inference_on_new_data.html) (a Sentinel-2 image) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
+    * [Perf metrics](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
 
 
 If you find this work useful please cite:
