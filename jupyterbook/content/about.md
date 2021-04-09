@@ -12,7 +12,7 @@ ML4Floods is an open-source project funded by the United Kingdom Space Agency (U
  segmentation models for Sentinel-2. These tools include: image downloading, flood map acquisition, neural network training, testing and the visualization of the results in an interactive map. 
  See the [introduction](./intro/introduction.md) for a more detailed explanation.
  
-This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) "Disaster Prevention, Progress and Response" work published in:
+This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) *"Disaster Prevention, Progress and Response"* team which results are published in:
  
  > Mateo-Garcia, G. et al. [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021).
  
