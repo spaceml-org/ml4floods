@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="300">
+    <img src="jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
 
 _ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML_
