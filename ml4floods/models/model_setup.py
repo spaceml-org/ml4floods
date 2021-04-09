@@ -3,6 +3,8 @@ import itertools
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 import numpy as np
+from pytorch_lightning.utilities.cloud_io import load
+import os
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)
@@ -14,30 +16,33 @@ SUBSAMPLE_MODULE = {
     "unet_dropout": 8
 }
 
-def get_model(model_config):
+def get_model(model_config, experiment_name=None):
     """
     Function to setup WorldFloodsModel
     """
-    if model_config.get("test", False):
-        
-        # TODO: Load final model state dict into model for testing
+    if model_config.get("test", False) or model_config.get("deploy", False):
+        assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
 
         if model_config.get("model_version","v1") == "v2":
-            return ML4FloodsModel(model_config)
+            model = ML4FloodsModel(model_config)
+        else:
+            model = WorldFloodsModel(model_config)
 
-        return WorldFloodsModel(model_config)
-    
+        path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt")
+        model.load_state_dict(load(path_to_models))
+        print(f"Loaded model weights: {path_to_models}")
+        return model
+
     elif model_config.get("train", False):
 
         if model_config.get("model_version", "v1") == "v2":
-            ml4floods=  ML4FloodsModel(model_config)
-            ml4floods.load_from_checkpoint()
+            return ML4FloodsModel(model_config)
 
         return WorldFloodsModel(model_config)
-    
+
     else:
         raise Exception("No model type set in config e.g model_params.test == True")
-        
+
         
         
 def get_channel_configuration_bands(channel_configuration):
