@@ -8,6 +8,8 @@ from typing import Union, Optional
 from ml4floods.data.worldfloods.configs import BANDS_S2
 from ml4floods.data.worldfloods import configs
 import matplotlib.pyplot as plt
+import os
+import fsspec
 
 
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
@@ -52,58 +54,50 @@ def plot_tiff_image(file_path: str, **kwargs):
     
     return fig
 
-def get_image_transform(input:Union[str, np.ndarray], **kwargs):
-    if "transform" in kwargs:
-        transform = kwargs["transform"]
-    else:
-        transform = None
+def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None, window=None):
 
-    if "bands" in kwargs:
-        bands = kwargs["bands"]
+    if bands is not None:
         bands_rasterio = [b+1 for b in bands]
     else:
-        bands = None
         bands_rasterio = None
-
-    if "window" in kwargs:
-        window = kwargs["window"]
-    else:
-        window = None
 
     if isinstance(input, str):
         with rasterio.open(input) as rst:
             output = rst.read(bands_rasterio, window=window)
             transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
     else:
-        window_slices = window.toslices()
-        output = input[bands]
-        output = output[:, window_slices]
+        if window is None:
+            window_slices = (slice(None), slice(None), slice(None))
+        else:
+            window_slices = (slice(None),) + window.toslices()
+
+        output = input[bands, ...]
+        output = output[window_slices]
         if transform is not None:
             transform = transform if window is None else rasterio.windows.transform(window, transform)
 
     return output, transform
 
 
-def plot_s2_rbg_image(input: Union[str, np.ndarray], **kwargs):
-    kwargs["bands"] = (3, 2, 1)
-    image, transform = get_image_transform(input, **kwargs)
+def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+    bands = (3, 2, 1)
+    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
 
     rgb = np.clip(image/3000.,0,1)
 
     rasterioplt.show(rgb, transform=transform, **kwargs)
 
 
-def plot_s2_swirnirred_image(input: Union[str, np.ndarray], **kwargs):
-    kwargs["bands"] = [BANDS_S2.index(b) for b in ["B11", "B8", "B4"]]
-    image, transform = get_image_transform(input, **kwargs)
+def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+    bands = [BANDS_S2.index(b) for b in ["B11", "B8", "B4"]]
+    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
     rgb = np.clip(image / 3000., 0, 1)
 
     rasterioplt.show(rgb, transform=transform, **kwargs)
 
 
-def plots_preds_v1(prediction: Union[str, np.ndarray], **kwargs):
-    kwargs["bands"] = [0]
-    prediction, transform = get_image_transform(prediction, **kwargs)
+def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=None, **kwargs):
+    prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window)
     prediction_show = prediction[0] + 1
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
@@ -120,13 +114,13 @@ def plots_preds_v1(prediction: Union[str, np.ndarray], **kwargs):
                   loc='upper right')
 
 
-def plot_gt_v1(target: Union[str, np.ndarray], **kwargs):
-    kwargs["bands"] = [0]
-    target, transform = get_image_transform(target, **kwargs)
+def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+    target, transform = get_image_transform(target,transform=transform, bands=[0], window=window)
     target = target[0]
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
+    kwargs.pop("transform")
     rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
                      interpolation='nearest', **kwargs)
 
@@ -148,18 +142,20 @@ def gt_v1_with_permanent_water(gt: np.ndarray, permanent_water: np.ndarray) -> n
 
 
 def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optional[Union[str, np.ndarray]]=None,
+                              transform=None, window=None,
                               **kwargs):
-    kwargs["bands"] = [0]
-    target, transform = get_image_transform(target, **kwargs)
+    bands = [0]
+    target, transform = get_image_transform(target, transform=transform, bands=bands, window=window)
     target= target[0]
     if permanent is not None:
-        permanent, _ = get_image_transform(permanent, **kwargs)
+        permanent, _ = get_image_transform(permanent, transform=transform, bands=bands, window=window)
         permanent = permanent[0]
         target = gt_v1_with_permanent_water(target, permanent)
 
     cmap_gt, norm_gt, patches_gt = get_cmap_norm_colors(COLORS_WORLDFLOODS_PERMANENT, INTERPRETATION_WORLDFLOODS_PERMANENT)
 
-    rasterioplt.show(target, transform=transform, cmap=cmap_gt, norm=norm_gt,
+    kwargs.pop("transform")
+    rasterioplt.show(target,transform=transform, cmap=cmap_gt, norm=norm_gt,
                      interpolation='nearest', **kwargs)
 
     if kwargs.get("legend", True):
@@ -181,3 +177,46 @@ def plot_s2_cloud_prob_image(file_path: str, **kwargs):
         rasterioplt.show(src.read(15), transform=src.transform, **kwargs)
     
     return None
+
+
+def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
+                  folder_permanent_water: Optional[str] = None) -> str:
+    """
+    Download a set of tiffs from the google bucket to a local folder
+
+    Args:
+        local_folder: local folder to download
+        tiff_input: input tiff file
+        folder_ground_truth: folder with ground truth images
+        folder_permanent_water: folder with permanent water images
+
+    Returns:
+        location of tiff_input in the local file system
+
+    """
+    import fsspec
+    fs = fsspec.filesystem("gs")
+
+    folders = ["/S2/", folder_ground_truth]
+    if folder_permanent_water is not None:
+        folders.append(folder_permanent_water)
+
+    for folder in folders:
+        file_to_download = tiff_input.replace("/S2/", folder)
+        if folder.startswith("/"):
+            folder = folder[1:]
+        folder_iter = os.path.join(local_folder, folder)  # remove /
+        file_local = os.path.join(folder_iter, os.path.basename(file_to_download))
+        if folder == "S2/":
+            return_folder = file_local
+        if os.path.exists(file_local):
+            continue
+        if not fs.exists(file_to_download):
+            print(f"WARNING!! file {file_to_download} does not exists")
+            continue
+
+        os.makedirs(folder_iter, exist_ok=True)
+        fs.get_file(file_to_download, file_local)
+        print(f"Downloaded file {file_local}")
+
+    return return_folder
