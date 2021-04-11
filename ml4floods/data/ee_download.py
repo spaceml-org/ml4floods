@@ -73,19 +73,25 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
 
     # Filter images with many invalids
-    def _count_valid(img):
+    def _count_valid_clouds(img):
         mascara = img.mask()
         mascara = mascara.select(bands)
         mascara = mascara.reduce(ee.Reducer.allNonZero())
-        # TODO do the same with clouds??
         dictio = mascara.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
                                       bestEffort=True, scale=10.)
 
         img = img.set("valids", dictio.get("all"))
 
+        # Count clouds
+        cloud_probability = img.select("probability")
+        dictio = cloud_probability.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
+                                                bestEffort=True, scale=10.)
+
+        img = img.set("cloud_probability", dictio.get("probability"))
+
         return img
 
-    daily_mosaic = daily_mosaic.map(_count_valid).filter(ee.Filter.greaterThanOrEquals('valids', threshold_invalid))
+    daily_mosaic = daily_mosaic.map(_count_valid_clouds).filter(ee.Filter.greaterThanOrEquals('valids', threshold_invalid))
 
     return daily_mosaic
 
