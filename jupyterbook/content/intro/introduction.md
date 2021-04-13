@@ -25,6 +25,12 @@ Machine learning (ML) algorithms have the potential to offer significantly faste
 Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.
 
 
+```{image} ../ml4ops/ts_albania.gif
+:alt: Flood extent segmentation over a time series of images from Albania.
+:width: 100%
+:align: center
+```
+
 ## MLOps tools: from data preparation to deployment
 
 
