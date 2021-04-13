@@ -3,9 +3,11 @@
     <img src="jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
 
-_ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML_
+ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
 
-This repository contains an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
+<p align="center">
+    <img src="jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
+</p>
 
 Install the package:
 

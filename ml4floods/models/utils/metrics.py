@@ -2,6 +2,7 @@
 from typing import List, Dict, Any, Callable
 import numpy as np
 import torch
+import torch.utils.data
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import json
@@ -91,24 +92,24 @@ def cm_analysis(cm: np.ndarray, labels: List[int], figsize=(10, 10)):
     sns.heatmap(cm, annot=annot, fmt='', ax=ax)
     plt.show()
 
-def binary_accuracy(cm_agg):
+def binary_accuracy(cm_agg)->float:
     tp = cm_agg[1, 1]
     tn = cm_agg[0, 0]
 
     return (tp+tn) / cm_agg.sum()
 
-def binary_precision(cm_agg):
+def binary_precision(cm_agg) -> float:
     tp = cm_agg[1, 1]
     fp = cm_agg[1, 0]
     return tp / (tp + fp + 1e-6)
 
-def binary_recall(cm_agg):
+def binary_recall(cm_agg) -> float:
     tp = cm_agg[1, 1]
     fn = cm_agg[0, 1]
     return tp / (tp + fn + 1e-6)
 
 
-def calculate_iou(confusions, labels):
+def calculate_iou(confusions: torch.Tensor, labels: List[str]) ->Dict[str, float]:
     """
     Caculate IoU for a list of confusion matrices 
     
@@ -131,7 +132,7 @@ def calculate_iou(confusions, labels):
     return iou_dict
 
 
-def calculate_recall(confusions, labels):
+def calculate_recall(confusions: torch.Tensor, labels: List[str]) ->Dict[str, float]:
     confusions = np.array(confusions)
     conf_matrix = np.sum(confusions, axis=0)
     true_positive = np.diag(conf_matrix) + 1e-6
@@ -144,7 +145,7 @@ def calculate_recall(confusions, labels):
     return recall_dict
 
 
-def calculate_precision(confusions, labels):
+def calculate_precision(confusions: torch.Tensor, labels: List[str]) ->Dict[str, float]:
     confusions = np.array(confusions)
     conf_matrix = np.sum(confusions, axis=0)
     true_positive = np.diag(conf_matrix) + 1e-6
@@ -209,7 +210,9 @@ def plot_metrics(metrics_dict, label_names):
     
     print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
         
-def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), plot=False):
+def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
+                    pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
+                    plot=False, mask_clouds:bool=False) -> Dict:
     """
     Run inference on a dataloader and compute metrics for that data
     
@@ -218,6 +221,7 @@ def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), p
         pred_fun: function to perform inference using a model
         thresholds_water: list of threshold for precision/recall curves
         plot: flag for calling plot method with metrics
+        mask_clouds:
         
         returns: dictionary of metrics
     """
@@ -229,18 +233,34 @@ def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), p
     confusions_thresh = []
 
     # This is constant: we're using this class convention to compute the PR curve
-    num_class, label_names = 3, ["land", "water", "cloud"]
-    
+    if mask_clouds:
+        num_class, label_names = 2, ["land","water"]
+    else:
+        num_class, label_names = 3, ["land", "water", "cloud"]
+
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
         test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
         
         test_outputs = pred_fun(test_inputs)
-        
-        test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
+
+        if mask_clouds:
+            assert test_outputs.shape[1] == 1, f"Mode mask clouds expects 1 channel output image found {test_outputs.shape}"
+            test_outputs_categorical = test_outputs[:, 0] > .5
+            probs_water_pr_curve = test_outputs[:, 0]
+        else:
+            assert test_outputs.shape[1] == num_class, f"Mode normal expects {num_class} channel output image found {test_outputs.shape}"
+            test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
+            probs_water_pr_curve = test_outputs[:, 1]
+
         ground_truth_outputs = torch.clone(ground_truth_outputs.to(test_outputs_categorical.device))
         
         # Save invalids to discount
         invalids = ground_truth_outputs == 0
+
+        # Do not consider cloud pixels for metrics
+        if mask_clouds:
+            invalids |= (ground_truth_outputs == 3)
+
         ground_truth_outputs[invalids] = 1
         ground_truth_outputs -= 1
         
@@ -270,7 +290,7 @@ def compute_metrics(dataloader, pred_fun, thresholds_water=np.arange(0,1,.05), p
         # thresholds_water sorted from high to low
         for threshold in thresholds_water:
             # keep invalids in pred to zero
-            test_outputs_categorical_thresh[valids & (test_outputs[:, 1] > threshold)] = 1
+            test_outputs_categorical_thresh[valids & (probs_water_pr_curve > threshold)] = 1
 
             confusions_batch = compute_confusions(ground_truth_outputs,
                                                   test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]

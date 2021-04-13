@@ -18,7 +18,8 @@
             "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
-            "lr_patience": 2
+            "lr_patience": 2,
+            "early_stopping_patience": 4
         },
         "train": true,
         "test": true
