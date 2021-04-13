@@ -3,10 +3,17 @@ import tempfile
 import traceback
 
 import ee
+import time
 import requests
 from google.cloud import storage
+import os
+from glob import glob
+from typing import Optional, Callable, List
 
 from ml4floods.data.config import BANDS_S2
+
+
+BANDS_EXPORT = ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60", "probability"]
 
 
 def download_permanent_water(date, bounds):
@@ -196,18 +203,31 @@ def findtask(description):
 
 def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=False, verbose=1,
              bucket_name="worldfloods"):
-    bucket = storage.Client().get_bucket(bucket_name)
-    blobs_rasterized_geom = list(bucket.list_blobs(prefix=filename))
 
-    if len(blobs_rasterized_geom) > 0:
-        if overwrite:
-            print("\tFile %s exists in the bucket. removing" % filename)
-            for b in blobs_rasterized_geom:
-                b.delete()
-        else:
-            if verbose >= 2:
-                print("\tFile %s exists in the bucket, it will not be downloaded" % filename)
-            return
+    if bucket_name is not None:
+        bucket = storage.Client().get_bucket(bucket_name)
+        blobs_rasterized_geom = list(bucket.list_blobs(prefix=filename))
+
+        if len(blobs_rasterized_geom) > 0:
+            if overwrite:
+                print("\tFile %s exists in the bucket. removing" % filename)
+                for b in blobs_rasterized_geom:
+                    b.delete()
+            else:
+                if verbose >= 2:
+                    print("\tFile %s exists in the bucket, it will not be downloaded" % filename)
+                return
+    else:
+        files = glob(f"{filename}*")
+        if len(files) > 0:
+            if overwrite:
+                print("\tFile %s exists in the bucket. removing" % filename)
+                for b in files:
+                    os.remove(b)
+            else:
+                if verbose >= 2:
+                    print(f"\tFile {filename} exists , it will not be downloaded")
+                return
 
     if not dry_run and findtask(desc):
         if verbose >= 2:
@@ -238,19 +258,45 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket="worldfloods", scale=10, file_dims=12544, maxPixels=5000000000):
-    def export_task(image_to_download, fileNamePrefix, description):
-        task = ee.batch.Export.image.toCloudStorage(image_to_download,
-                                                    fileNamePrefix=fileNamePrefix,
-                                                    description=description,
-                                                    crs='EPSG:4326',
-                                                    skipEmptyTiles=True,
-                                                    bucket=bucket,
-                                                    scale=scale,
-                                                    formatOptions={"cloudOptimized": True},
-                                                    fileDimensions=file_dims,
-                                                    maxPixels=maxPixels)
-        return task
+def export_task_image(bucket=Optional["worldfloods"], scale=10, file_dims=12544, maxPixels=5_000_000_000) -> Callable:
+    """
+    function to export images in the WorldFloods format.
+
+    Args:
+        bucket:
+        scale:
+        file_dims:
+        maxPixels:
+
+    Returns:
+
+    """
+
+    if bucket is not None:
+        def export_task(image_to_download, fileNamePrefix, description):
+            task = ee.batch.Export.image.toCloudStorage(image_to_download,
+                                                        fileNamePrefix=fileNamePrefix,
+                                                        description=description,
+                                                        crs='EPSG:4326',
+                                                        skipEmptyTiles=True,
+                                                        bucket=bucket,
+                                                        scale=scale,
+                                                        formatOptions={"cloudOptimized": True},
+                                                        fileDimensions=file_dims,
+                                                        maxPixels=maxPixels)
+            return task
+    else:
+        def export_task(image_to_download, fileNamePrefix, description):
+            task = ee.batch.Export.image.toDrive(image_to_download,
+                                                 fileNamePrefix=fileNamePrefix,
+                                                 description=description,
+                                                 crs='EPSG:4326',
+                                                 skipEmptyTiles=True,
+                                                 scale=scale,
+                                                 formatOptions={"cloudOptimized": True},
+                                                 fileDimensions=file_dims,
+                                                 maxPixels=maxPixels)
+            return task
 
     return export_task
 
@@ -273,3 +319,25 @@ def bbox_2_eepolygon(bbox):
                                  [bbox["east"], bbox["north"]],
                                  [bbox["east"], bbox["south"]],
                                  [bbox["west"], bbox["south"]]]])
+
+
+def wait_tasks(tasks:List[ee.batch.Task]) -> None:
+    task_down = []
+    for task in tasks:
+        if task.active():
+            task_down.append((task.status()["description"],task))
+
+    task_error = 0
+    while len(task_down) > 0:
+        print("%d tasks running" % len(task_down))
+        for _i, (t, task) in enumerate(list(task_down)):
+            if task.active():
+                continue
+            if task.status()["state"] != "COMPLETED":
+                print("Error in task {}:\n {}".format(t, task.status()))
+                task_error += 1
+            del task_down[_i]
+
+        time.sleep(60)
+
+    print("Tasks failed: %d" % task_error)

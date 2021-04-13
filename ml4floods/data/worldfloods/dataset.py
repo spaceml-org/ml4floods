@@ -1,21 +1,12 @@
-import os
-import random
-from datetime import datetime
-from pathlib import Path
 from ml4floods.preprocess.tiling import WindowSlices
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import rasterio
 import rasterio.windows
+import torch
 from torch.utils.data import Dataset
 import contextlib
-
-from ml4floods.data.utils import check_path_exists
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
-from ml4floods.data.worldfloods.prepare_data import prepare_data_func
-from ml4floods.preprocess.tiling import WindowSize
-from ml4floods.preprocess.utils import get_list_of_window_slices
 
 
 from ml4floods.data.worldfloods.configs import BANDS_S2
@@ -256,3 +247,23 @@ def rasterio_read(
             im_tif = f.read(channels, **kwargs_rasterio)
 
     return im_tif
+
+
+def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
+    """
+
+    Args:
+        tiff_input:
+        window: rasterio.Window object to read (None to read all)
+        channels: 0-based channels to read
+
+    Returns:
+        4-D tensor (1, len(channels), H, W)
+
+    """
+    with rasterio.open(tiff_input, "r") as rst:
+        inputs = rst.read((np.array(channels) + 1).tolist(), window=window)
+        # Shifted transform based on the given window (used for plotting)
+        transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+        torch_inputs = torch.tensor(np.nan_to_num(inputs).astype(np.float32))
+    return torch_inputs, transform

@@ -61,7 +61,7 @@ def train(config):
     
     early_stop_callback = EarlyStopping(
         monitor=config.model_params.hyperparameters.metric_monitor,
-        patience=4,
+        patience=config.model_params.hyperparameters.get("early_stopping_patience", 4),
         strict=False,
         verbose=False,
         mode='min'

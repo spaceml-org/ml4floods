@@ -66,6 +66,10 @@ def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None
             output = rst.read(bands_rasterio, window=window)
             transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
     else:
+        if hasattr(input, "cpu"):
+            input = input.cpu()
+
+        input = np.array(input)
         if window is None:
             window_slices = (slice(None), slice(None), slice(None))
         else:
@@ -79,21 +83,24 @@ def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None
     return output, transform
 
 
-def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000., **kwargs):
     bands = (3, 2, 1)
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
 
-    rgb = np.clip(image/3000.,0,1)
+    if max_clip_val is not None:
+        image = np.clip(image/max_clip_val,0,1)
 
-    rasterioplt.show(rgb, transform=transform, **kwargs)
+    rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000., **kwargs):
     bands = [BANDS_S2.index(b) for b in ["B11", "B8", "B4"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
-    rgb = np.clip(image / 3000., 0, 1)
 
-    rasterioplt.show(rgb, transform=transform, **kwargs)
+    if max_clip_val is not None:
+        image = np.clip(image / max_clip_val, 0, 1)
+
+    rasterioplt.show(image, transform=transform, **kwargs)
 
 
 def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=None, **kwargs):
@@ -120,7 +127,6 @@ def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, **kw
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
-    kwargs.pop("transform")
     rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
                      interpolation='nearest', **kwargs)
 
@@ -154,7 +160,6 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
 
     cmap_gt, norm_gt, patches_gt = get_cmap_norm_colors(COLORS_WORLDFLOODS_PERMANENT, INTERPRETATION_WORLDFLOODS_PERMANENT)
 
-    kwargs.pop("transform")
     rasterioplt.show(target,transform=transform, cmap=cmap_gt, norm=norm_gt,
                      interpolation='nearest', **kwargs)
 
