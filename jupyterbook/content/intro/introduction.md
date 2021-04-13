@@ -22,14 +22,18 @@ For flood disaster management, the real promise of this data is in translating i
 Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types. Such 'data fusion' capabilities are potentially game-changing for a broad spectrum of users, from emergency workers to urban planners.
 
 
-Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.
+Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.
 
 
-```{image} ../ml4ops/ts_albania.gif
-:alt: Flood extent segmentation over a time series of images from Albania.
-:width: 100%
-:align: center
+```{figure} ../ml4ops/ts_albania.gif
+---
+name: ts_albania
+width: 100%
+align: center
+---
+Flood extent segmentation over a time series of satellite images from Albania. [Made with this tutorial](../ml4ops/HOWTO_inference_on_image_time_series.ipynb).
 ```
+
 
 ## MLOps tools: from data preparation to deployment
 
