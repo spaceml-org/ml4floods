@@ -8,6 +8,7 @@ def parse_requirements_file(filename):
 
 
 # Optional Packages
+# See https://godatadriven.com/blog/a-practical-guide-to-using-setup-py/
 EXTRAS = {
     "dev": ["black", "isort", "pylint", "flake8", "pyprojroot"],
     "tests": [

@@ -169,8 +169,11 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
     def predict(x: torch.Tensor):
         """
 
-        :param x: BCHW tensor
-        :return: BCHW tensor with the same B, H and W as x
+        Args:
+            x:
+
+        Returns:
+
         """
         shape_tensor = np.array(list(x.shape))[2:].astype(np.int64)
         shape_new_tensor = np.ceil(shape_tensor.astype(np.float32) / module_shape).astype(np.int64) * module_shape
@@ -214,7 +217,7 @@ def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"
 
-    for b, i, j in itertools.product(range(0, input_batch.shape[0], tile_size),
+    for b, i, j in itertools.product(range(0, input_batch.shape[0]),
                                      range(0, input_batch.shape[2], tile_size),
                                      range(0, input_batch.shape[3], tile_size)):
 
