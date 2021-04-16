@@ -4,10 +4,12 @@ import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
 from ml4floods.preprocess.worldfloods import normalize
 from ml4floods.models.config_setup import  AttrDict
+from pytorch_lightning.utilities.cloud_io import load
 
 from ml4floods.models.utils import losses, metrics
 from ml4floods.models.architectures.baselines import SimpleLinear, SimpleCNN
 from ml4floods.models.architectures.unets import UNet, UNet_dropout
+from ml4floods.models.architectures.hrnet_seg import HighResolutionNet
 from ml4floods.data.worldfloods.configs import COLORS_WORLDFLOODS, CHANNELS_CONFIGURATIONS, BANDS_S2, COLORS_WORLDFLOODS_INVLANDWATER, COLORS_WORLDFLOODS_INVCLEARCLOUD
 
 
@@ -290,6 +292,9 @@ def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
     return mask_return
 
 
+PATH_TO_MODEL_HRNET_SMALL = "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart/hrnet_small_imagenet/HRNet_W18_C_ssld_pretrained.pth"
+
+
 def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
     architecture = h_params.get('model_type', 'linear')
     num_channels = h_params.get('num_channels', 3)
@@ -306,6 +311,14 @@ def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
 
     elif architecture == 'unet_dropout':
         model = UNet_dropout(num_channels, num_classes)
+
+    elif architecture == "hrnet_small":
+        model = HighResolutionNet(input_channels=num_channels, output_channels=num_classes)
+        if num_channels == 3:
+            print("3-channel model. Loading pre-trained weights from ImageNet")
+            # TODO models are bgr instead of rgb!
+            pretrained_dict = load(PATH_TO_MODEL_HRNET_SMALL)
+            model.init_weights(pretrained_dict)
 
     else:
         raise Exception(f'No model implemented for model_type: {h_params.model_type}')

@@ -94,7 +94,7 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
 
     return get_pred_function(model, model.device,
                              module_shape=module_shape,
-                             max_tile_size=config.model_params.hyperparameters.max_tile_size,
+                             max_tile_size=config.model_params.max_tile_size,
                              activation_fun=activation_fun,
                              normalization=normalize, eval_mode=eval_mode)
 
