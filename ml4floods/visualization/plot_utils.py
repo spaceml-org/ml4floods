@@ -5,11 +5,10 @@ from matplotlib import colors
 import matplotlib.patches as mpatches
 import numpy as np
 from typing import Union, Optional
-from ml4floods.data.worldfloods.configs import BANDS_S2
+from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods import configs
 import matplotlib.pyplot as plt
 import os
-import fsspec
 
 
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
@@ -83,8 +82,11 @@ def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None
     return output, transform
 
 
-def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000., **kwargs):
-    bands = (3, 2, 1)
+def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000.,
+                      channel_configuration="all",
+                      **kwargs):
+    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
 
     if max_clip_val is not None:
@@ -93,8 +95,11 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None
     rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000., **kwargs):
-    bands = [BANDS_S2.index(b) for b in ["B11", "B8", "B4"]]
+def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000.,
+                             channel_configuration="all",
+                             **kwargs):
+    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
 
     if max_clip_val is not None:
@@ -103,38 +108,30 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, wind
     rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=None, **kwargs):
+def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=None, legend=True, **kwargs):
     prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window)
     prediction_show = prediction[0] + 1
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
-    rasterioplt.show(prediction_show, transform=transform, cmap=cmap_preds, norm=norm_preds,
-                     interpolation='nearest',**kwargs)
+    ax = rasterioplt.show(prediction_show, transform=transform, cmap=cmap_preds, norm=norm_preds,
+                          interpolation='nearest',**kwargs)
 
-    if kwargs.get("legend", True):
-        if "ax" in kwargs:
-            ax = kwargs["ax"]
-        else:
-            ax = plt.gca()
+    if legend:
         ax.legend(handles=patches_preds,
                   loc='upper right')
 
 
-def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, **kwargs):
+def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, legend=True, **kwargs):
     target, transform = get_image_transform(target,transform=transform, bands=[0], window=window)
     target = target[0]
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
-    rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
-                     interpolation='nearest', **kwargs)
+    ax = rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
+                          interpolation='nearest', **kwargs)
 
-    if kwargs.get("legend",True):
-        if "ax" in kwargs:
-            ax = kwargs["ax"]
-        else:
-            ax = plt.gca()
+    if legend:
         ax.legend(handles=patches_preds,
                   loc='upper right')
 
@@ -148,7 +145,7 @@ def gt_v1_with_permanent_water(gt: np.ndarray, permanent_water: np.ndarray) -> n
 
 
 def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optional[Union[str, np.ndarray]]=None,
-                              transform=None, window=None,
+                              transform=None, window=None, legend=True,
                               **kwargs):
     bands = [0]
     target, transform = get_image_transform(target, transform=transform, bands=bands, window=window)
@@ -160,14 +157,10 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
 
     cmap_gt, norm_gt, patches_gt = get_cmap_norm_colors(COLORS_WORLDFLOODS_PERMANENT, INTERPRETATION_WORLDFLOODS_PERMANENT)
 
-    rasterioplt.show(target,transform=transform, cmap=cmap_gt, norm=norm_gt,
-                     interpolation='nearest', **kwargs)
+    ax = rasterioplt.show(target,transform=transform, cmap=cmap_gt, norm=norm_gt,
+                          interpolation='nearest', **kwargs)
 
-    if kwargs.get("legend", True):
-        if "ax" in kwargs:
-            ax = kwargs["ax"]
-        else:
-            ax = plt.gca()
+    if legend:
         ax.legend(handles=patches_gt,
                   loc='upper right')
 
