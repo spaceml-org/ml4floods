@@ -46,7 +46,8 @@ def main(version="v1_0",overwrite=False):
                                        pbar=pbar, gt_fun=gt_fun)
                 if status:
                     s2path = GCPPath(s2_image_path)
-                    cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
+                    cloudprob_path_dest, floodmap_path_dest, gt_path_dest, \
+                    meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
                         output_path=path_write, tiff_file_name=s2path.file_name, permanent_water_available=True)
                     dict_splits[ipath]["S2"].append(s2_image_path_dest.full_path)
                     dict_splits[ipath]["gt"].append(gt_path_dest.full_path)

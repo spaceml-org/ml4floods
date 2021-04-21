@@ -303,7 +303,7 @@ def worldfloods_output_files(output_path:Path, tiff_file_name:str, permanent_wat
     floodmap_path_dest = GCPPath(
         str(
             output_path
-                .joinpath("floodmap")
+                .joinpath("floodmaps")
                 .joinpath(tiff_file_name.replace(".tif", ".gejson"))
         )
     )
