@@ -873,18 +873,16 @@ def read_pickle_from_gcp(gs_path) -> dict:
 
 def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
     client = storage.Client()
-
-    f = BytesIO()
-    json.dump(dict_val, f)
-    f.seek(0)
-
     bucket_id = gs_path.split("gs://")[-1].split("/")[0]
     bucket = client.get_bucket(bucket_id)
 
     filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
     blob = bucket.blob(filename_full_path)
 
-    blob.upload_from_file(f)
+    with BytesIO() as f:
+        f.write(json.dumps(dict_val).encode())
+        f.seek(0)
+        blob.upload_from_file(f)
 
 
 def read_json_from_gcp(gs_path: str) ->Dict:
