@@ -199,12 +199,12 @@ def generate_item(s2_image_path:str, output_path:Union[str, Path],
             Path(meta_local_file).unlink()
 
         # Copy floodmap shapefiles
-        if pbar is not None:
-            pbar.set_description(f"Saving floodmap {name}...")
-
-        floodmap_local_file = str(local_path.joinpath(s2_image_path.file_name)).replace(".tif", ".geojson")
-        floodmap.to_file(floodmap_local_file, driver="GeoJSON")
-        save_file_to_bucket(floodmap_path_dest.full_path, floodmap_local_file)
+        if not floodmap_path_dest.check_if_file_exists() or overwrite:
+            if pbar is not None:
+                pbar.set_description(f"Saving floodmap {name}...")
+            floodmap_local_file = str(local_path.joinpath(s2_image_path.file_name)).replace(".tif", ".geojson")
+            floodmap.to_file(floodmap_local_file, driver="GeoJSON")
+            save_file_to_bucket(floodmap_path_dest.full_path, floodmap_local_file)
 
         # Copy cloudprob, S2 and permanent water
         if not cloudprob_path_dest.check_if_file_exists() or overwrite:
@@ -256,7 +256,7 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
     Args:
         output_path: path to check e.g. Path("ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v2_0/train")
         tiff_file_name: e.g. "SP6_20170502_WaterExtent_WetSoil_VillaRiva.tif"
-        warn_permanent_water:
+        warn_permanent_water: warn if the permanent water layer is not found
 
     """
     cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(output_path, tiff_file_name)
