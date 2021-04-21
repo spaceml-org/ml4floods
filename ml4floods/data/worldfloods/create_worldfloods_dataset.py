@@ -249,13 +249,32 @@ def generate_item(s2_image_path:str, output_path:Union[str, Path],
     return True
 
 
+def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_permanent_water:bool=True):
+    """
+    Assert all elements in worldlfooods_output_files exists for the given tiff_file_name.
+
+    Args:
+        output_path: path to check e.g. Path("ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v2_0/train")
+        tiff_file_name: e.g. "SP6_20170502_WaterExtent_WetSoil_VillaRiva.tif"
+        warn_permanent_water:
+
+    """
+    cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(output_path, tiff_file_name)
+
+    for p in [cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, s2_image_path_dest]:
+        assert p.check_if_file_exists(), f"{p.full_path} not found"
+
+    if warn_permanent_water and not permanent_water_image_path_dest.check_if_file_exists():
+        warnings.warn(f"{permanent_water_image_path_dest.full_path} not found")
+
+
 def worldfloods_output_files(output_path:Path, tiff_file_name:str, permanent_water_available:bool=True) -> Tuple[GCPPath, GCPPath, GCPPath, GCPPath, Optional[GCPPath], GCPPath]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
 
     These paths are:
     - cloudprob_path_dest (.tif)
-    - floodmap_path_dest. Folder with shp files
+    - floodmap_path_dest. (.geojson)
     - gt_path (.tif)
     - meta_parent_path (.tif)
     - permanent_water_image_path_dest (.tif) or None if not permanent_water_available
@@ -304,7 +323,7 @@ def worldfloods_output_files(output_path:Path, tiff_file_name:str, permanent_wat
         str(
             output_path
                 .joinpath("floodmaps")
-                .joinpath(tiff_file_name.replace(".tif", ".gejson"))
+                .joinpath(tiff_file_name.replace(".tif", ".geojson"))
         )
     )
 
