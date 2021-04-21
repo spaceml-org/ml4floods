@@ -49,7 +49,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
     # LOCAL PREPARATION
     # ======================================================
     local_destination_dir = data_config.path_to_splits
-    filenames_train_test = filenames_train_test_split(data_config.bucket_id, data_config.train_test_split_file)
+    filenames_train_test = filenames_train_test_split(data_config.WORLDFLOODS_V0_BUCKET, data_config.train_test_split_file)
     
     # ======================================================
     # LOCAL DATASET SETUP
@@ -59,7 +59,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         print('Using local dataset for this run')
         
         # Read Files from bucket and copy them in local_destination_dir
-        download_tiffs_from_bucket(data_config.bucket_id,
+        download_tiffs_from_bucket(data_config.WORLDFLOODS_V0_BUCKET,
                                    [data_config.input_folder, data_config.target_folder],
                                    filenames_train_test, local_destination_dir,
                                    download=data_config.get("download", None))
@@ -126,7 +126,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         from ml4floods.data.worldfloods.lightning import WorldFloodsGCPDataModule
         
         dataset = WorldFloodsGCPDataModule(
-            bucket_id=data_config.bucket_id,
+            bucket_id=data_config.WORLDFLOODS_V0_BUCKET,
             filenames_train_test=filenames_train_test,
             input_folder=data_config.input_folder,
             target_folder=data_config.target_folder,

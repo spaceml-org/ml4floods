@@ -310,10 +310,11 @@ def _read_s2img_cloudmask_v2(
 
 def generate_land_water_cloud_gt(
     s2_image_path: str,
-    floodmap_path: str,
+    floodmap: gpd.GeoDataFrame,
+    metadata_floodmap: Dict,
     window: Optional[rasterio.windows.Window] = None,
-    permanent_water_image_path: Optional[str] = None,
     keep_streams: bool = False,
+    permanent_water_image_path: Optional[str] = None,
     cloudprob_image_path: Optional[str] = None,
     cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
@@ -323,6 +324,7 @@ def generate_land_water_cloud_gt(
     Args:
         s2_image_path:
         floodmap:
+        metadata_floodmap:
         window:
         permanent_water_image_path:
         keep_streams: A boolean flag to indicate whether to include streams in the water mask
@@ -335,7 +337,6 @@ def generate_land_water_cloud_gt(
 
     """
     # open floodmap with geopandas
-    floodmap = gpd.read_file(floodmap_path)
     # =========================================
     # Generate Cloud Mask given S2 Data
     # =========================================
@@ -350,7 +351,7 @@ def generate_land_water_cloud_gt(
     # =========================================
     water_mask = compute_water(
         s2_image_path,
-        floodmap[floodmap["w_class"] != "area_of_interest"],
+        floodmap,
         window=window,
         permanent_water_path=permanent_water_image_path,
         keep_streams=keep_streams,
@@ -361,7 +362,7 @@ def generate_land_water_cloud_gt(
     # Compute metadata of the ground truth
     metadata = {}
     metadata["gtversion"] = "v1"
-    metadata["encoding_values"] = {-1: "invalid", 0: "land", 1: "water", 2: "cloud"}
+    metadata["encoding_values"] = {0: "invalid", 1: "land", 2: "water", 3: "cloud"}
     metadata["shape"] = list(water_mask.shape)
     metadata["s2_image_path"] = os.path.basename(s2_image_path)
     metadata["permanent_water_image_path"] = (
@@ -406,7 +407,7 @@ def generate_land_water_cloud_gt(
 
 def generate_water_cloud_binary_gt(
     s2_image_path: str,
-    floodmap_path: str,
+    floodmap: gpd.GeoDataFrame,
     metadata_floodmap: Dict,
     window: Optional[rasterio.windows.Window] = None,
     keep_streams: bool = False,
@@ -422,6 +423,7 @@ def generate_water_cloud_binary_gt(
         floodmap:
         metadata_floodmap: Metadata of the floodmap (if satellite is optical will mask the land/water GT)
         window:
+        keep_streams:
         permanent_water_image_path:
         cloudprob_image_path:
         cloudprob_in_lastband:
@@ -433,8 +435,6 @@ def generate_water_cloud_binary_gt(
         meta: dictionary with metadata information
 
     """
-    # open floodmap with geopandas
-    floodmap = gpd.read_file(floodmap_path)
 
     # =========================================
     # Generate Cloud Mask given S2 Data
@@ -448,7 +448,7 @@ def generate_water_cloud_binary_gt(
 
     water_mask = compute_water(
         s2_image_path,
-        floodmap[floodmap["w_class"] != "area_of_interest"],
+        floodmap,
         window=window,
         permanent_water_path=permanent_water_image_path,
         keep_streams=keep_streams,
@@ -719,11 +719,7 @@ def _generate_gt_v1_fromarray(
     :return:
     """
 
-    assert np.all(
-        water_mask != -1
-    ), "V1 does not expect masked inputs in the water layer"
-
-    invalids = np.all(s2_img == 0, axis=0)
+    invalids = np.all(s2_img == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudprob[invalids] = 0
