@@ -64,7 +64,7 @@ class GCPPath:
         files = ["gs://" + str(Path(self.bucket_id).joinpath(x.name)) for x in blobs]
         return files
 
-    def get_files_in_parent_directory_with_suffix(self, suffix=str, **kwargs):
+    def get_files_in_parent_directory_with_suffix(self, suffix:str, **kwargs):
         # initialize client
         client = storage.Client(**kwargs)
         # get bucket
@@ -222,6 +222,15 @@ class GCPPath:
         blob = bucket.blob(self.get_file_path())
         # check if it exists
         return blob.exists()
+
+    def delete(self, **kwargs):
+        # initialize client
+        client = storage.Client(**kwargs)
+        # get bucket
+        bucket = client.get_bucket(self.bucket_id)
+        # get blob
+        blob = bucket.blob(self.get_file_path())
+        blob.delete()
 
     #         return get_files_in_bucket_directory(self.bucket_id, directory=self.parent_path, suffix=self.suffix)
 
@@ -860,3 +869,30 @@ def read_pickle_from_gcp(gs_path) -> dict:
     my_dictionary = pickle.loads(pickle_in)
 
     return my_dictionary
+
+
+def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
+    client = storage.Client()
+    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
+    bucket = client.get_bucket(bucket_id)
+
+    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
+    blob = bucket.blob(filename_full_path)
+
+    with BytesIO() as f:
+        f.write(json.dumps(dict_val).encode())
+        f.seek(0)
+        blob.upload_from_file(f)
+
+
+def read_json_from_gcp(gs_path: str) ->Dict:
+    client = storage.Client()
+
+    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
+    bucket = client.get_bucket(bucket_id)
+
+    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
+    blob = bucket.blob(filename_full_path)
+    json_string = blob.download_as_string()
+    return json.loads(json_string)
+

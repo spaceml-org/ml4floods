@@ -1,5 +1,4 @@
 import torch
-import json
 from ml4floods.models.config_setup import save_json
 
 
@@ -159,17 +158,10 @@ def deploy(opt):
 if __name__ == "__main__":
     import argparse
     import os
-    import sys
-    from pathlib import Path
-    from pyprojroot import here
-    # spyder up to find the root
-    root = here(project_files=[".here"])
-    # append to path
-    sys.path.append(str(here()))
     
     from ml4floods.models.config_setup import setup_config
     
-    parser = argparse.ArgumentParser('Area Ratios Segmentation Classifiers')
+    parser = argparse.ArgumentParser('Train WorldFloods model')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
     parser.add_argument('--gpus', default='', type=str)
     # Mode: train, test or deploy
@@ -177,7 +169,7 @@ if __name__ == "__main__":
     parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
     parser.add_argument('--deploy', default=False, action='store_true')
-    # WandB fields TODO
+    # WandB fields
     parser.add_argument('--wandb_entity', default='ml4floods')
     parser.add_argument('--wandb_project', default='worldfloods')
     
@@ -198,8 +190,9 @@ if __name__ == "__main__":
 
     # Run testing
     if args.test:
-        test(config)
+        raise NotImplementedError("Test mode not implemented")
+        # test(config)
 
     # Run deployment ready inference
     if args.deploy:
-        deploy(config)
+        raise NotImplementedError("Deploy mode not implemented")

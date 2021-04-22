@@ -36,10 +36,12 @@ conda env update --file environments/environment.yml
 ```bash
 conda activate ml4fl_py38
 
-# Option a using setup.y
-python setup.py install
+# Option a from the ml4floods cloned directory
+git clone https://github.com/spaceml-org/ml4floods/
+cd ml4floods
+pip install -e .
 
-# Option b) directly with pip
+# Option b) directly from GitHub
 pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 ```
 
