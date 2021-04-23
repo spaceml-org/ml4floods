@@ -29,6 +29,7 @@
   - file: content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
   - file: content/ml4ops/HOWTO_inference_on_image_time_series.ipynb
+  - file: content/ml4ops/HOWTO_inference_SAFE_file.ipynb
 
 - part: About
   chapters:
