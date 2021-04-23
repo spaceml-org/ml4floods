@@ -59,7 +59,7 @@ Some instructions for how to install JupyterLab on your own system. There are de
 ### 1 Install JupyterLab
 
 ```bash
-conda env install -f jupyterlab.yml
+conda env create -f jupyterlab.yml
 ```
 
 ### 2 Install some extensions

@@ -272,7 +272,7 @@ def extract_ems_zip_files_gcp(
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
             if (
-                "areaOfInterestA" in name
+                "area" in name
                 or "hydrography" in name
                 or "observed" in name
                 or "source" in name
