@@ -1,0 +1,39 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+#    - file: ../notebooks/models/HOWTO_Train_models.ipynb
+#    - file: ../notebooks/models/HOWTO_Run_Inference_on_new_data.ipynb
+#    - file: ../notebooks/models/HOWTO_Run Inference_multioutput_binary.ipynb
+#    - file: ../notebooks/models/HOWTO_Calculate_uncertainty_maps.ipynb
+#    - file: ../notebooks/models/HOWTO_performance_metrics_workflow.ipynb
+#    - file: content/overview.md
+
+- file: content/intro/introduction.md
+
+- part: Install
+  chapters:
+    - file: content/config.md
+
+- part: Data prep
+  chapters:
+    - file: content/prep/full_data_ingest.ipynb
+    - file: content/prep/geographic_index_demo.ipynb
+    - file: content/prep/gt_masks_generation.ipynb
+    - file: content/prep/demo_pytorch_transforms.ipynb
+
+- part: MLOps
+  chapters:
+  - file: content/ml_overview.md
+  - file: content/ml4ops/HOWTO_Train_models.ipynb
+  - file: content/ml4ops/HOWTO_performance_metrics_workflow.ipynb
+  - file: content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb
+  - file: content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb
+  - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
+
+- part: End-to-end Pipeline
+  chapters:
+  - file: content/ml4ops/HOWTO_inference_on_image_time_series.ipynb
+  - file: content/ml4ops/HOWTO_inference_SAFE_file.ipynb
+
+- part: About
+  chapters:
+    - file: content/about.md

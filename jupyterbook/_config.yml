@@ -1,0 +1,28 @@
+#######################################################################################
+# A default configuration that will be loaded for all jupyter books
+# See the documentation for help and more options: 
+# https://jupyterbook.org/customize/config.html
+
+#######################################################################################
+# Book settings
+title                       : ML4Floods  # The title of the book. Will be placed in the left navbar.
+author                      : <a href="http://spaceml.org/" target="_blank">spaceml.org</a>  # The author of the book
+copyright                   : "2021"  # Copyright year to be placed in the footer
+logo                        : ml4cc_logo.png  # A path to the book logo
+execute:
+  execute_notebooks: cache
+
+repository:
+  url                       : https://github.com/spaceml-org/ml4floods  # Online location of your book
+  path_to_book              : jupyterbook  # Optional path to your book, relative to the repository root
+  branch                    : main  # Which branch of the repository should be used when creating links (optional)
+
+html:
+  use_repository_button: true
+  only_build_toc_files: true
+  favicon: ml4cc_logo.png
+  extra_navbar: See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+
+launch_buttons:
+  colab_url: "https://colab.research.google.com"
+  binderhub_url: ""

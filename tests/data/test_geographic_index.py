@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from src.data.index.geographic_index import GeographicIndex
+from ml4floods.data.index.geographic_index import GeographicIndex
 
 class TestGeographicIndex(unittest.TestCase):
 

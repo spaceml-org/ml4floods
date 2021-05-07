@@ -2,7 +2,7 @@ import time, requests, logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('TEST-TILESERVER')
 
-from src.serve import TileServer
+from ml4floods.serve import TileServer
 
 logger.info('initialising tileserver object')
 server = TileServer()

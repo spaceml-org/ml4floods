@@ -14,7 +14,12 @@ black
 isort
 mypy
 opencv-python
+albumentations
 seaborn
-ipykernel
 google-cloud-storage
 pyprojroot
+fsspec
+gcsfs
+requests_html
+earthengine-api
+geemap
