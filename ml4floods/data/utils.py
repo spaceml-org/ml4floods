@@ -880,7 +880,7 @@ def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
     blob = bucket.blob(filename_full_path)
 
     with BytesIO() as f:
-        f.write(json.dumps(dict_val).encode())
+        f.write(json.dumps(dict_val, cls=CustomJSONEncoder).encode())
         f.seek(0)
         blob.upload_from_file(f)
 

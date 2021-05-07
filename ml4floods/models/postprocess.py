@@ -42,7 +42,7 @@ def get_water_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
 
     for polygon, value in polygon_generator:
         p = shape(polygon)
-        if polygon_buffer:
+        if polygon_buffer > 0:
             p = p.buffer(polygon_buffer)
         if p.area >= min_area:
             p = p.simplify(tolerance=tolerance)
