@@ -20,7 +20,7 @@ from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
 import matplotlib.pyplot as plt
 
-from src.data import utils
+from ml4floods.data import utils
 
 
 

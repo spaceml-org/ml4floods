@@ -9,10 +9,10 @@ from tqdm import tqdm
 import ee
 from shapely import geometry
 import rasterio
-from src.data import ee_download, create_gt
-from src.data.copernicusEMS import activations
-from src.data import utils
-from src.serve.tileserver.REST_mosaic import RESTMosaic
+from ml4floods.data import ee_download, create_gt
+from ml4floods.data.copernicusEMS import activations
+from ml4floods.data import utils
+from ml4floods.serve.tileserver.REST_mosaic import RESTMosaic
 
 
 class Ingestor:

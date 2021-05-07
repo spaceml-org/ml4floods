@@ -7,7 +7,7 @@ from shapely import geometry
 import geojson
 
 import pandas as pd
-from src.data.copernicusEMS.activations import *
+from ml4floods.data.copernicusEMS.activations import *
 from google.cloud import storage
 
 
