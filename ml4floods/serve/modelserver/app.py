@@ -6,7 +6,6 @@ import torch
 from flask import Flask, jsonify, request, send_file
 
 from ml4floods.models.config_setup import get_default_config
-from ml4floods.models.worldfloods_model import WorldFloodsModel
 from ml4floods.models.model_setup import get_model_inference_function
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from ml4floods.data import utils
@@ -22,21 +21,23 @@ app = Flask(__name__)
 channel_configuration_name = 'all'
 inference_funcs = {}
 
+from ml4floods.models.model_setup import get_model
+
 models_conf = {
     "simplecnn": {
         "experiment_name" : "WFV1_scnn20",
-        "checkpoint_name" : "epoch=5-step=24581.ckpt",
     },
     "unet": {
         "experiment_name": "WFV1_unet",
-        "checkpoint_name": "epoch=24-step=153649.ckpt",
     }
 }
 
 for model_name, conf in models_conf.items():
     opt = get_default_config(f"gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart/{conf['experiment_name']}/config.json")
-    checkpoint_path = f"gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart/{conf['experiment_name']}/checkpoint/{conf['checkpoint_name']}"
-    model = WorldFloodsModel.load_from_checkpoint(checkpoint_path)
+    opt["model_params"]['model_folder'] = 'gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart'
+    opt["model_params"]['test'] = True
+    model = get_model(opt.model_params, conf['experiment_name'])
+    model.eval()
 
     # Set up to control the max size of the tiles to predict
     opt["model_params"]["hyperparameters"]["max_tile_size"] = 256
