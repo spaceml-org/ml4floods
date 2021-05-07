@@ -84,13 +84,12 @@ def tif_inference():
             transform = rst.transform
 
             print(rst.shape)
-            rgb_arr = np.zeros((3, rst.shape[0], rst.shape[1]))
             Y_arr = np.zeros((rst.shape[0], rst.shape[1]), dtype=np.uint8)
             for ii_x in range(rst.shape[1] // PATCH_SIZE + 1):
                 for ii_y in range(rst.shape[0] // PATCH_SIZE + 1):
                     w = rst.read(list(range(1, 14)), window=Window(ii_x * PATCH_SIZE, ii_y * PATCH_SIZE, 512, 512))
 
-                    tensor = torch.Tensor(w).unsqueeze(0)
+                    tensor = torch.tensor(w).unsqueeze(0)
                     Y_h = inference_funcs[chosen_model](tensor)
                     Y_h = torch.argmax(Y_h, dim=1).squeeze().numpy().astype(np.uint8)
 
