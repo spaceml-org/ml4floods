@@ -24,6 +24,7 @@ CHANNELS_CONFIGURATIONS = {
     "bgri": [1, 2, 3, 7],
     "riswir" : [3, 7, 11],
     "bgriswir" : [1, 2, 3, 7, 11],
+    "bgriswirs" : [1, 2, 3, 7, 11, 12], # Same bands as Landsat-7 and Landsat-8
     "sub_20": [1, 2, 3, 4, 5, 6, 7, 8, 11, 12],
     "hyperscout2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }
