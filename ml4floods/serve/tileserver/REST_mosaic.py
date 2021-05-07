@@ -400,7 +400,7 @@ class RESTMosaic:
             if self.verbose:
                 loggers = {ii_w:logging.getLogger(str(ii_w)) for ii_w in range(self.workers)}
             else:
-                loggers = {ii_w:None}
+                loggers = {ii_w:None for ii_w in range(self.workers)}
                 
             chunk_args = [
                 (
