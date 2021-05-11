@@ -8,6 +8,7 @@ import geojson
 
 import pandas as pd
 from ml4floods.data.copernicusEMS.activations import *
+from ml4floods.data import utils
 from google.cloud import storage
 
 

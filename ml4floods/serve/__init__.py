@@ -18,7 +18,7 @@ class TileServer:
     
     def serve(self, workers, port):
         atexit.register(self.stop) # make sure the tileserver is stopped if this object dies
-        P = subprocess.Popen(['gunicorn', f'--workers={workers}','src.serve.tileserver.app:app', f'--bind=0.0.0.0:{port}'])
+        P = subprocess.Popen(['gunicorn', f'--workers={workers}','ml4floods.serve.tileserver.app:app', f'--bind=0.0.0.0:{port}'])
         self.server_pid = P.pid
         self.port=port
         time.sleep(3)  # sleep for 3s to let workers boot
@@ -46,7 +46,7 @@ class ModelServer:
         
     def serve(self, workers, port):
         atexit.register(self.stop) # make sure the tileserver is stopped if this object dies
-        P = subprocess.Popen(['gunicorn', f'--workers={workers}','src.serve.modelserver.app:app', f'--bind=127.0.0.1:{port}'])
+        P = subprocess.Popen(['gunicorn', f'--workers={workers}','ml4floods.serve.modelserver.app:app', f'--bind=127.0.0.1:{port}'])
         self.server_pid = P.pid
         self.port=port
         time.sleep(3)  # sleep for 3s to let workers boot

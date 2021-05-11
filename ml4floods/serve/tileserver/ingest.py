@@ -117,7 +117,7 @@ class Ingestor:
         
     def _ingest_vector(self):
         
-        zip_files_activation = activations.fetch_zip_files(self.ems_code)
+        zip_files_activation = activations.fetch_zip_file_urls(self.ems_code)
         
         # parse into a dataframe to filter aois
         zip_df = pd.DataFrame([
@@ -159,6 +159,8 @@ class Ingestor:
             #self.registers = []
             #for unzip_folder in unzip_files_activation:
             metadata_floodmap = activations.filter_register_copernicusems(unzipped_file, self.code_date)
+            self.logger.info(f'retreived metadata_floodmap')
+            
             #    aoi_id = os.path.split(unzip_folder)[1].split('_')[1]
             if metadata_floodmap is not None:
                 floodmap = activations.generate_floodmap(metadata_floodmap, folder_files=folder_out)

@@ -26,7 +26,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 ### on startup grab copernicus events -> might want to periodically rerun this
 events_df = activations.table_floods_ems()
-countries_df = pd.DataFrame(json.load(open(os.path.join(os.getcwd(),'src','serve','tileserver','static','countries.json'),'r')))
+countries_df = pd.DataFrame(json.load(open(os.path.join(os.getcwd(),'ml4floods','serve','tileserver','static','countries.json'),'r')))
 events_df = helpers.postprocess_floodtable(events_df, countries_df)
 updated_df = helpers.walk_bucket(events_df)
 base_gj = gpd.read_file(os.path.join(os.getcwd(),'assets','gj_gdf.gpkg'))
@@ -224,7 +224,7 @@ def servexyz(layer_name,image_name,z,x,y):
     """
     
     if layer_name=='null':
-        return send_file(os.path.join(os.getcwd(),'src','serve','tileserver','static','border.png')) 
+        return send_file(os.path.join(os.getcwd(),'ml4floods','serve','tileserver','static','border.png')) 
     
     try:
   
@@ -278,7 +278,7 @@ def servexyz(layer_name,image_name,z,x,y):
                 ## if out-of-range, return empty
                 if (window.col_off<=-window.width) or ((window.col_off-rst.shape[0])>=window.width) or (window.row_off<=-window.height) or ((window.row_off-rst.shape[1])>=window.height) :
                     print ('out of range')
-                    return send_file(os.path.join(os.getcwd(),'src','serve','tileserver','static','border.png'))  
+                    return send_file(os.path.join(os.getcwd(),'ml4floods','serve','tileserver','static','border.png'))  
 
                 # use rasterio to read the pixel window from the cloud bucket
                 rst_arr = rst.read(READBANDS, window=window, out_shape=OUTPUT_SHAPE, boundless=True, fill_value=0)
@@ -328,7 +328,7 @@ def servexyz(layer_name,image_name,z,x,y):
 
     except Exception as e:
         print ('ERROR!',e)
-        return send_file(os.path.join(os.getcwd(),'src','serve','tileserver','static','border.png')) 
+        return send_file(os.path.join(os.getcwd(),'ml4floods','serve','tileserver','static','border.png')) 
         #raise
 
 if __name__ == "__main__":

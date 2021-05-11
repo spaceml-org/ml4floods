@@ -40,11 +40,11 @@ for model_name, conf in models_conf.items():
     model.eval()
 
     # Set up to control the max size of the tiles to predict
-    opt["model_params"]["hyperparameters"]["max_tile_size"] = 256
+    opt["model_params"]["max_tile_size"] = 256
     inference_function = get_model_inference_function(model, opt, apply_normalization=True)
 
     inference_funcs[model_name] = inference_function
-    N_CHANNELS = len(CHANNELS_CONFIGURATIONS[opt.channel_configuration])
+    N_CHANNELS = len(CHANNELS_CONFIGURATIONS[opt["model_params"]["hyperparameters"]["channel_configuration"]])
 
 
 def get_prediction(image_bytes, model):
