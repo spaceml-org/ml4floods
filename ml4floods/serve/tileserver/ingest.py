@@ -116,6 +116,9 @@ class Ingestor:
         self.logger.info('DONE!')
         
     def _ingest_vector(self):
+
+
+        metadata_floodmap=None
         
         zip_files_activation = activations.fetch_zip_file_urls(self.ems_code)
         
