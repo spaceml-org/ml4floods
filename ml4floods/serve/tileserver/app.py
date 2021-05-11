@@ -136,7 +136,7 @@ def get_runingest():
             },
             include=['S2-pre','S2-post','GT','ML'],
             inference_endpoint='http://127.0.0.1:8001',
-            ML_models=['linear','simplecnn','unet'],
+            ML_models=['simplecnn','unet'],
             workers=3,
             source='REST'
         )

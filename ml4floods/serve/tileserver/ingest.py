@@ -174,7 +174,7 @@ class Ingestor:
                 continue
         if metadata_floodmap==None:       
             self.register=None
-            self.logger.info(f'{unzipped_file} - Error!')
+            self.logger.info(f'{self.ems_code} - Error!')
         
     def _ingest_S2_register(self):
         ### can also into multiprocess...
