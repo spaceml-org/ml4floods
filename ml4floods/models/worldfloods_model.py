@@ -284,7 +284,7 @@ def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
     """
     assert len(values) == len(
         colors_cmap), f"Values and colors should have same length {len(values)} {len(colors_cmap)}"
-    assert len(mask.shape), f"Unexpected shape {mask.shape}"
+    assert len(mask.shape) == 2, f"Unexpected shape {mask.shape}"
     mask_return = np.zeros(mask.shape[:2] + (3,), dtype=np.uint8)
     colores = np.array(np.round(colors_cmap * 255), dtype=np.uint8)
     for i, c in enumerate(colores):

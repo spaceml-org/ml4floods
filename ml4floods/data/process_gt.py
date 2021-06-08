@@ -63,14 +63,14 @@ if __name__ == "__main__":
 
     # Read floodmaps metadata
     floodmaps_metadata = dict()
-    for f in glob(os.path.join("worldfloods/floodmaps/meta/*.json")):
+    for f in glob("worldfloods/floodmaps/meta/*.json"):
         with open(f,"r") as fh:
             floodmap_name = os.path.splitext(os.path.basename(f))[0]
             floodmaps_metadata[floodmap_name] = json.load(fh)
             floodmaps_metadata["filename"] = f
 
     # TODO glob in the bucket?
-    s2files = sorted(glob(os.path.join("worldfloods/tiffimages/S2/*.tif")))
+    s2files = sorted(glob("worldfloods/tiffimages/S2/*.tif"))
     s2_files = s2files[50:] + s2files[:50]  # Trick to process first the small files (for recomputing)
 
     for _i, s2_tiff_path in enumerate(s2files):

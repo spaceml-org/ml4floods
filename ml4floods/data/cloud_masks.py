@@ -69,19 +69,19 @@ def create_cloud_mask(tf_path, cp_path, verbose):
 
 
 def main(worldfloods_root, verbose):
-    copernicus_s2_path = os.path.join(worldfloods_root, "tiffimages", "S2")
+    copernicus_s2_path = os.path.join(worldfloods_root, "tiffimages", "S2").replace("\\","/")
 
     copernicus_cloudprob_path = os.path.join(
         worldfloods_root, "tiffimages", "cloudprob"
-    )
+    ).replace("\\","/")
     if not os.path.exists(copernicus_cloudprob_path):
         os.mkdir(copernicus_cloudprob_path)
 
     tiffiles = os.listdir(copernicus_s2_path)
 
     for i, tf in enumerate(tiffiles):
-        tf_path = os.path.join(copernicus_s2_path, tf)
-        cp_path = os.path.join(copernicus_cloudprob_path, tf)
+        tf_path = os.path.join(copernicus_s2_path, tf).replace("\\","/")
+        cp_path = os.path.join(copernicus_cloudprob_path, tf).replace("\\","/")
         if i % 20 == 0:
             print("")
         if verbose:

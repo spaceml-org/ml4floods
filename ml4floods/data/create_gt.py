@@ -40,7 +40,7 @@ def generate_floodmap_v1(
             "area_of_interest",
             register["layer name"],
             "map.shp",
-        )
+        ).replace("\\","/")
     )
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
@@ -53,7 +53,7 @@ def generate_floodmap_v1(
                 register["resource folder"],
                 register["layer name"],
                 "map.shp",
-            )
+            ).replace("\\","/")
         ),
         area_of_interest_pol,
     )
@@ -86,7 +86,7 @@ def generate_floodmap_v1(
                     register_hydro["resource folder"],
                     register_hydro["layer name"],
                     "map.shp",
-                )
+                ).replace("\\","/")
             ),
             area_of_interest_pol,
         )

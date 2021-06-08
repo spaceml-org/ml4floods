@@ -132,13 +132,16 @@ def collection_mosaic_day(imcol, region_of_interest, fun_before_mosaic=None):
 
         ims_day = imcol.filterDate(utc_date, utc_date.advance(1, "day"))
 
+        dates = ims_day.toList(ims_day.size()).map(lambda x: ee.Image(x).date().millis())
+        median_date = dates.reduce(ee.Reducer.median())
+
         # im = ims_day.mosaic()
         if fun_before_mosaic is not None:
             ims_day = ims_day.map(fun_before_mosaic)
 
         im = ims_day.mosaic()
         return im.set({
-            "system:time_start": utc_date.millis(),
+            "system:time_start": median_date,
             "system:id": solar_date.format("YYYY-MM-dd"),
             "system:index": solar_date.format("YYYY-MM-dd")
         })

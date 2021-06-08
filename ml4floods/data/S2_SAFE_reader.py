@@ -104,7 +104,7 @@ class S2Image:
         self.datetime = datetime.datetime.strptime(sensing_date_str, "%Y%m%dT%H%M%S").replace(
             tzinfo=datetime.timezone.utc)
         self.folder = s2_folder
-        self.metadata_msi = os.path.join(self.folder, f"MTD_{self.producttype}.xml")
+        self.metadata_msi = os.path.join(self.folder, f"MTD_{self.producttype}.xml").replace("\\","/")
         # load _pol from geometric_info product footprint!
         jp2bands, self._pol = process_metadata_msi(self.metadata_msi)
 
@@ -117,7 +117,7 @@ class S2Image:
                 self.band_check = band
                 break
 
-        self.granule = [os.path.join(self.folder, b) for b in jp2bands]
+        self.granule = [os.path.join(self.folder, b).replace("\\","/") for b in jp2bands]
 
     def polygon(self):
         """ Footprint polygon of the image in lat/lng (epsg:4326) """
@@ -282,8 +282,8 @@ class S2ImageL1C(S2Image):
 
         self.all_granules = list(self.granule)
 
-        self.msk_clouds_file = os.path.join(self.folder, self.granule_folder, "MSK_CLOUDS_B00.gml")
-        self.metadata_tl = os.path.join(self.folder, self.granule_folder, "MTD_TL.xml")
+        self.msk_clouds_file = os.path.join(self.folder, self.granule_folder, "MSK_CLOUDS_B00.gml").replace("\\","/")
+        self.metadata_tl = os.path.join(self.folder, self.granule_folder, "MTD_TL.xml").replace("\\","/")
 
         self.bands = list(BANDS_S2)
 
