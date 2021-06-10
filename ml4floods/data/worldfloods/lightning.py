@@ -48,8 +48,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         test_transform (Callable): the transformations used within the
             testing data module
         bands (List(int)): the bands to be selected from the images
-        input_prefix (str): the input folder sub_directory
-        target_prefix (str): the target folder sub directory
+        image_prefix (str): the input folder sub_directory
+        gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window size used to tile the images
                     for training
     Example:
@@ -71,6 +71,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
         num_workers:int = 4,
+        num_workers_val:int = 0,
+        num_workers_test: int = 0,
         filter_windows:Callable = None
     ):
         super().__init__()
@@ -78,7 +80,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.train_transform = train_transformations
         self.test_transform = test_transformations
         self.num_workers = num_workers
-        self.num_workers_test = 0
+        self.num_workers_test = num_workers_test
+        self.num_workers_val = num_workers_val
 
         # self.dims is returned when you call dm.size()
         # Setting default dims here because we know them.
@@ -158,15 +161,17 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         return DataLoader(self.train_dataset, batch_size=self.batch_size,
                           num_workers=self.num_workers, shuffle=True)
 
-    def val_dataloader(self):
+    def val_dataloader(self, num_workers=None):
         """Initializes and returns the validation dataloader"""
+        num_workers = num_workers or self.num_workers_val
         return DataLoader(self.val_dataset, batch_size=self.batch_size,
-                          num_workers=1, shuffle=False)
+                          num_workers=num_workers, shuffle=False)
 
-    def test_dataloader(self, num_workers=1):
+    def test_dataloader(self, num_workers=None):
         """Initializes and returns the test dataloader"""
+        num_workers = num_workers or self.num_workers_test
         return DataLoader(self.test_dataset, batch_size=1,
-                          num_workers=self.num_workers_test, shuffle=False)
+                          num_workers=num_workers, shuffle=False)
 
 
 class WorldFloodsGCPDataModule(pl.LightningDataModule):
@@ -225,12 +230,16 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         window_size: Tuple[int, int] = [64, 64],
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
-        num_workers: int = 4
+        num_workers: int = 4,
+        num_workers_val: int = 0,
+        num_workers_test: int = 0,
     ):
         super().__init__()
         self.train_transform = train_transformations
         self.test_transform = test_transformations
         self.num_workers = num_workers
+        self.num_workers_test = num_workers_test
+        self.num_workers_val = num_workers_val
 
         # WORLDFLOODS Directories
         self.bucket_name = bucket_id
@@ -301,12 +310,14 @@ class WorldFloodsGCPDataModule(pl.LightningDataModule):
         return DataLoader(self.train_dataset, batch_size=self.batch_size,
                           num_workers=self.num_workers, shuffle=True)
 
-    def val_dataloader(self):
+    def val_dataloader(self, num_workers=None):
         """Initializes and returns the validation dataloader"""
+        num_workers = num_workers or self.num_workers_val
         return DataLoader(self.val_dataset, batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=False)
+                          num_workers=num_workers, shuffle=False)
 
-    def test_dataloader(self):
+    def test_dataloader(self, num_workers=None):
         """Initializes and returns the test dataloader"""
+        num_workers = num_workers or self.num_workers_test
         return DataLoader(self.test_dataset, batch_size=1,
-                          num_workers=self.num_workers, shuffle=False)
+                          num_workers=num_workers, shuffle=False)
