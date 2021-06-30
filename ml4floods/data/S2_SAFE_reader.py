@@ -205,9 +205,9 @@ class S2Image:
         if all(BANDS_RESOLUTION[self.bands[iband]] == self.out_res  for iband in bands):
             shape_window = windows.shape(window)
             dest_array = np.zeros((len(bands), ) + shape_window, dtype=np.float32)
-            for iband in bands:
+            for _i, iband in enumerate(bands):
                 with rasterio.open(self.granule[iband]) as src:
-                    dest_array[iband] = src.read(1, window=window, boundless=True)
+                    dest_array[_i] = src.read(1, window=window, boundless=True)
             return dest_array
 
         # Get bounding box to read
