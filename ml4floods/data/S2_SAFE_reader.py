@@ -208,7 +208,12 @@ class S2Image:
             for _i, iband in enumerate(bands):
                 with rasterio.open(self.granule[iband]) as src:
                     dest_array[_i] = src.read(1, window=window, boundless=True)
-            return dest_array
+
+            if window is not None:
+                transform = rasterio.windows.transform(window, self.transform)
+            else:
+                transform = self.transform
+            return dest_array, transform
 
         # Get bounding box to read
         bbox = windows.bounds(window, self.transform)
