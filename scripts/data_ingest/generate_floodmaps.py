@@ -55,10 +55,10 @@ def main():
                                                                                                         "*_observed*.shp"))]
                 for name_file in name_files:
                     try:
-                        paths_to_copy = fs.glob(os.path.join(aoi_dir, f"{name_file}*"))
+                        paths_to_copy_glob = os.path.join(aoi_dir, f"{name_file}*")
 
                         with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
-                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy, tmpdirname+"/"])
+                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"])
                             metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,
                                                                                           code_date, verbose=False)
                             if metadata_floodmap is None:
