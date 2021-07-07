@@ -428,20 +428,26 @@ def filter_register_copernicusems(
     product_name = os.path.basename(observed_event_file).split("_observed")[0]
     ems_code, aoi_code = product_name.split("_")[0:2]
 
-    date_post_event = min(pd_source[pd_source.eventphase == "Post-event"]["date"])
-    max_date_post_event = max(pd_source[pd_source.eventphase == "Post-event"]["date"])
-    satellite_post_event = np.array(
-        pd_source[
-            (pd_source.eventphase == "Post-event") & (pd_source.date == date_post_event)
-        ]["source_nam"]
-    )[0]
+    # Filter content of shapefile
+    pd_geo = load_observed_event_file(observed_event_file, verbose=verbose)
+    if pd_geo is None:
+        return
+
+    # load dmg_src_id fields
+    dmg_srd_id_fields = np.unique(pd_geo.dmg_src_id)
+    valid_srd_fields_bool = pd_source.src_id.isin(dmg_srd_id_fields)
+
+    min_date_post_event = min(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
+    max_date_post_event = max(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
+
+    satellite_post_event = pd_source.loc[(pd_source.eventphase == "Post-event") & (pd_source.date == max_date_post_event), "source_nam"].iloc[0]
 
     date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(
         tzinfo=datetime.timezone.utc
     )
 
     if not post_event_date_difference_is_ok(
-        date_post_event, date_ems_code, max_date_post_event, verbose
+        min_date_post_event, date_ems_code, max_date_post_event, verbose
     ):
         return
 
@@ -460,36 +466,15 @@ def filter_register_copernicusems(
 
         content_pre_event["satellite_pre_event"] = satellite_pre_event
         content_pre_event["timestamp_pre_event"] = date_pre_event
-        if (date_post_event - date_pre_event).days < 0 and verbose:
+        if (min_date_post_event - date_pre_event).days < 0 and verbose:
             print(
                 "Date pre event %s is after date post event %s"
                 % (
                     date_pre_event.strftime("%Y-%m-%d"),
-                    date_post_event.strftime("%Y-%m-%d"),
+                    min_date_post_event.strftime("%Y-%m-%d"),
                 )
             )
             return
-
-    # Filter content of shapefile
-    pd_geo = gpd.read_file(observed_event_file)
-    if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
-        print(
-            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}"
-        )
-        return
-
-    if not all(
-        notation in ACCEPTED_FIELDS
-        for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]
-    ):
-        print(
-            f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}"
-        )
-        return
-
-    if pd_geo.crs is None:
-        print(f"{observed_event_file} file is not georeferenced")
-        return
 
     if not isinstance(satellite_post_event, str) and verbose:
         print("Satellite post event: {} is not a string!".format(satellite_post_event))
@@ -524,7 +509,7 @@ def filter_register_copernicusems(
         "event id": product_name,
         "layer name": os.path.basename(os.path.splitext(observed_event_file)[0]),
         "event type": event_type,
-        "satellite date": date_post_event,
+        "satellite date": max_date_post_event,
         "country": "NaN",
         "satellite": satellite_post_event,
         "bounding box": get_bbox(pd_geo),
@@ -561,6 +546,28 @@ def filter_register_copernicusems(
             register["hydrology_file_l"] = os.path.basename(hydrology_file_l[0])
 
     return register
+
+def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Optional[gpd.GeoDataFrame]:
+    pd_geo = gpd.read_file(observed_event_file)
+    if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
+        print(
+            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}"
+        )
+        return
+
+    if not all(
+        notation in ACCEPTED_FIELDS
+        for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]
+    ):
+        print(
+            f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}"
+        )
+        return
+
+    if pd_geo.crs is None:
+        print(f"{observed_event_file} file is not georeferenced")
+        return
+    return pd_geo
 
 
 def parse_date_messy(date_list):
