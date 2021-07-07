@@ -55,33 +55,33 @@ def main():
                                                                                                         "*_observed*.shp"))]
                 for name_file in name_files:
                     try:
-                        paths_to_copy_glob = os.path.join(aoi_dir, f"{name_file}*")
+                        paths_to_copy_glob = os.path.join(f"gs://{aoi_dir}", f"{name_file}*")
 
                         with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
-                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"])
+                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"], capture_output=True)
                             metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,
                                                                                           code_date, verbose=False)
                             if metadata_floodmap is None:
                                 continue
 
+                            satellite_date = metadata_floodmap["satellite date"]
                             gcp_metadata_floodmap_path = os.path.join(gcp_output_parent_dir,
                                                                       metadata_floodmap['ems_code'],
                                                                       metadata_floodmap['aoi_code'],
-                                                                      metadata_floodmap['event_id'],
+                                                                      metadata_floodmap['event id'],
                                                                       "flood_meta",
                                                                       satellite_date.strftime("%Y-%m-%d") + ".piclke")
 
                             gcp_floodmap_path = os.path.join(gcp_output_parent_dir,
                                                              metadata_floodmap['ems_code'],
                                                              metadata_floodmap['aoi_code'],
-                                                             metadata_floodmap['event_id'],
+                                                             metadata_floodmap['event id'],
                                                              "floodmap",
                                                              satellite_date.strftime("%Y-%m-%d") + ".geojson")
 
                             if fs.exists(gcp_metadata_floodmap_path) and fs.exists(gcp_floodmap_path):
                                 continue
 
-                            satellite_date = metadata_floodmap["satellite date"]
                             floodmap = activations.generate_floodmap(metadata_floodmap, tmpdirname)
 
                             utils.write_pickle_to_gcp(gs_path=gcp_metadata_floodmap_path,
@@ -90,7 +90,7 @@ def main():
                             # push floodmap to bucket
                             utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
 
-                    except:
+                    except Exception:
                         warnings.warn(f"File {name_file} problem when computing input/output names")
                         traceback.print_exc(file=sys.stdout)
 
