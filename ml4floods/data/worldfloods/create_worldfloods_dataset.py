@@ -268,7 +268,8 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
         warnings.warn(f"{permanent_water_image_path_dest.full_path} not found")
 
 
-def worldfloods_output_files(output_path:Path, tiff_file_name:str, permanent_water_available:bool=True) -> Tuple[GCPPath, GCPPath, GCPPath, GCPPath, Optional[GCPPath], GCPPath]:
+def worldfloods_output_files(output_path:Path, tiff_file_name:str,
+                             permanent_water_available:bool=True) -> Tuple[GCPPath, GCPPath, GCPPath, GCPPath, Optional[GCPPath], GCPPath]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
 

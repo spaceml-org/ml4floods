@@ -12,31 +12,25 @@
     # - directory location which is in metadata_floodmap
     
 # Path based modules to allow us to save files to our local machine
-from pyprojroot import here
 import sys
 import os
-root = here(project_files=[".here"])
-sys.path.append(str(here()))
+import warnings
+import traceback
+import tempfile
 
 # Geospatial modules and WorldFloods activations mapping module
-import geopandas as gpd
-import pickle
 import pandas as pd
 from ml4floods.data.copernicusEMS import activations
-from ml4floods.data import utils
 
-from pprint import pprint
-from google.cloud import storage
-from io import BytesIO
-
-import json
-import geopandas as gpd
-import subprocess
 from tqdm import tqdm
 from ml4floods.data import utils
+import fsspec
+import subprocess
+
 
 def main():
     # ===== Fetch ESMR Codes ==========
+    fs = fsspec.filesystem("gs")
     
     csv_file = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_codes/ems_activations_20150701_20210304.csv"
     table_activations_ems = pd.read_csv(csv_file, encoding="latin1")
@@ -49,32 +43,49 @@ def main():
     gcp_output_parent_dir = f"gs://ml4cc_data_lake/0_DEV/{data_store}/WorldFloods/"
 
     # ===== Generate and store registers per code ===========
-    with tqdm(esmr_codes[76:]) as pbar:
+    with tqdm(esmr_codes) as pbar:
         for activation in pbar:
             code_date = table_activations_ems.loc[activation]["CodeDate"]
             sample_activation_dir = os.path.join(unzipped_activations_parent_dir, activation)
-            register_list = activations.filter_register_copernicusems_gcp(sample_activation_dir, code_date)
 
-            # ====== Create and save metadata_floodmap and floodmap per AOI =======
-            for metadata_floodmap in register_list:
-                floodmap = activations.generate_floodmap_gcp(metadata_floodmap, folder_files=unzipped_activations_parent_dir)
+            aois_dirs = fs.glob(os.path.join(sample_activation_dir, "*"))
 
-                # push metadata to bucket
-                gcp_metadata_floodmap_path = os.path.join(gcp_output_parent_dir,
-                                                          "flood_meta",
-                                                          metadata_floodmap['ems_code'], 
-                                                          metadata_floodmap['aoi_code'],
-                                                          f"{metadata_floodmap['event_id']}_metadata_floodmap.pickle")
-                utils.write_pickle_to_gcp(gs_path=gcp_metadata_floodmap_path, dict_val=metadata_floodmap)
+            for aoi_dir in aois_dirs:
+                name_files = [os.path.basename(of).split("_observed")[0] for of in fs.glob(os.path.join(f"gs://{aoi_dir}",
+                                                                                                        "*_observed*.shp"))]
+                for name_file in name_files:
+                    try:
+                        paths_to_copy = fs.glob(os.path.join(aoi_dir, f"{name_file}*"))
 
-                # push floodmap to bucket
-                gcp_floodmap_path = os.path.join(gcp_output_parent_dir,
-                                                 "floodmap",
-                                                 metadata_floodmap['ems_code'], 
-                                                 metadata_floodmap['aoi_code'],
-                                                 f"{metadata_floodmap['event_id']}_floodmap.geojson")
-                utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
+                        with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
+                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy, tmpdirname+"/"])
+                            metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,
+                                                                                          code_date, verbose=False)
+                            if metadata_floodmap is not None:
+                                satellite_date = metadata_floodmap["satellite date"]
+                                floodmap = activations.generate_floodmap(metadata_floodmap, tmpdirname)
+                                gcp_metadata_floodmap_path = os.path.join(gcp_output_parent_dir,
+                                                                          metadata_floodmap['ems_code'],
+                                                                          metadata_floodmap['aoi_code'],
+                                                                          metadata_floodmap['event_id'],
+                                                                          "flood_meta",
+                                                                          satellite_date.strftime("%Y-%m-%d") + ".piclke")
 
+                                utils.write_pickle_to_gcp(gs_path=gcp_metadata_floodmap_path,
+                                                          dict_val=metadata_floodmap)
+
+                                # push floodmap to bucket
+                                gcp_floodmap_path = os.path.join(gcp_output_parent_dir,
+                                                                 metadata_floodmap['ems_code'],
+                                                                 metadata_floodmap['aoi_code'],
+                                                                 metadata_floodmap['event_id'],
+                                                                 "floodmap",
+                                                                 satellite_date.strftime("%Y-%m-%d") + ".geojson")
+                                utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
+
+                    except:
+                        warnings.warn(f"File {paths_to_copy} problem when computing input/output names")
+                        traceback.print_exc(file=sys.stdout)
 
     
 if __name__ == "__main__":
