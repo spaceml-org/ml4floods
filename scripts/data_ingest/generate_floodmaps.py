@@ -91,7 +91,7 @@ def main():
                             utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
 
                     except:
-                        warnings.warn(f"File {paths_to_copy} problem when computing input/output names")
+                        warnings.warn(f"File {name_file} problem when computing input/output names")
                         traceback.print_exc(file=sys.stdout)
 
     
