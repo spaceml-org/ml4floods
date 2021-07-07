@@ -1,17 +1,8 @@
 import sys, os
-from pyprojroot import here
-
-# spyder up to find the root
-root = here(project_files=[".here"])
-
-# append to path
-sys.path.append(str(here()))
-
 
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
-import geopandas as gpd
 from pathlib import Path
 import ee
 from ml4floods.data import ee_download
