@@ -436,6 +436,10 @@ def filter_register_copernicusems(
     # load dmg_src_id fields
     dmg_srd_id_fields = np.unique(pd_geo.dmg_src_id)
     valid_srd_fields_bool = pd_source.src_id.isin(dmg_srd_id_fields)
+    if not valid_srd_fields_bool.any():
+        if verbose:
+            print(f"dmg_srd_id fields not in source file {dmg_srd_id_fields}")
+        return 
 
     min_date_post_event = min(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
     max_date_post_event = max(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
