@@ -640,7 +640,7 @@ def generate_floodmap(
         )
     )
 
-    crs = area_of_interest.crs()
+    crs = area_of_interest.crs
 
     area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
 
