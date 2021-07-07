@@ -504,9 +504,9 @@ def filter_register_copernicusems(
         print(f"{area_of_interest_file} file is not georeferenced")
         return
 
-    area_of_interest_crs = str(area_of_interest.crs).lower()
+    area_of_interest_crs = str(area_of_interest.crs)
 
-    if area_of_interest_crs != "epsg:4326":
+    if area_of_interest_crs.lower() != "epsg:4326":
         area_of_interest.to_crs(crs="epsg:4326", inplace=True)
 
     # Save pol of area of interest in epsg:4326 (lat/lng)
@@ -528,7 +528,7 @@ def filter_register_copernicusems(
         "country": "NaN",
         "satellite": satellite_post_event,
         "bounding box": get_bbox(pd_geo),
-        "reference system": {"code space": "epsg", "code": "4326"},
+        "reference system": area_of_interest_crs,
         "abstract": "NaN",
         "purpose": "NaN",
         "source": "CopernicusEMS",
