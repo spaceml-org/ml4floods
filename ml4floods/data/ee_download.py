@@ -351,6 +351,9 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
 
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+
+    ee.Initialize()
+    
     path_bucket_no_gs = path_bucket.replace("gs://", "")
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
