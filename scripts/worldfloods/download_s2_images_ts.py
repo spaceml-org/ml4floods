@@ -30,6 +30,10 @@ def check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds, threshold_inva
     data = pd.read_csv(name_dest_csv)
     filter_good = (data["cloud_probability"] <= threshold_clouds) & (data["valids"] > (1 - threshold_invalids))
     data = data[filter_good]
+    
+    if data.shape[0] <= 0:
+        return False
+
     data["datetime"] = data["system:time_start"].apply(lambda x: datetime.utcfromtimestamp(x / 1000))
     for i in range(data.shape[0]):
         date = data['datetime'][i].strftime('%Y-%m-%d')
