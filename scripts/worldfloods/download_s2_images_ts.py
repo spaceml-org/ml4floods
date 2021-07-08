@@ -54,7 +54,7 @@ def main():
         print(f"{_i}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
 
         metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
-        satellite_date = metadata_floodmap["satellite date"]
+        satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
         date_start_search = satellite_date + timedelta(days=-DAYS_ADD)
         date_end_search = satellite_date + timedelta(days=DAYS_SUBTRACT)
 
