@@ -1,22 +1,24 @@
 import tqdm
 from ml4floods.data.utils import GCPPath, write_json_to_gcp
 from pathlib import Path
-from ml4floods.data.worldfloods.create_worldfloods_dataset import generate_item, worldfloods_output_files
+from ml4floods.data.worldfloods.create_worldfloods_dataset import generate_item, worldfloods_output_files, worldfloods_extra_gcp_paths
 from ml4floods.data.create_gt import generate_land_water_cloud_gt, generate_water_cloud_binary_gt
+from ml4floods.data import utils
+import os
+import fsspec
 
 
-def main(version="v1_0",overwrite=False, prod_dev="0_DEV"):
+def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original"):
 
     assert version in ["v1_0", "v2_0"], f"Unexpected version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
+    assert dataset in ["original", "extra"], f"Unexpected dataset {dataset}"
 
-    ml_paths = [
-        "test",
-        "val",
-        "train"
-    ]
     destination_bucket_id = "ml4cc_data_lake"
-    destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{version}"
+    if dataset == "original":
+        destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{version}"
+    else:
+        destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
     if version.startswith("v1"):
         gt_fun = generate_land_water_cloud_gt
     elif version.startswith("v2"):
@@ -24,10 +26,51 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV"):
     else:
         raise NotImplementedError(f"version {version} not implemented")
 
+    if dataset == "original":
+        main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
+
+    if dataset == "extra":
+        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
+
+
+
+def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,
+                           gt_fun):
+
+    fs = fsspec.filesystem("gs")
+
+    problem_files = []
+
+    # get all files
+    files_metadata_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.piclke")]
+
+    # loop through files in the bucket
+    with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
+        for metadata_file in pbar:
+            metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
+            event_id = metadata_floodmap["event id"]+"_observed_event_a" # add observed_event_a for backwards compatibility
+            path_write = Path(destination_bucket_id).joinpath(destination_parent_path)
+            status = generate_item(metadata_file,
+                                   path_write,
+                                   file_name=event_id,
+                                   overwrite=overwrite,
+                                   pbar=pbar, gt_fun=gt_fun,
+                                   paths_function=worldfloods_extra_gcp_paths)
+            if not status:
+                problem_files.append(path_write)
+
+
+    print("Files not generated that were expected:")
+    for p in problem_files:
+        print(p)
+
+
+def main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite,
+                              gt_fun):
     problem_files = []
 
     dict_splits = {}
-    for ipath in ml_paths:
+    for ipath in ["test", "val","train"]:
         dict_splits[ipath] = {"S2":[], "gt": []}
 
         # ensure path name is the same as ipath for the loop
@@ -44,6 +87,7 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV"):
             for s2_image_path in pbar:
                 path_write = Path(destination_bucket_id).joinpath(destination_parent_path).joinpath(ipath)
                 status = generate_item(s2_image_path, path_write,
+                                       file_name=os.path.splitext(os.path.basename(s2_image_path))[0],
                                        overwrite=overwrite,
                                        pbar=pbar, gt_fun=gt_fun)
                 if status:

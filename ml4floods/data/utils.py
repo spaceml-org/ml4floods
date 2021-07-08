@@ -8,13 +8,15 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import pandas as pd
 
 import geopandas as gpd
 import numpy as np
 import rasterio
 from google.cloud import storage
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, mapping
 from shapely.ops import cascaded_union
+from datetime import datetime
 
 from ml4floods.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 from dataclasses import dataclass, field
@@ -703,8 +705,6 @@ def parse_gcp_path(full_path: str) -> Tuple[str]:
 
 class CustomJSONEncoder(json.JSONEncoder):
 
-    # TODO encode shapely.geometry objects
-    # TODO encode timestamps with isoformat()
     def default(self, obj_to_encode):
         """Pandas and Numpy have some specific types that we want to ensure
         are coerced to Python types, for JSON generation purposes. This attempts
@@ -721,6 +721,12 @@ class CustomJSONEncoder(json.JSONEncoder):
         # ndarray -> list, pretty straightforward.
         if isinstance(obj_to_encode, np.ndarray):
             return obj_to_encode.tolist()
+        if isinstance(obj_to_encode, Polygon):
+            return mapping(obj_to_encode)
+        if isinstance(obj_to_encode, pd.Timestamp):
+            return obj_to_encode.isoformat()
+        if isinstance(obj_to_encode, datetime):
+            return obj_to_encode.isoformat()
         # torch or tensorflow -> list, pretty straightforward.
         if hasattr(obj_to_encode, "numpy"):
             return obj_to_encode.numpy().tolist()

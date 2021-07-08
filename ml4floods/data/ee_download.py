@@ -27,13 +27,11 @@ BANDS_S2_NAMES = {
 }
 
 
-def download_permanent_water(date, bounds):
-    
-    year = date.year    
+def permanent_water_image(year, bounds):
     # permananet water files are only available pre-2019
-    if year >= 2019:
-        year = 2019
-    return ee.Image(f"JRC/GSW1_2/YearlyHistory/{year}").clip(bounds)
+    if year >= 2020:
+        year = 2020
+    return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}").clip(bounds)
 
 
 def get_collection(collection_name, date_start, date_end, bounds):
@@ -336,9 +334,60 @@ def bbox_2_eepolygon(bbox):
                                  [bbox["east"], bbox["south"]],
                                  [bbox["west"], bbox["south"]]]])
 
+def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
+                             path_bucket: str, crs:str='EPSG:4326',
+                             name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+    """
+    Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
+    Args:
+        area_of_interest:
+        date_search:
+        path_bucket:
+        crs:
+        name_task:
+        resolution_meters:
+
+    Returns:
+
+    """
+    assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+    path_bucket_no_gs = path_bucket.replace("gs://", "")
+    bucket_name = path_bucket_no_gs.split("/")[0]
+    path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
+
+    area_of_interest_geojson = mapping(area_of_interest)
+    pol = ee.Geometry(area_of_interest_geojson)
+
+    img_export = permanent_water_image(date_search.year, pol)
+
+    if name_task is None:
+        name_for_desc = os.path.basename(path_no_bucket_name)
+    else:
+        name_for_desc = name_task
+
+    filename = os.path.join(path_no_bucket_name, f"{date_search.year}")
+    desc = f"{name_for_desc}_{date_search.year}"
+
+    export_task_fun_img = export_task_image(
+        bucket=bucket_name,
+        crs=crs,
+        scale=resolution_meters,
+    )
+
+    return mayberun(
+        filename,
+        desc,
+        lambda: img_export,
+        export_task_fun_img,
+        overwrite=False,
+        dry_run=False,
+        bucket_name=bucket_name,
+        verbose=2,
+    )
+
 
 def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end_search: datetime,
-                path_bucket: str, collection_name="COPERNICUS/S2_SR", crs='EPSG:4326',
+                path_bucket: str, collection_name="COPERNICUS/S2_SR", crs:str='EPSG:4326',
                 threshold_invalid=.75, threshold_clouds=.75,
                 name_task=None,
                 resolution_meters=10) -> Tuple[List[ee.batch.Task], Optional[pd.DataFrame]]:

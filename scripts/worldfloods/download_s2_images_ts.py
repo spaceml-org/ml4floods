@@ -66,7 +66,8 @@ def main():
             date_start_search = satellite_date + timedelta(days=-DAYS_ADD)
             date_end_search = satellite_date + timedelta(days=DAYS_SUBTRACT)
 
-            folder_dest = os.path.join(os.path.dirname(os.path.dirname(meta_floodmap_filepath)), "S2")
+            aoi_path = os.path.dirname(os.path.dirname(meta_floodmap_filepath))
+            folder_dest = os.path.join(aoi_path, "S2")
             # S2 images will be stored in folder_dest path.
             # We will save a csv with the images queried and the available S2 images for that date
             # basename_csv = f"{date_start_search.strftime('%Y%m%d')}_{date_end_search.strftime('%Y%m%d')}.csv"
@@ -92,7 +93,7 @@ def main():
                                                                       threshold_clouds=THRESHOLD_CLOUDS,
                                                                       collection_name=COLLECTION_NAME)
 
-            if dataframe_images_s2 is None:
+            if (dataframe_images_s2 is None) or dataframe_images_s2.shape[0] == 0:
                 continue
 
             # Create csv and copy to bucket
@@ -103,6 +104,15 @@ def main():
 
             subprocess.run(["gsutil", "-m", "mv", basename_csv_local, name_dest_csv])
             tasks.extend(tasks_iter)
+
+            # download permanent water
+            folder_dest_permament = os.path.join(aoi_path, "PERMANENTWATERJRC")
+            task_permanent = ee_download.download_permanent_water(pol_scene_id, date_search=satellite_date,
+                                                                  path_bucket=folder_dest_permament,
+                                                                  name_task=name_task, crs=crs)
+            if task_permanent is not None:
+                tasks_iter.append(task_permanent)
+
         except Exception:
             warnings.warn(f"Failed")
             traceback.print_exc(file=sys.stdout)

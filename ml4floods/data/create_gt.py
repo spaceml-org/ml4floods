@@ -251,7 +251,7 @@ def generate_land_water_cloud_gt(
     gt = _generate_gt_v1_fromarray(s2_img, cloudprob=cloud_mask, water_mask=water_mask)
 
     # Compute metadata of the ground truth
-    metadata = {}
+    metadata = metadata_floodmap.copy()
     metadata["gtversion"] = "v1"
     metadata["encoding_values"] = {0: "invalid", 1: "land", 2: "water", 3: "cloud"}
     metadata["shape"] = list(water_mask.shape)
@@ -359,7 +359,8 @@ def generate_water_cloud_binary_gt(
     )
 
     # Compute metadata of the ground truth
-    metadata = {}
+    metadata = metadata_floodmap.copy()
+
     metadata["gtversion"] = "v2"
     metadata["encoding_values"] = [
         {0: "invalid", 1: "clear", 2: "cloud"},
