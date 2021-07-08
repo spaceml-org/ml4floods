@@ -36,7 +36,7 @@ def check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds, threshold_inva
 
     data["datetime"] = data["system:time_start"].apply(lambda x: datetime.utcfromtimestamp(x / 1000))
     for i in range(data.shape[0]):
-        date = data['datetime'][i].strftime('%Y-%m-%d')
+        date = data['datetime'].iloc[i].strftime('%Y-%m-%d')
         filename = os.path.join(folder_dest, date + ".tif")
         if not fs.exists(filename):
             print(f"Missing files for product {name_dest_csv}. Re-run")
