@@ -8,12 +8,23 @@ import requests
 from google.cloud import storage
 import os
 from glob import glob
-from typing import Optional, Callable, List
+from typing import Optional, Callable, List, Tuple
+from shapely.geometry import mapping, Polygon
+import numpy as np
+import geopandas as gpd
+from datetime import datetime
+import pandas as pd
+
 
 from ml4floods.data.config import BANDS_S2
 
 
-BANDS_EXPORT = ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60", "probability"]
+BANDS_S2_NAMES = {
+    # Sentinel-2 L1C
+    "COPERNICUS/S2" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60"],
+    # Sentinel-2 L2A
+    "COPERNICUS/S2_SR" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12", "SCL"]
+}
 
 
 def download_permanent_water(date, bounds):
@@ -261,13 +272,15 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket=Optional["worldfloods"], scale=10, file_dims=12544, maxPixels=5_000_000_000) -> Callable:
+def export_task_image(bucket=Optional["worldfloods"],crs='EPSG:4326',
+                      scale=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
     """
     function to export images in the WorldFloods format.
 
     Args:
         bucket:
         scale:
+        crs:
         file_dims:
         maxPixels:
 
@@ -280,7 +293,7 @@ def export_task_image(bucket=Optional["worldfloods"], scale=10, file_dims=12544,
             task = ee.batch.Export.image.toCloudStorage(image_to_download,
                                                         fileNamePrefix=fileNamePrefix,
                                                         description=description,
-                                                        crs='EPSG:4326',
+                                                        crs=crs.upper(),
                                                         skipEmptyTiles=True,
                                                         bucket=bucket,
                                                         scale=scale,
@@ -293,7 +306,7 @@ def export_task_image(bucket=Optional["worldfloods"], scale=10, file_dims=12544,
             task = ee.batch.Export.image.toDrive(image_to_download,
                                                  fileNamePrefix=fileNamePrefix,
                                                  description=description,
-                                                 crs='EPSG:4326',
+                                                 crs=crs.upper(),
                                                  skipEmptyTiles=True,
                                                  scale=scale,
                                                  formatOptions={"cloudOptimized": True},
@@ -323,6 +336,104 @@ def bbox_2_eepolygon(bbox):
                                  [bbox["east"], bbox["south"]],
                                  [bbox["west"], bbox["south"]]]])
 
+
+def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end_search: datetime,
+                path_bucket: str, collection_name="COPERNICUS/S2_SR", crs='EPSG:4326',
+                threshold_invalid=.75, threshold_clouds=.75,
+                resolution_meters=10) -> Tuple[List[ee.batch.Task], Optional[pd.DataFrame]]:
+    """
+    Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
+    path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
+    threshold_clouds cloudy pixels.
+
+    Args:
+        area_of_interest:
+        date_start_search:
+        date_end_search:
+        path_bucket:
+        collection_name:
+        crs:
+        threshold_invalid:
+        threshold_clouds:
+        resolution_meters:
+
+    Returns:
+        List of running tasks and dataframe with metadata of the S2 files.
+
+    """
+
+    assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+
+    path_bucket_no_gs = path_bucket.replace("gs://", "")
+    bucket_name = path_bucket_no_gs.split("/")[0]
+    path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
+
+    ee.Initialize()
+    area_of_interest_geojson = mapping(area_of_interest)
+
+    pol = ee.Geometry(area_of_interest_geojson)
+
+    # Grab the S2 images
+    img_col = get_s2_collection(date_start_search, date_end_search, pol,
+                                collection_name=collection_name)
+    if img_col is None:
+        return [], None
+
+    # Get info of the S2 images (convert to table)
+    img_col_info = img_collection_to_feature_collection(img_col,
+                                                        ["system:time_start", "valids",
+                                                         "cloud_probability"])
+
+    img_col_info_local = gpd.GeoDataFrame.from_features(img_col_info.getInfo())
+    img_col_info_local["datetime"] = img_col_info_local["system:time_start"].apply(
+        lambda x: datetime.utcfromtimestamp(x / 1000))
+    img_col_info_local["cloud_probability"] /= 100
+    img_col_info_local = img_col_info_local[["system:time_start", "valids", "cloud_probability", "datetime"]]
+    img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
+
+    n_images_col = img_col_info_local.shape[0]
+    print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()}")
+
+    imgs_list = img_col.toList(n_images_col, 0)
+
+    export_task_fun_img = export_task_image(
+        bucket=bucket_name,
+        crs=crs,
+        scale=resolution_meters,
+    )
+    filter_good = (img_col_info_local["cloud_probability"] <= threshold_clouds) & (
+                img_col_info_local["valids"] > (1 - threshold_invalid))
+
+    if np.sum(filter_good) == 0:
+        print("All images are bad")
+        return [], img_col_info_local
+
+    img_col_info_local_good = img_col_info_local[filter_good]
+
+    tasks = []
+    for good_images in img_col_info_local_good.itertuples():
+        img_export = ee.Image(imgs_list.get(good_images.index_image_collection))
+        img_export = img_export.select(BANDS_S2_NAMES[collection_name] + ["probability"]).toFloat().clip(pol)
+
+        date = good_images.datetime.strftime('%Y-%m-%d')
+
+        name_for_desc = os.path.basename(path_no_bucket_name)
+        filename = os.path.join(path_no_bucket_name, date)
+        desc = f"{name_for_desc}_{date}"
+        task = mayberun(
+            filename,
+            desc,
+            lambda: img_export,
+            export_task_fun_img,
+            overwrite=False,
+            dry_run=False,
+            bucket_name=bucket_name,
+            verbose=2,
+        )
+        if task is not None:
+            tasks.append(task)
+
+    return tasks, img_col_info_local
 
 def wait_tasks(tasks:List[ee.batch.Task]) -> None:
     task_down = []
