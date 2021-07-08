@@ -340,6 +340,7 @@ def bbox_2_eepolygon(bbox):
 def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end_search: datetime,
                 path_bucket: str, collection_name="COPERNICUS/S2_SR", crs='EPSG:4326',
                 threshold_invalid=.75, threshold_clouds=.75,
+                name_task=None,
                 resolution_meters=10) -> Tuple[List[ee.batch.Task], Optional[pd.DataFrame]]:
     """
     Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
@@ -417,7 +418,11 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
 
         date = good_images.datetime.strftime('%Y-%m-%d')
 
-        name_for_desc = os.path.basename(path_no_bucket_name)
+        if name_task is None:
+            name_for_desc = os.path.basename(path_no_bucket_name)
+        else:
+            name_for_desc = name_task
+        
         filename = os.path.join(path_no_bucket_name, date)
         desc = f"{name_for_desc}_{date}"
         task = mayberun(

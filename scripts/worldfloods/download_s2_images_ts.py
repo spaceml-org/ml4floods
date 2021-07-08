@@ -75,10 +75,11 @@ def main():
         lon, lat = list(pol_scene_id.centroid.coords)[0]
         crs = convert_wgs_to_utm(lon=lon, lat=lat)
 
-
+        name_task = metadata_floodmap["ems_code"]+"_"+metadata_floodmap["aoi_code"]
         tasks_iter, dataframe_images_s2 = ee_download.download_s2(pol_scene_id, date_start_search=date_start_search,
                                                                   date_end_search=date_end_search,
                                                                   crs=crs, path_bucket=folder_dest,
+                                                                  name_task=name_task,
                                                                   threshold_invalid=THRESHOLD_INVALIDS,
                                                                   threshold_clouds=THRESHOLD_CLOUDS,
                                                                   collection_name=COLLECTION_NAME)
