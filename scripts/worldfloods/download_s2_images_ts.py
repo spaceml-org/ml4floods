@@ -6,6 +6,9 @@ import os
 import pandas as pd
 import subprocess
 import tempfile
+import warnings
+import traceback
+import sys
 
 
 def convert_wgs_to_utm(lon: float, lat: float) -> str:
@@ -57,48 +60,52 @@ def main():
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
         print(f"{_i}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
 
-        metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
-        satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
-        date_start_search = satellite_date + timedelta(days=-DAYS_ADD)
-        date_end_search = satellite_date + timedelta(days=DAYS_SUBTRACT)
+        try:
+            metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
+            satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+            date_start_search = satellite_date + timedelta(days=-DAYS_ADD)
+            date_end_search = satellite_date + timedelta(days=DAYS_SUBTRACT)
 
-        folder_dest = os.path.join(os.path.dirname(os.path.dirname(meta_floodmap_filepath)), "S2")
-        # S2 images will be stored in folder_dest path.
-        # We will save a csv with the images queried and the available S2 images for that date
-        # basename_csv = f"{date_start_search.strftime('%Y%m%d')}_{date_end_search.strftime('%Y%m%d')}.csv"
-        basename_csv = f"{DAYS_ADD}_{DAYS_SUBTRACT}_metadata.csv"
-        name_dest_csv = os.path.join(folder_dest, basename_csv)
+            folder_dest = os.path.join(os.path.dirname(os.path.dirname(meta_floodmap_filepath)), "S2")
+            # S2 images will be stored in folder_dest path.
+            # We will save a csv with the images queried and the available S2 images for that date
+            # basename_csv = f"{date_start_search.strftime('%Y%m%d')}_{date_end_search.strftime('%Y%m%d')}.csv"
+            basename_csv = f"{DAYS_ADD}_{DAYS_SUBTRACT}_metadata.csv"
+            name_dest_csv = os.path.join(folder_dest, basename_csv)
 
-        if not check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds=THRESHOLD_CLOUDS,
-                           threshold_invalids=THRESHOLD_INVALIDS):
-            print(f"\tAll data downloaded for product")
-            continue
+            if not check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds=THRESHOLD_CLOUDS,
+                               threshold_invalids=THRESHOLD_INVALIDS):
+                print(f"\tAll data downloaded for product")
+                continue
 
-        # Set the crs to UTM of the center polygon
-        pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
-        lon, lat = list(pol_scene_id.centroid.coords)[0]
-        crs = convert_wgs_to_utm(lon=lon, lat=lat)
+            # Set the crs to UTM of the center polygon
+            pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
+            lon, lat = list(pol_scene_id.centroid.coords)[0]
+            crs = convert_wgs_to_utm(lon=lon, lat=lat)
 
-        name_task = metadata_floodmap["ems_code"]+"_"+metadata_floodmap["aoi_code"]
-        tasks_iter, dataframe_images_s2 = ee_download.download_s2(pol_scene_id, date_start_search=date_start_search,
-                                                                  date_end_search=date_end_search,
-                                                                  crs=crs, path_bucket=folder_dest,
-                                                                  name_task=name_task,
-                                                                  threshold_invalid=THRESHOLD_INVALIDS,
-                                                                  threshold_clouds=THRESHOLD_CLOUDS,
-                                                                  collection_name=COLLECTION_NAME)
+            name_task = metadata_floodmap["ems_code"]+"_"+metadata_floodmap["aoi_code"]
+            tasks_iter, dataframe_images_s2 = ee_download.download_s2(pol_scene_id, date_start_search=date_start_search,
+                                                                      date_end_search=date_end_search,
+                                                                      crs=crs, path_bucket=folder_dest,
+                                                                      name_task=name_task,
+                                                                      threshold_invalid=THRESHOLD_INVALIDS,
+                                                                      threshold_clouds=THRESHOLD_CLOUDS,
+                                                                      collection_name=COLLECTION_NAME)
 
-        if dataframe_images_s2 is None:
-            continue
+            if dataframe_images_s2 is None:
+                continue
 
-        # Create csv and copy to bucket
-        with tempfile.NamedTemporaryFile(mode="w", dir=".", suffix=".csv", prefix=os.path.splitext(basename_csv)[0],
-                                         delete=False, newline='') as fh:
-            dataframe_images_s2.to_csv(fh, index=False)
-            basename_csv_local = fh.name
+            # Create csv and copy to bucket
+            with tempfile.NamedTemporaryFile(mode="w", dir=".", suffix=".csv", prefix=os.path.splitext(basename_csv)[0],
+                                             delete=False, newline='') as fh:
+                dataframe_images_s2.to_csv(fh, index=False)
+                basename_csv_local = fh.name
 
-        subprocess.run(["gsutil", "-m", "mv", basename_csv_local, name_dest_csv])
-        tasks.extend(tasks_iter)
+            subprocess.run(["gsutil", "-m", "mv", basename_csv_local, name_dest_csv])
+            tasks.extend(tasks_iter)
+        except Exception:
+            warnings.warn(f"Failed")
+            traceback.print_exc(file=sys.stdout)
 
     ee_download.wait_tasks(tasks)
 
