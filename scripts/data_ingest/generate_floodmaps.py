@@ -69,7 +69,7 @@ def main():
                                                                       metadata_floodmap['ems_code'],
                                                                       metadata_floodmap['aoi_code'],
                                                                       "flood_meta",
-                                                                      satellite_date.strftime("%Y-%m-%d") + ".piclke")
+                                                                      satellite_date.strftime("%Y-%m-%d") + ".pickle")
 
                             gcp_floodmap_path = os.path.join(gcp_output_parent_dir,
                                                              metadata_floodmap['ems_code'],

@@ -49,7 +49,7 @@ def check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds, threshold_inva
 
 def main():
     fs = fsspec.filesystem("gs")
-    files_metatada_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.piclke")]
+    files_metatada_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
     THRESHOLD_INVALIDS = .70
     THRESHOLD_CLOUDS = .95
     DAYS_ADD = 20

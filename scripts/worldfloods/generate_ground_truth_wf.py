@@ -6,6 +6,8 @@ from ml4floods.data.create_gt import generate_land_water_cloud_gt, generate_wate
 from ml4floods.data import utils
 import os
 import fsspec
+import json
+import warnings
 
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original"):
@@ -41,15 +43,42 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
 
     problem_files = []
 
+    with fs.open("gs://ml4cc_data_lake/2_Mart/worldfloods_v1_0/train_test_split.json", "r") as fh:
+        data = json.load(fh)
+
+    train_val_test_split = {}
+    for split in ["train", "test", "val"]:
+        train_val_test_split[split] = set((os.path.splitext(os.path.basename(d))[0] for d in data[split]["S2"]))
+
+    cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
+    cems_codes_test.add("EMSR9284")
+    cems_codes_test.add("EMSR284")
+
     # get all files
-    files_metadata_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.piclke")]
+    files_metadata_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
 
     # loop through files in the bucket
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
             event_id = metadata_floodmap["event id"]+"_observed_event_a" # add observed_event_a for backwards compatibility
-            path_write = Path(destination_bucket_id).joinpath(destination_parent_path)
+
+            # Find out which split to put the data in
+            subset = "unused"
+            for split in ["train", "test", "val"]:
+                if event_id in train_val_test_split[split]:
+                    subset = split
+                    if split == "test":
+                        expected_test_file = f"gs://ml4cc_data_lake/2_Mart/worldfloods_v1_0/test/floodmaps/{event_id}.json"
+                        if fs.exists(expected_test_file):
+                            metadata_floodmap["floodmap"] = expected_test_file
+                        else:
+                            warnings.warn(f"Test file {event_id} does not exists in old test database {expected_test_file}")
+                    break
+                if (split == "test") and metadata_floodmap["cems_code"] in cems_codes_test:
+                    subset = "banned"
+
+            path_write = os.path.join(destination_bucket_id, destination_parent_path, subset)
             status = generate_item(metadata_file,
                                    path_write,
                                    file_name=event_id,
@@ -85,7 +114,7 @@ def main_worldlfoods_original(destination_bucket_id, destination_parent_path, ov
         print(f"Generating ML GT for {ipath}, {len(files_in_bucket)} files")
         with tqdm.tqdm(files_in_bucket) as pbar:
             for s2_image_path in pbar:
-                path_write = Path(destination_bucket_id).joinpath(destination_parent_path).joinpath(ipath)
+                path_write = os.path.join(destination_bucket_id, destination_parent_path, ipath)
                 status = generate_item(s2_image_path, path_write,
                                        file_name=os.path.splitext(os.path.basename(s2_image_path))[0],
                                        overwrite=overwrite,
@@ -94,7 +123,7 @@ def main_worldlfoods_original(destination_bucket_id, destination_parent_path, ov
                     s2path = GCPPath(s2_image_path)
                     cloudprob_path_dest, floodmap_path_dest, gt_path_dest, \
                     meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
-                        output_path=path_write, tiff_file_name=s2path.file_name, permanent_water_available=True)
+                        output_path=path_write, file_name=s2path.file_name, permanent_water_available=True)
                     dict_splits[ipath]["S2"].append(s2_image_path_dest.full_path)
                     dict_splits[ipath]["gt"].append(gt_path_dest.full_path)
                 else:
@@ -114,12 +143,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser('Generate WorldFloods ML Dataset')
     parser.add_argument('--version', default='v1_0', choices=["v1_0", "v2_0"],
-                        help="Which version of the data we want to create (3-class) or multioutput binary")
-    parser.add_argument('--prod_dev', default='v1_0', choices=["0_DEV", "2_PROD"],
+                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+    parser.add_argument('--dataset', default='original', choices=["original", "extra"],
+                        help="Use the original data or the newly downloaded data from Copernicus EMS")
+    parser.add_argument('--prod_dev', default='0_DEV', choices=["0_DEV", "2_PROD"],
                         help="environment where the dataset would be created")
     parser.add_argument('--overwrite', default=False, action='store_true',
                         help="Overwrite the content in the folder {prod_dev}/2_Mart/worldfloods_{version}")
 
     args = parser.parse_args()
 
-    main(version=args.version, overwrite=args.overwrite, prod_dev=args.prod_dev)
+    main(version=args.version, overwrite=args.overwrite, prod_dev=args.prod_dev, dataset=args.dataset)

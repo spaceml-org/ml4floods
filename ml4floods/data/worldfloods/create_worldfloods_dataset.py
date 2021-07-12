@@ -69,8 +69,11 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     meta_floodmap = utils.read_pickle_from_gcp(main_path.full_path)
 
     # path to floodmap path
-    floodmap_path = main_path.replace("/flood_meta/", "/floodmap/")
-    floodmap_path = floodmap_path.replace(".piclke", ".geojson")
+    if "floodmap" not in meta_floodmap:
+        floodmap_path = main_path.replace("/flood_meta/", "/floodmap/")
+        floodmap_path = floodmap_path.replace(".pickle", ".geojson")
+    else:
+        floodmap_path = meta_floodmap["floodmap"]
 
     assert floodmap_path.check_if_file_exists(), f"Floodmap not found in {floodmap_path}"
 
@@ -207,7 +210,7 @@ def worldfloods_old_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, GCP
     return floodmap, cloudprob_path, permanent_water_path, meta_floodmap, s2_image_path
 
 
-def generate_item(main_path:str, output_path:Union[str, Path], file_name:str,
+def generate_item(main_path:str, output_path:str, file_name:str,
                   overwrite:bool=False, pbar:Optional[tqdm.tqdm]=None,
                   gt_fun:Callable=None, delete_if_error:bool=True,
                   paths_function:Callable=worldfloods_old_gcp_paths) -> bool:
@@ -229,6 +232,7 @@ def generate_item(main_path:str, output_path:Union[str, Path], file_name:str,
         aforementioned products.
         output_path: Folder where the item will be written. See fun worldfloods_output_files for corresponding output file naming convention.
         overwrite: if False it will not overwrite existing products in path_write folder.
+        file_name:
         pbar: optional progress bar with method description.
         gt_fun: one of ml4floods.data.create_gt.generate_land_water_cloud_gt or ml4floods.data.create_gt.generate_water_cloud_binary_gt.
         This function determines how the ground truth is created from the input products.
@@ -264,7 +268,7 @@ def generate_item(main_path:str, output_path:Union[str, Path], file_name:str,
                 pbar.set_description(f"Generating Ground Truth {name}...")
 
             with rasterio.open(s2_image_path.full_path) as rst:
-                bands = rst.descriptions()
+                bands = rst.descriptions
                 cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
 
             gt, gt_meta = gt_fun(
@@ -381,7 +385,7 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
         warnings.warn(f"{permanent_water_image_path_dest.full_path} not found")
 
 
-def worldfloods_output_files(output_path:Path, file_name:str,
+def worldfloods_output_files(output_path:str, file_name:str,
                              permanent_water_available:bool=True) -> Tuple[GCPPath, GCPPath, GCPPath, GCPPath, Optional[GCPPath], GCPPath]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
@@ -404,46 +408,15 @@ def worldfloods_output_files(output_path:Path, file_name:str,
 
     """
     if permanent_water_available:
-        permanent_water_image_path_dest = GCPPath(
-            str(
-                output_path
-                    .joinpath("PERMANENTWATERJRC")
-                    .joinpath(file_name+".tif")
-            )
-        )
+        permanent_water_image_path_dest = GCPPath(os.path.join(output_path, "PERMANENTWATERJRC", file_name+".tif"))
     else:
         permanent_water_image_path_dest = None
-    s2_image_path_dest = GCPPath(
-        str(
-            output_path
-                .joinpath("S2")
-                .joinpath(file_name+".tif")
-        )
-    )
-    meta_parent_path = GCPPath(str(
-        output_path
-            .joinpath("meta")
-            .joinpath(file_name+".json")
-    ))
-    cloudprob_path_dest = GCPPath(
-        str(
-            output_path
-                .joinpath("cloudprob")
-                .joinpath(file_name+".tif")
-        )
-    )
 
-    floodmap_path_dest = GCPPath(
-        str(
-            output_path
-                .joinpath("floodmaps")
-                .joinpath(file_name+".geojson")
-        )
-    )
-
-    # replace parent path
-    gt_path = GCPPath(str(output_path
-                          .joinpath("gt")
-                          .joinpath(file_name+".tif")))
+    output_path = str(output_path)
+    s2_image_path_dest = GCPPath(os.path.join(output_path,"S2",file_name+".tif"))
+    meta_parent_path = GCPPath(os.path.join(output_path,"meta",file_name+".json"))
+    cloudprob_path_dest = GCPPath(os.path.join(output_path, "cloudprob",file_name+".tif"))
+    floodmap_path_dest = GCPPath(os.path.join(output_path,"floodmaps",file_name+".geojson"))
+    gt_path = GCPPath(os.path.join(output_path,"gt",file_name+".tif"))
 
     return cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest
