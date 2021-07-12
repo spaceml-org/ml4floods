@@ -232,19 +232,26 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     """
     channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
 
-    train_transform = transformations.Compose([
+    train_transform = [
         transformations.InversePermuteChannels(),
         transformations.RandomRotate90(always_apply=True, p=0.5),
-        transformations.Flip(always_apply=True, p=0.5),
-        transformations.Normalize(
-            mean=channel_mean, 
-            std=channel_std, 
-            max_pixel_value=1),
-        transformations.PermuteChannels(), 
+        transformations.Flip(always_apply=True, p=0.5)]
+
+    if data_config.train_transformation.normalize:
+        train_transform.append(transformations.Normalize(
+            mean=channel_mean,
+            std=channel_std,
+            max_pixel_value=1))
+
+    train_transform.extend([
+        transformations.PermuteChannels(),
         transformations.ToTensor(),
     ])
 
-    test_transform = transformations.Compose([ 
+    train_transform = transformations.Compose(train_transform)
+
+    if data_config.test_transformation.normalize:
+        test_transform = [
         transformations.InversePermuteChannels(), 
         transformations.Normalize(
             mean=channel_mean, 
@@ -252,6 +259,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
             max_pixel_value=1),
         transformations.PermuteChannels(),
         transformations.ToTensor(),
-    ])
+        ]
+        test_transform = transformations.Compose(test_transform)
+    else:
+        test_transform = transformations.ToTensor()
     
     return train_transform, test_transform
