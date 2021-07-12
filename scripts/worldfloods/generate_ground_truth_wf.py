@@ -74,7 +74,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
                         else:
                             warnings.warn(f"Test file {event_id} does not exists in old test database {expected_test_file}")
                     break
-                if (split == "test") and metadata_floodmap["cems_code"] in cems_codes_test:
+                if (split == "test") and metadata_floodmap["ems_code"] in cems_codes_test:
                     subset = "banned"
 
             path_write = os.path.join(destination_bucket_id, destination_parent_path, subset)
