@@ -261,7 +261,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
             invalids = ((cloud_ground_truth != 1) | (water_ground_truth == 0)).to(test_outputs_categorical.device)
             ground_truth_outputs = torch.clone(water_ground_truth).to(test_outputs_categorical.device)
         else:
-            ground_truth_outputs = torch.clone(ground_truth.to(test_outputs_categorical.device))
+            ground_truth_outputs = torch.clone(ground_truth[:, 0].to(test_outputs_categorical.device))
             # Save invalids to discount
             invalids = ground_truth_outputs == 0
 
