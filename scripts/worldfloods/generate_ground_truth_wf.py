@@ -32,18 +32,17 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original"):
         main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
 
     if dataset == "extra":
-        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
+        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,prod_dev, gt_fun)
 
 
 
-def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,
-                           gt_fun):
+def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, prod_dev, gt_fun):
 
     fs = fsspec.filesystem("gs")
 
     problem_files = []
 
-    with fs.open("gs://ml4cc_data_lake/2_Mart/worldfloods_v1_0/train_test_split.json", "r") as fh:
+    with fs.open(f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_v1_0/train_test_split.json", "r") as fh:
         data = json.load(fh)
 
     train_val_test_split = {}
@@ -55,7 +54,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
     cems_codes_test.add("EMSR284")
 
     # get all files
-    files_metadata_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
+    files_metadata_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
 
     # loop through files in the bucket
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
