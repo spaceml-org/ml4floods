@@ -36,7 +36,7 @@ def process_s2metadata(s2files_path:str) -> pd.DataFrame:
     datas2 = pd.read_csv(path_csv_file)
                          # converters={'datetime': pd.Timestamp})
 
-    datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.strptime(x[:-4], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc))
+    datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))
 
     datas2["names2file"] = datas2.datetime.apply(lambda x: x.strftime("%Y-%m-%d"))
     datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(s2files_path, x+".tif")))
@@ -257,7 +257,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         # get output files
         cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
             output_path, file_name, permanent_water_path is not None)
-    except:
+    except Exception:
         warnings.warn(f"File {main_path} problem when computing input/output names")
         traceback.print_exc(file=sys.stdout)
         return False
