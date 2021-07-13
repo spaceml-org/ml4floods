@@ -243,8 +243,8 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         True if success in creating all the products
 
     """
-
-    local_path = Path(".").joinpath("cache_datasets")
+    name_path_local = gt_fun.__name__.replace(".", "-") + paths_function.__name__.replace(".", "-")
+    local_path = Path(".").joinpath(name_path_local)
     os.makedirs(local_path, exist_ok=True)
 
     main_path = GCPPath(main_path)
@@ -322,6 +322,8 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             floodmap_local_file = str(local_path.joinpath(floodmap_path_dest.file_name)).replace(".tif", ".geojson")
             floodmap.to_file(floodmap_local_file, driver="GeoJSON")
             save_file_to_bucket(floodmap_path_dest.full_path, floodmap_local_file)
+
+            Path(floodmap_local_file).unlink()
 
         # Copy cloudprob, S2 and permanent water
         if cloudprob_path is not None and (not cloudprob_path_dest.check_if_file_exists() or overwrite):
