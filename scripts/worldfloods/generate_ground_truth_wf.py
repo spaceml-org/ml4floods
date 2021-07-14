@@ -85,7 +85,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
                                    pbar=pbar, gt_fun=gt_fun,
                                    paths_function=worldfloods_extra_gcp_paths)
             if not status:
-                problem_files.append(path_write)
+                problem_files.append(metadata_file)
 
 
     print("Files not generated that were expected:")
