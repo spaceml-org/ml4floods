@@ -7,8 +7,6 @@ sys.path.append(str(here()))
 from google.cloud import storage
 from ml4floods.data.copernicusEMS import activations
 
-# import importlib
-# importlib.reload(activations)
 import requests
 from io import BytesIO, StringIO
 from typing import Dict
@@ -84,7 +82,7 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     input_zip = ZipFile(f_from_gcp)
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
-            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
+            if 'area' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
                 zipdict[name] = input_zip.read(name)
                 blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
                 blob_to_unzipped.upload_from_string(zipdict[name])
@@ -95,10 +93,16 @@ def main():
     bucket_id = 'ml4cc_data_lake'
     path_to_write_zip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
     path_to_write_unzip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
+    import argparse
+
+    parser = argparse.ArgumentParser('Download Copernicus EMS')
+    parser.add_argument('--event_start_date', default="2015-07-01",
+                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+    args = parser.parse_args()
     
     # fetch Copernicus EMSR codes from Copernicus EMS activations page
     # pandas DataFrame of activations table
-    table_activations_ems = activations.table_floods_ems(event_start_date="2015-07-01")
+    table_activations_ems = activations.table_floods_ems(event_start_date=args.event_start_date)
     
     # convert code index to a list
     emsr_codes = table_activations_ems.index.to_list()

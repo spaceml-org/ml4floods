@@ -21,14 +21,15 @@ CODES_FLOODMAP = {
     'Riverine flood': 1,
     # CopernicusEMS (hydro)
     'BH140-River': 2,
-    'BH090-Land Subject to Inundation': 2,
+    'BH090-Land Subject to Inundation': 0,
     'BH080-Lake': 2,
     'BA040-Open Water': 2,
-    # 'BA030-Island': 2, islands are excluded! see filter_land func
+    'BA030-Island': 0, # islands are excluded! see filter_land func
     'BH141-River Bank': 2,
+    'BH170-Natural Spring': 2,
     'BH130-Reservoir': 2,
     'BH141-Stream': 2,
-    'BA010-Coastline': 1,
+    'BA010-Coastline': 0,
     # UNOSAT
     "preflood water": 2,
     # "Flooded area": 1,  # 'flood water' DUPLICATED
