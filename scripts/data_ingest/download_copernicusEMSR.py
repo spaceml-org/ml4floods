@@ -1,17 +1,16 @@
 from pyprojroot import here
 import sys
-import os
-#root = here(project_files)=[".here"]
 sys.path.append(str(here()))
 
 from google.cloud import storage
 from ml4floods.data.copernicusEMS import activations
 
 import requests
-from io import BytesIO, StringIO
+from io import BytesIO
 from typing import Dict
 from zipfile import ZipFile, is_zipfile
 import tqdm
+
 
 copernicus_ems_webscrape_data  = {"confirmation": 1,
                                   "op":  "Download file",
@@ -111,7 +110,7 @@ def main():
     print(f"Generating Copernicus EMSR codes to fetch:")
     with tqdm.tqdm(emsr_codes) as pbar:
         for emsr in pbar:
-            pbar.set_description("Retrieving EMSR zipfiles to extract...")
+            pbar.set_description(f"Code: {emsr}")
             zip_files_activation_url_list = activations.fetch_zip_file_urls(emsr)
             path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}"
             for zip_url in zip_files_activation_url_list:

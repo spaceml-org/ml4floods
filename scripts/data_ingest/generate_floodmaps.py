@@ -28,14 +28,15 @@ import fsspec
 import subprocess
 
 
-def main():
+def main(event_start_date):
     # ===== Fetch ESMR Codes ==========
     fs = fsspec.filesystem("gs")
     
-    csv_file = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_codes/ems_activations_20150701_20210304.csv"
-    table_activations_ems = pd.read_csv(csv_file, encoding="latin1")
-    table_activations_ems = table_activations_ems.set_index("Code")
-    
+    # csv_file = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_codes/ems_activations_20150701_20210304.csv"
+    # table_activations_ems = pd.read_csv(csv_file, encoding="latin1")
+    # table_activations_ems = table_activations_ems.set_index("Code")
+
+    table_activations_ems = activations.table_floods_ems(event_start_date=event_start_date)
     esmr_codes = list(table_activations_ems.index)
     
     unzipped_activations_parent_dir = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip"
@@ -47,6 +48,7 @@ def main():
         for activation in pbar:
             code_date = table_activations_ems.loc[activation]["CodeDate"]
             sample_activation_dir = os.path.join(unzipped_activations_parent_dir, activation)
+            pbar.set_description(f"Code: {code_date}")
 
             aois_dirs = fs.glob(os.path.join(sample_activation_dir, "*"))
 
@@ -94,4 +96,10 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser('Download Copernicus EMS')
+    parser.add_argument('--event_start_date', default="2015-07-01",
+                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+    args = parser.parse_args()
+    main(args.event_start_date)
