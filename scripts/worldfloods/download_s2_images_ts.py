@@ -47,9 +47,9 @@ def check_rerun(name_dest_csv, fs, folder_dest, threshold_clouds, threshold_inva
     return False
 
 
-def main():
+def main(cems_code):
     fs = fsspec.filesystem("gs")
-    files_metatada_pickled = [f"gs://{f}" for f in fs.glob("gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
+    files_metatada_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*/flood_meta/*.pickle")]
     THRESHOLD_INVALIDS = .70
     THRESHOLD_CLOUDS = .95
     DAYS_ADD = 20
@@ -118,4 +118,10 @@ def main():
     ee_download.wait_tasks(tasks)
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser('Download Copernicus EMS')
+    parser.add_argument('--cems_code', default="",
+                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+    args = parser.parse_args()
+    main(args.cems_code)
