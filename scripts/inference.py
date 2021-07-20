@@ -16,6 +16,8 @@ import pandas as pd
 
 
 def load_inference_function(experiment_name):
+
+    # TODO handle multioutput model (instead of binary classification model)
     config_fp = f"gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/{experiment_name}/config.json"
     config = get_default_config(config_fp)
 
@@ -26,7 +28,7 @@ def load_inference_function(experiment_name):
     config["model_params"]['test'] = True
     model = get_model(config.model_params, experiment_name)
     model.to("cuda")
-    channels = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
+    channels = get_channel_configuration_bands(config.data_params.channel_configuration)
 
     return get_model_inference_function(model, config,apply_normalization=True), channels
 
@@ -58,8 +60,9 @@ def main(model_experiment, cems_code):
     with torch.no_grad():
         total = 0
         for filename in tiff_files:
-            torch_inputs, transform = dataset.load_input( f"gs://{filename}",
-                                                          window=None, channels=channels)
+            filename = f"gs://{filename}"
+            torch_inputs, transform = dataset.load_input(filename,
+                                                         window=None, channels=channels)
 
             print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
             total += 1
@@ -78,11 +81,12 @@ def main(model_experiment, cems_code):
             # Save data as vectors
             data_out = []
             start = 0
+            class_name = {2: "water", 3: "cloud"}
             for c in [2, 3]:
                 geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
                 data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
                                                   "id": np.arange(start, start + len(geoms_polygons)),
-                                                  "class": c},
+                                                  "class": class_name[c]},
                                                  crs=crs))
                 start += len(geoms_polygons)
 
@@ -101,7 +105,7 @@ def main(model_experiment, cems_code):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Run inference on S2 images')
+    parser = argparse.ArgumentParser('Run inference on all S2 images in Stagging')
     parser.add_argument('--cems_code', default="",
                         help="EMS Codes to filter")
     parser.add_argument('--model_experiment', default=MODEL_EXPERIMENT_DEFAULT,
