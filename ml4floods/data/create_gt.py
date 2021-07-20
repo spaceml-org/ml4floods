@@ -107,7 +107,7 @@ def compute_water(
 
 
 # TODO: Have a single function. No need of 2 versions
-def _read_s2img_cloudmask_v1(
+def _read_s2img_cloudmask(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
     cloudprob_image_path: Optional[str] = None,
@@ -154,51 +154,6 @@ def _read_s2img_cloudmask_v1(
     return s2_img, cloud_mask
 
 
-# TODO: Have a single function. No need of 2 versions
-def _read_s2img_cloudmask_v2(
-    s2tiff: str,
-    window: Optional[rasterio.windows.Window] = None,
-    cloudprob_tiff: Optional[str] = None,
-    cloudprob_in_lastband: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Helper function of generate_gt_v1 and generate_gt_v2
-
-    Args:
-        s2tiff:
-        window:
-        cloudprob_tiff:
-        cloudprob_in_lastband:
-
-    Returns:
-        s2img: C,H,W array with len(BANDS_S2) channels
-        cloud_mask: H, W array with cloud probability
-
-    """
-    bands_read = list(range(1, len(BANDS_S2) + 1))
-    # bands_read = list(range(1, 4))  # bands in rasterio are 1-based!
-    with rasterio.open(s2tiff, "r") as s2_rst:
-        s2_img = s2_rst.read(bands_read, window=window)
-    if cloudprob_in_lastband:
-        with rasterio.open(s2tiff, "r") as s2_rst:
-            last_band = s2_rst.count
-            cloud_mask = s2_rst.read(last_band, window=window)
-            cloud_mask = (
-                cloud_mask.astype(np.float32) / 100.0
-            )  # cloud mask in the last band is from 0 - 100
-    else:
-        if cloudprob_tiff is None:
-            from ml4floods.data import cloud_masks
-
-            # Compute cloud mask
-            cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
-        else:
-            with rasterio.open(cloudprob_tiff, "r") as cld_rst:
-                cloud_mask = cld_rst.read(1, window=window)
-
-    return s2_img, cloud_mask
-
-
 def generate_land_water_cloud_gt(
     s2_image_path: str,
     floodmap: gpd.GeoDataFrame,
@@ -231,7 +186,7 @@ def generate_land_water_cloud_gt(
     # =========================================
     # Generate Cloud Mask given S2 Data
     # =========================================
-    s2_img, cloud_mask = _read_s2img_cloudmask_v1(
+    s2_img, cloud_mask = _read_s2img_cloudmask(
         s2_image_path,
         window=window,
         cloudprob_image_path=cloudprob_image_path,
@@ -330,7 +285,7 @@ def generate_water_cloud_binary_gt(
     # =========================================
     # Generate Cloud Mask given S2 Data
     # =========================================
-    s2_img, cloud_mask = _read_s2img_cloudmask_v1(
+    s2_img, cloud_mask = _read_s2img_cloudmask(
         s2_image_path,
         window=window,
         cloudprob_image_path=cloudprob_image_path,

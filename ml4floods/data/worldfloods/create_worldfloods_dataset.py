@@ -8,16 +8,14 @@ from ml4floods.data.utils import save_file_to_bucket
 
 from ml4floods.data.io import save_groundtruth_tiff_rasterio
 from ml4floods.data import utils
+from ml4floods.data.ee_download import process_s2metadata
 import os
 from ml4floods.data.utils import GCPPath, CustomJSONEncoder, read_json_from_gcp
 
 from pathlib import Path
-from typing import Union, Optional, Callable, Tuple, Dict
+from typing import Optional, Callable, Tuple, Dict
 import geopandas as gpd
 import rasterio
-import fsspec
-import pandas as pd
-from datetime import datetime, timezone
 
 
 CLOUDPROB_PARENT_PATH = "worldfloods/tiffimages"
@@ -26,42 +24,17 @@ META_FLOODMAP_PARENT_PATH = "worldfloods/tiffimages/meta"
 WORLDFLOODS_V0_BUCKET = "ml4floods"
 
 
-def process_s2metadata(s2files_path:str) -> pd.DataFrame:
-    fs = fsspec.filesystem("gs")
-    csv_files = fs.glob(os.path.join(s2files_path,"*.csv"))
-    assert len(csv_files) > 0, f"No csv files for s2 path {s2files_path}"
-
-    path_csv_file = f"gs://{max(csv_files)}"
-
-    datas2 = pd.read_csv(path_csv_file)
-                         # converters={'datetime': pd.Timestamp})
-
-    datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))
-
-    datas2["names2file"] = datas2.datetime.apply(lambda x: x.strftime("%Y-%m-%d"))
-    datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(s2files_path, x+".tif")))
-
-    return datas2
-
-
 def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, Optional[GCPPath], Optional[GCPPath], Dict, GCPPath]:
     """
-    Given a S2 tiff file in the V0 WorldFloods dataset it returns the rest of the anciliary files to
-    the corresponding floodmap, cloud probability and permanent water
+    Given a pickle file in "gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods it returns the rest of the files to
+    create the full worldfloods registry (the corresponding floodmap, cloud probability and permanent water)
 
     Args:
-        main_path: S2 path in gs://ml4floods/worldfloods/public folder
+        main_path: path to .piclke file in bucket
 
     Returns:
         GCPPaths with locations of corresponding  floodmap, cloud probability,  permanent water, meta_floodmap and sentinel2 image
 
-    Examples
-        >>> s2_path_file = "gs://ml4floods/worldfloods/public/train/S2/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif"
-        >>> worldfloods_old_gcp_paths(GCPPath(s2_path_file))
-
-    (GCPPath(full_path='gs://ml4floods/worldfloods/public/train/floodmaps/EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', bucket_id='ml4floods', parent_path='worldfloods/public/train/floodmaps', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', suffix='shp'),
-     GCPPath(full_path='gs://ml4floods/worldfloods/tiffimages/cloudprob/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', bucket_id='ml4floods', parent_path='worldfloods/tiffimages/cloudprob', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', suffix='tif'),
-     'gs://ml4floods/worldfloods/tiffimages/PERMANENTWATERJRC/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif')
 
     """
     assert main_path.check_if_file_exists(), f"File {main_path} does not exists"
@@ -101,7 +74,7 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     s2_date = None
     for tup in metadatas2[metadatas2.s2available].itertuples():
         date_img = tup.datetime
-        if floodmap_date < date_img:
+        if (floodmap_date < date_img) or ((floodmap_date-date_img).total_seconds() / 3600. < 10):
             if s2_date is None:
                 s2_date = date_img
                 index = tup.Index
@@ -109,12 +82,11 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
                 if s2_date > date_img:
                     s2_date = date_img
                     index = tup.Index
-        elif (floodmap_date-date_img).total_seconds() / 3600. < 10:
-            s2_date = date_img
-            index = tup.Index
-            break
 
     assert s2_date is not None, f"Not found valid S2 files for {main_path}. {metadatas2}"
+
+    assert (s2_date - floodmap_date).total_seconds() / (3600. * 24) < 10, \
+        f"Difference between S2 date {s2_date} and floodmap date {floodmap_date} is larger than 10 days"
 
     # add exact metadata from the csv file
     meta_floodmap["s2_date"] = s2_date

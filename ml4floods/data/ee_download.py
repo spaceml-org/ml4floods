@@ -12,11 +12,10 @@ from typing import Optional, Callable, List, Tuple
 from shapely.geometry import mapping, Polygon
 import numpy as np
 import geopandas as gpd
-from datetime import datetime
 import pandas as pd
-
-
+import fsspec
 from ml4floods.data.config import BANDS_S2
+from datetime import datetime, timezone
 
 
 BANDS_S2_NAMES = {
@@ -90,11 +89,11 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
 
     # Filter images with many invalids
     def _count_valid_clouds(img):
-        mascara = img.mask()
-        mascara = mascara.select(bands)
-        mascara = mascara.reduce(ee.Reducer.allNonZero())
-        dictio = mascara.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
-                                      bestEffort=True, scale=10.)
+        mascara_valids = img.mask()
+        mascara_valids = mascara_valids.select(bands)
+        mascara_valids = mascara_valids.reduce(ee.Reducer.allNonZero())
+        dictio = mascara_valids.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
+                                             bestEffort=True, scale=10.)
 
         img = img.set("valids", dictio.get("all"))
 
@@ -334,6 +333,7 @@ def bbox_2_eepolygon(bbox):
                                  [bbox["east"], bbox["south"]],
                                  [bbox["west"], bbox["south"]]]])
 
+
 def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
                              path_bucket: str, crs:str='EPSG:4326',
                              name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
@@ -351,6 +351,12 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
 
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+
+    fs = fsspec.filesystem("gs")
+    filename_full_path = os.path.join(path_bucket, f"{date_search.year}.tif")
+    if fs.exists(filename_full_path):
+        print(f"File {filename_full_path} exists. It will not be downloaded again")
+        return
 
     ee.Initialize()
     
@@ -389,11 +395,58 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     )
 
 
-def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end_search: datetime,
+def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
+    if fs is None:
+        fs = fsspec.filesystem("gs")
+
+    datas2 = pd.read_csv(path_csv)
+                         # converters={'datetime': pd.Timestamp})
+
+    datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))
+
+    datas2["names2file"] = datas2.datetime.apply(lambda x: x.strftime("%Y-%m-%d"))
+    datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(os.path.basename(path_csv),
+                                                                                     x +".tif")))
+
+    return datas2
+
+
+def check_rerun(data:pd.DataFrame,
+                date_start_search: datetime, date_end_search: datetime,
+                filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]]) -> bool:
+    """ Check if any S2 image is missing to trigger download """
+
+    min_date = min(data["datetime"])
+
+    if (min_date > date_start_search) and ((min_date-date_start_search).total_seconds() / 3600.) > 10:
+        return False
+
+    max_date = max(data["datetime"])
+    if (max_date < date_end_search) and ((date_end_search-max_date).total_seconds() / 3600.) > 10:
+        return False
+
+    if data.shape[0] <= 0:
+        return False
+
+    if filter_s2_fun is not None:
+        filter_good = filter_s2_fun(data)
+        data = data[filter_good]
+
+    if data.shape[0] <= 0:
+        return False
+
+    if data["s2available"].all():
+        return True
+
+    return False
+
+
+def download_s2(area_of_interest: Polygon,
+                date_start_search: datetime, date_end_search: datetime,
                 path_bucket: str, collection_name="COPERNICUS/S2_SR", crs:str='EPSG:4326',
-                threshold_invalid=.75, threshold_clouds=.75,
+                filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
                 name_task=None,
-                resolution_meters=10) -> Tuple[List[ee.batch.Task], Optional[pd.DataFrame]]:
+                resolution_meters=10) -> List[ee.batch.Task]:
     """
     Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
     path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
@@ -406,8 +459,8 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
         path_bucket:
         collection_name:
         crs:
-        threshold_invalid:
-        threshold_clouds:
+        filter_s2_fun:
+        name_task:
         resolution_meters:
 
     Returns:
@@ -420,6 +473,20 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
     path_bucket_no_gs = path_bucket.replace("gs://", "")
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
+
+    fs = fsspec.filesystem("gs")
+    path_csv = os.path.join(path_bucket, "s2info.csv")
+    if fs.exists(path_csv):
+        data = process_s2metadata(path_csv, fs=fs)
+        if not check_rerun(data, date_start_search=date_start_search,
+                           date_end_search=date_end_search,
+                           filter_s2_fun=filter_s2_fun):
+            return [], None
+        else:
+            min_date = min(data["datetime"])
+            max_date = max(data["datetime"])
+            date_start_search = min(min_date, date_start_search)
+            date_end_search = max(max_date, date_end_search)
 
     ee.Initialize()
     area_of_interest_geojson = mapping(area_of_interest)
@@ -445,6 +512,10 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
     img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
 
     n_images_col = img_col_info_local.shape[0]
+
+    # Save S2 images as csv
+    img_col_info_local.to_csv(path_csv)
+
     print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()}")
 
     imgs_list = img_col.toList(n_images_col, 0)
@@ -454,14 +525,16 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
         crs=crs,
         scale=resolution_meters,
     )
-    filter_good = (img_col_info_local["cloud_probability"] <= threshold_clouds) & (
-                img_col_info_local["valids"] > (1 - threshold_invalid))
+    if filter_s2_fun is not None:
+        filter_good = filter_s2_fun(img_col_info_local)
 
-    if np.sum(filter_good) == 0:
-        print("All images are bad")
-        return [], img_col_info_local
+        if np.sum(filter_good) == 0:
+            print("All images are bad")
+            return [], img_col_info_local
 
-    img_col_info_local_good = img_col_info_local[filter_good]
+        img_col_info_local_good = img_col_info_local[filter_good]
+    else:
+        img_col_info_local_good = img_col_info_local
 
     tasks = []
     for good_images in img_col_info_local_good.itertuples():
@@ -490,7 +563,8 @@ def download_s2(area_of_interest: Polygon, date_start_search: datetime, date_end
         if task is not None:
             tasks.append(task)
 
-    return tasks, img_col_info_local
+    return tasks
+
 
 def wait_tasks(tasks:List[ee.batch.Task]) -> None:
     task_down = []
