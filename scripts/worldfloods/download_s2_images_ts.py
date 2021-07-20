@@ -122,6 +122,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Download Copernicus EMS')
     parser.add_argument('--cems_code', default="",
-                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+                        help="CEMS Code to download images from. If empty string (default) download the images"
+                             "from all the codes")
     args = parser.parse_args()
     main(args.cems_code)

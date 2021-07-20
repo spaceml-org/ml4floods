@@ -10,6 +10,8 @@ from io import BytesIO
 from typing import Dict
 from zipfile import ZipFile, is_zipfile
 import tqdm
+import os
+import fsspec
 
 
 copernicus_ems_webscrape_data  = {"confirmation": 1,
@@ -81,11 +83,13 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     input_zip = ZipFile(f_from_gcp)
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
+            name_dest = file_path_to_unzip + "/" + name
+            if fs.exists(name_dest):
+                continue
             if 'area' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
                 zipdict[name] = input_zip.read(name)
-                blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
+                blob_to_unzipped = bucket.blob(name_dest)
                 blob_to_unzipped.upload_from_string(zipdict[name])
-
 
 
 def main():
@@ -96,7 +100,7 @@ def main():
 
     parser = argparse.ArgumentParser('Download Copernicus EMS')
     parser.add_argument('--event_start_date', default="2015-07-01",
-                        help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+                        help="Event start date to consider when fetching the images from CEMS")
     args = parser.parse_args()
     
     # fetch Copernicus EMSR codes from Copernicus EMS activations page
@@ -112,19 +116,22 @@ def main():
         for emsr in pbar:
             pbar.set_description(f"Code: {emsr}")
             zip_files_activation_url_list = activations.fetch_zip_file_urls(emsr)
-            path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}"
             for zip_url in zip_files_activation_url_list:
                 aoi = zip_url.split('_')[1]
                 path_to_write_unzip_bucket = f"{path_to_write_unzip}/{emsr}/{aoi}"
-                load_ems_zipfiles_to_gcp(zip_url,
-                                         bucket_id,
-                                         path_to_write_zip_bucket,
-                                         copernicus_ems_webscrape_data)
+                name_zip = os.path.basename(zip_url)
+                path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}/{aoi}/{name_zip}"
+                if not fs.exists(path_to_write_zip_bucket):
+                    load_ems_zipfiles_to_gcp(zip_url,
+                                             bucket_id,
+                                             path_to_write_zip_bucket,
+                                             copernicus_ems_webscrape_data)
+
                 extract_ems_zip_files_gcp(bucket_id,
                                          path_to_write_zip_bucket,
                                          path_to_write_unzip_bucket)
     
     
-    
 if __name__ == "__main__":
+    fs = fsspec.filesystem("gs")
     main()
