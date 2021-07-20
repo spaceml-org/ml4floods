@@ -5,6 +5,7 @@ import os
 import tempfile
 import numpy as np
 import subprocess
+import fsspec
 
 from typing import Optional
 
@@ -83,7 +84,9 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict, tags: Optio
             rst_out.write(out_np)
 
         if path_tiff_save.startswith("gs://"):
-            subprocess.run(["gsutil", "-m", "mv", name_save, path_tiff_save])
+            fs = fsspec.filesystem("gs")
+            fs.put_file(name_save, path_tiff_save)
+            # subprocess.run(["gsutil", "-m", "mv", name_save, path_tiff_save])
             if os.path.exists(name_save):
                 os.remove(name_save)
 
