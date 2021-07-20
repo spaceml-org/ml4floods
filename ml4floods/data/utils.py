@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 import subprocess
 from io import BytesIO
 import pickle
+import fsspec
 
 # HOME = str(Path.home())
 
@@ -690,19 +691,6 @@ def get_files_in_bucket_directory(
     return files
 
 
-def parse_gcp_path(full_path: str) -> Tuple[str]:
-    """Function to parse a GCP bucket file path into smaller components.
-
-    Args:
-        full_path (str): Full path of a file within a GCP bucket.
-
-    Returns:
-        Tuple[str]: Returns a tuple of substrings from the full_path that include
-            bucket_id, filepath, and filename.
-    """
-    return None
-
-
 class CustomJSONEncoder(json.JSONEncoder):
 
     def default(self, obj_to_encode):
@@ -818,87 +806,38 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
 
 
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
-    """
-    This function takes a GeoPandas DataFrame and writes it to the Google Cloud Storage bucket as a GeoJSON file.
-    Args:
-      bucket_id (str): the name of the Google Cloud Storage Bucket (GCP).
-      file_directory_path_gcp (str): the name of the destination directory path in the GCP bucket.
-      geojson_file_name (str): the name of the geojson file.
-      floodmap (gpd.GeoDataFrame): the GeoPandas DataFrame containing the flood, area of interest,
-        hydrography, and observed event polygons derived from Copernicus EMS.
-    Returns:
-      None
-    """
-    client = storage.Client()
+    fs = fsspec.filesystem(gs_path.split("/")[0])
 
-    f = BytesIO()
-    geojson_val.to_file(f, driver="GeoJSON")
-    f.seek(0)
-
-    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
-    bucket = client.get_bucket(bucket_id)
-
-    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
-    blob = bucket.blob(filename_full_path)
-
-    blob.upload_from_file(f)
+    with fs.open(gs_path, "w") as fh:
+        geojson_val.to_file(fh, driver="GeoJSON")
 
 
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
-    client = storage.Client()
-
-    f = BytesIO()
-    pickle.dump(dict_val, f)
-    f.seek(0)
-
-    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
-    bucket = client.get_bucket(bucket_id)
-
-    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
-    blob = bucket.blob(filename_full_path)
-
-    blob.upload_from_file(f)
+    fs = fsspec.filesystem(gs_path.split("/")[0])
+    with fs.open(gs_path, "wb") as fh:
+        pickle.dump(dict_val, fh)
 
 
-def read_pickle_from_gcp(gs_path) -> dict:
-    from google.cloud import storage
-
-    client = storage.Client()
-
-    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
-    bucket = client.get_bucket(bucket_id)
-
-    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
-    blob = bucket.blob(filename_full_path)
-
-    pickle_in = blob.download_as_string()
-    my_dictionary = pickle.loads(pickle_in)
+def read_pickle_from_gcp(gs_path:str) -> dict:
+    fs = fsspec.filesystem(gs_path.split("/")[0])
+    with fs.open(gs_path, "rb") as fh:
+        my_dictionary = pickle.load(fh)
 
     return my_dictionary
 
 
 def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
-    client = storage.Client()
-    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
-    bucket = client.get_bucket(bucket_id)
+    fs = fsspec.filesystem(gs_path.split("/")[0])
 
-    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
-    blob = bucket.blob(filename_full_path)
-
-    with BytesIO() as f:
-        f.write(json.dumps(dict_val, cls=CustomJSONEncoder).encode())
-        f.seek(0)
-        blob.upload_from_file(f)
+    with fs.open(gs_path, "w") as fh:
+        json.dump(dict_val, fh, cls=CustomJSONEncoder)
 
 
 def read_json_from_gcp(gs_path: str) ->Dict:
-    client = storage.Client()
+    fs = fsspec.filesystem(gs_path.split("/")[0])
 
-    bucket_id = gs_path.split("gs://")[-1].split("/")[0]
-    bucket = client.get_bucket(bucket_id)
+    with fs.open(gs_path, "r") as fh:
+        my_dictionary = json.load(fh)
 
-    filename_full_path = gs_path.replace(f"gs://{bucket_id}/", "")
-    blob = bucket.blob(filename_full_path)
-    json_string = blob.download_as_string()
-    return json.loads(json_string)
+    return my_dictionary
 

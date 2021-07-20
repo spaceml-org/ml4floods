@@ -15,7 +15,7 @@ def convert_wgs_to_utm(lon: float, lat: float) -> str:
     # https://stackoverflow.com/questions/40132542/get-a-cartesian-projection-accurate-around-a-lat-lng-pair/40140326#40140326
     utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
     if len(utm_band) == 1:
-        utm_band = '0'+utm_band
+        utm_band = '0'+ utm_band
     if lat >= 0:
         epsg_code = 'EPSG:326' + utm_band
         return epsg_code
