@@ -31,7 +31,7 @@ def compute_water(
         keep_streams: A boolean flag to indicate whether to include streams in the water mask
 
     Returns:
-        water_mask : np.uint8 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
+        water_mask : np.int16 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
 
     with rasterio.open(tiffs2) as src_s2:
@@ -178,7 +178,7 @@ def generate_land_water_cloud_gt(
         cloudprob_in_lastband:
 
     Returns:
-        gt (np.ndarray): (H, W) np.uint8 array with encodding: {-1: invalid, 0: land, 1: water, 2: clouds}
+        gt (np.ndarray): (H, W) np.uint8 array with encodding: {0: "invalid", 1: "land", 2: "water", 3: "cloud"}
         meta: dictionary with metadata information
 
     """
@@ -363,7 +363,7 @@ def _generate_gt_v1_fromarray(
     :param s2_img: (C, H, W) used to find the invalid values in the input
     :param cloudprob:  probability value between [0,1]
     :param water_mask:  {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
-    :return:
+    :return: (H, W) np.uint8 {0: invalid, 1: land, 2:water, 3: cloud}
     """
 
     invalids = np.all(s2_img == 0, axis=0) | (water_mask == -1)

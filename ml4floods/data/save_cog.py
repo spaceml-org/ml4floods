@@ -50,6 +50,8 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict, tags: Optio
         >> save_cog(img, "example.tif", {"crs": {"init": "epsg:32644"}, "transform":transform})
     """
 
+    assert len(out_np.shape) == 3, f"Expected 3d tensor found tensor with shape {out_np.shape}"
+
     # Set count, height, width
     for idx, c in enumerate(["count", "height", "width"]):
         if c in profile:

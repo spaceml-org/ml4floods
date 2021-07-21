@@ -10,12 +10,14 @@ from ml4floods.data.io import save_groundtruth_tiff_rasterio
 from ml4floods.data import utils
 from ml4floods.data.ee_download import process_s2metadata
 import os
-from ml4floods.data.utils import GCPPath, CustomJSONEncoder, read_json_from_gcp
+from ml4floods.data.utils import GCPPath, read_json_from_gcp
 
 from pathlib import Path
 from typing import Optional, Callable, Tuple, Dict
 import geopandas as gpd
 import rasterio
+import fsspec
+from ml4floods.data import save_cog
 
 
 CLOUDPROB_PARENT_PATH = "worldfloods/tiffimages"
@@ -221,6 +223,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
     main_path = GCPPath(main_path)
     name = os.path.splitext(os.path.basename(main_path.file_name))[0]
+    fs = fsspec.filesystem("gs")
 
     try:
         # Get input files and check that they all exist
@@ -253,70 +256,54 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 permanent_water_image_path=permanent_water_path if permanent_water_path is None else permanent_water_path.full_path,  # Could be None!
             )
 
-            # save ground truth in local file
-            gt_local_path = local_path.joinpath(gt_path_dest.file_name)
-            save_groundtruth_tiff_rasterio(
-                gt,
-                str(gt_local_path),
-                gt_meta=gt_meta,
-                crs=gt_meta["crs"],
-                transform=gt_meta["transform"],
-            )
+            if len(gt.shape) == 2:
+                gt = gt[None]
 
-            # save meta in local json file
-            meta_local_file = str(local_path.joinpath(meta_json_path_dest.file_name)).replace(".tif", ".json")
-            del gt_meta["crs"]
-            del gt_meta["transform"]
-            with open(meta_local_file, "w") as fh:
-                json.dump(gt_meta, fh, cls=CustomJSONEncoder)
-
-            # upload ground truth to bucket
             if pbar is not None:
                 pbar.set_description(f"Saving GT {name}...")
-            save_file_to_bucket(
-                gt_path_dest.full_path, str(local_path.joinpath(gt_path_dest.file_name))
-            )
-            # delete local file
-            gt_local_path.unlink()
+
+            save_cog.save_cog(gt, gt_path_dest.full_path,
+                              {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
+                               "compression": "lzw", "nodata": 0}, # In both gts 0 is nodata
+                              tags=gt_meta)
 
             # upload meta json to bucket
             if pbar is not None:
                 pbar.set_description(f"Saving meta {name}...")
-            save_file_to_bucket(
-                meta_json_path_dest.full_path, meta_local_file
-            )
-            Path(meta_local_file).unlink()
+
+            # save meta in local json file
+            gt_meta["crs"] = str(gt_meta["crs"])
+            gt_meta["transform"] = [gt_meta["transform"].a, gt_meta["transform"].b, gt_meta["transform"].c,
+                                    gt_meta["transform"].d, gt_meta["transform"].e, gt_meta["transform"].f]
+
+            utils.write_json_to_gcp(meta_json_path_dest.full_path, gt_meta)
 
         # Copy floodmap shapefiles
         if not floodmap_path_dest.check_if_file_exists() or overwrite:
             if pbar is not None:
                 pbar.set_description(f"Saving floodmap {name}...")
-            floodmap_local_file = str(local_path.joinpath(floodmap_path_dest.file_name)).replace(".tif", ".geojson")
-            floodmap.to_file(floodmap_local_file, driver="GeoJSON")
-            save_file_to_bucket(floodmap_path_dest.full_path, floodmap_local_file)
 
-            Path(floodmap_local_file).unlink()
+            with fs.open(floodmap_path_dest.full_path, "w") as fh:
+                floodmap.to_file(fh, driver="GeoJSON")
 
         # Copy cloudprob, S2 and permanent water
         if cloudprob_path is not None and (not cloudprob_path_dest.check_if_file_exists() or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving cloud probs {name}...")
-            cloudprob_path.transfer_file_to_bucket_gsutils(
-                cloudprob_path_dest.full_path, file_name=True
-            )
+            fs.copy(cloudprob_path.full_path, cloudprob_path_dest.full_path)
 
         if not s2_image_path_dest.check_if_file_exists() or overwrite:
             if pbar is not None:
                 pbar.set_description(f"Saving S2 image {name}...")
-            s2_image_path.transfer_file_to_bucket_gsutils(
-                s2_image_path_dest.full_path, file_name=True
-            )
+
+            fs.copy(s2_image_path.full_path, s2_image_path_dest.full_path)
+
         if (permanent_water_image_path_dest is not None) and (not permanent_water_image_path_dest.check_if_file_exists() or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving permanent water image {name}...")
-            permanent_water_path.transfer_file_to_bucket_gsutils(
-                permanent_water_image_path_dest.full_path, file_name=True
-            )
+
+            fs.copy(permanent_water_path.full_path, permanent_water_image_path_dest.full_path)
+
     except Exception:
         warnings.warn(f"File {main_path} problem when computing Ground truth")
         traceback.print_exc(file=sys.stdout)
