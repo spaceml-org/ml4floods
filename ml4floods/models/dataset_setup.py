@@ -4,6 +4,7 @@ from ml4floods.preprocess.tiling import WindowSize, WindowSlices, save_tiles, lo
 from ml4floods.data import utils
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled
+from ml4floods.models.utils.configuration import AttrDict
 import pytorch_lightning as pl
 import os
 import json
@@ -11,6 +12,8 @@ from typing import Dict, List, Callable, Tuple, Optional
 from ml4floods.preprocess.worldfloods import prepare_patches
 from ml4floods.models.config_setup import load_json
 import fsspec
+import warnings
+
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
     """
@@ -236,6 +239,10 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         transformations.InversePermuteChannels(),
         transformations.RandomRotate90(always_apply=True, p=0.5),
         transformations.Flip(always_apply=True, p=0.5)]
+    
+    if "train_transformation" not in data_config:
+        warnings.warn("Train transformation not found in data config. Assume normalize is True")
+        data_config["train_transformation"] = AttrDict({"normalize": True})
 
     if data_config.train_transformation.normalize:
         train_transform.append(transformations.Normalize(
@@ -250,6 +257,10 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
 
     train_transform = transformations.Compose(train_transform)
 
+    if "test_transformation" not in data_config:
+        warnings.warn("Test transformation not found in data config. Assume normalize is True")
+        data_config["test_transformation"] = AttrDict({"normalize": True})
+    
     if data_config.test_transformation.normalize:
         test_transform = [
         transformations.InversePermuteChannels(), 
