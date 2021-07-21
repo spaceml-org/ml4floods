@@ -10,7 +10,7 @@ import json
 import warnings
 
 
-def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original"):
+def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", cems_code="", aoi_code=""):
 
     assert version in ["v1_0", "v2_0"], f"Unexpected version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
@@ -32,11 +32,11 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original"):
         main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
 
     if dataset == "extra":
-        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,prod_dev, gt_fun)
+        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,prod_dev, gt_fun, cems_code, aoi_code)
 
 
 
-def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, prod_dev, gt_fun):
+def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, prod_dev, gt_fun, cems_code, aoi_code):
 
     fs = fsspec.filesystem("gs")
 
@@ -54,7 +54,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
     cems_codes_test.add("EMSR284")
 
     # get all files
-    files_metadata_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods/*/*/flood_meta/*.pickle")]
+    files_metadata_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
 
     # loop through files in the bucket
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
@@ -149,7 +149,14 @@ if __name__ == "__main__":
                         help="environment where the dataset would be created")
     parser.add_argument('--overwrite', default=False, action='store_true',
                         help="Overwrite the content in the folder {prod_dev}/2_Mart/worldfloods_{version}")
+    parser.add_argument('--cems_code', default="",
+                        help="CEMS Code to download images from. If empty string (default) download the images"
+                             "from all the codes")
+    parser.add_argument('--aoi_code', default="",
+                        help="CEMS AoI to download images from. If empty string (default) download the images"
+                             "from all the AoIs")
 
     args = parser.parse_args()
 
-    main(version=args.version, overwrite=args.overwrite, prod_dev=args.prod_dev, dataset=args.dataset)
+    main(version=args.version, overwrite=args.overwrite, prod_dev=args.prod_dev, dataset=args.dataset,
+         cems_code=args.cems_code, aoi_code=args.aoi_code)
