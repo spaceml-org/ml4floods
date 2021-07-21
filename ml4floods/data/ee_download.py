@@ -536,7 +536,7 @@ def download_s2(area_of_interest: Polygon,
     n_images_col = img_col_info_local.shape[0]
 
     # Save S2 images as csv
-    img_col_info_local.to_csv(path_csv)
+    img_col_info_local.to_csv(path_csv, index=False)
 
     print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()}")
 

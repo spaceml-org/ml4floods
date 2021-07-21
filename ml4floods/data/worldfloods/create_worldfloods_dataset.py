@@ -63,8 +63,8 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
         warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")
         permanent_water_path = None
 
-    s2files_path = os.path.join(path_aoi, "S2")
-    metadatas2 = process_s2metadata(s2files_path)
+    csv_path = os.path.join(path_aoi, "S2", "s2info.csv")
+    metadatas2 = process_s2metadata(csv_path)
     metadatas2 = metadatas2.set_index("names2file")
 
     assert any(metadatas2.s2available), f"Not available S2 files for {main_path}. {metadatas2}"
