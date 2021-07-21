@@ -481,7 +481,7 @@ def download_s2(area_of_interest: Polygon,
         if not check_rerun(data, date_start_search=date_start_search,
                            date_end_search=date_end_search,
                            filter_s2_fun=filter_s2_fun):
-            return [], None
+            return []
         else:
             min_date = min(data["datetime"])
             max_date = max(data["datetime"])
@@ -497,7 +497,7 @@ def download_s2(area_of_interest: Polygon,
     img_col = get_s2_collection(date_start_search, date_end_search, pol,
                                 collection_name=collection_name)
     if img_col is None:
-        return [], None
+        return []
 
     # Get info of the S2 images (convert to table)
     img_col_info = img_collection_to_feature_collection(img_col,
@@ -530,7 +530,7 @@ def download_s2(area_of_interest: Polygon,
 
         if np.sum(filter_good) == 0:
             print("All images are bad")
-            return [], img_col_info_local
+            return []
 
         img_col_info_local_good = img_col_info_local[filter_good]
     else:
