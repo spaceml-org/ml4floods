@@ -326,13 +326,6 @@ def export_task_featurecollection(bucket="worldfloods", fileFormat="GeoJSON"):
     return export_task
 
 
-def bbox_2_eepolygon(bbox):
-    # ee.Polygon must be in long,lat
-    return ee.Geometry.Polygon([[[bbox["west"], bbox["north"]],
-                                 [bbox["east"], bbox["north"]],
-                                 [bbox["east"], bbox["south"]],
-                                 [bbox["west"], bbox["south"]]]])
-
 def generate_polygon(bbox):
     """
     Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
