@@ -38,22 +38,23 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
+            pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
+            name_task = metadata_floodmap["ems_code"] + "_" + metadata_floodmap["aoi_code"]
             satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"),
                                                "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+            folder_dest = os.path.dirname(os.path.dirname(meta_floodmap_filepath))
+
+            # Compute arguments to download the images
+            folder_dest_s2 = os.path.join(folder_dest, "S2")
+
             date_start_search = satellite_date + timedelta(days=-days_before)
-            date_end_search = satellite_date + timedelta(days=days_after)
-
-            aoi_path = os.path.dirname(os.path.dirname(meta_floodmap_filepath))
-            folder_dest = os.path.join(aoi_path, "S2")
-            # S2 images will be stored in folder_dest path.
-
-            pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
+            date_end_search = min(datetime.today().astimezone(timezone.utc),
+                                  satellite_date + timedelta(days=days_after))
 
             # Set the crs to UTM of the center polygon
             lon, lat = list(pol_scene_id.centroid.coords)[0]
             crs = convert_wgs_to_utm(lon=lon, lat=lat)
-
-            name_task = metadata_floodmap["ems_code"] + "_" + metadata_floodmap["aoi_code"]
 
             def filter_s2_images(img_col_info_local:pd.DataFrame)->pd.Series:
                 is_image_same_solar_day = img_col_info_local["datetime"].apply(lambda x: (satellite_date - x).total_seconds() / 3600. < 10)
@@ -71,7 +72,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                                                  date_end_search=date_end_search,
                                                  crs=crs,
                                                  filter_s2_fun=filter_s2_images,
-                                                 path_bucket=folder_dest,
+                                                 path_bucket=folder_dest_s2,
                                                  name_task=name_task,
                                                  collection_name=COLLECTION_NAME)
 
@@ -82,7 +83,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                 print(f"\tAll S2 data downloaded for product")
 
             # download permanent water
-            folder_dest_permament = os.path.join(aoi_path, "PERMANENTWATERJRC")
+            folder_dest_permament = os.path.join(folder_dest, "PERMANENTWATERJRC")
             task_permanent = ee_download.download_permanent_water(pol_scene_id, date_search=satellite_date,
                                                                   path_bucket=folder_dest_permament,
                                                                   name_task="PERMANENTWATERJRC"+name_task,

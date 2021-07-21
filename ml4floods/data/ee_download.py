@@ -30,7 +30,7 @@ def permanent_water_image(year, bounds):
     # permananet water files are only available pre-2019
     if year >= 2020:
         year = 2020
-    return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}").clip(bounds)
+    return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}")
 
 
 def get_collection(collection_name, date_start, date_end, bounds):
@@ -333,6 +333,16 @@ def bbox_2_eepolygon(bbox):
                                  [bbox["east"], bbox["south"]],
                                  [bbox["west"], bbox["south"]]]])
 
+def generate_polygon(bbox):
+    """
+    Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
+    """
+    return [[[bbox[0],bbox[1]],
+             [bbox[2],bbox[1]],
+             [bbox[2],bbox[3]],
+             [bbox[0],bbox[3]],
+             [bbox[0],bbox[1]]]]
+
 
 def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
                              path_bucket: str, crs:str='EPSG:4326',
@@ -366,6 +376,8 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
 
     area_of_interest_geojson = mapping(area_of_interest)
     pol = ee.Geometry(area_of_interest_geojson)
+    bounding_box_aoi = area_of_interest.bounds
+    bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
     img_export = permanent_water_image(date_search.year, pol)
 
@@ -386,7 +398,7 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     return mayberun(
         filename,
         desc,
-        lambda: img_export,
+        lambda: img_export.clip(bounding_box_pol),
         export_task_fun_img,
         overwrite=False,
         dry_run=False,
@@ -489,9 +501,9 @@ def download_s2(area_of_interest: Polygon,
     path_csv = os.path.join(path_bucket, "s2info.csv")
     if fs.exists(path_csv):
         data = process_s2metadata(path_csv, fs=fs)
-        if not check_rerun(data, date_start_search=date_start_search,
-                           date_end_search=date_end_search,
-                           filter_s2_fun=filter_s2_fun):
+        if check_rerun(data, date_start_search=date_start_search,
+                       date_end_search=date_end_search,
+                       filter_s2_fun=filter_s2_fun):
             return []
         else:
             min_date = min(data["datetime"])
@@ -501,6 +513,8 @@ def download_s2(area_of_interest: Polygon,
 
     ee.Initialize()
     area_of_interest_geojson = mapping(area_of_interest)
+    bounding_box_aoi = area_of_interest.bounds
+    bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
     pol = ee.Geometry(area_of_interest_geojson)
 
@@ -550,7 +564,7 @@ def download_s2(area_of_interest: Polygon,
     tasks = []
     for good_images in img_col_info_local_good.itertuples():
         img_export = ee.Image(imgs_list.get(good_images.index_image_collection))
-        img_export = img_export.select(BANDS_S2_NAMES[collection_name] + ["probability"]).toFloat().clip(pol)
+        img_export = img_export.select(BANDS_S2_NAMES[collection_name] + ["probability"]).toFloat().clip(bounding_box_pol)
 
         date = good_images.datetime.strftime('%Y-%m-%d')
 
