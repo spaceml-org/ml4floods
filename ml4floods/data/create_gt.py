@@ -414,7 +414,7 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.all(s2_img[:(len(BANDS_S2) - 1)] == 0, axis=0) | (water_mask == -1)
+    invalids = np.any(np.isnan(s2_img), axis=0) | np.all(s2_img[:(len(BANDS_S2) - 1)] == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
