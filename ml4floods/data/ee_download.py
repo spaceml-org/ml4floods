@@ -528,7 +528,7 @@ def download_s2(area_of_interest: Polygon,
 
     img_col_info_local = gpd.GeoDataFrame.from_features(img_col_info.getInfo())
     img_col_info_local["datetime"] = img_col_info_local["system:time_start"].apply(
-        lambda x: datetime.utcfromtimestamp(x / 1000))
+        lambda x: datetime.utcfromtimestamp(x / 1000).replace(tzinfo=timezone.utc))
     img_col_info_local["cloud_probability"] /= 100
     img_col_info_local = img_col_info_local[["system:time_start", "valids", "cloud_probability", "datetime"]]
     img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
