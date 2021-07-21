@@ -405,7 +405,7 @@ def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
     datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))
 
     datas2["names2file"] = datas2.datetime.apply(lambda x: x.strftime("%Y-%m-%d"))
-    datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(os.path.basename(path_csv),
+    datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(os.path.dirname(path_csv),
                                                                                      x +".tif")))
 
     return datas2
