@@ -1,7 +1,7 @@
 import math
 from ml4floods.data import ee_download, utils
 import fsspec
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import os
 import pandas as pd
 import warnings
@@ -38,7 +38,8 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
-            satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+            satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"),
+                                               "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             date_start_search = satellite_date + timedelta(days=-days_before)
             date_end_search = satellite_date + timedelta(days=days_after)
 
