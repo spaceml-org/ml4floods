@@ -806,7 +806,10 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
 
 
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
-    geojson_val.to_file(gs_path, driver="GeoJSON")
+    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+
+    with fs.open(gs_path, "wb") as fh:
+        geojson_val.to_file(fh, driver="GeoJSON")
 
 
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
