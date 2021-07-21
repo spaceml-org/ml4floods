@@ -414,7 +414,7 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.all(s2_img == 0, axis=0) | (water_mask == -1)
+    invalids = np.all(s2_img[:(len(BANDS_S2) - 1)] == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
@@ -430,7 +430,7 @@ def _generate_gt_fromarray(
 
     if invalid_clouds_threshold is not None:
         # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
-        watergt[(water_mask == 0) | (cloudprob > invalid_clouds_threshold)] = 0
+        watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
 
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 
