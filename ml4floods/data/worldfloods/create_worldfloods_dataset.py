@@ -44,11 +44,8 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     meta_floodmap = utils.read_pickle_from_gcp(main_path.full_path)
 
     # path to floodmap path
-    if "floodmap" not in meta_floodmap:
-        floodmap_path = main_path.replace("/flood_meta/", "/floodmap/")
-        floodmap_path = floodmap_path.replace(".pickle", ".geojson")
-    else:
-        floodmap_path = meta_floodmap["floodmap"]
+    floodmap_path = main_path.replace("/flood_meta/", "/floodmap/")
+    floodmap_path = floodmap_path.replace(".pickle", ".geojson")
 
     assert floodmap_path.check_if_file_exists(), f"Floodmap not found in {floodmap_path}"
 
@@ -59,7 +56,7 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     floodmap_date = meta_floodmap['satellite date']
 
     # create permenant water path
-    permanent_water_path = GCPPath(os.path.join(path_aoi, "PERMANENTWATERJRC",f"{floodmap_date.year}.tif"))
+    permanent_water_path = GCPPath(os.path.join(path_aoi, "PERMANENTWATERJRC", f"{floodmap_date.year}.tif"))
 
     if not permanent_water_path.check_if_file_exists():
         warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")

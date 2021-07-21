@@ -70,7 +70,8 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
                     if split == "test":
                         expected_test_file = f"gs://ml4cc_data_lake/2_Mart/worldfloods_v1_0/test/floodmaps/{event_id}.geojson"
                         if fs.exists(expected_test_file):
-                            metadata_floodmap["floodmap"] = expected_test_file
+                            floodmap_file = metadata_file.replace("/flood_meta/", "/floodmap/").replace(".pickle", ".geojson")
+                            fs.copy(expected_test_file, floodmap_file)
                         else:
                             warnings.warn(f"Test file {event_id} does not exists in old test database {expected_test_file}")
                     break
