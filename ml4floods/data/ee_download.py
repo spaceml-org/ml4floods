@@ -428,9 +428,20 @@ def check_rerun(data:pd.DataFrame,
     if data.shape[0] <= 0:
         return False
 
+    n_images_col = data.shape[0]
     if filter_s2_fun is not None:
         filter_good = filter_s2_fun(data)
         data = data[filter_good]
+        images_available = data["s2available"].sum()
+        print(
+            f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
+            f"{np.sum(filter_good)} satisfies the criteria "
+            f"{images_available} are already downloaded")
+    else:
+        images_available = data["s2available"].sum()
+        print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
+              f"all satisfies the criteria "
+              f"{images_available} are already downloaded")
 
     if data.shape[0] <= 0:
         return False
