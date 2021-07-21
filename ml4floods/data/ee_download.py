@@ -58,6 +58,10 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
     Returns:
 
     """
+
+    # GEE doesnt like time zones
+    date_start = date_start.replace(tzinfo=None)
+    date_end = date_end.replace(tzinfo=None)
     img_col_all, n_images_col = get_collection(collection_name, date_start, date_end, bounds)
     if n_images_col <= 0:
         if verbose > 1:
