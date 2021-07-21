@@ -91,7 +91,7 @@ def main(model_experiment, cems_code):
                 start += len(geoms_polygons)
 
             data_out = pd.concat(data_out, ignore_index=True)
-            data_out.write_file(filename_save_vect, driver="GeoJSON")
+            data_out.to_file(filename_save_vect, driver="GeoJSON")
 
             # Save data as COG GeoTIFF
             profile = {"crs": crs,
