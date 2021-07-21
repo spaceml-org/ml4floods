@@ -68,7 +68,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
                 if event_id in train_val_test_split[split]:
                     subset = split
                     if split == "test":
-                        expected_test_file = f"gs://ml4cc_data_lake/2_Mart/worldfloods_v1_0/test/floodmaps/{event_id}.geojson"
+                        expected_test_file = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_v1_0/test/floodmaps/{event_id}.geojson"
                         if fs.exists(expected_test_file):
                             metadata_floodmap["floodmap"] = expected_test_file
                         else:
