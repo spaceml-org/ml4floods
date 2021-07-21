@@ -283,8 +283,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.set_description(f"Saving floodmap {name}...")
 
-            with fs.open(floodmap_path_dest.full_path, "w") as fh:
-                floodmap.to_file(fh, driver="GeoJSON")
+            utils.write_geojson_to_gcp(floodmap_path_dest.full_path, floodmap)
 
         # Copy cloudprob, S2 and permanent water
         if cloudprob_path is not None and (not cloudprob_path_dest.check_if_file_exists() or overwrite):
