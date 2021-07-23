@@ -48,7 +48,7 @@ def main(event_start_date):
         for activation in pbar:
             code_date = table_activations_ems.loc[activation]["CodeDate"]
             sample_activation_dir = os.path.join(unzipped_activations_parent_dir, activation)
-            pbar.set_description(f"Code: {code_date}")
+            pbar.set_description(f"Code: {activation}")
 
             aois_dirs = fs.glob(os.path.join(sample_activation_dir, "*"))
 
@@ -60,6 +60,7 @@ def main(event_start_date):
                         paths_to_copy_glob = os.path.join(f"gs://{aoi_dir}", f"{name_file}*")
 
                         with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
+                            # TODO remove dependency of subprocess
                             subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"], capture_output=True)
                             metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,
                                                                                           code_date, verbose=False)

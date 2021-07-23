@@ -4,10 +4,9 @@ import rasterio.windows
 from matplotlib import colors
 import matplotlib.patches as mpatches
 import numpy as np
-from typing import Union, Optional
+from typing import Union, Optional, List, Tuple
 from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods import configs
-import matplotlib.pyplot as plt
 import os
 
 
@@ -53,7 +52,57 @@ def plot_tiff_image(file_path: str, **kwargs):
     
     return fig
 
-def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None, window=None):
+
+def _read_data(input:str,
+              bands_rasterio:Optional[List[int]]=None,
+              window:Optional[rasterio.windows.Window]=None,
+              size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+
+    if size_read is not None:
+        if bands_rasterio is None:
+            n_bands = 1
+        else:
+            n_bands = len(bands_rasterio)
+
+        if window is None:
+            with rasterio.open(input) as rst:
+                shape = rst.shape
+        else:
+            shape = window.height, window.width
+
+        if (size_read >= shape[0]) and (size_read >= shape[1]):
+            out_shape = (n_bands, )+ shape
+        elif shape[0] > shape[1]:
+            out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
+        else:
+            out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
+    else:
+        out_shape = None
+
+    with rasterio.open(input) as rst:
+        output = rst.read(bands_rasterio, window=window, out_shape=out_shape)
+        transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+
+    return output, transform
+
+
+def plot_s2_cloud_prob_image(file_path: str, size_read:Optional[int]=None, **kwargs):
+    # open image with rasterio
+    with rasterio.open(file_path) as src:
+        # assert the image has 15 channels
+        assert src.meta["count"] == 15
+
+    output, transform = _read_data(file_path, bands_rasterio=[15], size_read=size_read)
+    output = output[0]
+    # plot image
+    return rasterioplt.show(output, transform=transform, vmin=0, vmax=100, cmap="gray", **kwargs)
+
+
+def get_image_transform(input:Union[str, np.ndarray],
+                        transform:Optional[rasterio.Affine]=None,
+                        bands:List[int]=None,
+                        window:Optional[rasterio.windows.Window]=None,
+                        size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
 
     if bands is not None:
         bands_rasterio = [b+1 for b in bands]
@@ -61,55 +110,106 @@ def get_image_transform(input:Union[str, np.ndarray], transform=None, bands=None
         bands_rasterio = None
 
     if isinstance(input, str):
-        with rasterio.open(input) as rst:
-            output = rst.read(bands_rasterio, window=window)
-            transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+        return _read_data(input, bands_rasterio, window=window, size_read=size_read)
+
+    if hasattr(input, "cpu"):
+        input = input.cpu()
+
+    input = np.array(input)
+    if window is None:
+        window_slices = (slice(None), slice(None), slice(None))
     else:
-        if hasattr(input, "cpu"):
-            input = input.cpu()
+        window_slices = (slice(None),) + window.toslices()
 
-        input = np.array(input)
-        if window is None:
-            window_slices = (slice(None), slice(None), slice(None))
-        else:
-            window_slices = (slice(None),) + window.toslices()
-
-        output = input[bands, ...]
-        output = output[window_slices]
-        if transform is not None:
-            transform = transform if window is None else rasterio.windows.transform(window, transform)
+    output = input[bands, ...]
+    output = output[window_slices]
+    if transform is not None:
+        transform = transform if window is None else rasterio.windows.transform(window, transform)
 
     return output, transform
 
 
-def plot_s2_rbg_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000.,
-                      channel_configuration="all",
+def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
+                      window:Optional[rasterio.windows.Window]=None,
+                      max_clip_val:float=3000.,
+                      channel_configuration:str="all",
+                      size_read:Optional[int]=None,
                       **kwargs):
+    """
+    Plot bands B4, B3, B2 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
+    (assume the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
+
+    Tip: Use `size_read` to read from the image pyramid if input is a COG GeoTIFF to speed up the reading.
+
+    Args:
+        input: str of array with (C, H, W) configuration.
+        transform: geospatial transform if input is an array
+        window: window to read from the input
+        max_clip_val: value to clip the the input for visualization
+        channel_configuration: Expected bands of the inputs
+        size_read: max size to read. Use this to read from the overviews of the image.
+        **kwargs: extra args for rasterio.plot.show
+
+    Returns:
+        ax : matplotlib Axes
+            Axes with plot.
+
+    """
     band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
     bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
-    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
+    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
+                                           size_read=size_read)
 
     if max_clip_val is not None:
-        image = np.clip(image/max_clip_val,0,1)
+        image = np.clip(image/max_clip_val, 0, 1)
 
-    rasterioplt.show(image, transform=transform, **kwargs)
+    return rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plot_s2_swirnirred_image(input: Union[str, np.ndarray], transform=None, window=None, max_clip_val:float=3000.,
+def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
+                             transform:Optional[rasterio.Affine]=None,
+                             window:Optional[rasterio.windows.Window]=None,
+                             max_clip_val:float=3000.,
                              channel_configuration="all",
+                             size_read:Optional[int]=None,
                              **kwargs):
+    """
+    Plot bands B11, B8, B4 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
+    (assume the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
+
+    Tip: Use `size_read` to read from the image pyramid if input is a COG GeoTIFF to speed up the reading.
+
+    Args:
+        input: str of array with (C, H, W) configuration.
+        transform: geospatial transform if input is an array
+        window: window to read from the input
+        max_clip_val: value to clip the the input for visualization
+        channel_configuration: Expected bands of the inputs
+        size_read: max size to read. Use this to read from the overviews of the image.
+        **kwargs: extra args for rasterio.plot.show
+
+    Returns:
+        ax : matplotlib Axes
+            Axes with plot.
+
+    """
     band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
     bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
-    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window)
+    image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
+                                           size_read=size_read)
 
     if max_clip_val is not None:
         image = np.clip(image / max_clip_val, 0, 1)
 
-    rasterioplt.show(image, transform=transform, **kwargs)
+    return rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=None, legend=True, **kwargs):
-    prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window)
+def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasterio.Affine]=None,
+                   window:Optional[rasterio.windows.Window]=None, legend=True,
+                   size_read:Optional[int]=None,
+                   **kwargs):
+    prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window,
+                                                size_read=size_read)
     prediction_show = prediction[0] + 1
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
@@ -121,9 +221,15 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform=None, window=Non
         ax.legend(handles=patches_preds,
                   loc='upper right')
 
+    return ax
 
-def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, legend=True, **kwargs):
-    target, transform = get_image_transform(target,transform=transform, bands=[0], window=window)
+
+def plot_gt_v1(target: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
+               window:Optional[rasterio.windows.Window]=None,
+               legend=True, size_read:Optional[int]=None, **kwargs):
+
+    target, transform = get_image_transform(target,transform=transform, bands=[0], window=window,
+                                            size_read=size_read)
     target = target[0]
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
@@ -135,9 +241,11 @@ def plot_gt_v1(target: Union[str, np.ndarray], transform=None, window=None, lege
         ax.legend(handles=patches_preds,
                   loc='upper right')
 
+    return ax
+
 
 def gt_v1_with_permanent_water(gt: np.ndarray, permanent_water: np.ndarray) -> np.ndarray:
-    """ Permanent water taken from: https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_2_YearlyHistory"""
+    """ Permanent water taken from: https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_3_YearlyHistory"""
     gt[(gt == 2) & (permanent_water == 3)] = 4  # set as permanent_water
     gt[(gt == 2) & (permanent_water == 2)] = 5  # set as seasonal water
 
@@ -145,13 +253,17 @@ def gt_v1_with_permanent_water(gt: np.ndarray, permanent_water: np.ndarray) -> n
 
 
 def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optional[Union[str, np.ndarray]]=None,
-                              transform=None, window=None, legend=True,
+                              transform:Optional[rasterio.Affine]=None,
+                              window:Optional[rasterio.windows.Window]=None, legend=True,
+                              size_read:Optional[int]=None,
                               **kwargs):
     bands = [0]
-    target, transform = get_image_transform(target, transform=transform, bands=bands, window=window)
+    target, transform = get_image_transform(target, transform=transform, bands=bands, window=window,
+                                            size_read=size_read)
     target= target[0]
     if permanent is not None:
-        permanent, _ = get_image_transform(permanent, transform=transform, bands=bands, window=window)
+        permanent, _ = get_image_transform(permanent, transform=transform, bands=bands, window=window,
+                                           size_read=min(target.shape))
         permanent = permanent[0]
         target = gt_v1_with_permanent_water(target, permanent)
 
@@ -164,17 +276,7 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
         ax.legend(handles=patches_gt,
                   loc='upper right')
 
-
-def plot_s2_cloud_prob_image(file_path: str, **kwargs):
-    # open image with rasterio
-    with rasterio.open(file_path) as src:
-        # assert the image has 15 channels
-        assert src.meta["count"] == 15
-        
-        # plot image
-        rasterioplt.show(src.read(15), transform=src.transform, **kwargs)
-    
-    return None
+    return ax
 
 
 def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
