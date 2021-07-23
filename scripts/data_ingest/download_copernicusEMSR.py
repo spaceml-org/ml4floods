@@ -84,7 +84,7 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
             name_dest = file_path_to_unzip + "/" + name
-            if fs.exists(name_dest):
+            if fs.exists(f"gs://{bucket_id}/{name_dest}"):
                 continue
             if 'area' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
                 zipdict[name] = input_zip.read(name)
@@ -121,7 +121,7 @@ def main():
                 path_to_write_unzip_bucket = f"{path_to_write_unzip}/{emsr}/{aoi}"
                 name_zip = os.path.basename(zip_url)
                 path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}/{aoi}/{name_zip}"
-                if not fs.exists(path_to_write_zip_bucket):
+                if not fs.exists(f"gs://{bucket_id}/{path_to_write_zip_bucket}"):
                     load_ems_zipfiles_to_gcp(zip_url,
                                              bucket_id,
                                              path_to_write_zip_bucket,
