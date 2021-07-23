@@ -106,7 +106,6 @@ def compute_water(
     return water_mask
 
 
-# TODO: Have a single function. No need of 2 versions
 def read_s2img_cloudmask(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
