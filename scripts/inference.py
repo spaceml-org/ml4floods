@@ -61,17 +61,17 @@ def main(model_experiment, cems_code):
         total = 0
         for filename in tiff_files:
             filename = f"gs://{filename}"
+            filename_save = filename.replace("/S2/", f"/{model_experiment}/")
+            filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
+
+            if fs.exists(filename_save) and fs.exists(filename_save_vect):
+                continue
+
             torch_inputs, transform = dataset.load_input(filename,
                                                          window=None, channels=channels)
 
             print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
             total += 1
-
-            filename_save = filename.replace("/S2/", f"/{model_experiment}/")
-            filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
-
-            if fs.exists(filename_save):
-                continue
 
             with rasterio.open(filename) as src:
                 crs = src.crs
@@ -91,7 +91,8 @@ def main(model_experiment, cems_code):
                 start += len(geoms_polygons)
 
             data_out = pd.concat(data_out, ignore_index=True)
-            data_out.to_file(filename_save_vect, driver="GeoJSON")
+            if data_out.shape[0] > 0:
+                data_out.to_file(filename_save_vect, driver="GeoJSON")
 
             # Save data as COG GeoTIFF
             profile = {"crs": crs,
