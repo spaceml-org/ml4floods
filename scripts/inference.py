@@ -13,6 +13,9 @@ from datetime import datetime
 import argparse
 import geopandas as gpd
 import pandas as pd
+import warnings
+import sys
+import traceback
 
 
 def load_inference_function(experiment_name):
@@ -50,20 +53,20 @@ def get_segmentation_mask(torch_inputs, inference_function):
 
 MODEL_EXPERIMENT_DEFAULT = "WFV1_unet"
 
+@torch.no_grad()
 def main(model_experiment, cems_code):
     inference_function, channels = load_inference_function(model_experiment)
 
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*/S2/*.tif")
     tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
+    total = 0
+    for filename in tiff_files:
+        filename = f"gs://{filename}"
+        filename_save = filename.replace("/S2/", f"/{model_experiment}/")
+        filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
 
-    with torch.no_grad():
-        total = 0
-        for filename in tiff_files:
-            filename = f"gs://{filename}"
-            filename_save = filename.replace("/S2/", f"/{model_experiment}/")
-            filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
-
+        try:
             if fs.exists(filename_save) and fs.exists(filename_save_vect):
                 continue
 
@@ -103,6 +106,11 @@ def main(model_experiment, cems_code):
 
             save_cog.save_cog(prediction, filename_save, profile=profile,
                               tags={"model": model_experiment})
+        except Exception:
+            warnings.warn(f"Failed")
+            traceback.print_exc(file=sys.stdout)
+
+
 
 
 if __name__ == "__main__":
