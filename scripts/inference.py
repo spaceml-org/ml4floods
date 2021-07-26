@@ -61,6 +61,7 @@ def main(model_experiment, cems_code):
     tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
     total = 0
+    files_with_errors = []
     for filename in tiff_files:
         filename = f"gs://{filename}"
         filename_save = filename.replace("/S2/", f"/{model_experiment}/")
@@ -109,7 +110,10 @@ def main(model_experiment, cems_code):
         except Exception:
             warnings.warn(f"Failed")
             traceback.print_exc(file=sys.stdout)
+            files_with_errors.append(filename)
 
+    if len(files_with_errors) > 0:
+        print(f"Files with errors:\n {files_with_errors}")
 
 
 
