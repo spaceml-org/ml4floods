@@ -230,7 +230,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
             output_path, file_name, permanent_water_path is not None)
     except Exception:
-        warnings.warn(f"File {main_path} problem when computing input/output names")
+        warnings.warn(f"File {main_path.file_name} problem when computing input/output names")
         traceback.print_exc(file=sys.stdout)
         return False
     try:
@@ -301,7 +301,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             fs.copy(permanent_water_path.full_path, permanent_water_image_path_dest.full_path)
 
     except Exception:
-        warnings.warn(f"File {main_path} problem when computing Ground truth")
+        warnings.warn(f"File input: {main_path.file_name} output S2 file: {s2_image_path_dest.full_path} problem when computing Ground truth")
         traceback.print_exc(file=sys.stdout)
 
         if not delete_if_error:
