@@ -60,22 +60,20 @@ def main(model_experiment, cems_code):
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*/S2/*.tif")
     tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
-    total = 0
     files_with_errors = []
-    for filename in tiff_files:
+    for total, filename in enumerate(tiff_files):
         filename = f"gs://{filename}"
         filename_save = filename.replace("/S2/", f"/{model_experiment}/")
         filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
 
-        try:
-            if fs.exists(filename_save) and fs.exists(filename_save_vect):
-                continue
+        if fs.exists(filename_save) and fs.exists(filename_save_vect):
+            continue
 
+        try:
             torch_inputs, transform = dataset.load_input(filename,
                                                          window=None, channels=channels)
 
             print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
-            total += 1
 
             with rasterio.open(filename) as src:
                 crs = src.crs
