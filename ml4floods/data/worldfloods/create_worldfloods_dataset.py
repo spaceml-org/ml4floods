@@ -261,7 +261,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
             save_cog.save_cog(gt, gt_path_dest.full_path,
                               {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
-                               "compression": "lzw", "nodata": 0}, # In both gts 0 is nodata
+                               "compress": "lzw", "nodata": 0}, # In both gts 0 is nodata
                               tags=gt_meta)
 
             # upload meta json to bucket
