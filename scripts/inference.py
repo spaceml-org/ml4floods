@@ -54,10 +54,10 @@ def get_segmentation_mask(torch_inputs, inference_function):
 MODEL_EXPERIMENT_DEFAULT = "WFV1_unet"
 
 @torch.no_grad()
-def main(model_experiment, cems_code):
+def main(model_experiment, cems_code, aoi_code):
     inference_function, channels = load_inference_function(model_experiment)
 
-    tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*/S2/*.tif")
+    tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/S2/*.tif")
     tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
     files_with_errors = []
@@ -116,14 +116,17 @@ def main(model_experiment, cems_code):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Run inference on all S2 images in Stagging')
+    parser = argparse.ArgumentParser('Run inference on all S2 images in Staging')
     parser.add_argument('--cems_code', default="",
                         help="EMS Codes to filter")
+    parser.add_argument('--aoi_code', default="",
+                        help="CEMS AoI to download images from. If empty string (default) download the images"
+                             "from all the AoIs")
     parser.add_argument('--model_experiment', default=MODEL_EXPERIMENT_DEFAULT,
                         help="Experiment name to load the weights")
     args = parser.parse_args()
     fs = fsspec.filesystem("gs")
-    main(args.model_experiment, args.cems_code)
+    main(args.model_experiment, args.cems_code, args.aoi_code)
 
 
 
