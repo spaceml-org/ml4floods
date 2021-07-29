@@ -208,6 +208,19 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
                    window:Optional[rasterio.windows.Window]=None, legend=True,
                    size_read:Optional[int]=None,
                    **kwargs):
+    """
+    Prediction expected to be {0: land, 1: water, 2: cloud}
+    Args:
+        prediction:
+        transform:
+        window:
+        legend:
+        size_read:
+        **kwargs:
+
+    Returns:
+
+    """
     prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window,
                                                 size_read=size_read)
     prediction_show = prediction[0] + 1
@@ -227,6 +240,19 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
 def plot_gt_v1(target: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
                window:Optional[rasterio.windows.Window]=None,
                legend=True, size_read:Optional[int]=None, **kwargs):
+    """
+    ground truth `target` expected to be {0: invalid: 1: land, 2: water, 3: cloud}
+    Args:
+        target:
+        transform:
+        window:
+        legend:
+        size_read:
+        **kwargs:
+
+    Returns:
+
+    """
 
     target, transform = get_image_transform(target,transform=transform, bands=[0], window=window,
                                             size_read=size_read)
@@ -235,6 +261,46 @@ def plot_gt_v1(target: Union[str, np.ndarray], transform:Optional[rasterio.Affin
                                                                  INTERPRETATION_WORLDFLOODS)
 
     ax = rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
+                          interpolation='nearest', **kwargs)
+
+    if legend:
+        ax.legend(handles=patches_preds,
+                  loc='upper right')
+
+    return ax
+
+def plot_gt_v2(target: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
+               window:Optional[rasterio.windows.Window]=None,
+               legend=True, size_read:Optional[int]=None, **kwargs):
+    """
+    ground truth `target` expected to be 2 channel image [{0: invalid: 1: land, 2: cloud}, {0:invalid, 1:land, 2: water}]
+
+    We use the invalid values of the land/water mask
+
+    Args:
+        target:
+        transform:
+        window:
+        legend:
+        size_read:
+        **kwargs:
+
+    Returns:
+
+    """
+
+    target, transform = get_image_transform(target,transform=transform, bands=[0, 1], window=window,
+                                            size_read=size_read)
+    clear_clouds = target[0]
+    land_water = target[1]
+
+    v1gt = land_water.copy() # {0: invalid, 1: land, 2: water}
+    v1gt[clear_clouds == 2] = 3
+
+    cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
+                                                                 INTERPRETATION_WORLDFLOODS)
+
+    ax = rasterioplt.show(v1gt, transform=transform, cmap=cmap_preds, norm=norm_preds,
                           interpolation='nearest', **kwargs)
 
     if legend:
