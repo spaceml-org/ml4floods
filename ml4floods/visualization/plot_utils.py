@@ -72,16 +72,24 @@ def _read_data(input:str,
 
         if (size_read >= shape[0]) and (size_read >= shape[1]):
             out_shape = (n_bands, )+ shape
+            input_output_factor = 1
         elif shape[0] > shape[1]:
             out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
+            input_output_factor = shape[0]  / size_read # > 1
         else:
             out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
+            input_output_factor = shape[1] / size_read # > 1
     else:
         out_shape = None
+        input_output_factor = None
 
     with rasterio.open(input) as rst:
         output = rst.read(bands_rasterio, window=window, out_shape=out_shape)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+
+    if input_output_factor is not None:
+        transform = rasterio.Affine(transform.a * input_output_factor, transform.b, transform.c,
+                                    transform.d, transform.e * input_output_factor, transform.f)
 
     return output, transform
 
