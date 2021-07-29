@@ -212,6 +212,7 @@ def plot_metrics(metrics_dict, label_names):
         
 def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
                     pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
+                    threshold:float=.5,
                     plot=False, mask_clouds:bool=False) -> Dict:
     """
     Run inference on a dataloader and compute metrics for that data
@@ -220,6 +221,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         dataloader: pytorch Dataloader for test set
         pred_fun: function to perform inference using a model
         thresholds_water: list of threshold for precision/recall curves
+        threshold: threshold to compute the confusion matrix
         plot: flag for calling plot method with metrics
         mask_clouds:
         
@@ -234,32 +236,38 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
 
     # This is constant: we're using this class convention to compute the PR curve
     if mask_clouds:
-        num_class, label_names = 2, ["land","water"]
+        num_class, label_names = 2, ["land", "water"]
     else:
         num_class, label_names = 3, ["land", "water", "cloud"]
 
     for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
-        test_inputs, ground_truth_outputs = batch["image"], batch["mask"].squeeze(1)
-        
+        test_inputs, ground_truth = batch["image"], batch["mask"]
+
         test_outputs = pred_fun(test_inputs)
 
         if mask_clouds:
             assert test_outputs.shape[1] == 1, f"Mode mask clouds expects 1 channel output image found {test_outputs.shape}"
-            test_outputs_categorical = test_outputs[:, 0] > .5
+            test_outputs_categorical = test_outputs[:, 0] > threshold
             probs_water_pr_curve = test_outputs[:, 0]
         else:
             assert test_outputs.shape[1] == num_class, f"Mode normal expects {num_class} channel output image found {test_outputs.shape}"
             test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
             probs_water_pr_curve = test_outputs[:, 1]
 
-        ground_truth_outputs = torch.clone(ground_truth_outputs.to(test_outputs_categorical.device))
-        
-        # Save invalids to discount
-        invalids = ground_truth_outputs == 0
+        if ground_truth.shape[1] > 1:
+            assert mask_clouds, f"Expected ground truth of one band found {ground_truth.shape}"
+            cloud_ground_truth = ground_truth[:, 0]
+            water_ground_truth = ground_truth[:, 1]
+            invalids = ((cloud_ground_truth != 1) | (water_ground_truth == 0)).to(test_outputs_categorical.device)
+            ground_truth_outputs = torch.clone(water_ground_truth).to(test_outputs_categorical.device)
+        else:
+            ground_truth_outputs = torch.clone(ground_truth[:, 0].to(test_outputs_categorical.device))
+            # Save invalids to discount
+            invalids = ground_truth_outputs == 0
 
-        # Do not consider cloud pixels for metrics
-        if mask_clouds:
-            invalids |= (ground_truth_outputs == 3)
+            # Do not consider cloud pixels for metrics
+            if mask_clouds:
+                invalids |= (ground_truth_outputs == 3)
 
         ground_truth_outputs[invalids] = 1
         ground_truth_outputs -= 1
@@ -288,9 +296,9 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         valids = ~invalids
         
         # thresholds_water sorted from high to low
-        for threshold in thresholds_water:
+        for thr in thresholds_water:
             # keep invalids in pred to zero
-            test_outputs_categorical_thresh[valids & (probs_water_pr_curve > threshold)] = 1
+            test_outputs_categorical_thresh[valids & (probs_water_pr_curve > thr)] = 1
 
             confusions_batch = compute_confusions(ground_truth_outputs,
                                                   test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]
