@@ -1,19 +1,18 @@
 from pyprojroot import here
 import sys
-import os
-#root = here(project_files)=[".here"]
 sys.path.append(str(here()))
 
 from google.cloud import storage
 from ml4floods.data.copernicusEMS import activations
 
-# import importlib
-# importlib.reload(activations)
 import requests
-from io import BytesIO, StringIO
+from io import BytesIO
 from typing import Dict
 from zipfile import ZipFile, is_zipfile
 import tqdm
+import os
+import fsspec
+
 
 copernicus_ems_webscrape_data  = {"confirmation": 1,
                                   "op":  "Download file",
@@ -84,21 +83,29 @@ def extract_ems_zip_files_gcp(bucket_id: str, file_path_to_zip: str, file_path_t
     input_zip = ZipFile(f_from_gcp)
     if is_zipfile(f_from_gcp):
         for name in input_zip.namelist():
-            if 'areaOfInterestA' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
+            name_dest = file_path_to_unzip + "/" + name
+            if fs.exists(f"gs://{bucket_id}/{name_dest}"):
+                continue
+            if 'area' in name or 'hydrography' in name or 'observed' in name or 'source' in name:
                 zipdict[name] = input_zip.read(name)
-                blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
+                blob_to_unzipped = bucket.blob(name_dest)
                 blob_to_unzipped.upload_from_string(zipdict[name])
-
 
 
 def main():
     bucket_id = 'ml4cc_data_lake'
     path_to_write_zip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
     path_to_write_unzip = '0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
+    import argparse
+
+    parser = argparse.ArgumentParser('Download Copernicus EMS')
+    parser.add_argument('--event_start_date', default="2015-07-01",
+                        help="Event start date to consider when fetching the images from CEMS")
+    args = parser.parse_args()
     
     # fetch Copernicus EMSR codes from Copernicus EMS activations page
     # pandas DataFrame of activations table
-    table_activations_ems = activations.table_floods_ems(event_start_date="2015-07-01")
+    table_activations_ems = activations.table_floods_ems(event_start_date=args.event_start_date)
     
     # convert code index to a list
     emsr_codes = table_activations_ems.index.to_list()
@@ -107,21 +114,24 @@ def main():
     print(f"Generating Copernicus EMSR codes to fetch:")
     with tqdm.tqdm(emsr_codes) as pbar:
         for emsr in pbar:
-            pbar.set_description("Retrieving EMSR zipfiles to extract...")
+            pbar.set_description(f"Code: {emsr}")
             zip_files_activation_url_list = activations.fetch_zip_file_urls(emsr)
-            path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}"
             for zip_url in zip_files_activation_url_list:
                 aoi = zip_url.split('_')[1]
                 path_to_write_unzip_bucket = f"{path_to_write_unzip}/{emsr}/{aoi}"
-                load_ems_zipfiles_to_gcp(zip_url,
-                                         bucket_id,
-                                         path_to_write_zip_bucket,
-                                         copernicus_ems_webscrape_data)
+                name_zip = os.path.basename(zip_url)
+                path_to_write_zip_bucket = f"{path_to_write_zip}/{emsr}/{aoi}/{name_zip}"
+                if not fs.exists(f"gs://{bucket_id}/{path_to_write_zip_bucket}"):
+                    load_ems_zipfiles_to_gcp(zip_url,
+                                             bucket_id,
+                                             path_to_write_zip_bucket,
+                                             copernicus_ems_webscrape_data)
+
                 extract_ems_zip_files_gcp(bucket_id,
                                          path_to_write_zip_bucket,
                                          path_to_write_unzip_bucket)
     
     
-    
 if __name__ == "__main__":
+    fs = fsspec.filesystem("gs")
     main()

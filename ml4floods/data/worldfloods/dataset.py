@@ -258,7 +258,7 @@ def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.wind
         channels: 0-based channels to read
 
     Returns:
-        4-D tensor (1, len(channels), H, W)
+        3-D tensor (len(channels), H, W)
 
     """
     with rasterio.open(tiff_input, "r") as rst:
