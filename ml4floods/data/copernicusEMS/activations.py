@@ -559,6 +559,11 @@ def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Opt
         )
         return
 
+    if pd_geo.notation.isna().any():
+        if verbose:
+            print(f"Found na in field {COLUMN_W_CLASS_OBSERVED_EVENT}. Replacing them with 'Flooded area'")
+        pd_geo.loc[pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT].isna(), COLUMN_W_CLASS_OBSERVED_EVENT] = 'Flooded area'
+
     if not all(
         notation in ACCEPTED_FIELDS
         for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]
