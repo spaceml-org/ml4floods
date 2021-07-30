@@ -28,7 +28,7 @@ import fsspec
 import subprocess
 
 
-def main(event_start_date):
+def main(event_start_date, cems_code:str="", aoi_code:str=""):
     # ===== Fetch ESMR Codes ==========
     fs = fsspec.filesystem("gs")
     
@@ -37,7 +37,12 @@ def main(event_start_date):
     # table_activations_ems = table_activations_ems.set_index("Code")
 
     table_activations_ems = activations.table_floods_ems(event_start_date=event_start_date)
-    esmr_codes = list(table_activations_ems.index)
+    if cems_code == "":
+        esmr_codes = list(table_activations_ems.index)
+    else:
+        esmr_codes = [cems_code]
+        assert cems_code in table_activations_ems.index, \
+            f"CEMS code: {cems_code} not in table of activations\n {table_activations_ems}"
     
     unzipped_activations_parent_dir = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip"
     data_store = "1_Staging"
@@ -50,7 +55,7 @@ def main(event_start_date):
             sample_activation_dir = os.path.join(unzipped_activations_parent_dir, activation)
             pbar.set_description(f"Code: {activation}")
 
-            aois_dirs = fs.glob(os.path.join(sample_activation_dir, "*"))
+            aois_dirs = fs.glob(os.path.join(sample_activation_dir, f"*{aoi_code}"))
 
             for aoi_dir in aois_dirs:
                 name_files = [os.path.basename(of).split("_observed")[0] for of in fs.glob(os.path.join(f"gs://{aoi_dir}",
@@ -61,7 +66,8 @@ def main(event_start_date):
 
                         with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
                             # TODO remove dependency of subprocess
-                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"], capture_output=True)
+                            subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"],
+                                           capture_output=True)
                             metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,
                                                                                           code_date, verbose=False)
                             if metadata_floodmap is None:
@@ -102,5 +108,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser('Download Copernicus EMS')
     parser.add_argument('--event_start_date', default="2015-07-01",
                         help="Which version of the ground truth we want to create (3-class) or multioutput binary")
+    parser.add_argument('--cems_code', default="",
+                        help="CEMS Code to download images from. If empty string (default) download the images"
+                             "from all the codes")
+    parser.add_argument('--aoi_code', default="",
+                        help="CEMS AoI to download images from. If empty string (default) download the images"
+                             "from all the AoIs")
     args = parser.parse_args()
-    main(args.event_start_date)
+    main(args.event_start_date, cems_code=args.cems_code, aoi_code=args.aoi_code)
