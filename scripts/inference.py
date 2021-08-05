@@ -73,7 +73,7 @@ def main(model_experiment, cems_code, aoi_code):
         try:
             if exists_tiff:
                 with rasterio.open(filename_save) as rst:
-                    prediction = rst.read(0)
+                    prediction = rst.read(1)
                     crs  = rst.crs
                     transform = rst.transform
             else:

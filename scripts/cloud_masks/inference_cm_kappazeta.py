@@ -85,7 +85,7 @@ def main(cems_code:str, aoi_code:str):
         try:
             if exists_tiff:
                 with rasterio.open(filename_save) as rst:
-                    pred = rst.read(0)
+                    pred = rst.read(1)
                     crs  = rst.crs
                     transform = rst.transform
             else:
