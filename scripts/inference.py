@@ -81,19 +81,8 @@ def main(model_experiment, cems_code, aoi_code):
             prediction = get_segmentation_mask(torch_inputs, inference_function)
 
             # Save data as vectors
-            data_out = []
-            start = 0
-            class_name = {2: "water", 3: "cloud"}
-            for c in [2, 3]:
-                geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
-                data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
-                                                  "id": np.arange(start, start + len(geoms_polygons)),
-                                                  "class": class_name[c]},
-                                                 crs=crs))
-                start += len(geoms_polygons)
-
-            data_out = pd.concat(data_out, ignore_index=True)
-            if data_out.shape[0] > 0:
+            data_out = vectorize_outputv1(prediction, crs, transform)
+            if data_out is not None:
                 data_out.to_file(filename_save_vect, driver="GeoJSON")
 
             # Save data as COG GeoTIFF
@@ -113,6 +102,26 @@ def main(model_experiment, cems_code, aoi_code):
     if len(files_with_errors) > 0:
         print(f"Files with errors:\n {files_with_errors}")
 
+
+def vectorize_outputv1(prediction, crs, transform):
+    data_out = []
+    start = 0
+    class_name = {2: "water", 3: "cloud"}
+    for c in [2, 3]:
+        geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
+        if len(geoms_polygons) > 0:
+            data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
+                                              "id": np.arange(start, start + len(geoms_polygons)),
+                                              "class": class_name[c]},
+                                             crs=crs))
+        start += len(geoms_polygons)
+
+    if len(data_out) == 1:
+        return data_out[0]
+    elif len(data_out) > 1:
+        return pd.concat(data_out, ignore_index=True)
+
+    return None
 
 
 if __name__ == "__main__":
