@@ -6,7 +6,7 @@ from ml4floods.data.worldfloods import dataset
 from ml4floods.models import postprocess
 import torch
 import rasterio
-from ml4floods.data import save_cog
+from ml4floods.data import save_cog, utils
 import numpy as np
 import fsspec
 from datetime import datetime
@@ -66,24 +66,31 @@ def main(model_experiment, cems_code, aoi_code):
         filename_save = filename.replace("/S2/", f"/{model_experiment}/")
         filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
 
-        if fs.exists(filename_save) and fs.exists(filename_save_vect):
+        exists_tiff = fs.exists(filename_save)
+        if exists_tiff and fs.exists(filename_save_vect):
             continue
 
         try:
-            torch_inputs, transform = dataset.load_input(filename,
-                                                         window=None, channels=channels)
+            if exists_tiff:
+                with rasterio.open(filename_save) as rst:
+                    prediction = rst.read(0)
+                    crs  = rst.crs
+                    transform = rst.transform
+            else:
+                torch_inputs, transform = dataset.load_input(filename,
+                                                             window=None, channels=channels)
 
-            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
+                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
 
-            with rasterio.open(filename) as src:
-                crs = src.crs
+                with rasterio.open(filename) as src:
+                    crs = src.crs
 
-            prediction = get_segmentation_mask(torch_inputs, inference_function)
+                prediction = get_segmentation_mask(torch_inputs, inference_function)
 
             # Save data as vectors
-            data_out = vectorize_outputv1(prediction, crs, transform)
+            data_out = vectorize_outputv1(prediction[0], crs, transform)
             if data_out is not None:
-                data_out.to_file(filename_save_vect, driver="GeoJSON")
+                utils.write_geojson_to_gcp(filename_save_vect, data_out)
 
             # Save data as COG GeoTIFF
             profile = {"crs": crs,

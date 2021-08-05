@@ -1,6 +1,6 @@
 import argparse
 import fsspec
-from ml4floods.data import cmkappazeta, save_cog
+from ml4floods.data import cmkappazeta, save_cog, utils
 from ml4floods.models import postprocess
 import geopandas as gpd
 import pandas as pd
@@ -76,21 +76,29 @@ def main(cems_code:str, aoi_code:str):
         filename_save = filename.replace("/S2/", "/cmkappazeta/")
         filename_save_vect = filename.replace("/S2/", "/cmkappazeta_vec/").replace(".tif", ".geojson")
 
-        if fs.exists(filename_save) and fs.exists(filename_save_vect):
+        exists_tiff = fs.exists(filename_save)
+        if exists_tiff and fs.exists(filename_save_vect):
             continue
 
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
 
         try:
-            inputs, transform, crs = load_input(filename,
-                                                channels=[0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12])
+            if exists_tiff:
+                with rasterio.open(filename_save) as rst:
+                    pred = rst.read(0)
+                    crs  = rst.crs
+                    transform = rst.transform
+            else:
+                inputs, transform, crs = load_input(filename,
+                                                    channels=[0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12])
 
-            pred = model.predict(inputs)
-            pred[pred == 5] = 0
+                pred = model.predict(inputs)
+                pred[pred == 5] = 0
 
             data_out = vectorize_output(pred, crs, transform)
+
             if data_out is not None:
-                data_out.to_file(filename_save_vect, driver="GeoJSON")
+                utils.write_geojson_to_gcp(filename_save_vect, data_out)
 
             # Save data as COG GeoTIFF
             profile = {"crs": crs,

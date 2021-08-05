@@ -35,6 +35,7 @@ def get_water_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
         list of rasterised polygons
 
     """
+    assert binary_water_mask.ndim == 2, f"Expected mask with 2 dim found {binary_water_mask.shape}"
 
     geoms_polygons = []
     polygon_generator = features.shapes(binary_water_mask.astype(np.int16),
