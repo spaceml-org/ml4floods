@@ -90,7 +90,7 @@ def main(cems_code:str, aoi_code:str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Run inference on all S2 images in Staging')
+    parser = argparse.ArgumentParser('Run inference and vectorize the output of kappazeta cloud and cloud shadow mask')
     parser.add_argument('--cems_code', default="",
                         help="EMS Codes to filter")
     parser.add_argument('--aoi_code', default="",
