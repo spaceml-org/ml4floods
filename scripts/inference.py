@@ -18,7 +18,7 @@ import sys
 import traceback
 
 
-def load_inference_function(experiment_name):
+def load_inference_function(experiment_name, device_name):
 
     # TODO handle multioutput model (instead of binary classification model)
     config_fp = f"gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/{experiment_name}/config.json"
@@ -30,7 +30,7 @@ def load_inference_function(experiment_name):
     config["model_params"]['model_folder'] = 'gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart'
     config["model_params"]['test'] = True
     model = get_model(config.model_params, experiment_name)
-    model.to("cuda")
+    model.to(device_name)
     channels = get_channel_configuration_bands(config.data_params.channel_configuration)
 
     return get_model_inference_function(model, config,apply_normalization=True), channels
@@ -54,8 +54,8 @@ def get_segmentation_mask(torch_inputs, inference_function):
 MODEL_EXPERIMENT_DEFAULT = "WFV1_unet"
 
 @torch.no_grad()
-def main(model_experiment, cems_code, aoi_code):
-    inference_function, channels = load_inference_function(model_experiment)
+def main(model_experiment, cems_code, aoi_code, device_name):
+    inference_function, channels = load_inference_function(model_experiment, device_name)
 
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/S2/*.tif")
     tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
@@ -140,9 +140,12 @@ if __name__ == "__main__":
                              "from all the AoIs")
     parser.add_argument('--model_experiment', default=MODEL_EXPERIMENT_DEFAULT,
                         help="Experiment name to load the weights")
+    parser.add_argument('--device_name', default="cuda",
+                        help="Device name")
+
     args = parser.parse_args()
     fs = fsspec.filesystem("gs")
-    main(args.model_experiment, args.cems_code, args.aoi_code)
+    main(args.model_experiment, args.cems_code, args.aoi_code, args.device_name)
 
 
 
