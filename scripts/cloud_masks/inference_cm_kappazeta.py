@@ -99,7 +99,7 @@ def main(cems_code:str, aoi_code:str):
                        "RESAMPLING": "NEAREST",
                        "nodata": 0}
 
-            save_cog.save_cog(pred, filename_save, profile=profile)
+            save_cog.save_cog(pred[np.newaxis], filename_save, profile=profile)
 
         except Exception:
             warnings.warn(f"Failed {filename}")
