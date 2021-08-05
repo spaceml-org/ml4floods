@@ -1,9 +1,6 @@
 import argparse
 import fsspec
 from ml4floods.data import cmkappazeta, save_cog, utils
-from ml4floods.models import postprocess
-import geopandas as gpd
-import pandas as pd
 from datetime import datetime
 from typing import Optional, Tuple, List
 import rasterio
@@ -37,32 +34,6 @@ def load_input(tiff_input:str, channels:List[int],
     return inputs, transform, crs
 
 
-def vectorize_output(prediction, crs, transform):
-    data_out = []
-    start = 0
-    for c in [2, 3, 4]:
-        if c == 3:
-            binary_mask = (prediction == 3) | (prediction == 4)
-            class_name = "THICK AND THIN CLOUDS"
-        else:
-            binary_mask = prediction == c
-            class_name = cmkappazeta.CLASSES_KAPPAZETA[c]
-        geoms_polygons = postprocess.get_water_polygons(prediction == binary_mask,
-                                                        transform=transform)
-        if len(geoms_polygons) > 0:
-            data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
-                                              "id": np.arange(start, start + len(geoms_polygons)),
-                                              "class": class_name},
-                                             crs=crs))
-            start += len(geoms_polygons)
-
-    if len(data_out) == 1:
-        return data_out[0]
-    elif len(data_out) > 1:
-        return pd.concat(data_out, ignore_index=True)
-
-    return None
-
 
 def main(cems_code:str, aoi_code:str):
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/S2/*.tif")
@@ -95,7 +66,7 @@ def main(cems_code:str, aoi_code:str):
                 pred = model.predict(inputs)
                 pred[pred == 5] = 0
 
-            data_out = vectorize_output(pred, crs, transform)
+            data_out = cmkappazeta.vectorize_output(pred, crs, transform)
 
             if data_out is not None:
                 utils.write_geojson_to_gcp(filename_save_vect, data_out)

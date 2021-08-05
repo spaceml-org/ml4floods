@@ -12,9 +12,13 @@ You may obtain a copy of the License at
 import tensorflow as tf
 import os
 import numpy as np
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Optional
 import itertools
 from ml4floods.visualization.plot_utils import get_cmap_norm_colors
+from ml4floods.models import postprocess
+import geopandas as gpd
+import pandas as pd
+import rasterio.transform
 
 
 COLORS_KAPPAZETA = np.array([[255, 0, 0], # 0: invalid
@@ -58,6 +62,44 @@ def plot_pred(pred_argmax:np.ndarray, ax=None, legend=True):
         ax.legend(handles=patches_preds,
                   loc='upper right')
     return ax
+
+
+def vectorize_output(prediction:np.ndarray, crs:str, transform:rasterio.transform.Affine) -> Optional[gpd.GeoDataFrame]:
+    """
+    Vectorize cloud and shadow classes
+
+    Args:
+        prediction: (H, W) array with predictions. Values expected in range(len(CLASSES_KAPPAZETA))
+        crs:
+        transform:
+
+    Returns:
+        gpd.GeoDataFrame with vectorized cloud, shadows and thick and thin clouds classes
+    """
+    data_out = []
+    start = 0
+    for c in [2, 3, 4]:
+        if c == 3:
+            binary_mask = (prediction == 3) | (prediction == 4)
+            class_name = "THICK AND THIN CLOUDS"
+        else:
+            binary_mask = prediction == c
+            class_name = CLASSES_KAPPAZETA[c]
+        geoms_polygons = postprocess.get_water_polygons(binary_mask,
+                                                        transform=transform)
+        if len(geoms_polygons) > 0:
+            data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
+                                              "id": np.arange(start, start + len(geoms_polygons)),
+                                              "class": class_name},
+                                             crs=crs))
+            start += len(geoms_polygons)
+
+    if len(data_out) == 1:
+        return data_out[0]
+    elif len(data_out) > 1:
+        return pd.concat(data_out, ignore_index=True)
+
+    return None
 
 
 def predbytiles(pred_function: Callable, input_batch: np.ndarray,
