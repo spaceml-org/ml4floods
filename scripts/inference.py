@@ -58,7 +58,6 @@ def main(model_experiment, cems_code, aoi_code, device_name):
     inference_function, channels = load_inference_function(model_experiment, device_name)
 
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/S2/*.tif")
-    tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
     files_with_errors = []
     for total, filename in enumerate(tiff_files):
