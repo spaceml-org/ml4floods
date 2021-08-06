@@ -41,3 +41,9 @@ If you find this work useful please cite:
 	pages = {7249},
 }
 ```
+
+----
+
+The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
+
+<img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="100"/>
