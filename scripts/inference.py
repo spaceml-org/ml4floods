@@ -69,6 +69,7 @@ def main(model_experiment, cems_code, aoi_code, device_name):
         if exists_tiff and fs.exists(filename_save_vect):
             continue
 
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
         try:
             if exists_tiff:
                 with rasterio.open(filename_save) as rst:
@@ -78,8 +79,6 @@ def main(model_experiment, cems_code, aoi_code, device_name):
             else:
                 torch_inputs, transform = dataset.load_input(filename,
                                                              window=None, channels=channels)
-
-                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
 
                 with rasterio.open(filename) as src:
                     crs = src.crs
