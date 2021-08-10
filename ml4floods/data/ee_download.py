@@ -1,10 +1,7 @@
-import shutil
-import tempfile
 import traceback
 
 import ee
 import time
-import requests
 from google.cloud import storage
 import os
 from glob import glob
@@ -14,7 +11,6 @@ import numpy as np
 import geopandas as gpd
 import pandas as pd
 import fsspec
-from ml4floods.data.config import BANDS_S2
 from datetime import datetime, timezone
 import math
 
@@ -44,20 +40,24 @@ def get_collection(collection_name, date_start, date_end, bounds):
     return collection_filtered, n_images
 
 
-def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/S2", bands=BANDS_S2, verbose=1,
-                      threshold_invalid=.5):
+def get_s2_collection(date_start:datetime, date_end:datetime,
+                      bounds:ee.Geometry,
+                      collection_name:str="COPERNICUS/S2", bands:Optional[List[str]]=None, verbose:int=1) -> ee.ImageCollection:
     """
+    Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
+    (see collection COPERNICUS/S2_CLOUD_PROBABILITY). This function also filters repeated images of the same date
+    over the same location.
 
     Args:
-        date_start:
-        date_end:
-        bounds:
-        collection_name:
-        bands:
-        threshold_invalid:
+        date_start: start search date
+        date_end: end search date
+        bounds: polygon with the AoI to download
+        collection_name: "COPERNICUS/S2" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR" for L2A images.
+        bands: list of bands to get
+        verbose: print stuff
 
     Returns:
-
+        image collection with S2 imaages and s2cloudless cloud masks
     """
 
     # GEE doesnt like time zones
@@ -68,6 +68,9 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
         if verbose > 1:
             print(f"Not images found for collection {collection_name} date start: {date_start} date end: {date_end}")
         return
+
+    if bands is None:
+        bands = BANDS_S2_NAMES[collection_name]
 
     img_col_all = img_col_all.select(bands)
 
@@ -111,14 +114,17 @@ def get_s2_collection(date_start, date_end, bounds, collection_name="COPERNICUS/
 
         return img
 
-    daily_mosaic = daily_mosaic.map(_count_valid_clouds).filter(ee.Filter.greaterThanOrEquals('valids', threshold_invalid))
+    # Add cloud info and valid info
+    daily_mosaic = daily_mosaic.map(_count_valid_clouds)
 
     return daily_mosaic
 
 
-def collection_mosaic_day(imcol, region_of_interest, fun_before_mosaic=None):
+def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geometry,
+                          fun_before_mosaic:Optional[Callable[[ee.ImageCollection], ee.ImageCollection]]=None)-> ee.ImageCollection:
     """
-    Groups by solar day the images in the image collection.
+    Groups by solar day the images in the image collection. This function is useful to discard repeated images in
+    image collections for example in the case of Sentinel-2 images.
 
     Args:
         imcol:
@@ -173,39 +179,6 @@ def img_collection_to_feature_collection(img_col, properties=PROPERTIES_DEFAULT)
         return ee.Feature(img.geometry(), dictio)
 
     return ee.FeatureCollection(img_col.map(extractFeatures))
-
-
-def export_eeFeatureCollection(feature_col, properties=None, filename=None, filetype="GeoJSON"):
-    """
-    exports ee.FeatureCollection to a file to be read.
-
-    :param feature_col: feature collection to export
-    :type feature_col: ee.FeatureCollection
-    :param properties: (optional) list of columns to export
-    :param filename: (optional) name of the file.
-    :param filetype: type of the file.
-
-    :return: filename to open (with geopandas if geojson)
-    """
-    if filename is None:
-        fileobj = tempfile.NamedTemporaryFile(dir=".", suffix=f".{filetype.lower()}", delete=True)
-        filename = fileobj.name
-        fileobj.close()
-
-    if properties is None:
-        url = feature_col.getDownloadURL(filetype=filetype)
-    else:
-        properties_list = properties.getInfo()
-        url = feature_col.getDownloadURL(filetype=filetype,
-                                         selectors=properties_list)
-
-    r_link = requests.get(url, stream=True)
-    if r_link.status_code == 200:
-        with open(filename, 'wb') as f:
-            r_link.raw.decode_content = True
-            shutil.copyfileobj(r_link.raw, f)
-
-    return filename
 
 
 def findtask(description):
@@ -275,7 +248,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
 
 
 def export_task_image(bucket=Optional["worldfloods"],crs='EPSG:4326',
-                      scale=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
+                      scale:float=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
     """
     function to export images in the WorldFloods format.
 
@@ -319,19 +292,7 @@ def export_task_image(bucket=Optional["worldfloods"],crs='EPSG:4326',
     return export_task
 
 
-def export_task_featurecollection(bucket="worldfloods", fileFormat="GeoJSON"):
-    def export_task(featcol2down, fileNamePrefix, description):
-        task = ee.batch.Export.table.toCloudStorage(featcol2down,
-                                                    fileNamePrefix=fileNamePrefix,
-                                                    description=description,
-                                                    fileFormat=fileFormat,
-                                                    bucket=bucket)
-        return task
-
-    return export_task
-
-
-def generate_polygon(bbox):
+def generate_polygon(bbox:Tuple[float, float, float, float]) ->List[List[List[float]]]:
     """
     Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
     """
@@ -347,16 +308,18 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
                              name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
     """
     Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
+
     Args:
-        area_of_interest:
-        date_search:
-        path_bucket:
-        crs:
+        area_of_interest: polygon with the AoI to download
+        date_search: start search date
+        path_bucket: path in the bucket to export the image. If the files in that bucket exists it does not download
+        them.
+        crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
         name_task:
         resolution_meters:
 
     Returns:
-
+        List of GEE tasks if triggered
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
@@ -405,9 +368,19 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     )
 
 def convert_wgs_to_utm(lon: float, lat: float) -> str:
-    """Based on lat and lng, return best utm epsg-code"""
-    # https://gis.stackexchange.com/questions/269518/auto-select-suitable-utm-zone-based-on-grid-intersection
-    # https://stackoverflow.com/questions/40132542/get-a-cartesian-projection-accurate-around-a-lat-lng-pair/40140326#40140326
+    """
+    Based on lat and lng, return best utm epsg-code
+
+    https://gis.stackexchange.com/questions/269518/auto-select-suitable-utm-zone-based-on-grid-intersection
+    https://stackoverflow.com/questions/40132542/get-a-cartesian-projection-accurate-around-a-lat-lng-pair/40140326#40140326
+    Args:
+        lon:
+        lat:
+
+    Returns: string with the best utm espg-code
+
+    """
+
     utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
     if len(utm_band) == 1:
         utm_band = '0'+ utm_band
@@ -419,6 +392,17 @@ def convert_wgs_to_utm(lon: float, lat: float) -> str:
 
 
 def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
+    """
+    Opens s2info.csv file that are exported in download_s2 function. It converts the date fields and
+    adds a column indicating which files are available.
+
+    Args:
+        path_csv:
+        fs:
+
+    Returns:
+        dataframe with processed date fields and column indicating if the s2 file is available
+    """
     if fs is None:
         fs = fsspec.filesystem("gs")
 
@@ -434,7 +418,7 @@ def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
     return datas2
 
 
-def check_rerun(data:pd.DataFrame,
+def _check_rerun(data:pd.DataFrame,
                 date_start_search: datetime, date_end_search: datetime,
                 filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]]) -> bool:
     """ Check if any S2 image is missing to trigger download """
@@ -477,25 +461,28 @@ def check_rerun(data:pd.DataFrame,
 
 def download_s2(area_of_interest: Polygon,
                 date_start_search: datetime, date_end_search: datetime,
-                path_bucket: str, collection_name="COPERNICUS/S2_SR", crs:str='EPSG:4326',
+                path_bucket: str, collection_name="COPERNICUS/S2", crs:str='EPSG:4326',
                 filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
-                name_task=None,
-                resolution_meters=10) -> List[ee.batch.Task]:
+                name_task:Optional[str]=None,
+                resolution_meters:float=10) -> List[ee.batch.Task]:
     """
     Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
     path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
     threshold_clouds cloudy pixels.
 
     Args:
-        area_of_interest:
-        date_start_search:
-        date_end_search:
-        path_bucket:
-        collection_name:
-        crs:
-        filter_s2_fun:
-        name_task:
-        resolution_meters:
+        area_of_interest: polygon with the AoI to download
+        date_start_search: start search date
+        date_end_search: end search date
+        path_bucket: path in the bucket to export the images. If the files in that bucket exists it does not download
+        them.
+        collection_name: "COPERNICUS/S2" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR" for L2A images.
+        crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
+        filter_s2_fun: function to filter the images to download. This function receives a dataframe with columns
+            "cloud_probability", "valids" and "datetime" the output of this function should be boolean array of the
+            with the number of rows of the dataframe that indicates which images of the dataframe to download.
+        name_task: if not provided will use the basename of `path_bucket`
+        resolution_meters: resolution in meters to export the images
 
     Returns:
         List of running tasks and dataframe with metadata of the S2 files.
@@ -512,9 +499,9 @@ def download_s2(area_of_interest: Polygon,
     path_csv = os.path.join(path_bucket, "s2info.csv")
     if fs.exists(path_csv):
         data = process_s2metadata(path_csv, fs=fs)
-        if check_rerun(data, date_start_search=date_start_search,
-                       date_end_search=date_end_search,
-                       filter_s2_fun=filter_s2_fun):
+        if _check_rerun(data, date_start_search=date_start_search,
+                        date_end_search=date_end_search,
+                        filter_s2_fun=filter_s2_fun):
             return []
         else:
             min_date = min(data["datetime"])
@@ -531,6 +518,7 @@ def download_s2(area_of_interest: Polygon,
 
     # Grab the S2 images
     img_col = get_s2_collection(date_start_search, date_end_search, pol,
+                                bands=BANDS_S2_NAMES[collection_name],
                                 collection_name=collection_name)
     if img_col is None:
         return []
@@ -603,6 +591,13 @@ def download_s2(area_of_interest: Polygon,
 
 
 def wait_tasks(tasks:List[ee.batch.Task]) -> None:
+    """
+    Wait for a list of tasks to finish
+
+    Args:
+        tasks: list of ee.Tasks
+
+    """
     task_down = []
     for task in tasks:
         if task.active():
@@ -615,7 +610,7 @@ def wait_tasks(tasks:List[ee.batch.Task]) -> None:
         task_down_new = []
         for _i, (t, task) in enumerate(list(task_down)):
             if task.active():
-                task_down_new.append(task)
+                task_down_new.append((t, task))
                 continue
             if task.status()["state"] != "COMPLETED":
                 print("Error in task {}:\n {}".format(t, task.status()))
