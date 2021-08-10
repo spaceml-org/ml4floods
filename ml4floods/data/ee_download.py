@@ -30,7 +30,7 @@ def permanent_water_image(year, bounds):
     return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}")
 
 
-def get_collection(collection_name, date_start, date_end, bounds):
+def _get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
     collection_filtered = collection.filterDate(date_start, date_end) \
         .filterBounds(bounds)
@@ -63,7 +63,7 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     # GEE doesnt like time zones
     date_start = date_start.replace(tzinfo=None)
     date_end = date_end.replace(tzinfo=None)
-    img_col_all, n_images_col = get_collection(collection_name, date_start, date_end, bounds)
+    img_col_all, n_images_col = _get_collection(collection_name, date_start, date_end, bounds)
     if n_images_col <= 0:
         if verbose > 1:
             print(f"Not images found for collection {collection_name} date start: {date_start} date end: {date_end}")
@@ -91,8 +91,7 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     # Add s2cloudless as new band
     img_col_all = img_col_all.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
 
-    daily_mosaic =  collection_mosaic_day(img_col_all, bounds,
-                                          fun_before_mosaic=None)
+    daily_mosaic =  collection_mosaic_day(img_col_all, bounds)
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
 
     # Filter images with many invalids
@@ -120,16 +119,14 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     return daily_mosaic
 
 
-def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geometry,
-                          fun_before_mosaic:Optional[Callable[[ee.ImageCollection], ee.ImageCollection]]=None)-> ee.ImageCollection:
+def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geometry)-> ee.ImageCollection:
     """
     Groups by solar day the images in the image collection. This function is useful to discard repeated images in
     image collections for example in the case of Sentinel-2 images.
 
     Args:
-        imcol:
-        region_of_interest:
-        fun_before_mosaic:
+        imcol: image collection
+        region_of_interest: needed to find the solar day
 
     Returns:
 
@@ -154,11 +151,8 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
         dates = ims_day.toList(ims_day.size()).map(lambda x: ee.Image(x).date().millis())
         median_date = dates.reduce(ee.Reducer.median())
 
-        # im = ims_day.mosaic()
-        if fun_before_mosaic is not None:
-            ims_day = ims_day.map(fun_before_mosaic)
-
         im = ims_day.mosaic()
+
         return im.set({
             "system:time_start": median_date,
             "system:id": solar_date.format("YYYY-MM-dd"),
@@ -170,7 +164,10 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
 
 
 PROPERTIES_DEFAULT = ["system:index", "system:time_start"]
-def img_collection_to_feature_collection(img_col, properties=PROPERTIES_DEFAULT):
+def img_collection_to_feature_collection(img_col:ee.ImageCollection,
+                                         properties:List[str]=PROPERTIES_DEFAULT) -> ee.FeatureCollection:
+    """Transforms the image collection to a feature collection """
+
     properties = ee.List(properties)
 
     def extractFeatures(img):
@@ -181,7 +178,7 @@ def img_collection_to_feature_collection(img_col, properties=PROPERTIES_DEFAULT)
     return ee.FeatureCollection(img_col.map(extractFeatures))
 
 
-def findtask(description):
+def _istaskrunning(description:str) -> bool:
     task_list = ee.data.getTaskList()
     for t in task_list:
         if t["description"] == description:
@@ -218,7 +215,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
                     print(f"\tFile {filename} exists , it will not be downloaded")
                 return
 
-    if not dry_run and findtask(desc):
+    if not dry_run and _istaskrunning(desc):
         if verbose >= 2:
             print("\ttask %s already running!" % desc)
         return
@@ -247,7 +244,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket=Optional["worldfloods"],crs='EPSG:4326',
+def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
                       scale:float=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
     """
     function to export images in the WorldFloods format.
@@ -524,16 +521,7 @@ def download_s2(area_of_interest: Polygon,
         return []
 
     # Get info of the S2 images (convert to table)
-    img_col_info = img_collection_to_feature_collection(img_col,
-                                                        ["system:time_start", "valids",
-                                                         "cloud_probability"])
-
-    img_col_info_local = gpd.GeoDataFrame.from_features(img_col_info.getInfo())
-    img_col_info_local["datetime"] = img_col_info_local["system:time_start"].apply(
-        lambda x: datetime.utcfromtimestamp(x / 1000).replace(tzinfo=timezone.utc))
-    img_col_info_local["cloud_probability"] /= 100
-    img_col_info_local = img_col_info_local[["system:time_start", "valids", "cloud_probability", "datetime"]]
-    img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
+    img_col_info_local = s2_image_collection_fetch_metadata(img_col)
 
     n_images_col = img_col_info_local.shape[0]
 
@@ -588,6 +576,22 @@ def download_s2(area_of_interest: Polygon,
             tasks.append(task)
 
     return tasks
+
+
+def s2_image_collection_fetch_metadata(img_col:ee.ImageCollection) -> pd.DataFrame:
+    """
+    Return the metadata of the provided image collection as a pandas dataframe.
+    """
+    img_col_info = img_collection_to_feature_collection(img_col,
+                                                        ["system:time_start", "valids",
+                                                         "cloud_probability"])
+    img_col_info_local = gpd.GeoDataFrame.from_features(img_col_info.getInfo())
+    img_col_info_local["datetime"] = img_col_info_local["system:time_start"].apply(
+        lambda x: datetime.utcfromtimestamp(x / 1000).replace(tzinfo=timezone.utc))
+    img_col_info_local["cloud_probability"] /= 100
+    img_col_info_local = img_col_info_local[["system:time_start", "valids", "cloud_probability", "datetime"]]
+    img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
+    return img_col_info_local
 
 
 def wait_tasks(tasks:List[ee.batch.Task]) -> None:

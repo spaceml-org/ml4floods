@@ -139,7 +139,8 @@ def get_image_transform(input:Union[str, np.ndarray],
 
 def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
                       window:Optional[rasterio.windows.Window]=None,
-                      max_clip_val:float=3000.,
+                      max_clip_val:Optional[float]=3000.,
+                      min_clip_val:Optional[float]=0.,
                       channel_configuration:str="all",
                       size_read:Optional[int]=None,
                       **kwargs):
@@ -154,6 +155,7 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
         transform: geospatial transform if input is an array
         window: window to read from the input
         max_clip_val: value to clip the the input for visualization
+        min_clip_val: value to clip the the input for visualization
         channel_configuration: Expected bands of the inputs
         size_read: max size to read. Use this to read from the overviews of the image.
         **kwargs: extra args for rasterio.plot.show
@@ -169,7 +171,8 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
                                            size_read=size_read)
 
     if max_clip_val is not None:
-        image = np.clip(image/max_clip_val, 0, 1)
+        min_clip_val = 0 if min_clip_val is None else min_clip_val
+        image = np.clip((image-min_clip_val)/(max_clip_val - min_clip_val), 0, 1)
 
     return rasterioplt.show(image, transform=transform, **kwargs)
 
@@ -177,7 +180,8 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
 def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
                              transform:Optional[rasterio.Affine]=None,
                              window:Optional[rasterio.windows.Window]=None,
-                             max_clip_val:float=3000.,
+                             max_clip_val: Optional[float] = 3000.,
+                             min_clip_val: Optional[float] = 0.,
                              channel_configuration="all",
                              size_read:Optional[int]=None,
                              **kwargs):
@@ -192,6 +196,7 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
         transform: geospatial transform if input is an array
         window: window to read from the input
         max_clip_val: value to clip the the input for visualization
+        min_clip_val: value to clip the the input for visualization
         channel_configuration: Expected bands of the inputs
         size_read: max size to read. Use this to read from the overviews of the image.
         **kwargs: extra args for rasterio.plot.show
@@ -207,7 +212,8 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
                                            size_read=size_read)
 
     if max_clip_val is not None:
-        image = np.clip(image / max_clip_val, 0, 1)
+        min_clip_val = 0 if min_clip_val is None else min_clip_val
+        image = np.clip((image-min_clip_val)/(max_clip_val - min_clip_val), 0, 1)
 
     return rasterioplt.show(image, transform=transform, **kwargs)
 
