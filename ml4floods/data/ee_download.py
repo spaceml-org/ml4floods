@@ -611,14 +611,17 @@ def wait_tasks(tasks:List[ee.batch.Task]) -> None:
     task_error = 0
     while len(task_down) > 0:
         print("%d tasks running" % len(task_down))
+
+        task_down_new = []
         for _i, (t, task) in enumerate(list(task_down)):
             if task.active():
+                task_down_new.append(task)
                 continue
             if task.status()["state"] != "COMPLETED":
                 print("Error in task {}:\n {}".format(t, task.status()))
                 task_error += 1
-            del task_down[_i]
 
+        task_down = task_down_new
         time.sleep(60)
 
     print("Tasks failed: %d" % task_error)
