@@ -16,6 +16,7 @@ import pandas as pd
 import fsspec
 from ml4floods.data.config import BANDS_S2
 from datetime import datetime, timezone
+import math
 
 
 BANDS_S2_NAMES = {
@@ -402,6 +403,19 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         bucket_name=bucket_name,
         verbose=2,
     )
+
+def convert_wgs_to_utm(lon: float, lat: float) -> str:
+    """Based on lat and lng, return best utm epsg-code"""
+    # https://gis.stackexchange.com/questions/269518/auto-select-suitable-utm-zone-based-on-grid-intersection
+    # https://stackoverflow.com/questions/40132542/get-a-cartesian-projection-accurate-around-a-lat-lng-pair/40140326#40140326
+    utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
+    if len(utm_band) == 1:
+        utm_band = '0'+ utm_band
+    if lat >= 0:
+        epsg_code = 'EPSG:326' + utm_band
+        return epsg_code
+    epsg_code = 'EPSG:327' + utm_band
+    return epsg_code
 
 
 def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:

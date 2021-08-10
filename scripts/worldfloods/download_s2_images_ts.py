@@ -1,4 +1,3 @@
-import math
 from ml4floods.data import ee_download, utils
 import fsspec
 from datetime import timedelta, datetime, timezone
@@ -7,21 +6,6 @@ import pandas as pd
 import warnings
 import traceback
 import sys
-
-
-def convert_wgs_to_utm(lon: float, lat: float) -> str:
-    """Based on lat and lng, return best utm epsg-code"""
-    # https://gis.stackexchange.com/questions/269518/auto-select-suitable-utm-zone-based-on-grid-intersection
-    # https://stackoverflow.com/questions/40132542/get-a-cartesian-projection-accurate-around-a-lat-lng-pair/40140326#40140326
-    utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
-    if len(utm_band) == 1:
-        utm_band = '0'+ utm_band
-    if lat >= 0:
-        epsg_code = 'EPSG:326' + utm_band
-        return epsg_code
-    epsg_code = 'EPSG:327' + utm_band
-    return epsg_code
-
 
 
 def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
@@ -54,7 +38,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
             # Set the crs to UTM of the center polygon
             lon, lat = list(pol_scene_id.centroid.coords)[0]
-            crs = convert_wgs_to_utm(lon=lon, lat=lat)
+            crs = ee_download.convert_wgs_to_utm(lon=lon, lat=lat)
 
             def filter_s2_images(img_col_info_local:pd.DataFrame)->pd.Series:
                 is_image_same_solar_day = img_col_info_local["datetime"].apply(lambda x: (satellite_date - x).total_seconds() / 3600. < 10)
