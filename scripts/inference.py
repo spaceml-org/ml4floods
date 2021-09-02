@@ -6,7 +6,7 @@ from ml4floods.data.worldfloods import dataset
 from ml4floods.models import postprocess
 import torch
 import rasterio
-from ml4floods.data import save_cog
+from ml4floods.data import save_cog, utils
 import numpy as np
 import fsspec
 from datetime import datetime
@@ -18,7 +18,7 @@ import sys
 import traceback
 
 
-def load_inference_function(experiment_name):
+def load_inference_function(experiment_name, device_name):
 
     # TODO handle multioutput model (instead of binary classification model)
     config_fp = f"gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/{experiment_name}/config.json"
@@ -30,7 +30,7 @@ def load_inference_function(experiment_name):
     config["model_params"]['model_folder'] = 'gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart'
     config["model_params"]['test'] = True
     model = get_model(config.model_params, experiment_name)
-    model.to("cuda")
+    model.to(device_name)
     channels = get_channel_configuration_bands(config.data_params.channel_configuration)
 
     return get_model_inference_function(model, config,apply_normalization=True), channels
@@ -54,11 +54,10 @@ def get_segmentation_mask(torch_inputs, inference_function):
 MODEL_EXPERIMENT_DEFAULT = "WFV1_unet"
 
 @torch.no_grad()
-def main(model_experiment, cems_code, aoi_code):
-    inference_function, channels = load_inference_function(model_experiment)
+def main(model_experiment, cems_code, aoi_code, device_name):
+    inference_function, channels = load_inference_function(model_experiment, device_name)
 
     tiff_files = fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/S2/*.tif")
-    tiff_files = [f for f in tiff_files if not fs.exists(f"gs://{f}".replace("/S2/", f"/{model_experiment}/"))]
 
     files_with_errors = []
     for total, filename in enumerate(tiff_files):
@@ -66,35 +65,30 @@ def main(model_experiment, cems_code, aoi_code):
         filename_save = filename.replace("/S2/", f"/{model_experiment}/")
         filename_save_vect = filename.replace("/S2/", f"/{model_experiment}_vec/").replace(".tif", ".geojson")
 
-        if fs.exists(filename_save) and fs.exists(filename_save_vect):
+        exists_tiff = fs.exists(filename_save)
+        if exists_tiff and fs.exists(filename_save_vect):
             continue
 
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
         try:
-            torch_inputs, transform = dataset.load_input(filename,
-                                                         window=None, channels=channels)
+            if exists_tiff:
+                with rasterio.open(filename_save) as rst:
+                    prediction = rst.read([1])
+                    crs  = rst.crs
+                    transform = rst.transform
+            else:
+                torch_inputs, transform = dataset.load_input(filename,
+                                                             window=None, channels=channels)
 
-            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
+                with rasterio.open(filename) as src:
+                    crs = src.crs
 
-            with rasterio.open(filename) as src:
-                crs = src.crs
-
-            prediction = get_segmentation_mask(torch_inputs, inference_function)
+                prediction = get_segmentation_mask(torch_inputs, inference_function)
 
             # Save data as vectors
-            data_out = []
-            start = 0
-            class_name = {2: "water", 3: "cloud"}
-            for c in [2, 3]:
-                geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
-                data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
-                                                  "id": np.arange(start, start + len(geoms_polygons)),
-                                                  "class": class_name[c]},
-                                                 crs=crs))
-                start += len(geoms_polygons)
-
-            data_out = pd.concat(data_out, ignore_index=True)
-            if data_out.shape[0] > 0:
-                data_out.to_file(filename_save_vect, driver="GeoJSON")
+            data_out = vectorize_outputv1(prediction[0], crs, transform)
+            if data_out is not None:
+                utils.write_geojson_to_gcp(filename_save_vect, data_out)
 
             # Save data as COG GeoTIFF
             profile = {"crs": crs,
@@ -114,6 +108,26 @@ def main(model_experiment, cems_code, aoi_code):
         print(f"Files with errors:\n {files_with_errors}")
 
 
+def vectorize_outputv1(prediction, crs, transform):
+    data_out = []
+    start = 0
+    class_name = {2: "water", 3: "cloud"}
+    for c in [2, 3]:
+        geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
+        if len(geoms_polygons) > 0:
+            data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
+                                              "id": np.arange(start, start + len(geoms_polygons)),
+                                              "class": class_name[c]},
+                                             crs=crs))
+        start += len(geoms_polygons)
+
+    if len(data_out) == 1:
+        return data_out[0]
+    elif len(data_out) > 1:
+        return pd.concat(data_out, ignore_index=True)
+
+    return None
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Run inference on all S2 images in Staging')
@@ -124,9 +138,12 @@ if __name__ == "__main__":
                              "from all the AoIs")
     parser.add_argument('--model_experiment', default=MODEL_EXPERIMENT_DEFAULT,
                         help="Experiment name to load the weights")
+    parser.add_argument('--device_name', default="cuda",
+                        help="Device name")
+
     args = parser.parse_args()
     fs = fsspec.filesystem("gs")
-    main(args.model_experiment, args.cems_code, args.aoi_code)
+    main(args.model_experiment, args.cems_code, args.aoi_code, args.device_name)
 
 
 

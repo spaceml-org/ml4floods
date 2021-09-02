@@ -60,7 +60,7 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
-            event_id = metadata_floodmap["event id"]+"_observed_event_a" # add observed_event_a for backwards compatibility
+            event_id = metadata_floodmap["layer name"]
 
             # Find out which split to put the data in
             subset = "unused"

@@ -3,17 +3,15 @@ import warnings
 import traceback
 
 import tqdm
-import json
-from ml4floods.data.utils import save_file_to_bucket
-
-from ml4floods.data.io import save_groundtruth_tiff_rasterio
+import pandas as pd
+from datetime import datetime
 from ml4floods.data import utils
 from ml4floods.data.ee_download import process_s2metadata
 import os
 from ml4floods.data.utils import GCPPath, read_json_from_gcp
 
 from pathlib import Path
-from typing import Optional, Callable, Tuple, Dict
+from typing import Optional, Callable, Tuple, Dict, Any
 import geopandas as gpd
 import rasterio
 import fsspec
@@ -69,18 +67,7 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     assert any(metadatas2.s2available), f"Not available S2 files for {main_path}. {metadatas2}"
 
     # find corresponding s2_image_path for this image
-    index = None
-    s2_date = None
-    for tup in metadatas2[metadatas2.s2available].itertuples():
-        date_img = tup.datetime
-        if (floodmap_date < date_img) or ((floodmap_date-date_img).total_seconds() / 3600. < 10):
-            if s2_date is None:
-                s2_date = date_img
-                index = tup.Index
-            else:
-                if s2_date > date_img:
-                    s2_date = date_img
-                    index = tup.Index
+    index, s2_date = best_s2_match(metadatas2, floodmap_date)
 
     assert s2_date is not None, f"Not found valid S2 files for {main_path}. {metadatas2}"
 
@@ -96,6 +83,32 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     s2_image_path = GCPPath(os.path.join(path_aoi, "S2", index+".tif"))
 
     return floodmap, None, permanent_water_path, meta_floodmap, s2_image_path
+
+
+def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any, datetime]:
+    """
+    Return s2 date posterior to the floodmap_date
+
+    Args:
+        metadatas2:
+        floodmap_date:
+
+    Returns:
+
+    """
+    index = None
+    s2_date = None
+    for tup in metadatas2[metadatas2.s2available].itertuples():
+        date_img = tup.datetime
+        if (floodmap_date < date_img) or ((floodmap_date - date_img).total_seconds() / 3600. < 10):
+            if s2_date is None:
+                s2_date = date_img
+                index = tup.Index
+            else:
+                if s2_date > date_img:
+                    s2_date = date_img
+                    index = tup.Index
+    return index, s2_date
 
 
 def worldfloods_old_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, GCPPath, Optional[GCPPath], Dict, GCPPath]:
