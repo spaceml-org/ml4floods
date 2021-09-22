@@ -73,7 +73,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         num_workers:int = 4,
         num_workers_val:int = 0,
         num_workers_test: int = 0,
-        filter_windows:Callable = None
+        filter_windows:Callable = None,
+        filenames_train_test: Dict = None
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -93,6 +94,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         self.gt_prefix = target_folder
         self.filter_windows = filter_windows
         self.window_size = WindowSize(height=window_size[0], width=window_size[1])
+        self.filenames_train_test = filenames_train_test
 
     def prepare_data(self):
         """Does Nothing for now. Here for compatibility."""
@@ -103,21 +105,27 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         """This creates the PyTorch dataset given the preconfigured
         file paths.
         """
+        
+        if self.filenames_train_test is None:
         # get the path names
-        files = {}
-        splits = ["train", "test", "val"]
-
-        # loop through the naming splits
-        for isplit in splits:
-            # get the subdirectory
-            sub_dir = Path(self.data_dir).joinpath(isplit).joinpath(self.image_prefix)
-            # append filenames to split dictionary
-            files[isplit] = get_files_in_directory(sub_dir, "tif")
-
-        # save filenames
-        self.train_files = files["train"]
-        self.val_files = files["val"]
-        self.test_files = files["test"]
+            files = {}
+            splits = ["train", "test", "val"]
+    
+            # loop through the naming splits
+            for isplit in splits:
+                # get the subdirectory
+                sub_dir = Path(self.data_dir).joinpath(isplit).joinpath(self.image_prefix)
+                # append filenames to split dictionary
+                files[isplit] = get_files_in_directory(sub_dir, "tif")
+    
+            # save filenames
+            self.train_files = files["train"]
+            self.val_files = files["val"]
+            self.test_files = files["test"]
+        else:
+            self.train_files = self.filenames_train_test['train']['S2']
+            self.val_files = self.filenames_train_test['val']['S2']
+            self.test_files = self.filenames_train_test['test']['S2']
 
         if self.filter_windows is not None:
             self.train_dataset = WorldFloodsDatasetTiled(

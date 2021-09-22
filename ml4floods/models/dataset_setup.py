@@ -85,7 +85,8 @@ def get_dataset(data_config) -> pl.LightningDataModule:
             num_workers=data_config.num_workers,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size,
-            filter_windows= filter_windows_config
+            filter_windows= filter_windows_config,
+            filenames_train_test=filenames_train_test
         )
         dataset.setup()
             
