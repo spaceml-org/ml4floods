@@ -117,18 +117,16 @@ class WorldFloodsDataModule(pl.LightningDataModule):
                 sub_dir = Path(self.data_dir).joinpath(isplit).joinpath(self.image_prefix)
                 # append filenames to split dictionary
                 files[isplit] = get_files_in_directory(sub_dir, "tif")        
-                print(files[isplit])
+                
             else:
                 files[isplit] = self.filenames_train_test[isplit]['S2']
             
             # save filenames
-            print(files)
+            
         self.train_files = files["train"]
         self.val_files = files["val"]
         self.test_files = files["test"]            
     
-
-
 
         if self.filter_windows is not None:
             self.train_dataset = WorldFloodsDatasetTiled(
