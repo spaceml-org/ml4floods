@@ -105,27 +105,30 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         """This creates the PyTorch dataset given the preconfigured
         file paths.
         """
+        files = {}
+        splits = ["train", "test", "val"]   
         
-        if self.filenames_train_test is None:
-        # get the path names
-            files = {}
-            splits = ["train", "test", "val"]
-    
-            # loop through the naming splits
-            for isplit in splits:
-                # get the subdirectory
+        # loop through the naming splits
+        for isplit in splits:
+            
+            if not self.filenames_train_test[isplit]['S2']:
+                
+                #get the subdirectory
                 sub_dir = Path(self.data_dir).joinpath(isplit).joinpath(self.image_prefix)
                 # append filenames to split dictionary
-                files[isplit] = get_files_in_directory(sub_dir, "tif")
-    
+                files[isplit] = get_files_in_directory(sub_dir, "tif")        
+                print(files[isplit])
+            else:
+                files[isplit] = self.filenames_train_test[isplit]['S2']
+            
             # save filenames
-            self.train_files = files["train"]
-            self.val_files = files["val"]
-            self.test_files = files["test"]
-        else:
-            self.train_files = self.filenames_train_test['train']['S2']
-            self.val_files = self.filenames_train_test['val']['S2']
-            self.test_files = self.filenames_train_test['test']['S2']
+            print(files)
+        self.train_files = files["train"]
+        self.val_files = files["val"]
+        self.test_files = files["test"]            
+    
+
+
 
         if self.filter_windows is not None:
             self.train_dataset = WorldFloodsDatasetTiled(
