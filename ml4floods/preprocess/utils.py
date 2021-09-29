@@ -25,9 +25,7 @@ def get_list_of_window_slices(
 
     accumulated_list_of_windows = []
     for ifilename in file_names:
-        if ".tif.aux.xml" in ifilename:
-            continue
-        
+
         with rasterio.open(ifilename) as dataset:
             # get list of windows
             list_of_windows = get_window_tiles(

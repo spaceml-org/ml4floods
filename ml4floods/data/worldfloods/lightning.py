@@ -51,7 +51,12 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window size used to tile the images
-                    for training
+            for training
+        filter_windows (Callable): function to filter the training tiles by 
+            number of invalid and cloud pixels 
+        filenames_train_test (Dict): path to images and ground truth for 
+            the training, validation and test splits 
+      
     Example:
         >>> from ml4floods.data.worldfloods.lightning import WorldFloodsGCPDataModule
         >>> wf_dm = WorldFloodsDataModule()
