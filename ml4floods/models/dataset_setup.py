@@ -52,9 +52,11 @@ def get_dataset(data_config) -> pl.LightningDataModule:
     # LOCAL PREPARATION
     # ======================================================
     local_destination_dir = data_config.path_to_splits
-    filenames_train_test = filenames_train_test_split(data_config.bucket_id, data_config.train_test_split_file)
-    
-    # ======================================================
+    if data_config.train_test_split_file is not None:
+        filenames_train_test = filenames_train_test_split(data_config.bucket_id, data_config.train_test_split_file)
+    else:
+        filenames_train_test = {'train': {'gt':[],'S2':[]},'test': {'gt':[],'S2':[]},'val': {'gt':[],'S2':[]}}
+# ======================================================
     # LOCAL DATASET SETUP
     # ======================================================
     if data_config.loader_type == 'local':
@@ -62,10 +64,11 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         print('Using local dataset for this run')
         
         # Read Files from bucket and copy them in local_destination_dir
-        download_tiffs_from_bucket(data_config.bucket_id,
-                                   [data_config.input_folder, data_config.target_folder],
-                                   filenames_train_test, local_destination_dir,
-                                   download=data_config.get("download", None))
+        if data_config.bucket_id is not None:
+            download_tiffs_from_bucket(data_config.bucket_id,
+                                       [data_config.input_folder, data_config.target_folder],
+                                       filenames_train_test, local_destination_dir,
+                                       download=data_config.get("download", None))
 
         filter_windows_attr = data_config.get("filter_windows", None)
         if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
@@ -85,7 +88,8 @@ def get_dataset(data_config) -> pl.LightningDataModule:
             num_workers=data_config.num_workers,
             window_size=data_config.window_size,
             batch_size=data_config.batch_size,
-            filter_windows= filter_windows_config
+            filter_windows= filter_windows_config,
+            filenames_train_test=filenames_train_test
         )
         dataset.setup()
             
