@@ -6,7 +6,10 @@ import torch
 import numpy as np
 from ml4floods.models.utils import metrics
 from ml4floods.data.utils import  write_json_to_gcp, GCPPath
+from typing import Optional
 import os
+import json
+import fsspec
 
 def get_code(x):
     """" Get CEMS code """
@@ -40,24 +43,27 @@ def load_inf_function_as_v1(config, model):
     return inference_function
 
 
-def compute_metrics_v1(experiment_name, prod_dev="0_DEV", path_to_splits=None, overwrite=False):
+def compute_metrics_v1(experiment_name, experiment_path="gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
+                       path_to_splits=None, overwrite=False, device:Optional[torch.device]=None):
     """
     Compute metrics of a given experiment and saves it on the corresponding folder:
     gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart/{experiment_name}
 
     Args:
         experiment_name: e.g. WFV1_unet
-        prod_dev: 0_DEV or 2_PROD
+        experiment_path: path to experiments
         path_to_splits: e.g. /worldfloods/worldfloods_v1_0/
         overwrite: overwrite the files if they exist
+        device: device to run the metrics
 
     """
+    fs = fsspec.filesystem(experiment_path)
 
-    if not overwrite and all(GCPPath(f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart/{experiment_name}/{dl_name}.json").check_if_file_exists() for dl_name in ["test","val"]):
-        print(f"All files exists for experiment gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart/{experiment_name}")
+    if not overwrite and all(fs.exists(os.path.join(experiment_path, f"{experiment_name}/{dl_name}.json").replace("\\","/")) for dl_name in ["test","val"]):
+        print(f"All files exists for experiment {experiment_path}/{experiment_name}")
         return
 
-    config_fp = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart/{experiment_name}/config.json"
+    config_fp = os.path.join(experiment_path, f"{experiment_name}/config.json").replace("\\", "/")
     config = get_default_config(config_fp)
 
     config["model_params"]["max_tile_size"] = 256
@@ -73,19 +79,20 @@ def compute_metrics_v1(experiment_name, prod_dev="0_DEV", path_to_splits=None, o
     if "filter_windows" in config["data_params"]:
         del config["data_params"]["filter_windows"]
 
-    config["model_params"]['model_folder'] = f'gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart'
+    config["model_params"]['model_folder'] = experiment_path
     config["model_params"]['test'] = True
     model = get_model(config.model_params, experiment_name)
 
     model.eval()
-    model.to("cuda:1")
+    if device is not None:
+        model.to(device)
     inference_function = load_inf_function_as_v1(config, model)
 
     data_module = dataset_setup.get_dataset(config["data_params"])
     thresholds_water = [0, 1e-3, 1e-2] + np.arange(0.5, .96, .05).tolist() + [.99, .995, .999]
 
     for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:
-        metrics_file = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/2_MLModelMart/{experiment_name}/{dl_name}.json"
+        metrics_file = os.path.join(experiment_path, f"{experiment_name}/{dl_name}.json").replace("\\", "/")
         if not overwrite and GCPPath(metrics_file).check_if_file_exists():
             print(f"File {metrics_file} exists. Continue")
             continue
@@ -102,14 +109,31 @@ def compute_metrics_v1(experiment_name, prod_dev="0_DEV", path_to_splits=None, o
             mets["cems_code"] = [get_code(f.file_name) for f in dl.dataset.list_of_windows]
 
         write_json_to_gcp(metrics_file, mets)
+        print(f"Per Class IOU", json.dumps(mets['iou'], indent=4, sort_keys=True))
 
 
 if __name__ == '__main__':
-    experiments_dev = ["WFV1_unet", "WF1_unet_all", "WF1_unet_rgb", "WF1_unet_rgbiswir", "WF1_unet_rgbi",
-                       "WF1_hrnet_rgbbs32", "WF2_unet", "WF2_hrnetsmall_rgb"]
+    from tqdm import tqdm
+    import traceback
+    import sys
+
+    device = torch.device("cuda:1")
+
+    experiments_dev = ["WFV1_unet", "WF1_unet_all", "WF1_unet_bgr", "WF1_unet_rgbiswir", "WF1_unet_rgbi",
+                       "WF1_hrnet_rgbbs32", "WF1_hrnet_allbs32", "WF2_unet",
+                       "WF2_hrnetsmall_rgb", "WFV1_scnn20", "WF1_scnn_bgr",
+                       "WF1_simplecnn_rgbi", "WF1_simplecnn_rgbiswir", "WF1_unetFilWME",
+                       "WF1_scnnFiltW"]
+
     path_2_splits = "/worldfloods/worldfloods_v1_0/"
 
-    for e in experiments_dev:
-        compute_metrics_v1(e,path_to_splits=path_2_splits)
+    experiment_path = "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart"
+
+    for e in tqdm(experiments_dev):
+        try:
+            compute_metrics_v1(e, experiment_path=experiment_path, path_to_splits=path_2_splits, device=device)
+        except Exception:
+            print(f"Error in experiment {e}")
+            traceback.print_exc(file=sys.stdout)
 
 
