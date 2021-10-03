@@ -221,7 +221,7 @@ class WorldFloodsDatasetTiled(Dataset):
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
 
-        mask = np.nan_to_num(mask_tif)
+        mask = np.nan_to_num(mask_tif).astype(int)
 
         # Apply transformation
         if self.transforms is not None:

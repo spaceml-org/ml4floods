@@ -42,8 +42,8 @@ class WorldFloodsModel(pl.LightningModule):
         """
         Args:
             batch: includes
-                x (torch.Tensor): (B,  C, W, H), input image
-                y (torch.Tensor): (B, W, H) encoded as {0: invalid, 1: land, 2: water, 3: cloud}
+                x (torch.Tensor): (B, C, W, H), input image
+                y (torch.Tensor): (B, 1, W, H) encoded as {0: invalid, 1: land, 2: water, 3: cloud}
         """
         x, y = batch['image'], batch['mask'].squeeze(1)
         logits = self.network(x)
