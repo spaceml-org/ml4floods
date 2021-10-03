@@ -19,7 +19,7 @@ class WorldFloodsModel(pl.LightningModule):
     It expects ground truths y (B, H, W) tensors to be encoded as: {0: invalid, 1: clear, 2:water, 3: cloud}
     The preds (model.forward(x)) will produce a tensor with shape (B, 3, H, W)
     """
-    def __init__(self, model_params: dict):
+    def __init__(self, model_params: dict, normalized_data:bool=True):
         super().__init__()
         self.save_hyperparameters()
         h_params_dict = model_params.get('hyperparameters', {})
@@ -28,6 +28,7 @@ class WorldFloodsModel(pl.LightningModule):
         self.weight_per_class = torch.Tensor(h_params_dict.get('weight_per_class',
                                                                [1 for i in range(self.num_class)]),
                                              device=self.device)
+        self.normalized_data = normalized_data
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
@@ -70,8 +71,11 @@ class WorldFloodsModel(pl.LightningModule):
         import wandb
         mask_data = y.cpu().numpy()
         pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
-        img_data = batch_to_unnorm_rgb(x,
-                                       self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
+        if self.normalized_data:
+            img_data = batch_to_unnorm_rgb(x,
+                                           self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
+        else:
+            img_data = x
 
         self.logger.experiment.log(
             {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
@@ -146,7 +150,7 @@ class ML4FloodsModel(pl.LightningModule):
     - Channel 0: {0: invalid, 1: clear, 2: cloud}
     - Channel 1: {0: invalid, 1: land, 2: water}
     """
-    def __init__(self, model_params: AttrDict):
+    def __init__(self, model_params: AttrDict, normalized_data:bool = True):
         super().__init__()
         self.save_hyperparameters()
         h_params_dict = model_params.get('hyperparameters', {})
@@ -158,6 +162,7 @@ class ML4FloodsModel(pl.LightningModule):
         self.weight_problem = [1 / self.num_class for _ in range(self.num_class)]
 
         self.network = configure_architecture(h_params_dict)
+        self.normalized_data = normalized_data
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
@@ -212,8 +217,11 @@ class ML4FloodsModel(pl.LightningModule):
         """ Log batch images and preds using wandb """
         mask_data = y.cpu().numpy()
         pred_data = torch.round(torch.sigmoid(logits)).long().cpu().numpy()
-        img_data = batch_to_unnorm_rgb(x,
-                                       self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
+        if self.normalized_data:
+            img_data = batch_to_unnorm_rgb(x,
+                                           self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
+        else:
+            img_data = x
 
 
         self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
@@ -274,13 +282,16 @@ class ML4FloodsModel(pl.LightningModule):
                 "monitor": self.hparams["model_params"]["hyperparameters"]["metric_monitor"]}
 
 
-def mask_to_rgb(mask, values=[0, 1, 2, 3], colors_cmap=COLORS_WORLDFLOODS):
+def mask_to_rgb(mask:np.ndarray, values:List[int]=[0, 1, 2, 3], colors_cmap:np.ndarray=COLORS_WORLDFLOODS) -> np.ndarray:
     """
-    Given a 2D mask it assign each value of the mask the corresponding color
-    :param mask:
-    :param values:
-    :param colors_cmap:
-    :return:
+     Given a 2D mask it assign each value of the mask the corresponding color
+    Args:
+        mask: (H, W) tensor with values in values
+        values: list of values to replace by the colors in colors_cmap
+        colors_cmap:
+
+    Returns:
+
     """
     assert len(values) == len(
         colors_cmap), f"Values and colors should have same length {len(values)} {len(colors_cmap)}"
@@ -316,7 +327,6 @@ def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
         model = HighResolutionNet(input_channels=num_channels, output_channels=num_classes)
         if num_channels == 3:
             print("3-channel model. Loading pre-trained weights from ImageNet")
-            # TODO models are bgr instead of rgb!
             pretrained_dict = load(PATH_TO_MODEL_HRNET_SMALL)
             model.init_weights(pretrained_dict)
 
