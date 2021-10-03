@@ -114,8 +114,6 @@ class WorldFloodsDatasetTiled(Dataset):
             namedtuples each consisting of a filename and a rasterio.window
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        window_size (Tuple[int,int]): the window sizes (height, width) to be
-            used for the tiling
         transforms (Callable): the transformations used within the
             training data module
 
@@ -124,8 +122,6 @@ class WorldFloodsDatasetTiled(Dataset):
             namedtuples each consisting of a filename and a rasterio.window
         image_prefix (str): the input folder sub_directory
         gt_prefix (str): the target folder sub directory
-        window_size (namedtuple): a tuple with the height and width
-            arguments
         transforms (Callable): the transformations used within the
             training data module
         bands: List[int]
@@ -251,6 +247,7 @@ def rasterio_read(
 
 def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
     """
+    Reads from a tiff the specified channel and window.
 
     Args:
         tiff_input:
@@ -258,7 +255,7 @@ def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.wind
         channels: 0-based channels to read
 
     Returns:
-        3-D tensor (len(channels), H, W)
+        3-D tensor (len(channels), H, W), Affine transform to geo-reference the array read.
 
     """
     with rasterio.open(tiff_input, "r") as rst:

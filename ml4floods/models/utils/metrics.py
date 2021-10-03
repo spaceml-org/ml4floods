@@ -12,8 +12,9 @@ from collections import OrderedDict
 
 
 @torch.no_grad()
-def compute_confusions(ground_truth_outputs: torch.Tensor, test_outputs_categorical: torch.Tensor, num_class: int,
-                       remove_class_zero=False) -> torch.Tensor:
+def compute_confusions(ground_truth_outputs: torch.Tensor,
+                       test_outputs_categorical: torch.Tensor, num_class: int,
+                       remove_class_zero:bool=False) -> torch.Tensor:
     """
     Compute the confusion matrix for a pair of ground truth and predictions. Returns one confusion matrix for each
     element in the batch
@@ -96,7 +97,7 @@ def binary_accuracy(cm_agg)->float:
     tp = cm_agg[1, 1]
     tn = cm_agg[0, 0]
 
-    return (tp+tn) / cm_agg.sum()
+    return (tp+tn) / (cm_agg.sum() + 1e-6)
 
 def binary_precision(cm_agg) -> float:
     tp = cm_agg[1, 1]
@@ -330,7 +331,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
     return out_dict
 
 
-def group_confusion(confusions:torch.Tensor, cems_code:str,fun:Callable,
+def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
                    label_names:List[str]) ->List[Dict[str, Any]]:
     CMs = OrderedDict({c:[] for c in sorted(np.unique(cems_code))})
 
