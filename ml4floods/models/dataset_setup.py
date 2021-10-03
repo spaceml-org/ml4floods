@@ -103,7 +103,8 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
         for idx, filename in enumerate(filenames_train_test[isplit][input_folder]):
             fs = get_filesystem(filename)
             assert fs.exists(filename), f"File input: {filename} does not exists"
-            filename_target = filename.replace(input_folder, target_folder, 1)
+
+            filename_target = filenames_train_test[isplit][target_folder][idx]
             assert fs.exists(filename_target), f"File target: {filename_target} does not exists"
 
             # Download if needed and replace filenames_train_test with the downloaded version
@@ -158,6 +159,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
 
     # CREATE DATAMODULE
     datamodule = WorldFloodsDataModule(
+        filenames_train_test=filenames_train_test,
         input_folder=data_config.input_folder,
         target_folder=data_config.target_folder,
         train_transformations=train_transform,
@@ -166,8 +168,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         num_workers=data_config.num_workers,
         window_size=data_config.window_size,
         batch_size=data_config.batch_size,
-        filter_windows= filter_windows_config,
-        filenames_train_test=filenames_train_test
+        filter_windows= filter_windows_config
     )
     datamodule.setup()
 

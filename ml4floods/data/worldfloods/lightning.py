@@ -1,13 +1,3 @@
-from pathlib import Path
-from typing import Callable, List, Optional, Tuple
-
-import albumentations
-import pytorch_lightning as pl
-from torch.utils.data import DataLoader, random_split
-
-from ml4floods.data.utils import get_files_in_bucket_directory, get_files_in_directory
-from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled
-from ml4floods.data.utils import get_files_in_directory
 from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
@@ -26,8 +16,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
     the training fit framework.
 
     Args:
-        data_dir: (str): the top level directory where the input
-            and target folder directories are found
         input_folder (str): the input folder sub_directory
         target_folder (str): the target folder sub directory
         train_transformations (Callable): the transformations used within the
@@ -40,8 +28,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         bands (List(int)): the bands to be selected from the images
 
     Attributes:
-        data_dir: (str): the top level directory where the input
-            and target folder directories are found
         train_transform (Callable): the transformations used within the
             training data module
         test_transform (Callable): the transformations used within the
@@ -66,6 +52,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
     def __init__(
         self,
+        filenames_train_test: Dict,
         input_folder: str = "S2",
         target_folder: str = "gt",
         train_transformations: Optional[Callable] = None,
@@ -78,7 +65,6 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         num_workers_test: int = 0,
         filter_windows:Callable = None,
         lock_read: bool = False,
-        filenames_train_test: Optional[Dict] = None
     ):
         super().__init__()
         self.train_transform = train_transformations
@@ -105,7 +91,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
         # loop through the naming splits
         for isplit in splits:
-                files[isplit] = self.filenames_train_test[isplit]['S2']
+                # TODO we might could use the train_test_split dict for avoiding to use the image_prefix and gt_prefix
+                files[isplit] = self.filenames_train_test[isplit][self.image_prefix]
 
         # save filenames
         self.train_files = files["train"]
