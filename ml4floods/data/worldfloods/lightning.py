@@ -12,7 +12,6 @@ from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
 import pytorch_lightning as pl
-from pathlib import Path
 from ml4floods.preprocess.tiling import WindowSize
 from ml4floods.preprocess.utils import get_list_of_window_slices
 
