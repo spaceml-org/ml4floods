@@ -23,6 +23,24 @@ These tutorials may help you explore the datasets and models:
     * Inference on [new data](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Run_Inference_on_new_data.html) (a Sentinel-2 image) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
     * [Perf metrics](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
 
+## The *WorldFloods* database
+
+The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z) contains 444 pairs of Sentinel-2 images and flood segmentation masks. It requires approximately 300GB of hard-disk storage. The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
+
+The database is available in this Google bucket: `gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/`. This Google bucket is in *requester pays* mode, hence you'd need a GCP project to download the data. To download the entire dataset run:
+
+```bash
+gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/worldfloods_v1_0.zip .
+```
+
+If you want only an specific subset (train, train_sample, val or test) run:
+
+```bash
+gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_v1_0.zip .
+gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_sample_v1_0.zip .
+gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/val_v1_0.zip .
+gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/test_v1_0.zip .
+```
 
 If you find this work useful please cite:
 
