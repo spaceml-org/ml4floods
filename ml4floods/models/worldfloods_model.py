@@ -68,15 +68,18 @@ class WorldFloodsModel(pl.LightningModule):
         """
         return self.network(x)
 
+    def image_to_logger(self, x:torch.Tensor) -> np.ndarray:
+        return batch_to_unnorm_rgb(x,
+                                   self.hparams["model_params"]["hyperparameters"]['channel_configuration'],
+                                   unnormalize=self.normalized_data)
+
+
     def log_images(self, x, y, logits, prefix=""):
         import wandb
         mask_data = y.cpu().numpy()
         pred_data = torch.argmax(logits, dim=1).long().cpu().numpy()
-        if self.normalized_data:
-            img_data = batch_to_unnorm_rgb(x,
-                                           self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
-        else:
-            img_data = x
+
+        img_data = self.image_to_logger(x)
 
         self.logger.experiment.log(
             {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
@@ -122,7 +125,8 @@ class WorldFloodsModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.network.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                               mode=METRIC_MODE[self.hparams["model_params"]["hyperparameters"]["metric_monitor"]],
                                                                factor=self.lr_decay, verbose=True,
                                                                patience=self.lr_patience)
 
@@ -142,6 +146,15 @@ class WorldFloodsModel(pl.LightningModule):
             2: "water",
             3: "cloud"
         }
+
+
+METRIC_MODE = {
+    "val_dice_loss": "min",
+    "val_iou water": "max",
+    "val_bce_land_water": "min",
+    "val_bce_loss": "min",
+    "val_Acc_land_water": "max"
+}
 
 
 class ML4FloodsModel(pl.LightningModule):
@@ -213,24 +226,24 @@ class ML4FloodsModel(pl.LightningModule):
         """
         return self.network(x)
 
+    def image_to_logger(self, x:torch.Tensor) -> np.ndarray:
+        return batch_to_unnorm_rgb(x,
+                                   self.hparams["model_params"]["hyperparameters"]['channel_configuration'],
+                                   unnormalize=self.normalized_data)
+
     def log_images(self, x, y, logits, prefix=""):
         import wandb
         """ Log batch images and preds using wandb """
         mask_data = y.cpu().numpy()
         pred_data = torch.round(torch.sigmoid(logits)).long().cpu().numpy()
-        if self.normalized_data:
-            img_data = batch_to_unnorm_rgb(x,
-                                           self.hparams["model_params"]["hyperparameters"]['channel_configuration'])
-        else:
-            img_data = x
-
+        img_data = self.image_to_logger(x)
 
         self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
 
         for i in range(self.num_class):
             problem_name = "_".join(self.label_names[i, 1:])
-            self.logger.experiment.log({f"{prefix}_{problem_name}_pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
-            self.logger.experiment.log({f"{prefix}_{problem_name}_pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
+            self.logger.experiment.log({f"{prefix}{problem_name}_pred_cont": [wandb.Image(img[i], mode="L") for img in pred_data]})
+            self.logger.experiment.log({f"{prefix}{problem_name}_pred": [wandb.Image(mask_to_rgb(img[i].round().astype(np.int64) + 1,
                                                                                                  values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in pred_data]})
             self.logger.experiment.log({f"{prefix}y_{problem_name}": [wandb.Image(mask_to_rgb(img[i], values=[0, 1, 2], colors_cmap=self.colormaps[i])) for img in mask_data]})
 
@@ -275,7 +288,8 @@ class ML4FloodsModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.network.parameters(), self.lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                               mode=METRIC_MODE[self.hparams["model_params"]["hyperparameters"]["metric_monitor"]],
                                                                factor=self.lr_decay, verbose=True,
                                                                patience=self.lr_patience)
 
@@ -283,7 +297,8 @@ class ML4FloodsModel(pl.LightningModule):
                 "monitor": self.hparams["model_params"]["hyperparameters"]["metric_monitor"]}
 
 
-def mask_to_rgb(mask:np.ndarray, values:List[int]=[0, 1, 2, 3], colors_cmap:np.ndarray=COLORS_WORLDFLOODS) -> np.ndarray:
+def mask_to_rgb(mask:np.ndarray, values:List[int]=[0, 1, 2, 3],
+                colors_cmap:np.ndarray=COLORS_WORLDFLOODS) -> np.ndarray:
     """
      Given a 2D mask it assign each value of the mask the corresponding color
     Args:
@@ -337,7 +352,8 @@ def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
     return model
 
 
-def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_clip_val=3000.) -> np.ndarray:
+def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_clip_val=3000.,
+                        unnormalize:bool=True) -> np.ndarray:
     """
     Unnorm x images and get rgb channels for visualization
 
@@ -345,13 +361,14 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
         x: (B, C, H, W) image
         channel_configuration: one of CHANNELS_CONFIGURATIONS.keys()
         max_clip_val: value to saturate the image
+        unnormalize:
 
     Returns:
         (B, H, W, 3) np.array with values between 0-1 ready to be used in imshow/PIL.from_array()
     """
     model_input_npy = x.cpu().numpy()
 
-    mean, std = normalize.get_normalisation("bgr")  # B, R, G!
+    mean, std = normalize.get_normalisation("rgb")  # B, R, G!
     mean = mean[np.newaxis]
     std = std[np.newaxis]
 
@@ -359,9 +376,10 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
     bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
     bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
 
-    model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2, 3, 1) * std[..., -1::-1] + mean[...,
-                                                                                                         -1::-1]
-    model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
+    model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2, 3, 1)
+    if unnormalize:
+        model_input_rgb_npy = model_input_npy  * std + mean
+        model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
 
     return model_input_rgb_npy
 
