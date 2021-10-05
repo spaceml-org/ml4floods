@@ -19,7 +19,7 @@ def get_filesystem(path: Union[str, Path]):
 def load_json(filename) ->Dict:
     """Loads a json file possibly from the gcp bucket if name start with gs:// """
 
-    fs = get_filesystem(filename)
+    fs = get_filesystem(filename,requester_pays = True)
     with fs.open(filename, "rb") as fh:
         return json.load(fh)
 
