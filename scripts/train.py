@@ -170,8 +170,8 @@ if __name__ == "__main__":
     parser.add_argument('--test', default=False, action='store_true')
     parser.add_argument('--deploy', default=False, action='store_true')
     # WandB fields
-    parser.add_argument('--wandb_entity', default='ml4floods')
-    parser.add_argument('--wandb_project', default='worldfloods')
+    parser.add_argument('--wandb_entity', default='ipl_uv')
+    parser.add_argument('--wandb_project', default='ml4floods-scripts')
     
     args = parser.parse_args()
     
