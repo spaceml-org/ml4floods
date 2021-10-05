@@ -24,9 +24,16 @@ def train(config):
     print("SETTING UP MODEL")
     print("======================================================")
     from ml4floods.models.model_setup import get_model
+    
+    if config.resume_from_checkpoint:
+        config.model_params.test = True
+        model = get_model(config.model_params)
+    else:
+        model = get_model(config.model_params)
+    
     config.model_params.test = False
     config.model_params.train = True
-    model = get_model(config.model_params)
+    
     
     # LOGGING SETUP 
     print("======================================================")
@@ -55,7 +62,7 @@ def train(config):
         verbose=True,
         monitor=config.model_params.hyperparameters.metric_monitor,
         mode='min',
-        prefix=''
+        #prefix=''
     )
     
     early_stop_callback = EarlyStopping(
