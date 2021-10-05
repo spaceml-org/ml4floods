@@ -367,7 +367,7 @@ def download_merit_layer(area_of_interest: Polygon,
                              path_bucket: str, crs:str='EPSG:4326',
                              name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
     """
-    Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1")
+    Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1") from GEE
 
     Args:
         area_of_interest: polygon with the AoI to download
