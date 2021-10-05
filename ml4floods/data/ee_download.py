@@ -2,7 +2,6 @@ import traceback
 
 import ee
 import time
-from google.cloud import storage
 import os
 from glob import glob
 from typing import Optional, Callable, List, Tuple
@@ -191,14 +190,13 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
              bucket_name="worldfloods"):
 
     if bucket_name is not None:
-        bucket = storage.Client().get_bucket(bucket_name)
-        blobs_rasterized_geom = list(bucket.list_blobs(prefix=filename))
-
-        if len(blobs_rasterized_geom) > 0:
+        fs = fsspec.filesystem("gs", requester_pays=True)
+        files_in_bucket = fs.glob(f"gs://{bucket_name}/{filename}*")
+        if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
-                for b in blobs_rasterized_geom:
-                    b.delete()
+                for b in files_in_bucket:
+                    fs.remove(f"gs://{b}")
             else:
                 if verbose >= 2:
                     print("\tFile %s exists in the bucket, it will not be downloaded" % filename)
