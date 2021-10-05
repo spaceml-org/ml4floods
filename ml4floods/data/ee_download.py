@@ -364,6 +364,72 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         verbose=2,
     )
 
+def download_merit_layer(area_of_interest: Polygon, date_search:datetime,
+                             path_bucket: str, crs:str='EPSG:4326',
+                             name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+    """
+    Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
+
+    Args:
+        area_of_interest: polygon with the AoI to download
+        date_search: start search date
+        path_bucket: path in the bucket to export the image. If the files in that bucket exists it does not download
+        them.
+        crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
+        name_task:
+        resolution_meters:
+
+    Returns:
+        List of GEE tasks if triggered
+    """
+    assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+
+    fs = fsspec.filesystem("gs",requester_pays = True)
+    filename_full_path = os.path.join(path_bucket, f"{date_search.year}.tif")
+    if fs.exists(filename_full_path):
+        print(f"File {filename_full_path} exists. It will not be downloaded again")
+        return
+
+    ee.Initialize()
+    
+    path_bucket_no_gs = path_bucket.replace("gs://", "")
+    bucket_name = path_bucket_no_gs.split("/")[0]
+    path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
+
+    area_of_interest_geojson = mapping(area_of_interest)
+    pol = ee.Geometry(area_of_interest_geojson)
+    bounding_box_aoi = area_of_interest.bounds
+    bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
+
+    img_export = ee.Image("MERIT/Hydro/v1_0_1").select('elv','dir','wth','wat','hnd','viswth').float()
+
+    if name_task is None:
+        name_for_desc = os.path.basename(path_no_bucket_name)
+    else:
+        name_for_desc = name_task
+
+    filename = os.path.join(path_no_bucket_name, f"{date_search.year}")
+    desc = f"{name_for_desc}_{date_search.year}"
+
+    export_task_fun_img = export_task_image(
+        bucket=bucket_name,
+        crs=crs,
+        scale=resolution_meters,
+    )
+
+    return mayberun(
+        filename,
+        desc,
+        lambda: img_export.clip(bounding_box_pol),
+        export_task_fun_img,
+        overwrite=False,
+        dry_run=False,
+        bucket_name=bucket_name,
+        verbose=2,
+    )
+
+
+
 def convert_wgs_to_utm(lon: float, lat: float) -> str:
     """
     Based on lat and lng, return best utm epsg-code
