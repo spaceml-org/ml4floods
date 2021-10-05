@@ -191,7 +191,8 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
 
     if bucket_name is not None:
         fs = fsspec.filesystem("gs", requester_pays=True)
-        files_in_bucket = fs.glob(f"gs://{bucket_name}/{filename}*")
+
+        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
         if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
@@ -362,7 +363,7 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         verbose=2,
     )
 
-def download_merit_layer(area_of_interest: Polygon, date_search:datetime,
+def download_merit_layer(area_of_interest: Polygon,
                              path_bucket: str, crs:str='EPSG:4326',
                              name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
     """
@@ -383,7 +384,8 @@ def download_merit_layer(area_of_interest: Polygon, date_search:datetime,
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
     fs = fsspec.filesystem("gs",requester_pays = True)
-    filename_full_path = os.path.join(path_bucket, f"{date_search.year}.tif")
+    
+    filename_full_path = os.path.join(path_bucket, "merit").replace("\\",'/')
     if fs.exists(filename_full_path):
         print(f"File {filename_full_path} exists. It will not be downloaded again")
         return
@@ -395,25 +397,26 @@ def download_merit_layer(area_of_interest: Polygon, date_search:datetime,
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
     area_of_interest_geojson = mapping(area_of_interest)
-    pol = ee.Geometry(area_of_interest_geojson)
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
-    img_export = ee.Image("MERIT/Hydro/v1_0_1").select('elv','dir','wth','wat','hnd','viswth').float()
+    img_export = ee.Image("MERIT/Hydro/v1_0_1").float()
 
     if name_task is None:
         name_for_desc = os.path.basename(path_no_bucket_name)
     else:
         name_for_desc = name_task
 
-    filename = os.path.join(path_no_bucket_name, f"{date_search.year}")
-    desc = f"{name_for_desc}_{date_search.year}"
+    filename = os.path.join(path_no_bucket_name, "merit").replace("\\",'/')
+    
+    desc = f"{name_for_desc}"
 
     export_task_fun_img = export_task_image(
         bucket=bucket_name,
         crs=crs,
         scale=resolution_meters,
     )
+    
 
     return mayberun(
         filename,
