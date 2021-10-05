@@ -191,7 +191,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
 
     if bucket_name is not None:
         fs = fsspec.filesystem("gs", requester_pays=True)
-
+    
         files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
         if len(files_in_bucket) > 0:
             if overwrite:
@@ -367,11 +367,10 @@ def download_merit_layer(area_of_interest: Polygon,
                              path_bucket: str, crs:str='EPSG:4326',
                              name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
     """
-    Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
+    Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1")
 
     Args:
         area_of_interest: polygon with the AoI to download
-        date_search: start search date
         path_bucket: path in the bucket to export the image. If the files in that bucket exists it does not download
         them.
         crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
