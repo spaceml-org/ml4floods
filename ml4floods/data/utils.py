@@ -819,7 +819,7 @@ def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
 
 
 def read_pickle_from_gcp(gs_path:str) -> dict:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""),requester_pays = True)
     with fs.open(gs_path, "rb") as fh:
         my_dictionary = pickle.load(fh)
 
