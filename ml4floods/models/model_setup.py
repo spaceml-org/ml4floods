@@ -16,7 +16,7 @@ SUBSAMPLE_MODULE = {
     "unet_dropout": 8
 }
 
-def get_model(model_config, experiment_name=None):
+def get_model(model_config, experiment_name=None, resume_from_checkpoint = False):
     """
     Function to setup WorldFloodsModel
     """
@@ -27,7 +27,7 @@ def get_model(model_config, experiment_name=None):
             model = ML4FloodsModel(model_config)
         else:
             model = WorldFloodsModel(model_config)
-        if model_config.resume_from_checkpoint:
+        if resume_from_checkpoint:
             path_to_models = os.path.join(model_config.model_folder,experiment_name,"checkpoint", "model.pt").replace("\\","/")
         else:
             path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt").replace("\\","/")
