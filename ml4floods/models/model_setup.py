@@ -27,7 +27,8 @@ def get_model(model_config, experiment_name=None):
             model = ML4FloodsModel(model_config)
         else:
             model = WorldFloodsModel(model_config)
-            path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt").replace("\\","/")
+            
+        path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt").replace("\\","/")
         
         model.load_state_dict(load(path_to_models))
         print(f"Loaded model weights: {path_to_models}")
