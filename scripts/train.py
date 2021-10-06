@@ -25,11 +25,7 @@ def train(config):
     print("======================================================")
     from ml4floods.models.model_setup import get_model
     
-    if config.resume_from_checkpoint:
-        config.model_params.test = True
-        model = get_model(config.model_params,config.experiment_name)
-    else:
-        model = get_model(config.model_params)
+    model = get_model(config.model_params)
     
     config.model_params.test = False
     config.model_params.train = True
