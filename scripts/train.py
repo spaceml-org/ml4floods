@@ -24,6 +24,7 @@ def train(config):
     print("SETTING UP MODEL")
     print("======================================================")
     from ml4floods.models.model_setup import get_model
+    from ml4floods.models import worldfloods_model
     config.model_params.test = False
     config.model_params.train = True
     model = get_model(config.model_params)
@@ -54,8 +55,7 @@ def train(config):
         save_top_k=True,
         verbose=True,
         monitor=config.model_params.hyperparameters.metric_monitor,
-        mode='min',
-        prefix=''
+        mode=worldfloods_model.METRIC_MODE[config.model_params.hyperparameters.metric_monitor]
     )
     
     early_stop_callback = EarlyStopping(
@@ -63,7 +63,7 @@ def train(config):
         patience=config.model_params.hyperparameters.get("early_stopping_patience", 4),
         strict=False,
         verbose=False,
-        mode='min'
+        mode=worldfloods_model.METRIC_MODE[config.model_params.hyperparameters.metric_monitor]
     )
     
     callbacks = [checkpoint_callback, early_stop_callback]

@@ -16,7 +16,7 @@ SUBSAMPLE_MODULE = {
     "unet_dropout": 8
 }
 
-def get_model(model_config, experiment_name=None):
+def get_model(model_config, normalized_data:bool=True, experiment_name=None):
     """
     Function to setup WorldFloodsModel
     """
@@ -26,7 +26,7 @@ def get_model(model_config, experiment_name=None):
         if model_config.get("model_version","v1") == "v2":
             model = ML4FloodsModel(model_config)
         else:
-            model = WorldFloodsModel(model_config)
+            model = WorldFloodsModel(model_config, normalized_data=normalized_data)
 
         path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt").replace("\\","/")
         model.load_state_dict(load(path_to_models))
