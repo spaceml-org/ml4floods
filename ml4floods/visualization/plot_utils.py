@@ -146,7 +146,7 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
                       **kwargs):
     """
     Plot bands B4, B3, B2 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
-    (assume the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
+    (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
 
     Tip: Use `size_read` to read from the image pyramid if input is a COG GeoTIFF to speed up the reading.
 
@@ -187,7 +187,7 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
                              **kwargs):
     """
     Plot bands B11, B8, B4 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
-    (assume the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
+    (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
 
     Tip: Use `size_read` to read from the image pyramid if input is a COG GeoTIFF to speed up the reading.
 
@@ -360,7 +360,7 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
 
 
 def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
-                  folder_permanent_water: Optional[str] = None) -> str:
+                  folder_permanent_water: Optional[str] = None, requester_pays:bool=True) -> str:
     """
     Download a set of tiffs from the google bucket to a local folder
 
@@ -369,13 +369,14 @@ def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
         tiff_input: input tiff file
         folder_ground_truth: folder with ground truth images
         folder_permanent_water: folder with permanent water images
+        requester_pays: Requester pays option of the bucket
 
     Returns:
         location of tiff_input in the local file system
 
     """
     import fsspec
-    fs = fsspec.filesystem("gs")
+    fs = fsspec.filesystem("gs", requester_pays=requester_pays)
 
     folders = ["/S2/", folder_ground_truth]
     if folder_permanent_water is not None:
