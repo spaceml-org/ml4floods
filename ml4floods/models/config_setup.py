@@ -10,10 +10,10 @@ def get_filesystem(path: Union[str, Path]):
     path = str(path)
     if "://" in path:
         # use the fileystem from the protocol specified
-        return fsspec.filesystem(path.split(":", 1)[0])
+        return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
     else:
         # use local filesystem
-        return fsspec.filesystem("file")
+        return fsspec.filesystem("file",requester_pays = True)
 
 
 def load_json(filename) ->Dict:

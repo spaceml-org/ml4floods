@@ -2,7 +2,6 @@ import traceback
 
 import ee
 import time
-from google.cloud import storage
 import os
 from glob import glob
 from typing import Optional, Callable, List, Tuple
@@ -191,14 +190,14 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
              bucket_name="worldfloods"):
 
     if bucket_name is not None:
-        bucket = storage.Client().get_bucket(bucket_name)
-        blobs_rasterized_geom = list(bucket.list_blobs(prefix=filename))
-
-        if len(blobs_rasterized_geom) > 0:
+        fs = fsspec.filesystem("gs", requester_pays=True)
+    
+        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
+        if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
-                for b in blobs_rasterized_geom:
-                    b.delete()
+                for b in files_in_bucket:
+                    fs.remove(f"gs://{b}")
             else:
                 if verbose >= 2:
                     print("\tFile %s exists in the bucket, it will not be downloaded" % filename)
@@ -363,6 +362,73 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         bucket_name=bucket_name,
         verbose=2,
     )
+
+def download_merit_layer(area_of_interest: Polygon,
+                             path_bucket: str, crs:str='EPSG:4326',
+                             name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+    """
+    Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1") from GEE
+
+    Args:
+        area_of_interest: polygon with the AoI to download
+        path_bucket: path in the bucket to export the image. If the files in that bucket exists it does not download
+        them.
+        crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
+        name_task:
+        resolution_meters:
+
+    Returns:
+        List of GEE tasks if triggered
+    """
+    assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
+
+    fs = fsspec.filesystem("gs",requester_pays = True)
+    
+    filename_full_path = os.path.join(path_bucket, "merit").replace("\\",'/')
+    if fs.exists(filename_full_path):
+        print(f"File {filename_full_path} exists. It will not be downloaded again")
+        return
+
+    ee.Initialize()
+    
+    path_bucket_no_gs = path_bucket.replace("gs://", "")
+    bucket_name = path_bucket_no_gs.split("/")[0]
+    path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
+
+    area_of_interest_geojson = mapping(area_of_interest)
+    bounding_box_aoi = area_of_interest.bounds
+    bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
+
+    img_export = ee.Image("MERIT/Hydro/v1_0_1").float()
+
+    if name_task is None:
+        name_for_desc = os.path.basename(path_no_bucket_name)
+    else:
+        name_for_desc = name_task
+
+    filename = os.path.join(path_no_bucket_name, "merit").replace("\\",'/')
+    
+    desc = f"{name_for_desc}"
+
+    export_task_fun_img = export_task_image(
+        bucket=bucket_name,
+        crs=crs,
+        scale=resolution_meters,
+    )
+    
+
+    return mayberun(
+        filename,
+        desc,
+        lambda: img_export.clip(bounding_box_pol),
+        export_task_fun_img,
+        overwrite=False,
+        dry_run=False,
+        bucket_name=bucket_name,
+        verbose=2,
+    )
+
+
 
 def convert_wgs_to_utm(lon: float, lat: float) -> str:
     """
