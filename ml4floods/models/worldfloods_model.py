@@ -11,7 +11,7 @@ from ml4floods.models.architectures.baselines import SimpleLinear, SimpleCNN
 from ml4floods.models.architectures.unets import UNet, UNet_dropout
 from ml4floods.models.architectures.hrnet_seg import HighResolutionNet
 from ml4floods.data.worldfloods.configs import COLORS_WORLDFLOODS, CHANNELS_CONFIGURATIONS, BANDS_S2, COLORS_WORLDFLOODS_INVLANDWATER, COLORS_WORLDFLOODS_INVCLEARCLOUD
-
+from pytorch_lightning.loggers import WandbLogger
 
 class WorldFloodsModel(pl.LightningModule):
     """
@@ -19,7 +19,7 @@ class WorldFloodsModel(pl.LightningModule):
     It expects ground truths y (B, H, W) tensors to be encoded as: {0: invalid, 1: clear, 2:water, 3: cloud}
     The preds (model.forward(x)) will produce a tensor with shape (B, 3, H, W)
     """
-    def __init__(self, model_params: dict, normalized_data:bool=True, log_images:bool=True):
+    def __init__(self, model_params: dict, normalized_data:bool=True):
         super().__init__()
         self.save_hyperparameters()
         h_params_dict = model_params.get('hyperparameters', {})
@@ -29,7 +29,6 @@ class WorldFloodsModel(pl.LightningModule):
                                                                [1 for i in range(self.num_class)]),
                                              device=self.device)
         self.normalized_data = normalized_data
-        self.logging_images = log_images
 
         # learning rate params
         self.lr = h_params_dict.get('lr', 1e-4)
@@ -52,7 +51,7 @@ class WorldFloodsModel(pl.LightningModule):
         if (batch_idx % 100) == 0:
             self.log("loss", loss)
         
-        if self.logging_images and (batch_idx == 0) and self.logger is not None:
+        if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
             self.log_images(x, y, logits,prefix="train_")
             
         return loss
@@ -119,7 +118,7 @@ class WorldFloodsModel(pl.LightningModule):
         for k in iou_dict.keys():
             self.log(f"val_iou {k}", iou_dict[k])
             
-        if self.logging_images and (batch_idx == 0) and self.logger is not None:
+        if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
             self.log_images(x, y, logits,prefix="val_")
             
 
@@ -207,7 +206,7 @@ class ML4FloodsModel(pl.LightningModule):
         if (batch_idx % 100) == 0:
             self.log("loss", loss)
 
-        if batch_idx == 0 and self.logger is not None:
+        if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
             self.log_images(x, y, logits, prefix="train_")
 
         return loss
@@ -283,7 +282,7 @@ class ML4FloodsModel(pl.LightningModule):
             for k in iou_dict.keys():
                 self.log(f"val_iou_{problem_name} {k}", iou_dict[k])
 
-        if batch_idx == 0 and self.logger is not None:
+        if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
             self.log_images(x, y, logits, prefix="val_")
 
     def configure_optimizers(self):
