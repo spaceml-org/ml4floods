@@ -32,16 +32,20 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", c
         main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
 
     if dataset == "extra":
-        main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite,prod_dev, gt_fun, cems_code, aoi_code)
+        main_worldlfoods_extra(f"gs://{destination_bucket_id}/{destination_parent_path}",
+                               overwrite, prod_dev, gt_fun, cems_code, aoi_code)
 
 
 
-def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overwrite, prod_dev, gt_fun, cems_code, aoi_code):
+def main_worldlfoods_extra(destination_path, overwrite, prod_dev, gt_fun, cems_code, aoi_code):
 
-    fs = fsspec.filesystem("gs")
+    # TODO: docstring of this function
+
+    fs = fsspec.filesystem("gs", requester_pays=True)
 
     problem_files = []
 
+    # TODO train test split file as argument!
     with fs.open(f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_v1_0/train_test_split.json", "r") as fh:
         data = json.load(fh)
 
@@ -62,23 +66,18 @@ def main_worldlfoods_extra(destination_bucket_id, destination_parent_path, overw
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
             event_id = metadata_floodmap["layer name"]
 
-            # Find out which split to put the data in
+            # TODO Find out which split to put the data in!!
             subset = "unused"
             for split in ["train", "test", "val"]:
                 if event_id in train_val_test_split[split]:
                     subset = split
-                    if split == "test":
-                        expected_test_file = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_v1_0/test/floodmaps/{event_id}.geojson"
-                        if fs.exists(expected_test_file):
-                            floodmap_file = metadata_file.replace("/flood_meta/", "/floodmap/").replace(".pickle", ".geojson")
-                            fs.copy(expected_test_file, floodmap_file)
-                        else:
-                            warnings.warn(f"Test file {event_id} does not exists in old test database {expected_test_file}")
                     break
                 if (split == "test") and metadata_floodmap["ems_code"] in cems_codes_test:
                     subset = "banned"
 
-            path_write = os.path.join(destination_bucket_id, destination_parent_path, subset)
+            path_write = os.path.join(destination_path, subset).replace("\\", "/")
+            # TODO mkdir path_write if not gs
+
             status = generate_item(metadata_file,
                                    path_write,
                                    file_name=event_id,

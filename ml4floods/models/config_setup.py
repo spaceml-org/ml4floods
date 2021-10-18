@@ -1,27 +1,10 @@
 import json
-from typing import Dict
 from ml4floods.models.utils.configuration import AttrDict
-from typing import Union
-from pathlib import Path
-import fsspec
+from ml4floods.data import utils
 
 
-def get_filesystem(path: Union[str, Path]):
-    path = str(path)
-    if "://" in path:
-        # use the fileystem from the protocol specified
-        return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
-    else:
-        # use local filesystem
-        return fsspec.filesystem("file",requester_pays = True)
-
-
-def load_json(filename) ->Dict:
-    """Loads a json file possibly from the gcp bucket if name start with gs:// """
-
-    fs = get_filesystem(filename)
-    with fs.open(filename, "rb") as fh:
-        return json.load(fh)
+get_filesystem = utils.get_filesystem
+load_json = utils.read_json_from_gcp
 
 
 def setup_config(args) -> AttrDict:

@@ -7,7 +7,7 @@ import argparse
 import json
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
 
 import geopandas as gpd
@@ -804,22 +804,37 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
     else:
         return filepath
 
+def get_filesystem(path: Union[str, Path]):
+    path = str(path)
+    if "://" in path:
+        # use the fileystem from the protocol specified
+        return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
+    else:
+        # use local filesystem
+        return fsspec.filesystem("file",requester_pays = True)
 
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+    fs = get_filesystem(gs_path)
 
     with fs.open(gs_path, "wb") as fh:
         geojson_val.to_file(fh, driver="GeoJSON")
 
 
+def read_geojson_from_gcp(gs_path: str) -> gpd.GeoDataFrame:
+    fs = get_filesystem(gs_path)
+    with fs.open(gs_path, "rb") as fh:
+        return gpd.read_file(fh)
+
+
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "wb") as fh:
         pickle.dump(dict_val, fh)
 
 
 def read_pickle_from_gcp(gs_path:str) -> dict:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""),requester_pays = True)
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "rb") as fh:
         my_dictionary = pickle.load(fh)
 
@@ -827,15 +842,14 @@ def read_pickle_from_gcp(gs_path:str) -> dict:
 
 
 def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+    fs = get_filesystem(gs_path)
 
     with fs.open(gs_path, "w") as fh:
         json.dump(dict_val, fh, cls=CustomJSONEncoder)
 
 
 def read_json_from_gcp(gs_path: str) ->Dict:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
-
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "r") as fh:
         my_dictionary = json.load(fh)
 
