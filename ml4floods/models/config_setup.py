@@ -118,4 +118,4 @@ def save_json(config:AttrDict, config_file_path:str) -> None:
         )
     else:
         with open(config_file_path, "w") as fh:
-            json.dump(config, fh,cls=CustomJSONEncoder)
+            json.dump(config, fh, cls = CustomJSONEncoder)
