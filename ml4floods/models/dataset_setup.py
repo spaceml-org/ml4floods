@@ -71,7 +71,7 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
     if download is None:
         download = {"train": False, "val": False, "test": False}
 
-    if train_test_split_file is not None:
+    if train_test_split_file:
         filenames_train_test = filenames_train_test_split(bucket_id, train_test_split_file)
     else:
         assert (path_to_splits is not None) and os.path.exists(path_to_splits), \

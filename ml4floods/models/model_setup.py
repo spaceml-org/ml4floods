@@ -16,7 +16,7 @@ SUBSAMPLE_MODULE = {
     "unet_dropout": 8
 }
 
-def get_model(model_config, normalized_data:bool=True, experiment_name=None):
+def get_model(model_config, experiment_name=None, normalized_data:bool=True):
     """
     Function to setup WorldFloodsModel
     """
