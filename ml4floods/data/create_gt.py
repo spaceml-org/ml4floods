@@ -130,25 +130,33 @@ def read_s2img_cloudmask(
     with rasterio.open(s2tiff, "r") as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
     # print(cloudprob_in_lastband)
-    if cloudprob_in_lastband:
+    if cloudprob_image_path and os.path.exists(cloudprob_image_path):
+        ext = os.path.splitext(cloudprob_image_path)[1]
+        if ext == ".tif":
+            with rasterio.open(cloudprob_image_path, "r") as cld_rst:
+                cloud_mask = cld_rst.read(1, window=window)
+
+        elif  ext == ".geojson":
+            # TODO check if empty file -> cloud_masks=np.zeros(shape)
+
+            # TODO rasterize image over s2tiff loc
+            with rasterio.open(s2tiff, "r") as s2_rst:
+                transform = s2_rst.transform
+                crs = s2_rst.crs
+                shape = s2_rst.shape
+
+
+    elif cloudprob_in_lastband:
         with rasterio.open(s2tiff, "r") as s2_rst:
             last_band = s2_rst.count
             cloud_mask = s2_rst.read(last_band, window=window)
             cloud_mask = (
                 cloud_mask.astype(np.float32) / 100.0
             )  # cloud mask in the last band is from 0 - 100
-    elif cloudprob_image_path is None:
+    else:
         from ml4floods.data import cloud_masks
-
         # Compute cloud mask
         cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
-
-    elif isinstance(cloudprob_image_path, str):
-        with rasterio.open(cloudprob_image_path, "r") as cld_rst:
-            cloud_mask = cld_rst.read(1, window=window)
-
-    else:
-        raise ValueError(f"Unrecognized input type: {cloudprob_image_path}")
 
     return s2_img, cloud_mask
 

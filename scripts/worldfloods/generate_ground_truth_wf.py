@@ -7,12 +7,12 @@ from ml4floods.data import utils
 import os
 import fsspec
 import json
-import warnings
+from typing import Callable
 
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", cems_code="", aoi_code=""):
 
-    assert version in ["v1_0", "v2_0"], f"Unexpected version {version}"
+    assert version in ["v1_0", "v2_0"], f"Unexpected ground truth version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
     assert dataset in ["original", "extra"], f"Unexpected dataset {dataset}"
 
@@ -32,51 +32,70 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", c
         main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
 
     if dataset == "extra":
+        staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
         main_worldlfoods_extra(f"gs://{destination_bucket_id}/{destination_parent_path}",
-                               overwrite, prod_dev, gt_fun, cems_code, aoi_code)
+                               overwrite=overwrite, staging_path=staging_path,
+                               gt_fun=gt_fun, cems_code=cems_code, aoi_code=aoi_code)
 
 
 
-def main_worldlfoods_extra(destination_path, overwrite, prod_dev, gt_fun, cems_code, aoi_code):
+def main_worldlfoods_extra(destination_path:str,
+                           train_test_split_file:str="gs://ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v1_0/train_test_split.json" ,
+                           overwrite:bool=False, staging_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods",
+                           gt_fun:Callable=generate_water_cloud_binary_gt, cems_code:str="", aoi_code:str=""):
+    """
+    Creates the worldfloods_extra dataset in the folder `destination_path`. It copies the files from
+    the bucket (from `staging_path`) and creates the ground truth tiff file used for training the models.
 
-    # TODO: docstring of this function
+    Args:
+        destination_path: Path where the dataset will be created
+        train_test_split_file: json file with the files used for train, validation, test and baned.
+        overwrite: Whether or not to overwrite the files if exists.
+        staging_path: Path to WorldFloods staging data.
+        gt_fun: Function to create the ground truth (3 class ground truth or 2-bands multioutput binary)
+        cems_code: optional use only data from this cems_code to create the ground truth
+        aoi_code: optional use only data from this cems_code to create the ground truth
+    """
 
-    fs = fsspec.filesystem("gs", requester_pays=True)
-
-    problem_files = []
-
-    # TODO train test split file as argument!
-    with fs.open(f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_v1_0/train_test_split.json", "r") as fh:
+    # Read traintest split file
+    fstraintest = utils.get_filesystem(train_test_split_file)
+    with fstraintest.open(train_test_split_file, "r") as fh:
         data = json.load(fh)
 
     train_val_test_split = {}
-    for split in ["train", "test", "val"]:
+    SPLITS = ["train", "test", "val", "banned"]
+    for split in SPLITS:
         train_val_test_split[split] = set((os.path.splitext(os.path.basename(d))[0] for d in data[split]["S2"]))
 
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
-    cems_codes_test.add("EMSR9284")
-    cems_codes_test.add("EMSR284")
+    if "EMSR9284" in cems_codes_test:
+        cems_codes_test.add("EMSR284")
 
     # get all files
-    files_metadata_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
+    fs_ml4cc = fsspec.filesystem("gs", requester_pays=True)
+    files_metadata_pickled = [f"gs://{f}" for f in fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
 
     # loop through files in the bucket
+    problem_files = []
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
             event_id = metadata_floodmap["layer name"]
 
-            # TODO Find out which split to put the data in!!
+            # Find out which split to put the data in
             subset = "unused"
-            for split in ["train", "test", "val"]:
-                if event_id in train_val_test_split[split]:
-                    subset = split
-                    break
-                if (split == "test") and metadata_floodmap["ems_code"] in cems_codes_test:
-                    subset = "banned"
+            if metadata_floodmap["ems_code"] in cems_codes_test:
+                subset = "banned"
+            else:
+                for split in SPLITS:
+                    if event_id in train_val_test_split[split]:
+                        subset = split
+                        break
 
+            # Create destination folder if it doesn't exists
             path_write = os.path.join(destination_path, subset).replace("\\", "/")
-            # TODO mkdir path_write if not gs
+            if not path_write.startswith("gs:") and not os.path.exists(path_write):
+                os.makedirs(path_write)
 
             status = generate_item(metadata_file,
                                    path_write,
@@ -86,7 +105,6 @@ def main_worldlfoods_extra(destination_path, overwrite, prod_dev, gt_fun, cems_c
                                    paths_function=worldfloods_extra_gcp_paths)
             if not status:
                 problem_files.append(metadata_file)
-
 
     print("Files not generated that were expected:")
     for p in problem_files:

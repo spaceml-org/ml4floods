@@ -83,9 +83,12 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
 
     s2_image_path = os.path.join(path_aoi, "S2", index+".tif").replace("\\", "/")
 
-    # TODO add cloud_probability if exists in edited!
+    # Add cloud_probability if exists in edited
+    cm_edited = main_path.replace("/flood_meta/", "/cmedited_vec/").replace(".pickle", ".geojson")
+    if not fs.exists(cm_edited):
+        cm_edited = None
 
-    return floodmap, None, permanent_water_path, meta_floodmap, s2_image_path
+    return floodmap, cm_edited, permanent_water_path, meta_floodmap, s2_image_path
 
 
 def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any, datetime]:
