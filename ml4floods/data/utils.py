@@ -3,16 +3,14 @@ This script contains all the utility functions that are not specific to a partic
 These are mainly used for explorations, testing, and demonstrations.
 """
 import os
-import argparse
 import json
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
+import warnings
 
 import geopandas as gpd
 import numpy as np
-import rasterio
 from google.cloud import storage
 from shapely.geometry import Polygon, mapping
 from shapely.ops import cascaded_union
@@ -21,11 +19,10 @@ from datetime import datetime
 from ml4floods.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 from dataclasses import dataclass, field
 import subprocess
-from io import BytesIO
 import pickle
 import fsspec
-
-# HOME = str(Path.home())
+from contextlib import contextmanager
+import rasterio
 
 
 @dataclass
@@ -804,6 +801,7 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
     else:
         return filepath
 
+
 def get_filesystem(path: Union[str, Path]):
     path = str(path)
     if "://" in path:
@@ -813,11 +811,28 @@ def get_filesystem(path: Union[str, Path]):
         # use local filesystem
         return fsspec.filesystem("file",requester_pays = True)
 
+
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
     fs = get_filesystem(gs_path)
+    if geojson_val.shape[0] == 0:
+        warnings.warn(f"Dataframe is empty. Saving in {gs_path}")
+        with fs.open(gs_path, "w") as fh:
+            json.dump(eval(geojson_val.to_json()), fh)
+    else:
+        with fs.open(gs_path, "wb") as fh:
+            geojson_val.to_file(fh, driver="GeoJSON")
 
-    with fs.open(gs_path, "wb") as fh:
-        geojson_val.to_file(fh, driver="GeoJSON")
+
+@contextmanager
+def rasterio_open_read(tifffile, requester_pays:bool=True) -> rasterio.DatasetReader:
+    if requester_pays and tifffile.startswith("gs"):
+        fs = fsspec.filesystem("gs", requester_pays=True)
+        with fs.open(tifffile, "rb") as fh:
+            with rasterio.io.MemoryFile(fh.read()) as mem:
+                yield mem.open()
+    else:
+        with rasterio.open(tifffile) as src:
+            yield src
 
 
 def read_geojson_from_gcp(gs_path: str) -> gpd.GeoDataFrame:

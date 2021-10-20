@@ -7,6 +7,7 @@ import rasterio.windows
 import torch
 from torch.utils.data import Dataset
 import contextlib
+from ml4floods.data import utils
 
 
 from ml4floods.data.worldfloods.configs import BANDS_S2
@@ -239,7 +240,7 @@ def rasterio_read(
     image_name: str, lock, channels: List[int] = None, kwargs_rasterio: Dict = {}
 ) -> np.ndarray:
     with lock:
-        with rasterio.open(image_name) as f:
+        with utils.rasterio_open_read(image_name) as f:
             im_tif = f.read(channels, **kwargs_rasterio)
 
     return im_tif
@@ -258,7 +259,7 @@ def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.wind
         3-D tensor (len(channels), H, W), Affine transform to geo-reference the array read.
 
     """
-    with rasterio.open(tiff_input, "r") as rst:
+    with utils.rasterio_open_read(tiff_input) as rst:
         inputs = rst.read((np.array(channels) + 1).tolist(), window=window)
         # Shifted transform based on the given window (used for plotting)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)

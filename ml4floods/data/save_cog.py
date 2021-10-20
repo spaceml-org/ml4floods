@@ -4,7 +4,6 @@ import rasterio.shutil as rasterio_shutil
 import os
 import tempfile
 import numpy as np
-import subprocess
 import fsspec
 
 from typing import Optional

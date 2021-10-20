@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import warnings
 import traceback
+from ml4floods.data import utils
 
 
 def load_input(tiff_input:str, channels:List[int],
@@ -24,7 +25,7 @@ def load_input(tiff_input:str, channels:List[int],
         3-D tensor (len(channels), H, W), rasterio.transform and crs
 
     """
-    with rasterio.open(tiff_input, "r") as rst:
+    with utils.rasterio_open_read(tiff_input) as rst:
         inputs = rst.read((np.array(channels) + 1).tolist(), window=window)
         # Shifted transform based on the given window (used for plotting)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
@@ -55,7 +56,7 @@ def main(cems_code:str, aoi_code:str):
 
         try:
             if exists_tiff:
-                with rasterio.open(filename_save) as rst:
+                with utils.rasterio_open_read(filename_save) as rst:
                     pred = rst.read(1)
                     crs  = rst.crs
                     transform = rst.transform

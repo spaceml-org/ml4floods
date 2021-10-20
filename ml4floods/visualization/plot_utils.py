@@ -7,6 +7,7 @@ import numpy as np
 from typing import Union, Optional, List, Tuple
 from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods import configs
+from ml4floods.data import utils
 import os
 
 
@@ -65,7 +66,7 @@ def _read_data(input:str,
             n_bands = len(bands_rasterio)
 
         if window is None:
-            with rasterio.open(input) as rst:
+            with utils.rasterio_open_read(input) as rst:
                 shape = rst.shape
         else:
             shape = window.height, window.width
@@ -83,7 +84,7 @@ def _read_data(input:str,
         out_shape = None
         input_output_factor = None
 
-    with rasterio.open(input) as rst:
+    with utils.rasterio_open_read(input) as rst:
         output = rst.read(bands_rasterio, window=window, out_shape=out_shape)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
 

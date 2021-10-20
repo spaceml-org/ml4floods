@@ -8,12 +8,10 @@ from datetime import datetime
 from ml4floods.data import utils
 from ml4floods.data.ee_download import process_s2metadata
 import os
-from ml4floods.data.utils import read_json_from_gcp
 
 from pathlib import Path
 from typing import Optional, Callable, Tuple, Dict, Any
 import geopandas as gpd
-import rasterio
 import fsspec
 from ml4floods.data import save_cog
 
@@ -86,7 +84,9 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
     # Add cloud_probability if exists in edited
     cm_edited = main_path.replace("/flood_meta/", "/cmedited_vec/").replace(".pickle", ".geojson")
     if not fs.exists(cm_edited):
-        cm_edited = None
+        cm_edited = main_path.replace("/cmedited_vec/", "/cmedited/").replace(".geojson", ".tif")
+        if not fs.exists(cm_edited):
+            cm_edited = None
 
     return floodmap, cm_edited, permanent_water_path, meta_floodmap, s2_image_path
 
@@ -195,7 +195,7 @@ def worldfloods_old_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, str, Op
     )
     assert meta_floodmap_path.check_if_file_exists(), f"Meta floodmap not found in {meta_floodmap_path}"
 
-    meta_floodmap = read_json_from_gcp(meta_floodmap_path.full_path)
+    meta_floodmap = utils.read_json_from_gcp(meta_floodmap_path.full_path)
 
     return floodmap, cloudprob_path, permanent_water_path, meta_floodmap, s2_image_path
 
@@ -259,11 +259,8 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.set_description(f"Generating Ground Truth {name}...")
 
-            # TODO need to copy s2_image_path to local before reading.
+            # TODO need to copy s2_image_path to local before reading?
             #  If so we will need also to copy cloudprob_path and permanent_water_path
-            with rasterio.open(s2_image_path) as rst:
-                bands = rst.descriptions
-                cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
 
             gt, gt_meta = gt_fun(
                 s2_image_path,
@@ -271,7 +268,6 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 metadata_floodmap=metadata_floodmap,
                 keep_streams=True,
                 cloudprob_image_path=cloudprob_path, # Could be None!
-                cloudprob_in_lastband=cloudprob_in_lastband,
                 permanent_water_image_path=permanent_water_path,  # Could be None!
             )
 

@@ -1,16 +1,15 @@
 import logging
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.windows
 from rasterio import features
-from rasterio.crs import CRS
-from affine import Affine
 
 from ml4floods.data.config import BANDS_S2, CODES_FLOODMAP
+from ml4floods.data import utils
 
 
 def compute_water(
@@ -110,55 +109,86 @@ def read_s2img_cloudmask(
     s2tiff: str,
     window: Optional[rasterio.windows.Window] = None,
     cloudprob_image_path: Optional[str] = None,
-    cloudprob_in_lastband: bool = False,
+    bands_read: Optional[List[int]] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Helper function to load a s2 image and its cloud mask
 
     Args:
-        s2tiff:
-        window:
-        cloudprob_image_path:
-        cloudprob_in_lastband:
+        s2tiff: path to S2 tiff file
+        window: Optional window to read
+        cloudprob_image_path: Optional path to geojson or tiff file with cloud mask.
+        bands_read: bands to read from `BANDS_S2` [0-based]
 
     Returns:
-        s2img: (C,H,W) array with len(BANDS_S2) channels
-        cloud_mask: (H, W) array with cloud probability
+        s2img: (C, H, W) array with len(bands_read) channels.
+        cloud_prob: (H, W) array with cloud probability
 
     """
-    bands_read = list(range(1, len(BANDS_S2)))
-    with rasterio.open(s2tiff, "r") as s2_rst:
+    if bands_read is None:
+        bands_read = list(range(1, len(BANDS_S2)))
+    else:
+        bands_read = [b+1 for b in bands_read]
+
+    with utils.rasterio_open_read(s2tiff) as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
-    # print(cloudprob_in_lastband)
-    if cloudprob_image_path and os.path.exists(cloudprob_image_path):
+        bands = s2_rst.descriptions
+        cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
+
+    if cloudprob_image_path:
+        fs = utils.get_filesystem(cloudprob_in_lastband)
+    else:
+        fs = None
+
+    if fs and fs.exists(cloudprob_image_path):
         ext = os.path.splitext(cloudprob_image_path)[1]
         if ext == ".tif":
-            with rasterio.open(cloudprob_image_path, "r") as cld_rst:
-                cloud_mask = cld_rst.read(1, window=window)
+            with utils.rasterio_open_read(cloudprob_image_path) as cld_rst:
+                cloud_prob = cld_rst.read(1, window=window)
 
         elif  ext == ".geojson":
-            # TODO check if empty file -> cloud_masks=np.zeros(shape)
+            # check if empty file -> cloud_masks=np.zeros(shape)
+            clouds_vec = utils.read_geojson_from_gcp(cloudprob_image_path)
+            if clouds_vec.shape[0] == 0:
+                cloud_prob = np.zeros(s2_img.shape[1:], dtype=np.float32)
+            else:
+                with utils.rasterio_open_read(s2tiff) as s2_rst:
+                    transform = rasterio.windows.transform(window,s2_rst.transform)
+                    crs = str(s2_rst.crs).lower()
+                    shape = s2_img.shape[1:]
 
-            # TODO rasterize image over s2tiff loc
-            with rasterio.open(s2tiff, "r") as s2_rst:
-                transform = s2_rst.transform
-                crs = s2_rst.crs
-                shape = s2_rst.shape
+                # Convert clouds_vec crs to s2 crs
+                if str(clouds_vec.crs).lower() != crs:
+                    clouds_vec.to_crs(crs=crs, inplace=True)
 
-
+                clouds_vec = clouds_vec[clouds_vec["class"] == "CLOUD"]
+                shapes_rasterise = (
+                    (g, 1)
+                    for g,w in clouds_vec[["geometry", "class"]].itertuples(
+                    index=False, name=None
+                )
+                )
+                cloud_prob = features.rasterize(
+                    shapes=shapes_rasterise,
+                    fill=0,
+                    out_shape=shape,
+                    dtype=np.float32,
+                    transform=transform,
+                    all_touched=True,
+                )
     elif cloudprob_in_lastband:
-        with rasterio.open(s2tiff, "r") as s2_rst:
+        with utils.rasterio_open_read(s2tiff) as s2_rst:
             last_band = s2_rst.count
-            cloud_mask = s2_rst.read(last_band, window=window)
-            cloud_mask = (
-                cloud_mask.astype(np.float32) / 100.0
+            cloud_prob = s2_rst.read(last_band, window=window)
+            cloud_prob = (
+                cloud_prob.astype(np.float32) / 100.0
             )  # cloud mask in the last band is from 0 - 100
     else:
         from ml4floods.data import cloud_masks
         # Compute cloud mask
-        cloud_mask = cloud_masks.compute_cloud_mask(s2_img)
+        cloud_prob = cloud_masks.compute_cloud_mask(s2_img)
 
-    return s2_img, cloud_mask
+    return s2_img, cloud_prob
 
 
 def generate_land_water_cloud_gt(
@@ -169,7 +199,6 @@ def generate_land_water_cloud_gt(
     keep_streams: bool = False,
     permanent_water_image_path: Optional[str] = None,
     cloudprob_image_path: Optional[str] = None,
-    cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
     """
     Old ground truth generating function (inherited from worldfloods_internal.compute_meta_tif.generate_mask_meta_clouds)
@@ -182,7 +211,6 @@ def generate_land_water_cloud_gt(
         permanent_water_image_path:
         keep_streams: A boolean flag to indicate whether to include streams in the water mask
         cloudprob_image_path:
-        cloudprob_in_lastband:
 
     Returns:
         gt (np.ndarray): (H, W) np.uint8 array with encodding: {0: "invalid", 1: "land", 2: "water", 3: "cloud"}
@@ -197,7 +225,6 @@ def generate_land_water_cloud_gt(
         s2_image_path,
         window=window,
         cloudprob_image_path=cloudprob_image_path,
-        cloudprob_in_lastband=cloudprob_in_lastband,
     )
     # =========================================
     # Compute Water Mask
@@ -225,7 +252,7 @@ def generate_land_water_cloud_gt(
     )
     metadata["cloudprob_tiff"] = (
         os.path.basename(cloudprob_image_path)
-        if not cloudprob_in_lastband and cloudprob_image_path is not None
+        if not cloudprob_image_path is not None
         else "None"
     )
     metadata["method clouds"] = "s2cloudless"
@@ -266,7 +293,6 @@ def generate_water_cloud_binary_gt(
     keep_streams: bool = False,
     permanent_water_image_path: Optional[str] = None,
     cloudprob_image_path: Optional[str] = None,
-    cloudprob_in_lastband: bool = False,
 ) -> Tuple[np.ndarray, Dict]:
     """
     New ground truth generating function for multioutput binary classification
@@ -279,7 +305,6 @@ def generate_water_cloud_binary_gt(
         keep_streams:
         permanent_water_image_path:
         cloudprob_image_path:
-        cloudprob_in_lastband:
 
     Returns:
         gt (np.ndarray): (2, H, W) np.uint8 array where:
@@ -296,7 +321,6 @@ def generate_water_cloud_binary_gt(
         s2_image_path,
         window=window,
         cloudprob_image_path=cloudprob_image_path,
-        cloudprob_in_lastband=cloudprob_in_lastband,
     )
 
     water_mask = compute_water(
@@ -337,7 +361,7 @@ def generate_water_cloud_binary_gt(
     )
     metadata["cloudprob_image_path"] = (
         os.path.basename(cloudprob_image_path)
-        if not cloudprob_in_lastband and cloudprob_image_path is not None
+        if cloudprob_image_path is not None
         else "None"
     )
     metadata["method clouds"] = "s2cloudless"
@@ -391,9 +415,6 @@ def _generate_gt_v1_fromarray(
     return gt
 
 
-# THIS FUNCTION WORKS
-# TODO: Would be nice to return the original water mask and
-# do all the extra processing at the DataLoader end.
 def _generate_gt_fromarray(
     s2_img: np.ndarray,
     cloudprob: np.ndarray,
@@ -442,11 +463,3 @@ def _generate_gt_fromarray(
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 
     return stacked_cloud_water_mask
-
-
-def _get_image_geocoords(image_path: str) -> Tuple[CRS, Affine]:
-    """Get important geocoordinates from saved image"""
-    with rasterio.open(image_path) as src_image:
-        crs = src_image.crs
-        transform = src_image.transform
-    return crs, transform
