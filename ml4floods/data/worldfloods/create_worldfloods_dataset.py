@@ -82,9 +82,9 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
     s2_image_path = os.path.join(path_aoi, "S2", index+".tif").replace("\\", "/")
 
     # Add cloud_probability if exists in edited
-    cm_edited = main_path.replace("/flood_meta/", "/cmedited_vec/").replace(".pickle", ".geojson")
+    cm_edited = s2_image_path.replace("/S2/", "/cmedited_vec/").replace(".tif", ".geojson")
     if not fs.exists(cm_edited):
-        cm_edited = main_path.replace("/cmedited_vec/", "/cmedited/").replace(".geojson", ".tif")
+        cm_edited = s2_image_path.replace("/S2/", "/cmedited/")
         if not fs.exists(cm_edited):
             cm_edited = None
 

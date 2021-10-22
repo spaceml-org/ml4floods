@@ -33,7 +33,7 @@ def compute_water(
         water_mask : np.int16 raster same shape as tiffs2 {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
     """
 
-    with rasterio.open(tiffs2) as src_s2:
+    with utils.rasterio_open_read(tiffs2) as src_s2:
         if window is None:
             out_shape = src_s2.shape
             transform = src_s2.transform
@@ -93,7 +93,8 @@ def compute_water(
 
     if permanent_water_path is not None:
         logging.info("\t Adding permanent water")
-        permanent_water = rasterio.open(permanent_water_path).read(1, window=window)
+        with utils.rasterio_open_read(permanent_water_path) as srcperm:
+            permanent_water = srcperm.read(1, window=window)
 
         # Set to permanent water
         # Only interested in permanent water labelled as 3 and valid water masks.
@@ -134,9 +135,12 @@ def read_s2img_cloudmask(
         s2_img = s2_rst.read(bands_read, window=window)
         bands = s2_rst.descriptions
         cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
+        transform = s2_rst.transform if window is None else rasterio.windows.transform(window, s2_rst.transform)
+        crs = str(s2_rst.crs).lower()
+        shape = s2_img.shape[1:]
 
     if cloudprob_image_path:
-        fs = utils.get_filesystem(cloudprob_in_lastband)
+        fs = utils.get_filesystem(cloudprob_image_path)
     else:
         fs = None
 
@@ -152,11 +156,6 @@ def read_s2img_cloudmask(
             if clouds_vec.shape[0] == 0:
                 cloud_prob = np.zeros(s2_img.shape[1:], dtype=np.float32)
             else:
-                with utils.rasterio_open_read(s2tiff) as s2_rst:
-                    transform = rasterio.windows.transform(window,s2_rst.transform)
-                    crs = str(s2_rst.crs).lower()
-                    shape = s2_img.shape[1:]
-
                 # Convert clouds_vec crs to s2 crs
                 if str(clouds_vec.crs).lower() != crs:
                     clouds_vec.to_crs(crs=crs, inplace=True)
@@ -277,7 +276,7 @@ def generate_land_water_cloud_gt(
         "pixels water S2"
     ], f'Different number of water pixels than expected {metadata["pixels flood water S2"]} {metadata["pixels hydro water S2"]} {metadata["pixels permanent water S2"]}, {metadata["pixels water S2"]} '
 
-    with rasterio.open(s2_image_path) as s2_src:
+    with utils.rasterio_open_read(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
         metadata["crs"] = s2_src.crs
         metadata["transform"] = s2_src.transform
@@ -377,7 +376,7 @@ def generate_water_cloud_binary_gt(
     metadata["pixels hydro water S2"] = int(np.sum(water_mask == 2))
     metadata["pixels permanent water S2"] = int(np.sum(water_mask == 3))
 
-    with rasterio.open(s2_image_path) as s2_src:
+    with utils.rasterio_open_read(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
         metadata["crs"] = s2_src.crs
         metadata["transform"] = s2_src.transform
