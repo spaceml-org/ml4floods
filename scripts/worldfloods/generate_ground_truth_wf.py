@@ -9,6 +9,7 @@ import fsspec
 import json
 from typing import Callable
 import warnings
+import pkg_resources
 
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", cems_code="", aoi_code=""):
@@ -34,14 +35,18 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", c
 
     if dataset == "extra":
         staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
-        main_worldlfoods_extra(f"gs://{destination_bucket_id}/{destination_parent_path}",
+        train_test_split_file = pkg_resources.resource_filename("ml4floods",
+                                                                "data/configuration/train_test_split_extra_dataset.json")
+
+        main_worldlfoods_extra(destination_path=f"gs://{destination_bucket_id}/{destination_parent_path}",
+                               train_test_split_file=train_test_split_file,
                                overwrite=overwrite, staging_path=staging_path,
                                gt_fun=gt_fun, cems_code=cems_code, aoi_code=aoi_code)
 
 
 
 def main_worldlfoods_extra(destination_path:str,
-                           train_test_split_file:str="gs://ml4cc_data_lake/0_DEV/2_Mart/worldfloods_v1_0/train_test_split.json" ,
+                           train_test_split_file:str,
                            overwrite:bool=False, staging_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods",
                            gt_fun:Callable=generate_water_cloud_binary_gt, cems_code:str="", aoi_code:str=""):
     """
@@ -84,7 +89,7 @@ def main_worldlfoods_extra(destination_path:str,
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
-            layer_name = metadata_floodmap["layer name"]
+            event_id = metadata_floodmap["event_id"]
 
             # Find out which split to put the data in
             subset = "unused"
@@ -95,7 +100,7 @@ def main_worldlfoods_extra(destination_path:str,
                 if split not in train_val_test_split:
                     continue
 
-                if layer_name in train_val_test_split[split]:
+                if event_id in train_val_test_split[split]:
                     subset = split
                     break
 
@@ -106,7 +111,7 @@ def main_worldlfoods_extra(destination_path:str,
 
             status = generate_item(metadata_file,
                                    path_write,
-                                   file_name=layer_name,
+                                   file_name=event_id,
                                    overwrite=overwrite,
                                    pbar=pbar, gt_fun=gt_fun,
                                    paths_function=worldfloods_extra_gcp_paths)
