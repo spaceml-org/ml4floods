@@ -4,6 +4,7 @@ from ml4floods.models.utils.configuration import AttrDict
 from typing import Union
 from pathlib import Path
 import fsspec
+from ml4floods.data.utils import CustomJSONEncoder
 
 
 def get_filesystem(path: Union[str, Path]):
@@ -117,4 +118,4 @@ def save_json(config:AttrDict, config_file_path:str) -> None:
         )
     else:
         with open(config_file_path, "w") as fh:
-            json.dump(config, fh)
+            json.dump(config, fh, cls = CustomJSONEncoder)
