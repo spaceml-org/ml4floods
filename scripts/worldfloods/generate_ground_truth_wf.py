@@ -84,20 +84,20 @@ def main_worldlfoods_extra(destination_path:str,
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
-            event_id = metadata_floodmap["layer name"]
+            layer_name = metadata_floodmap["layer name"]
 
             # Find out which split to put the data in
             subset = "unused"
-            if metadata_floodmap["ems_code"] in cems_codes_test:
-                subset = "banned"
-            else:
-                for split in SPLITS:
-                    if split not in train_val_test_split:
-                        continue
-                    
-                    if event_id in train_val_test_split[split]:
-                        subset = split
-                        break
+            for split in SPLITS:
+                if (split != "test") and (metadata_floodmap["ems_code"] in cems_codes_test):
+                    subset = "banned"
+
+                if split not in train_val_test_split:
+                    continue
+
+                if layer_name in train_val_test_split[split]:
+                    subset = split
+                    break
 
             # Create destination folder if it doesn't exists
             path_write = os.path.join(destination_path, subset).replace("\\", "/")
@@ -106,7 +106,7 @@ def main_worldlfoods_extra(destination_path:str,
 
             status = generate_item(metadata_file,
                                    path_write,
-                                   file_name=event_id,
+                                   file_name=layer_name,
                                    overwrite=overwrite,
                                    pbar=pbar, gt_fun=gt_fun,
                                    paths_function=worldfloods_extra_gcp_paths)
