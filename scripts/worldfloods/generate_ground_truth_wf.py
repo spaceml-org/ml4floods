@@ -113,9 +113,10 @@ def main_worldlfoods_extra(destination_path:str,
             if not status:
                 problem_files.append(metadata_file)
 
-    print("Files not generated that were expected:")
-    for p in problem_files:
-        print(p)
+    if len(problem_files) > 0:
+        print("Files not generated that were expected:")
+        for p in problem_files:
+            print(p)
 
 
 def main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite,
