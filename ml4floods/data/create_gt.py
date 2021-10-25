@@ -61,7 +61,7 @@ def compute_water(
         (g, CODES_FLOODMAP[w])
         for g, w in floodmap_rasterise[["geometry", "w_class"]].itertuples(
             index=False, name=None
-        )
+        ) if g and not g.is_empty
     )
 
     water_mask = features.rasterize(
@@ -79,7 +79,7 @@ def compute_water(
             (g, 1)
             for g, w in floodmap_aoi[["geometry", "w_class"]].itertuples(
                 index=False, name=None
-            )
+            ) if g and not g.is_empty
         )
         valid_mask = features.rasterize(
             shapes=shapes_rasterise,
