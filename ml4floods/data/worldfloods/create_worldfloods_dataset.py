@@ -234,7 +234,6 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
     """
 
-    name = os.path.splitext(os.path.basename(main_path))[0]
     fs = fsspec.filesystem("gs", requester_pays=True)
 
     try:
@@ -254,7 +253,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
         if not fsdest.exists(gt_path_dest) or not fsdest.exists(meta_json_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Generating Ground Truth {name}...")
+                pbar.set_description(f"Generating Ground Truth {file_name}...")
 
             # TODO need to copy s2_image_path to local before reading?
             #  If so we will need also to copy cloudprob_path and permanent_water_path
@@ -272,7 +271,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 gt = gt[None]
 
             if pbar is not None:
-                pbar.set_description(f"Saving GT {name}...")
+                pbar.set_description(f"Saving GT {file_name}...")
 
             save_cog.save_cog(gt, gt_path_dest,
                               {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
@@ -281,7 +280,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
             # upload meta json to bucket
             if pbar is not None:
-                pbar.set_description(f"Saving meta {name}...")
+                pbar.set_description(f"Saving meta {file_name}...")
 
             # save meta in local json file
             gt_meta["crs"] = str(gt_meta["crs"])
@@ -293,28 +292,28 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         # Copy floodmap shapefiles
         if not fsdest.exists(floodmap_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving floodmap {name}...")
+                pbar.set_description(f"Saving floodmap {file_name}...")
 
             utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)                
         
         # Copy S2 image
         if not fsdest.exists(s2_image_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving S2 image {name}...")
+                pbar.set_description(f"Saving S2 image {file_name}...")
             
             _copy(s2_image_path, s2_image_path_dest, fs)
         
         # Copy cloudprob
         if cloudprob_path is not None and (not fsdest.exists(cloudprob_path_dest) or overwrite):
             if pbar is not None:
-                pbar.set_description(f"Saving cloud probs {name}...")
+                pbar.set_description(f"Saving cloud probs {file_name}...")
             
             _copy(cloudprob_path, cloudprob_path_dest, fs)
         
         # Copy permanent water
         if (permanent_water_image_path_dest is not None) and (not fsdest.exists(permanent_water_image_path_dest) or overwrite):
             if pbar is not None:
-                pbar.set_description(f"Saving permanent water image {name}...")
+                pbar.set_description(f"Saving permanent water image {file_name}...")
 
             _copy(permanent_water_path, permanent_water_image_path_dest, fs)
 
