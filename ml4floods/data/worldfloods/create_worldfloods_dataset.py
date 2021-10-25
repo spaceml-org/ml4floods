@@ -233,9 +233,6 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         True if success in creating all the products
 
     """
-    name_path_local = gt_fun.__name__.replace(".", "-") + paths_function.__name__.replace(".", "-")
-    local_path = Path(".").joinpath(name_path_local)
-    os.makedirs(local_path, exist_ok=True)
 
     name = os.path.splitext(os.path.basename(main_path))[0]
     fs = fsspec.filesystem("gs", requester_pays=True)
