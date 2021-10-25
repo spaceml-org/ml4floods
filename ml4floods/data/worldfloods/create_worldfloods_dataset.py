@@ -316,7 +316,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             fs.copy(permanent_water_path, permanent_water_image_path_dest)
 
     except Exception:
-        warnings.warn(f"File input: {main_path.file_name} output S2 file: {s2_image_path_dest.full_path} problem when computing Ground truth")
+        warnings.warn(f"File input: {main_path} output S2 file: {s2_image_path_dest} problem when computing Ground truth")
         traceback.print_exc(file=sys.stdout)
 
         if not delete_if_error:
