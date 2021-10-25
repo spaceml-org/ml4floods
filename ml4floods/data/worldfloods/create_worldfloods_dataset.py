@@ -242,7 +242,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
         # get output files
         cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
-            output_path, file_name, permanent_water_path is not None, mkdirs=True)
+            output_path, file_name, permanent_water_available=permanent_water_path is not None, clouds_available=cloudprob_path is not None, mkdirs=True)
     except Exception:
         warnings.warn(f"File {main_path} problem when computing input/output names")
         traceback.print_exc(file=sys.stdout)
@@ -304,7 +304,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             _copy(s2_image_path, s2_image_path_dest, fs)
         
         # Copy cloudprob
-        if cloudprob_path is not None and (not fsdest.exists(cloudprob_path_dest) or overwrite):
+        if cloudprob_path is not None and cloudprob_path_dest and (not fsdest.exists(cloudprob_path_dest) or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving cloud probs {file_name}...")
             
