@@ -68,6 +68,9 @@ def main_worldlfoods_extra(destination_path:str,
     with fstraintest.open(train_test_split_file, "r") as fh:
         train_val_test_split = json.load(fh)
 
+    for s in train_val_test_split:
+        print(f"Subset {s} {len(train_val_test_split[s])} ids")
+
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
     if "EMSR9284" in cems_codes_test:
         cems_codes_test.add("EMSR284")
@@ -78,6 +81,7 @@ def main_worldlfoods_extra(destination_path:str,
 
     # loop through files in the bucket
     problem_files = []
+    count_files_per_split = {s:0 for s in train_val_test_split}
     with tqdm.tqdm(files_metadata_pickled, desc="Generating ground truth extra data") as pbar:
         for metadata_file in pbar:
             metadata_floodmap = utils.read_pickle_from_gcp(metadata_file)
@@ -104,8 +108,14 @@ def main_worldlfoods_extra(destination_path:str,
                                    overwrite=overwrite,
                                    pbar=pbar, gt_fun=gt_fun,
                                    paths_function=worldfloods_extra_gcp_paths)
-            if not status:
+            if status:
+                if subset in count_files_per_split:
+                    count_files_per_split[subset]+= 1
+            else:
                 problem_files.append(metadata_file)
+
+    for s in train_val_test_split:
+        print(f"Split {s} expected {len(train_val_test_split[s])} copied {count_files_per_split[s]}")
 
     if len(problem_files) > 0:
         print("Files not generated that were expected:")
