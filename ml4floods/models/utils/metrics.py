@@ -210,11 +210,21 @@ def plot_metrics(metrics_dict, label_names):
     plt.show()
     
     print("Per Class IOU", json.dumps(metrics_dict['iou'], indent=4, sort_keys=True))
-        
+  
+def convert_targets_to_v1(target: torch.Tensor) -> torch.Tensor:
+    
+    clear_clouds = target[:,0,:,:]
+    land_water = target[:,1,:,:]
+    
+    v1gt = land_water.clone() # {0: invalid, 1: land, 2: water}
+    v1gt[clear_clouds == 2] = 3
+
+    return v1gt.unsqueeze(dim = 1)
+      
 def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
                     pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
                     threshold:float=.5,
-                    plot=False, mask_clouds:bool=False) -> Dict:
+                    plot=False, mask_clouds:bool=False, convert_targets:bool = True) -> Dict:
     """
     Run inference on a dataloader and compute metrics for that data
     
@@ -225,6 +235,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         threshold: threshold to compute the confusion matrix
         plot: flag for calling plot method with metrics
         mask_clouds:
+        convert_targets: if true converts targets from v2 to v1
         
         returns: dictionary of metrics
     """
@@ -245,6 +256,9 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         test_inputs, ground_truth = batch["image"], batch["mask"]
 
         test_outputs = pred_fun(test_inputs)
+        
+        if convert_targets:
+            ground_truth = convert_targets_to_v1(ground_truth)
 
         if mask_clouds:
             assert test_outputs.shape[1] == 1, f"Mode mask clouds expects 1 channel output image found {test_outputs.shape}"
@@ -346,3 +360,4 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
     
     return data_out
         
+
