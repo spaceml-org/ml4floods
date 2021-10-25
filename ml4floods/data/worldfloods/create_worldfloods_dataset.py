@@ -295,30 +295,28 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.set_description(f"Saving floodmap {name}...")
 
-            utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)
-
-        # Copy cloudprob, S2 image and permanent water
+            utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)                
+        
+        # Copy S2 image
+        if not fsdest.exists(s2_image_path_dest) or overwrite:
+            if pbar is not None:
+                pbar.set_description(f"Saving S2 image {name}...")
+            
+            _copy(s2_image_path, s2_image_path_dest, fs)
+        
+        # Copy cloudprob
         if cloudprob_path is not None and (not fsdest.exists(cloudprob_path_dest) or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving cloud probs {name}...")
             
-            if cloudprob_path_dest.startswith("gs"):
-                fs.copy(cloudprob_path, cloudprob_path_dest)
-            else:
-                fs.put_file(cloudprob_path, cloudprob_path_dest)
-                
-
-        if not fsdest.exists(s2_image_path_dest) or overwrite:
-            if pbar is not None:
-                pbar.set_description(f"Saving S2 image {name}...")
-
-            fs.copy(s2_image_path, s2_image_path_dest)
-
+            _copy(cloudprob_path, cloudprob_path_dest, fs)
+        
+        # Copy permanent water
         if (permanent_water_image_path_dest is not None) and (not fsdest.exists(permanent_water_image_path_dest) or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving permanent water image {name}...")
 
-            fs.copy(permanent_water_path, permanent_water_image_path_dest)
+            _copy(permanent_water_path, permanent_water_image_path_dest, fs)
 
     except Exception:
         warnings.warn(f"File input: {main_path} output S2 file: {s2_image_path_dest} problem when computing Ground truth")
@@ -339,6 +337,13 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
     return True
 
+
+def _copy(file_or, file_dest, fsor):    
+    if file_dest.startswith("gs"):
+        fsor.copy(file_or, file_dest)
+    else:
+        fsor.get_file(file_or, file_dest)
+    
 
 def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_permanent_water:bool=True):
     """
@@ -405,7 +410,7 @@ def worldfloods_output_files(output_path:str, file_name:str,
     # makedir if not gs
     if mkdirs and not s2_image_path_dest.startswith("gs"):
         fs = utils.get_filesystem(s2_image_path_dest)
-        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path, permanent_water_available]:
+        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path, permanent_water_image_path_dest]:
             if f is not None:
                 fs.makedirs(os.path.dirname(f), exist_ok=True)
 
