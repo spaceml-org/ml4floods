@@ -7,7 +7,7 @@ from ml4floods.data import utils
 import os
 import fsspec
 import json
-from typing import Callable
+from typing import Callable, List
 import warnings
 import pkg_resources
 
@@ -37,18 +37,21 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", c
         staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
         train_test_split_file = pkg_resources.resource_filename("ml4floods",
                                                                 "data/configuration/train_test_split_extra_dataset.json")
+        fs_ml4cc = fsspec.filesystem("gs", requester_pays=True)
+        files_metadata_pickled = [f"gs://{f}" for f in
+                                  fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
 
         main_worldlfoods_extra(destination_path=f"gs://{destination_bucket_id}/{destination_parent_path}",
                                train_test_split_file=train_test_split_file,
-                               overwrite=overwrite, staging_path=staging_path,
-                               gt_fun=gt_fun, cems_code=cems_code, aoi_code=aoi_code)
+                               overwrite=overwrite, files_metadata_pickled=files_metadata_pickled,
+                               gt_fun=gt_fun)
 
 
 
 def main_worldlfoods_extra(destination_path:str,
                            train_test_split_file:str,
-                           overwrite:bool=False, staging_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods",
-                           gt_fun:Callable=generate_water_cloud_binary_gt, cems_code:str="", aoi_code:str=""):
+                           overwrite:bool=False, files_metadata_pickled:List[str]=[],
+                           gt_fun:Callable=generate_water_cloud_binary_gt):
     """
     Creates the worldfloods_extra dataset in the folder `destination_path`. It copies the files from
     the bucket (from `staging_path`) and creates the ground truth tiff file used for training the models.
@@ -57,10 +60,8 @@ def main_worldlfoods_extra(destination_path:str,
         destination_path: Path where the dataset will be created
         train_test_split_file: json file with the files used for train, validation, test and baned.
         overwrite: Whether or not to overwrite the files if exists.
-        staging_path: Path to WorldFloods staging data.
+        files_metadata_pickled: Path to WorldFloods staging data.
         gt_fun: Function to create the ground truth (3 class ground truth or 2-bands multioutput binary)
-        cems_code: optional use only data from this cems_code to create the ground truth
-        aoi_code: optional use only data from this cems_code to create the ground truth
     """
 
     # Read traintest split file
@@ -74,10 +75,6 @@ def main_worldlfoods_extra(destination_path:str,
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
     if "EMSR9284" in cems_codes_test:
         cems_codes_test.add("EMSR284")
-
-    # get all files
-    fs_ml4cc = fsspec.filesystem("gs", requester_pays=True)
-    files_metadata_pickled = [f"gs://{f}" for f in fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
 
     # loop through files in the bucket
     problem_files = []
