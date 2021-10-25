@@ -356,6 +356,7 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
 
 def worldfloods_output_files(output_path:str, file_name:str,
                              permanent_water_available:bool=True,
+                             clouds_available:bool=True,
                              mkdirs:bool=False) -> Tuple[str, str, str, str, Optional[str], str]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
@@ -372,6 +373,7 @@ def worldfloods_output_files(output_path:str, file_name:str,
         output_path: Path to produce the outputs
         file_name:
         permanent_water_available:
+        clouds_available:
         mkdirs: make dirs if needed for the output paths
 
     Returns:
@@ -386,14 +388,20 @@ def worldfloods_output_files(output_path:str, file_name:str,
     output_path = str(output_path)
     s2_image_path_dest = os.path.join(output_path,"S2",file_name+".tif").replace("\\", "/")
     meta_parent_path = os.path.join(output_path,"meta",file_name+".json").replace("\\", "/")
-    cloudprob_path_dest = os.path.join(output_path, "cloudprob",file_name+".tif").replace("\\", "/")
+
+    if clouds_available:
+        cloudprob_path_dest = os.path.join(output_path, "cloudprob",file_name+".tif").replace("\\", "/")
+    else:
+        cloudprob_path_dest = None
+
     floodmap_path_dest = os.path.join(output_path,"floodmaps",file_name+".geojson").replace("\\", "/")
     gt_path = os.path.join(output_path,"gt",file_name+".tif").replace("\\", "/")
 
     # makedir if not gs
     if mkdirs and not s2_image_path_dest.startswith("gs"):
         fs = utils.get_filesystem(s2_image_path_dest)
-        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path]:
-            fs.makedirs(os.path.dirname(f), exist_ok=True)
+        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path, permanent_water_available]:
+            if f is not None:
+                fs.makedirs(os.path.dirname(f), exist_ok=True)
 
     return cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest
