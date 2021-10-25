@@ -8,6 +8,7 @@ import os
 import fsspec
 import json
 from typing import Callable
+import warnings
 
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="original", cems_code="", aoi_code=""):
@@ -65,6 +66,9 @@ def main_worldlfoods_extra(destination_path:str,
     train_val_test_split = {}
     SPLITS = ["train", "test", "val", "banned"]
     for split in SPLITS:
+        if split not in data:
+            warnings.warn(f"Split {split} not found in train test split file: {train_test_split_file}")
+            continue
         train_val_test_split[split] = set((os.path.splitext(os.path.basename(d))[0] for d in data[split]["S2"]))
 
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
@@ -88,6 +92,9 @@ def main_worldlfoods_extra(destination_path:str,
                 subset = "banned"
             else:
                 for split in SPLITS:
+                    if split not in train_val_test_split:
+                        continue
+                    
                     if event_id in train_val_test_split[split]:
                         subset = split
                         break
