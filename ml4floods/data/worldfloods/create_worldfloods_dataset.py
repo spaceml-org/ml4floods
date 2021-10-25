@@ -301,7 +301,12 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         if cloudprob_path is not None and (not fsdest.exists(cloudprob_path_dest) or overwrite):
             if pbar is not None:
                 pbar.set_description(f"Saving cloud probs {name}...")
-            fs.copy(cloudprob_path, cloudprob_path_dest)
+            
+            if cloudprob_path_dest.startswith("gs"):
+                fs.copy(cloudprob_path, cloudprob_path_dest)
+            else:
+                fs.put_file(cloudprob_path, cloudprob_path_dest)
+                
 
         if not fsdest.exists(s2_image_path_dest) or overwrite:
             if pbar is not None:
