@@ -66,15 +66,7 @@ def main_worldlfoods_extra(destination_path:str,
     # Read traintest split file
     fstraintest = utils.get_filesystem(train_test_split_file)
     with fstraintest.open(train_test_split_file, "r") as fh:
-        data = json.load(fh)
-
-    train_val_test_split = {}
-    SPLITS = ["train", "test", "val", "banned"]
-    for split in SPLITS:
-        if split not in data:
-            warnings.warn(f"Split {split} not found in train test split file: {train_test_split_file}")
-            continue
-        train_val_test_split[split] = set((os.path.splitext(os.path.basename(d))[0] for d in data[split]["S2"]))
+        train_val_test_split = json.load(fh)
 
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
     if "EMSR9284" in cems_codes_test:
@@ -93,12 +85,9 @@ def main_worldlfoods_extra(destination_path:str,
 
             # Find out which split to put the data in
             subset = "unused"
-            for split in SPLITS:
+            for split in train_val_test_split.keys():
                 if (split != "test") and (metadata_floodmap["ems_code"] in cems_codes_test):
                     subset = "banned"
-
-                if split not in train_val_test_split:
-                    continue
 
                 if event_id in train_val_test_split[split]:
                     subset = split
