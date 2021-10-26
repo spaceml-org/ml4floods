@@ -18,14 +18,13 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
     assert dataset in ["", "original", "extra"], f"Unexpected dataset {dataset}"
 
-    destination_bucket_id = "ml4cc_data_lake"
     if not destination_parent_path:
         if dataset == "":
-            destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{version}"
+            destination_parent_path = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{version}"
         elif dataset == "original":
-            destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
+            destination_parent_path = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
         else:
-            destination_parent_path = f"{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
+            destination_parent_path = f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
 
     if version.startswith("v1"):
         gt_fun = generate_land_water_cloud_gt
@@ -35,7 +34,7 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems
         raise NotImplementedError(f"version {version} not implemented")
 
     if dataset == "":
-        main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun)
+        main_worldlfoods_original("ml4cc_data_lake", destination_parent_path, overwrite, gt_fun)
     else:
         staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
         train_test_split_file = pkg_resources.resource_filename("ml4floods",
@@ -44,7 +43,7 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems
         files_metadata_pickled = [f"gs://{f}" for f in
                                   fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
 
-        main_worldlfoods_extra(destination_path=f"gs://{destination_bucket_id}/{destination_parent_path}",
+        main_worldlfoods_extra(destination_path=destination_parent_path,
                                train_test_split_file=train_test_split_file,
                                overwrite=overwrite, files_metadata_pickled=files_metadata_pickled,
                                gt_fun=gt_fun)
