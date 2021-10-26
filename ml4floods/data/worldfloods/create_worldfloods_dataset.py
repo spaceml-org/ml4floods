@@ -237,6 +237,19 @@ def generate_item(main_path:str, output_path:str, file_name:str,
     fs = fsspec.filesystem("gs", requester_pays=True)
 
     try:
+        expected_outputs = worldfloods_output_files(
+            output_path, file_name, permanent_water_available=True, clouds_available=False, mkdirs=False)
+        fsdest = utils.get_filesystem(expected_outputs[-1])
+
+        must_process = False
+        for e in expected_outputs:
+            if e and not fsdest.exists(e):
+                must_process = True
+                break
+
+        if not must_process:
+            return True
+
         # Get input files and check that they all exist
         floodmap, cloudprob_path, permanent_water_path, metadata_floodmap, s2_image_path = paths_function(main_path)
 
