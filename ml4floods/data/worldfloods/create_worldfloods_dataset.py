@@ -328,7 +328,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         files_to_delete = [cloudprob_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest,
                            s2_image_path_dest, floodmap_path_dest]
         for f in files_to_delete:
-            if fsdest.exists(f):
+            if f and fsdest.exists(f):
                 print(f"Deleting file {f}")
                 fsdest.delete(f)
 
