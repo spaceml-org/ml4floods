@@ -255,8 +255,8 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.set_description(f"Generating Ground Truth {file_name}...")
 
-            # TODO need to copy s2_image_path to local before reading?
-            #  If so we will need also to copy cloudprob_path and permanent_water_path
+            # Copy s2_image_path to local before reading?
+            # If so we will need also to copy cloudprob_path and permanent_water_path
 
             gt, gt_meta = gt_fun(
                 s2_image_path,
