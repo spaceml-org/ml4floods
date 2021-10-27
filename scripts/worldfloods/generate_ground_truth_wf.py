@@ -73,6 +73,8 @@ def main_worldlfoods_extra(destination_path:str,
     for s in train_val_test_split:
         print(f"Subset {s} {len(train_val_test_split[s])} ids")
 
+    print(f"Provided {len(files_metadata_pickled)} pickle files to generate the ML-ready dataset")
+
     cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
     if "EMSR9284" in cems_codes_test:
         cems_codes_test.add("EMSR284")
