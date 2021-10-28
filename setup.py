@@ -28,9 +28,11 @@ setup(name="ml4floods",
       author="SpaceML-org",
       packages=find_packages(".", exclude=["tests"]),
       package_data={
-        "ml4floods" : ["models/configurations/*.json"]  # Add json files from configuration dir.
+        "ml4floods" : ["models/configurations/*.json",
+                       "data/configuration/train_test_split_extra_dataset.json",
+                       "data/configuration/train_test_split_original_dataset.json"]  # Add json files from configuration dirs.
       },
-      description="Machine learning methods for flood extent segmentation.",
+      description="Machine learning models for end-to-end flood extent segmentation.",
       install_requires=parse_requirements_file("requirements.txt"),
       extras_require=EXTRAS,
       keywords=["floods pytorch machine-learning earth"],

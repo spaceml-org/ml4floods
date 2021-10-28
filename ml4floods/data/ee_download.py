@@ -467,9 +467,14 @@ def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
         dataframe with processed date fields and column indicating if the s2 file is available
     """
     if fs is None:
-        fs = fsspec.filesystem("gs")
-
-    datas2 = pd.read_csv(path_csv)
+        fs = fsspec.filesystem("gs", requester_pays=True)
+    
+    if path_csv.startswith("gs"):
+        with fs.open(path_csv, "r") as fh:
+            datas2 = pd.read_csv(fh)
+    else:
+        datas2 = pd.read_csv(fh)
+        
                          # converters={'datetime': pd.Timestamp})
 
     datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))

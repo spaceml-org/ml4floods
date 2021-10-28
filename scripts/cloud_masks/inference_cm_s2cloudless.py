@@ -4,7 +4,6 @@ from ml4floods.data import utils
 from ml4floods.models import postprocess
 from datetime import datetime
 from typing import Optional
-import rasterio
 import rasterio.windows
 import numpy as np
 import sys
@@ -16,10 +15,10 @@ import geopandas as gpd
 
 def vectorize_output(binary_mask:np.ndarray, crs:str, transform:rasterio.transform.Affine) -> Optional[gpd.GeoDataFrame]:
     """
-    Vectorize cloud and shadow classes
+    Vectorize cloud class
 
     Args:
-        binary_mask: (H, W) array with predictions. Values expected in range(len(CLASSES_KAPPAZETA))
+        binary_mask: (H, W) array with predictions. Values 0 clear 1 cloud.
         crs:
         transform:
 
@@ -31,8 +30,8 @@ def vectorize_output(binary_mask:np.ndarray, crs:str, transform:rasterio.transfo
                                                     transform=transform)
     if len(geoms_polygons) > 0:
         return gpd.GeoDataFrame({"geometry": geoms_polygons,
-                                     "id": np.arange(0, len(geoms_polygons)),
-                                     "class": "CLOUD"},
+                                 "id": np.arange(0, len(geoms_polygons)),
+                                 "class": "CLOUD"},
                                     crs=crs)
     return None
 
@@ -51,7 +50,7 @@ def main(cems_code:str, aoi_code:str):
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(tiff_files)}) Processing {filename}")
 
         try:
-            with rasterio.open(filename) as rst:
+            with utils.rasterio_open_read(filename) as rst:
                 band_index = rst.descriptions.index("probability") + 1
                 pred = rst.read(band_index)
                 crs  = rst.crs

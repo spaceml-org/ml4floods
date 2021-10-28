@@ -4,7 +4,6 @@ import rasterio.shutil as rasterio_shutil
 import os
 import tempfile
 import numpy as np
-import subprocess
 import fsspec
 
 from typing import Optional
@@ -73,7 +72,7 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict, tags: Optio
         profile["RESAMPLING"] = "CUBICSPLINE"  # for pyramids
 
     if cog_driver:
-        # Save tiff locally and copy it to GCP with gsutil is path is a GCP path
+        # Save tiff locally and copy it to GCP with fsspec is path is a GCP path
         if path_tiff_save.startswith("gs://"):
             with tempfile.NamedTemporaryFile(dir=dir_tmpfiles, suffix=".tif", delete=True) as fileobj:
                 name_save = fileobj.name
@@ -86,7 +85,7 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict, tags: Optio
             rst_out.write(out_np)
 
         if path_tiff_save.startswith("gs://"):
-            fs = fsspec.filesystem("gs")
+            fs = fsspec.filesystem("gs", requester_pays=True)
             fs.put_file(name_save, path_tiff_save)
             # subprocess.run(["gsutil", "-m", "mv", name_save, path_tiff_save])
             if os.path.exists(name_save):
