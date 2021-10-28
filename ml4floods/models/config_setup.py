@@ -1,10 +1,10 @@
-import json
 from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data import utils
 
 
 get_filesystem = utils.get_filesystem
 load_json = utils.read_json_from_gcp
+save_json = utils.write_json_to_gcp
 
 
 def setup_config(args) -> AttrDict:
@@ -74,30 +74,3 @@ def get_default_config(config_fp) -> AttrDict:
     
     config = setup_config(args)
     return config
-
-
-def save_json(config:AttrDict, config_file_path:str) -> None:
-    """
-    Saves a config file posibly in the google bucket
-
-    Args:
-        config: config dict to save
-        config_file_path: location to save it
-
-    Returns:
-
-    """
-    if config_file_path.startswith("gs://"):
-        from google.cloud import storage
-        splitted_path = config_file_path.replace("gs://", "").split("/")
-        bucket_name = splitted_path[0]
-        blob_name = "/".join(splitted_path[1:])
-        bucket = storage.Client().get_bucket(bucket_name)
-        blob = bucket.blob(blob_name)
-        blob.upload_from_string(
-            data=json.dumps(config),
-            content_type='application/json'
-        )
-    else:
-        with open(config_file_path, "w") as fh:
-            json.dump(config, fh)
