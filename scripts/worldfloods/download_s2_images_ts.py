@@ -12,7 +12,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
          threshold_invalids_after:float, days_before:int, days_after:int, 
          requester_pays:bool = True):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"X:\home\kike\json_creds\ml4cc-general-access_request_pays.json"
+    
 
     fs = fsspec.filesystem("gs", requester_pays = requester_pays)
     files_metatada_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
