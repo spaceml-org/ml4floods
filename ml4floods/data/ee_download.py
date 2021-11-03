@@ -192,7 +192,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     if bucket_name is not None:
         fs = fsspec.filesystem("gs", requester_pays=True)
     
-        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
+        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}')
         if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
@@ -532,7 +532,7 @@ def download_s2(area_of_interest: Polygon,
                 path_bucket: str, collection_name="COPERNICUS/S2", crs:str='EPSG:4326',
                 filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
                 name_task:Optional[str]=None,
-                resolution_meters:float=10) -> List[ee.batch.Task]:
+                resolution_meters:float=10, requester_pays:bool = True) -> List[ee.batch.Task]:
     """
     Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
     path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
@@ -563,7 +563,7 @@ def download_s2(area_of_interest: Polygon,
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    fs = fsspec.filesystem("gs")
+    fs = fsspec.filesystem("gs", requester_pays = requester_pays)
     path_csv = os.path.join(path_bucket, "s2info.csv")
     if fs.exists(path_csv):
         data = process_s2metadata(path_csv, fs=fs)
