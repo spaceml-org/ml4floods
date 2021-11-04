@@ -301,7 +301,7 @@ def generate_polygon(bbox:Tuple[float, float, float, float]) ->List[List[List[fl
 
 def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
                              path_bucket: str, crs:str='EPSG:4326',
-                             name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+                             name_task:Optional[str]=None, resolution_meters:int=10, requester_pays:bool = True) -> Optional[ee.batch.Task]:
     """
     Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
 
@@ -319,7 +319,7 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
-    fs = fsspec.filesystem("gs")
+    fs = fsspec.filesystem("gs", requester_pays = requester_pays)
     filename_full_path = os.path.join(path_bucket, f"{date_search.year}.tif")
     if fs.exists(filename_full_path):
         print(f"File {filename_full_path} exists. It will not be downloaded again")
