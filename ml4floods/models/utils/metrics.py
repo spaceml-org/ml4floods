@@ -259,11 +259,15 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         
         if convert_targets:
             ground_truth = convert_targets_to_v1(ground_truth)
-
+            
         if mask_clouds:
-            assert test_outputs.shape[1] == 1, f"Mode mask clouds expects 1 channel output image found {test_outputs.shape}"
-            test_outputs_categorical = test_outputs[:, 0] > threshold
-            probs_water_pr_curve = test_outputs[:, 0]
+            # assert test_outputs.shape[1] == 1, f"Mode mask clouds expects 1 channel output image found {test_outputs.shape}"
+            if test_outputs.shape[1] == 3:    
+                test_outputs_categorical = test_outputs[:,1] > threshold
+                probs_water_pr_curve = test_outputs[:, 1]
+            else:
+                test_outputs_categorical = test_outputs[:, 0] > threshold
+                probs_water_pr_curve = test_outputs[:, 0]
         else:
             assert test_outputs.shape[1] == num_class, f"Mode normal expects {num_class} channel output image found {test_outputs.shape}"
             test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
