@@ -405,13 +405,18 @@ def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
 
 
 
-def plot_s2_and_confusions(image: np.ndarray, positives: np.ndarray ,title:Optional[str] = None, 
-                     transform:Optional[rasterio.Affine]=None, **kwargs):
+def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray ,title:Optional[str] = None, 
+                     transform:Optional[rasterio.Affine]=None, channel_configuration = 'all', **kwargs):
     """
     Plots a S2 image and overlapping FP, FN and TP with masked clouds, computed from 
     compute_positives function
 
     """
+    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
+    image = get_image_transform(input, transform=transform, bands=bands)[0]
+    image = np.clip((image-0)/(3000 - 0), 0, 1)
+    image = np.moveaxis(image,0,-1)
     
     #set invalids and clouds to black, FP white, FN orange and TP blue
     image[positives == 4] = colors.to_rgb('black')
