@@ -13,7 +13,7 @@ import pkg_resources
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems_code="", aoi_code="",
          destination_parent_path=""):
-
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\1\Documents\Projectes\Floods\Credentials\ml4cc-general-access_request_pays.json"
     assert version in ["v1_0", "v2_0"], f"Unexpected ground truth version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
     assert dataset in ["", "original", "extra"], f"Unexpected dataset {dataset}"
