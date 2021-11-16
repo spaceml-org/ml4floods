@@ -402,3 +402,24 @@ def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
         print(f"Downloaded file {file_local}")
 
     return return_folder
+
+
+
+def plot_s2_and_confusions(image: np.ndarray, positives: np.ndarray ,title:Optional[str] = None, 
+                     transform:Optional[rasterio.Affine]=None, **kwargs):
+    """
+    Plots a S2 image and overlapping FP, FN and TP with masked clouds, computed from 
+    compute_positives function
+
+    """
+    
+    #set invalids and clouds to black, FP white, FN orange and TP blue
+    image[positives == 4] = colors.to_rgb('black')
+    image[positives == 1] = colors.to_rgb('C9')
+    image[positives == 2] = colors.to_rgb('orange')
+    image[positives == 3] = colors.to_rgb('blue')
+
+    cmap_colors = ['orange','C9', 'blue']
+    cmap = colors.ListedColormap(cmap_colors)
+    
+    return rasterioplt.show(np.moveaxis(image,-1,0), cmap = cmap, transform = transform, title = title, **kwargs)

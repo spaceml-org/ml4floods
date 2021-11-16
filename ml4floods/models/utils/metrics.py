@@ -363,5 +363,39 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
         data_out.append(ious)
     
     return data_out
+
+def compute_positives(ground_truth_outputs: torch.Tensor,
+                       water_outputs_categorical: torch.Tensor, convert_targets:bool = True) -> torch.Tensor:
+    
+    """
+    Computes FP, FN and TP given a pair of ground truth and water/land predictions 
+    
+    """
+    
+    ground_truth = ground_truth_outputs.clone().type(torch.uint8) 
+    
+    if convert_targets:
+        ground_truth = convert_targets_to_v1(ground_truth).squeeze(0)
+    
+    invalids = ground_truth == 0  # (batch_size, H, W) gpu
+    cloudy = ground_truth == 3
+
+    # Set invalids in pred to zero
+
+    water_outputs = water_outputs_categorical.clone().type(torch.uint8) 
+    water_outputs[invalids] = 0  # (batch_size, H, W)
+    
+    FP = (water_outputs == 2) & (ground_truth == 1) #preds water is land
+    FN = (water_outputs == 1) & (ground_truth == 2) #preds land is water
+    TP = (water_outputs == 2) & (ground_truth == 2) # pred ok!
+    
+    positives = torch.zeros(size = ground_truth.shape)
+    positives[invalids] = 4
+    positives[cloudy] = 4
+    positives[FP] = 1
+    positives[FN] = 2
+    positives[TP] = 3
+
+    return positives.squeeze(0)
         
 
