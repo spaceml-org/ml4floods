@@ -159,7 +159,7 @@ def calculate_precision(confusions: torch.Tensor, labels: List[str]) ->Dict[str,
     return precision_dict
 
 
-def plot_metrics(metrics_dict, label_names):
+def plot_metrics(metrics_dict, label_names, thresholds_water = None):
     """
     Plot confusion matrix, precision/recall curve,  tp_rate/fp_rate curve, class IoUs
     
@@ -205,6 +205,12 @@ def plot_metrics(metrics_dict, label_names):
     sns.set_style('darkgrid')
     plot_df = pd.DataFrame({"Precision": precisions, "Recall": recalls, "FP Rate": fp_rates, "TP Rate": tp_rates})
     sns.lineplot(data=plot_df, x="Recall", y="Precision", ax=ax[0])
+    if thresholds_water is not None:
+        for i, (rec, prec)  in enumerate(zip(plot_df['Recall'],plot_df['Precision'])):
+            ax[0].text(rec, prec, '%10.3f' % thresholds_water[i])
+        for i, (fps, tps)  in enumerate(zip(plot_df['FP Rate'],plot_df['TP Rate'])):
+            ax[1].text(fps, tps, '%10.3f' % thresholds_water[i])
+
     sns.lineplot(data=plot_df, x="FP Rate", y="TP Rate", ax=ax[1])
 
     plt.show()
