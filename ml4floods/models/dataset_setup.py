@@ -151,7 +151,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
 
     filter_windows_attr = data_config.get("filter_windows", None)
     if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
-        filter_windows_config = filter_windows_fun(data_config.filter_windows.version,
+        filter_windows_config = filter_windows_fun(data_config.filter_windows.version, data_config.train_test_split_file,
                                                    threshold_clouds=data_config.filter_windows.threshold_clouds,
                                                    local_destination_dir=data_config.path_to_splits)
     else:
