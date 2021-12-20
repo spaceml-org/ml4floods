@@ -59,32 +59,31 @@ def _read_data(input:str,
               window:Optional[rasterio.windows.Window]=None,
               size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
 
-    if size_read is not None:
-        if bands_rasterio is None:
-            n_bands = 1
-        else:
-            n_bands = len(bands_rasterio)
-
-        if window is None:
-            with utils.rasterio_open_read(input) as rst:
-                shape = rst.shape
-        else:
-            shape = window.height, window.width
-
-        if (size_read >= shape[0]) and (size_read >= shape[1]):
-            out_shape = (n_bands, )+ shape
-            input_output_factor = 1
-        elif shape[0] > shape[1]:
-            out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
-            input_output_factor = shape[0]  / size_read # > 1
-        else:
-            out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
-            input_output_factor = shape[1] / size_read # > 1
-    else:
-        out_shape = None
-        input_output_factor = None
-
     with utils.rasterio_open_read(input) as rst:
+        if size_read is not None:
+            if bands_rasterio is None:
+                n_bands = 1
+            else:
+                n_bands = len(bands_rasterio)
+
+            if window is None:
+                shape = rst.shape
+            else:
+                shape = window.height, window.width
+
+            if (size_read >= shape[0]) and (size_read >= shape[1]):
+                out_shape = (n_bands, )+ shape
+                input_output_factor = 1
+            elif shape[0] > shape[1]:
+                out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
+                input_output_factor = shape[0]  / size_read # > 1
+            else:
+                out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
+                input_output_factor = shape[1] / size_read # > 1
+        else:
+            out_shape = None
+            input_output_factor = None
+
         output = rst.read(bands_rasterio, window=window, out_shape=out_shape)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
 
