@@ -91,7 +91,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
         # loop through the naming splits
         for isplit in splits:
-                # TODO we might could use the train_test_split dict for avoiding to use the image_prefix and gt_prefix
+                # TODO we might could use the train_test_split dict directly to avoid using image_prefix and gt_prefix
                 files[isplit] = self.filenames_train_test[isplit][self.image_prefix]
 
         # save filenames

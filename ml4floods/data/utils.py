@@ -3,16 +3,14 @@ This script contains all the utility functions that are not specific to a partic
 These are mainly used for explorations, testing, and demonstrations.
 """
 import os
-import argparse
 import json
-import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
+import warnings
 
 import geopandas as gpd
 import numpy as np
-import rasterio
 from google.cloud import storage
 from shapely.geometry import Polygon, mapping
 from shapely.ops import cascaded_union
@@ -21,11 +19,10 @@ from datetime import datetime
 from ml4floods.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
 from dataclasses import dataclass, field
 import subprocess
-from io import BytesIO
 import pickle
 import fsspec
-
-# HOME = str(Path.home())
+from contextlib import contextmanager
+import rasterio
 
 
 @dataclass
@@ -805,21 +802,54 @@ def remove_gcp_prefix(filepath: str, gcp_prefix: bool = False):
         return filepath
 
 
-def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+def get_filesystem(path: Union[str, Path]):
+    path = str(path)
+    if "://" in path:
+        # use the fileystem from the protocol specified
+        return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
+    else:
+        # use local filesystem
+        return fsspec.filesystem("file",requester_pays = True)
 
-    with fs.open(gs_path, "wb") as fh:
-        geojson_val.to_file(fh, driver="GeoJSON")
+
+def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
+    fs = get_filesystem(gs_path)
+    if geojson_val.shape[0] == 0:
+        warnings.warn(f"Dataframe is empty. Saving in {gs_path}")
+        with fs.open(gs_path, "w") as fh:
+            json.dump(eval(geojson_val.to_json()), fh)
+    else:
+        with fs.open(gs_path, "wb") as fh:
+            geojson_val.to_file(fh, driver="GeoJSON")
+
+
+@contextmanager
+def rasterio_open_read(tifffile, requester_pays:bool=True) -> rasterio.DatasetReader:
+    if requester_pays and tifffile.startswith("gs"):
+        fs = fsspec.filesystem("gs", requester_pays=True)
+        with fs.open(tifffile, "rb") as fh:
+            with rasterio.io.MemoryFile(fh.read()) as mem:
+                yield mem.open()
+    else:
+        with rasterio.open(tifffile) as src:
+            yield src
+
+
+def read_geojson_from_gcp(gs_path: str) -> gpd.GeoDataFrame:
+    fs = get_filesystem(gs_path)
+    with fs.open(gs_path, "rb") as fh:
+        return gpd.read_file(fh)
 
 
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "wb") as fh:
         pickle.dump(dict_val, fh)
 
 
 def read_pickle_from_gcp(gs_path:str) -> dict:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""),requester_pays = True)
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "rb") as fh:
         my_dictionary = pickle.load(fh)
 
@@ -827,15 +857,14 @@ def read_pickle_from_gcp(gs_path:str) -> dict:
 
 
 def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
+    fs = get_filesystem(gs_path)
 
     with fs.open(gs_path, "w") as fh:
         json.dump(dict_val, fh, cls=CustomJSONEncoder)
 
 
 def read_json_from_gcp(gs_path: str) ->Dict:
-    fs = fsspec.filesystem(gs_path.split("/")[0].replace(":", ""))
-
+    fs = get_filesystem(gs_path)
     with fs.open(gs_path, "r") as fh:
         my_dictionary = json.load(fh)
 

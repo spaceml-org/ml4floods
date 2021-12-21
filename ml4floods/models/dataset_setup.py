@@ -151,7 +151,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
 
     filter_windows_attr = data_config.get("filter_windows", None)
     if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
-        filter_windows_config = filter_windows_fun(data_config.filter_windows.version,
+        filter_windows_config = filter_windows_fun(data_config.filter_windows.version, data_config.train_test_split_file,
                                                    threshold_clouds=data_config.filter_windows.threshold_clouds,
                                                    local_destination_dir=data_config.path_to_splits)
     else:
@@ -178,7 +178,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
     
     return datamodule
 
-def filter_windows_fun(data_version:str, local_destination_dir:Optional[str]=None, threshold_clouds=.5) -> Callable:
+def filter_windows_fun(data_version:str, train_test_split_file:str, local_destination_dir:Optional[str]=None, threshold_clouds=.5) -> Callable:
     """
     Returns a function to filter the windows in the  WorldFloodsDatasetTiled dataset. This is used for pre-filtering
     the training images to discard patches with high cloud content.
@@ -194,7 +194,9 @@ def filter_windows_fun(data_version:str, local_destination_dir:Optional[str]=Non
 
     """
     if local_destination_dir is not None:
-        windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
+        split_name = os.path.basename(train_test_split_file)
+        #windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
+        windows_file = os.path.join(local_destination_dir, f"windows_{split_name}")
     else:
         windows_file = None
 
