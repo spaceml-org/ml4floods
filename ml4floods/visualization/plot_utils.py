@@ -20,6 +20,7 @@ COLORS_WORLDFLOODS_V1_1 = np.array([[0, 0, 0], # invalid
                               dtype=np.float32) / 255
 
 INTERPRETATION_WORLDFLOODS = ["invalid", "land", "water", "cloud"]
+INTERPRETATION_INVLANDWATER = ["invalid", "land", "water"]
 
 COLORS_WORLDFLOODS_PERMANENT = np.array([[0, 0, 0], # 0: invalid
                                          [139, 64, 0], # 1: land
@@ -59,32 +60,31 @@ def _read_data(input:str,
               window:Optional[rasterio.windows.Window]=None,
               size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
 
-    if size_read is not None:
-        if bands_rasterio is None:
-            n_bands = 1
-        else:
-            n_bands = len(bands_rasterio)
-
-        if window is None:
-            with utils.rasterio_open_read(input) as rst:
-                shape = rst.shape
-        else:
-            shape = window.height, window.width
-
-        if (size_read >= shape[0]) and (size_read >= shape[1]):
-            out_shape = (n_bands, )+ shape
-            input_output_factor = 1
-        elif shape[0] > shape[1]:
-            out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
-            input_output_factor = shape[0]  / size_read # > 1
-        else:
-            out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
-            input_output_factor = shape[1] / size_read # > 1
-    else:
-        out_shape = None
-        input_output_factor = None
-
     with utils.rasterio_open_read(input) as rst:
+        if size_read is not None:
+            if bands_rasterio is None:
+                n_bands = 1
+            else:
+                n_bands = len(bands_rasterio)
+
+            if window is None:
+                shape = rst.shape
+            else:
+                shape = window.height, window.width
+
+            if (size_read >= shape[0]) and (size_read >= shape[1]):
+                out_shape = (n_bands, )+ shape
+                input_output_factor = 1
+            elif shape[0] > shape[1]:
+                out_shape = (n_bands, size_read, int(round(shape[1]/shape[0] * size_read)))
+                input_output_factor = shape[0]  / size_read # > 1
+            else:
+                out_shape = (n_bands, int(round(shape[0] / shape[1] * size_read)), size_read)
+                input_output_factor = shape[1] / size_read # > 1
+        else:
+            out_shape = None
+            input_output_factor = None
+
         output = rst.read(bands_rasterio, window=window, out_shape=out_shape)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
 
@@ -251,6 +251,38 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
 
     return ax
 
+
+def plots_preds_v2(prediction: Union[str, np.ndarray],transform:Optional[rasterio.Affine]=None,
+                   window:Optional[rasterio.windows.Window]=None, legend=True,
+                   size_read:Optional[int]=None,
+                   **kwargs):
+    """
+    Prediction expected binary (H, W). This function plots only the land/water mask
+    Args:
+        prediction: (H, W) binary mask
+        transform: geotransform
+        window: window to read
+        legend: plot legend
+        size_read:
+        **kwargs:
+
+    Returns:
+
+    """
+    prediction, transform = get_image_transform(prediction, transform=transform, bands=[0], window=window,
+                                                size_read=size_read)
+    prediction_show = prediction + 1
+    cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS_INVLANDWATER,
+                                                                 INTERPRETATION_INVLANDWATER)
+
+    ax = rasterioplt.show(prediction_show, transform=transform, cmap=cmap_preds, norm=norm_preds,
+                          interpolation='nearest',**kwargs)
+
+    if legend:
+        ax.legend(handles=patches_preds,
+                  loc='upper right')
+
+    return ax
 
 def plot_gt_v1(target: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
                window:Optional[rasterio.windows.Window]=None,
