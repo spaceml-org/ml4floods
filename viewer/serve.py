@@ -8,6 +8,7 @@ from PIL import Image
 import numpy as np
 import rasterio
 import rasterio.windows
+import geopandas
 from rasterio import warp
 from ml4floods.data.config import BANDS_S2
 
@@ -39,6 +40,19 @@ def round_outer_window(window:rasterio.windows.Window)-> rasterio.windows.Window
     """ Rounds a rasterio.windows.Window object to outer (larger) window """
     return window.round_lengths(op="ceil", pixel_precision=PIXEL_PRECISION).round_offsets(op="floor",
                                                                                           pixel_precision=PIXEL_PRECISION)
+
+@app.route("/<subset>/<eventid>/floodmap.geojson")
+def floodmap(subset:str, eventid:str):
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
+    data = geopandas.read_file(floodmap_address).to_crs("epsg:4326")
+    buf = io.BytesIO()
+    data.to_file(buf,driver="GeoJSON")
+    buf.seek(0,0)
+    return send_file(buf,
+                     as_attachment=True,
+                     download_name=f'{subset}_{eventid}_floodmap.geojson',
+                     mimetype='application/geojson'
+                     )
 
 
 @app.route("/<subset>/<eventid>/<productname>/<z>/<x>/<y>.png")

@@ -3,6 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="Description" content="Landsat 8 cloud cover assessment dataset."/>
+<link rel="icon" type="image/png" href="/web/ml4cc_logo.png">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
    integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
@@ -17,6 +18,7 @@
   <label for="image" title="Event id">Event id:</label>
   <select id="image" class="selector" style="width:40%;" onChange="changeImage(this.value);"></select>
   <button type="button" onclick="loadTile()">Load Image</button>
+    <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
 </div>
 </div>
 
@@ -37,7 +39,7 @@
     let layer_polygons = null;
 
     let COLOR_CODES = {"train": "#00DD00",
-                       "val": "#0000DD",
+                       "val": "#DDDD00",
                        "test": "#DD0000"};
 
     // Initialize js map
@@ -64,6 +66,7 @@
 	function loadTile(){
 	    let name = $('#image :selected').val();
 
+	    // Save the tileservers shown in tileserver_objects dict
         if (!(name in tileserver_objects)){
           let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
                             + worldfloods[name]["subset"]+"/"+name;
@@ -74,14 +77,38 @@
           tileserver_objects[name] = [tilelayer_s2, tilelayer_gt];
           tilelayer_s2.addTo(mymap);
           tilelayer_gt.addTo(mymap);
-          control_layer.addOverlay(tilelayer_s2, "S2 "+name);
-          control_layer.addOverlay(tilelayer_gt, "gt "+name);
+          control_layer.addOverlay(tilelayer_s2, "S2: "+name);
+          control_layer.addOverlay(tilelayer_gt, "gt: "+name);
         }
 
         //  zoom to location
         layer_polygons.addTo(mymap);
         mymap.fitBounds(worldfloods[name]["polygon"].getBounds());
         layer_polygons.remove();
+    }
+
+    // style floodmaps based on w_class and source
+    function style_fun(feature){
+	  switch (feature.properties.source) {
+            case 'area_of_interest': return {color: "#ff0000", fillOpacity: 0};
+            case 'hydro_l':   return {color: "#0000ff", fillOpacity: 0.2};
+            case 'hydro':   return {color: "#0000ff", fillOpacity: 0.2};
+            case 'flood':   return {color: "#00ffff", fillOpacity: 0.2};
+        }
+    }
+
+    function loadFloodMap(){
+	  let name = $('#image :selected').val();
+      if (!("floodmap" in worldfloods[name])) {
+        let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
+                + worldfloods[name]["subset"] + "/" + name + "/floodmap.geojson";
+        $.getJSON(path_dest_base, function (floodmap) {
+          let floodmap_leaflet = L.geoJSON(floodmap, {"style": style_fun});
+          floodmap_leaflet.addTo(mymap);
+          worldfloods[name]["floodmap"] = floodmap_leaflet;
+          control_layer.addOverlay(floodmap_leaflet, "floodmap: " + name);
+        });
+      }
     }
 
 	$(document).ready(function(){
@@ -97,8 +124,21 @@
             let meta = worldfloods_list[i]["meta"];
             worldfloods[image] = meta;
 
+            // Add stuff for selector
+            let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset"]+") "+image};
+
+            if (searchParams.has('id')){
+                 if (image == searchParams.get('id')){
+                     dict_push["selected"] = true;
+                 }
+             }
+             else if ("selected" in worldfloods_list[i]){
+                 dict_push["selected"] = true;
+             }
+             dats_select2.push(dict_push);
+
+            // Create polygon for map
             let color = COLOR_CODES[meta["subset"]];
-            let dict_push = {"id": image, "text": "("+i.toString()+") "+image};
 
             let geojson_feature = {"geometry": meta["geometry"], "type": "Feature",
                                    "properties": {}};
@@ -122,19 +162,10 @@
                      .on('mouseout', function () {
                                     this.setStyle({
                                         opacity: 0.5,
-                                        fillOpacity: 0.4
+                                        fillOpacity: 0.1
 
                                     });
                                 });
-             if (searchParams.has('id')){
-                 if (image == searchParams.get('id')){
-                     dict_push["selected"] = true;
-                 }
-             }
-             else if ("selected" in worldfloods_list[i]){
-                 dict_push["selected"] = true;
-             }
-             dats_select2.push(dict_push);
 
              worldfloods[image]["polygon"] = pl;
              polygons_all.push(pl);
