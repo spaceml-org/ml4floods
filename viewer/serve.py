@@ -62,7 +62,6 @@ def floodmap(subset:str, eventid:str):
 def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     """
     A route to get an RGB JPEG clipped from a given geotiff Sentinel-2 image for a given z,x,y TMS tile coordinate.
-    Parameters
     """
 
     ### get latlon bounding box from z,x,y tile request
@@ -102,6 +101,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
         OUTPUT_SHAPE_READ = (len(bands), SIZE+1, SIZE+1)
 
+        # With out_shape it reads from the pyramids if rst is a COG GeoTIFF
         src_arr = rst.read(bands, window=window, out_shape=OUTPUT_SHAPE_READ, boundless=True,
                            fill_value=0)
 
