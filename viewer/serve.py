@@ -201,7 +201,7 @@ if __name__ == "__main__":
     parser.add_argument('--host',  type=str, required=False, help="Use \"0.0.0.0\" to have "
                                                                   "the server available externally as well")
     parser.add_argument('--root_location', help='Root folder', type=str,
-                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_v1_0/')
+                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
 
     args = parser.parse_args()
 
