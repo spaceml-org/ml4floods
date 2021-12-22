@@ -45,8 +45,11 @@ def round_outer_window(window:rasterio.windows.Window)-> rasterio.windows.Window
 def floodmap(subset:str, eventid:str):
     floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
     data = geopandas.read_file(floodmap_address).to_crs("epsg:4326")
+    data = data[data["source"] != "area_of_interest"]
+    data["id"] = np.arange(data.shape[0])
+
     buf = io.BytesIO()
-    data.to_file(buf,driver="GeoJSON")
+    data.to_file(buf, driver="GeoJSON")
     buf.seek(0,0)
     return send_file(buf,
                      as_attachment=True,

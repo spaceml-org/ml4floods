@@ -96,6 +96,10 @@
             case 'flood':   return {color: "#00ffff", fillOpacity: 0.2};
         }
     }
+    function onEachFeature(feature, layer) {
+	  layer.bindPopup('w_class: '+feature.properties.w_class+'<br> source: '+feature.properties.source+
+                                 '<br> id: '+feature.properties.id);
+    }
 
     function loadFloodMap(){
 	  let name = $('#image :selected').val();
@@ -103,7 +107,7 @@
         let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
                 + worldfloods[name]["subset"] + "/" + name + "/floodmap.geojson";
         $.getJSON(path_dest_base, function (floodmap) {
-          let floodmap_leaflet = L.geoJSON(floodmap, {"style": style_fun});
+          let floodmap_leaflet = L.geoJSON(floodmap, {"style": style_fun, "onEachFeature": onEachFeature});
           floodmap_leaflet.addTo(mymap);
           worldfloods[name]["floodmap"] = floodmap_leaflet;
           control_layer.addOverlay(floodmap_leaflet, "floodmap: " + name);
