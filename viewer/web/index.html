@@ -1,0 +1,155 @@
+<html>
+<head><title>WorldFloods</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="Description" content="Landsat 8 cloud cover assessment dataset."/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+   integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+   crossorigin=""/>
+<link rel="stylesheet" href="/web/css/main.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head>
+<body>
+<h1>WorldFloods dataset</h1>
+<div>
+  <div id="toolbar">
+  <label for="image" title="Event id">Event id:</label>
+  <select id="image" class="selector" style="width:40%;" onChange="changeImage(this.value);"></select>
+  <button type="button" onclick="loadTile()">Load Image</button>
+</div>
+</div>
+
+<div id="mapid"></div>
+
+<div id="footnote">
+  Developed by <a href="https://www.uv.es/gonmagar/" target="_blank">Gonzalo Mateo-García</a>. This work has been partially supported by the Spanish Ministry of Economy and Competitiveness (MINECO-ERDF, TEC2016-77741-R projects)
+</div>
+
+<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+   integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+   crossorigin=""></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+
+<script>
+    let worldfloods = {};
+    let layer_polygons = null;
+
+    let COLOR_CODES = {"train": "#00DD00",
+                       "val": "#0000DD",
+                       "test": "#DD0000"};
+
+    // Initialize js map
+    let mymap = L.map('mapid').setView([20, 0], 3);
+    let basemap = L.tileLayer(
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {"control": true, "overlay":true}
+      ).addTo(mymap);
+
+    let control_layer = L.control.layers({}, {"basemap": basemap}, {"collapsed":false}).addTo(mymap);
+    let tileserver_objects = {};
+
+	function changeImage(name){
+      let searchParams = new URLSearchParams(window.location.search);
+      searchParams.set("id",name);
+      var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname +'?'+ searchParams.toString();
+      history.pushState({"path": newurl},'',newurl);
+      mymap.closePopup();
+      layer_polygons.addTo(mymap);
+      worldfloods[name]["polygon"].openPopup();
+      mymap.fitBounds(worldfloods[name]["polygon"].getBounds());
+	}
+
+	function loadTile(){
+	    let name = $('#image :selected').val();
+
+        if (!(name in tileserver_objects)){
+          let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
+                            + worldfloods[name]["subset"]+"/"+name;
+          let path_s2 = path_dest_base+"/S2/{z}/{x}/{y}.png";
+          let path_gt = path_dest_base+"/gt/{z}/{x}/{y}.png";
+          let tilelayer_s2 = L.tileLayer(path_s2);
+          let tilelayer_gt = L.tileLayer(path_gt)
+          tileserver_objects[name] = [tilelayer_s2, tilelayer_gt];
+          tilelayer_s2.addTo(mymap);
+          tilelayer_gt.addTo(mymap);
+          control_layer.addOverlay(tilelayer_s2, "S2 "+name);
+          control_layer.addOverlay(tilelayer_gt, "gt "+name);
+        }
+
+        //  zoom to location
+        layer_polygons.addTo(mymap);
+        mymap.fitBounds(worldfloods[name]["polygon"].getBounds());
+        layer_polygons.remove();
+    }
+
+	$(document).ready(function(){
+      // Initialize select2 selector
+       $('#image').select2({});
+
+       $.getJSON('/worldfloods.json',function( worldfloods_list ) {
+         let searchParams = new URLSearchParams(window.location.search);
+         let dats_select2 = [];
+         let polygons_all = [];
+         for (let i = 0; i < worldfloods_list.length; i++) {
+            let image = worldfloods_list[i]["id"];
+            let meta = worldfloods_list[i]["meta"];
+            worldfloods[image] = meta;
+
+            let color = COLOR_CODES[meta["subset"]];
+            let dict_push = {"id": image, "text": "("+i.toString()+") "+image};
+
+            let geojson_feature = {"geometry": meta["geometry"], "type": "Feature",
+                                   "properties": {}};
+            let mystyle = {title: image,
+                           opacity: 0.5,fillOpacity: 0.4,
+                           color: color};
+
+            let pl = L.geoJSON(geojson_feature, {"style": mystyle})
+                      .bindPopup(image+'</br>Floodmap date:'+meta["satellite date"]
+                                      +'</br>Floodmap satellite:'+meta["satellite"]
+                                      +'</br>Sentinel-2 date:'+meta["s2_date"])
+                      .on('click', function() {
+                        $('#image').val(image).trigger('change');
+                     })
+                     .on('mouseover', function() {
+                                    this.setStyle({
+                                        opacity: 0.9,
+                                        fillOpacity: 0.7
+                                    });
+                                 })
+                     .on('mouseout', function () {
+                                    this.setStyle({
+                                        opacity: 0.5,
+                                        fillOpacity: 0.4
+
+                                    });
+                                });
+             if (searchParams.has('id')){
+                 if (image == searchParams.get('id')){
+                     dict_push["selected"] = true;
+                 }
+             }
+             else if ("selected" in worldfloods_list[i]){
+                 dict_push["selected"] = true;
+             }
+             dats_select2.push(dict_push);
+
+             worldfloods[image]["polygon"] = pl;
+             polygons_all.push(pl);
+        }
+        layer_polygons = L.layerGroup(polygons_all).addTo(mymap);
+        control_layer.addOverlay(layer_polygons, "polygons");
+
+        $("#image").select2("destroy").empty().select2({"data": dats_select2});
+        if (searchParams.has('id')){
+            $('#image').val(searchParams.get('id')).trigger('change');
+         }
+       });
+
+	});
+
+	</script>
+</body>
+</html>
