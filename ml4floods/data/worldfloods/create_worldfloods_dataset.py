@@ -8,12 +8,10 @@ from datetime import datetime
 from ml4floods.data import utils
 from ml4floods.data.ee_download import process_s2metadata
 import os
-from ml4floods.data.utils import GCPPath, read_json_from_gcp
 
 from pathlib import Path
 from typing import Optional, Callable, Tuple, Dict, Any
 import geopandas as gpd
-import rasterio
 import fsspec
 from ml4floods.data import save_cog
 
@@ -24,7 +22,7 @@ META_FLOODMAP_PARENT_PATH = "worldfloods/tiffimages/meta"
 WORLDFLOODS_V0_BUCKET = "ml4floods"
 
 
-def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, Optional[GCPPath], Optional[GCPPath], Dict, GCPPath]:
+def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optional[str], Optional[str], Dict, str]:
     """
     Given a pickle file in "gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods it returns the rest of the files to
     create the full worldfloods registry (the corresponding floodmap, cloud probability and permanent water)
@@ -33,35 +31,36 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
         main_path: path to .piclke file in bucket
 
     Returns:
-        GCPPaths with locations of corresponding  floodmap, cloud probability,  permanent water, meta_floodmap and sentinel2 image
-
+        Locations of corresponding  floodmap, cloud probability,  permanent water, metadata_floodmap and S2 image
 
     """
-    assert main_path.check_if_file_exists(), f"File {main_path} does not exists"
+    fs = fsspec.filesystem("gs", requester_pays=True)
+    assert fs.exists(main_path), f"File {main_path} does not exists"
 
-    meta_floodmap = utils.read_pickle_from_gcp(main_path.full_path)
+    meta_floodmap = utils.read_pickle_from_gcp(main_path)
 
     # path to floodmap path
-    floodmap_path = main_path.replace("/flood_meta/", "/floodmap/")
-    floodmap_path = floodmap_path.replace(".pickle", ".geojson")
+    floodmap_path = main_path.replace("/flood_meta/", "/floodmap_edited/").replace(".pickle", ".geojson")
+    if not fs.exists(floodmap_path):
+        floodmap_path = floodmap_path.replace("/floodmap_edited/", "/floodmap/")
 
-    assert floodmap_path.check_if_file_exists(), f"Floodmap not found in {floodmap_path}"
+    assert fs.exists(floodmap_path), f"Floodmap not found in {floodmap_path}"
 
-    path_aoi = os.path.dirname(os.path.dirname(floodmap_path.full_path))
+    path_aoi = os.path.dirname(os.path.dirname(floodmap_path))
 
     # open floodmap with geopandas
-    floodmap = gpd.read_file(floodmap_path.full_path)
+    floodmap = utils.read_geojson_from_gcp(floodmap_path)
     floodmap_date = meta_floodmap['satellite date']
 
     # create permenant water path
-    permanent_water_path = GCPPath(os.path.join(path_aoi, "PERMANENTWATERJRC", f"{floodmap_date.year}.tif"))
+    permanent_water_path = os.path.join(path_aoi, "PERMANENTWATERJRC", f"{floodmap_date.year}.tif").replace("\\", "/")
 
-    if not permanent_water_path.check_if_file_exists():
+    if not fs.exists(permanent_water_path):
         warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")
         permanent_water_path = None
 
     csv_path = os.path.join(path_aoi, "S2", "s2info.csv")
-    metadatas2 = process_s2metadata(csv_path)
+    metadatas2 = process_s2metadata(csv_path, fs=fs)
     metadatas2 = metadatas2.set_index("names2file")
 
     assert any(metadatas2.s2available), f"Not available S2 files for {main_path}. {metadatas2}"
@@ -80,9 +79,16 @@ def worldfloods_extra_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, O
     meta_floodmap["cloud_probability"] = metadatas2.loc[index, "cloud_probability"]
     meta_floodmap["valids"] = metadatas2.loc[index, "valids"]
 
-    s2_image_path = GCPPath(os.path.join(path_aoi, "S2", index+".tif"))
+    s2_image_path = os.path.join(path_aoi, "S2", index+".tif").replace("\\", "/")
 
-    return floodmap, None, permanent_water_path, meta_floodmap, s2_image_path
+    # Add cloud_probability if exists in edited
+    cm_edited = s2_image_path.replace("/S2/", "/cmedited_vec/").replace(".tif", ".geojson")
+    if not fs.exists(cm_edited):
+        cm_edited = s2_image_path.replace("/S2/", "/cmedited/")
+        if not fs.exists(cm_edited):
+            cm_edited = None
+
+    return floodmap, cm_edited, permanent_water_path, meta_floodmap, s2_image_path
 
 
 def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any, datetime]:
@@ -111,7 +117,7 @@ def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any,
     return index, s2_date
 
 
-def worldfloods_old_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, GCPPath, Optional[GCPPath], Dict, GCPPath]:
+def worldfloods_old_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, str, Optional[str], Dict, str]:
     """
     Given a S2 tiff file in the V0 WorldFloods dataset it returns the rest of the anciliary files to
     the corresponding floodmap, cloud probability and permanent water
@@ -189,7 +195,7 @@ def worldfloods_old_gcp_paths(main_path: GCPPath) -> Tuple[gpd.GeoDataFrame, GCP
     )
     assert meta_floodmap_path.check_if_file_exists(), f"Meta floodmap not found in {meta_floodmap_path}"
 
-    meta_floodmap = read_json_from_gcp(meta_floodmap_path.full_path)
+    meta_floodmap = utils.read_json_from_gcp(meta_floodmap_path.full_path)
 
     return floodmap, cloudprob_path, permanent_water_path, meta_floodmap, s2_image_path
 
@@ -216,7 +222,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         aforementioned products.
         output_path: Folder where the item will be written. See fun worldfloods_output_files for corresponding output file naming convention.
         overwrite: if False it will not overwrite existing products in path_write folder.
-        file_name:
+        file_name: Name of the file to be saved (e.g. in S2/gt/floodmap/ data will be saved with this name and the corresponding extension .tif, .geojson)
         pbar: optional progress bar with method description.
         gt_fun: one of ml4floods.data.create_gt.generate_land_water_cloud_gt or ml4floods.data.create_gt.generate_water_cloud_binary_gt.
         This function determines how the ground truth is created from the input products.
@@ -227,114 +233,131 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         True if success in creating all the products
 
     """
-    name_path_local = gt_fun.__name__.replace(".", "-") + paths_function.__name__.replace(".", "-")
-    local_path = Path(".").joinpath(name_path_local)
-    os.makedirs(local_path, exist_ok=True)
 
-    main_path = GCPPath(main_path)
-    name = os.path.splitext(os.path.basename(main_path.file_name))[0]
-    fs = fsspec.filesystem("gs")
+    fs = fsspec.filesystem("gs", requester_pays=True)
 
     try:
+        # Check if output products exist before reading from the bucket
+        if not overwrite:
+            expected_outputs = worldfloods_output_files(
+                output_path, file_name, permanent_water_available=True, clouds_available=False, mkdirs=False)
+            fsdest = utils.get_filesystem(expected_outputs[-1])
+
+            must_process = False
+            for e in expected_outputs:
+                if e and not fsdest.exists(e):
+                    must_process = True
+                    break
+
+            if not must_process:
+                return True
+
         # Get input files and check that they all exist
         floodmap, cloudprob_path, permanent_water_path, metadata_floodmap, s2_image_path = paths_function(main_path)
 
         # get output files
         cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
-            output_path, file_name, permanent_water_path is not None)
+            output_path, file_name, permanent_water_available=permanent_water_path is not None, clouds_available=cloudprob_path is not None, mkdirs=True)
     except Exception:
-        warnings.warn(f"File {main_path.file_name} problem when computing input/output names")
+        warnings.warn(f"File {main_path} problem when computing input/output names")
         traceback.print_exc(file=sys.stdout)
         return False
     try:
         # generate gt, gt meta and copy all files to path_write
-        if not gt_path_dest.check_if_file_exists() or not meta_json_path_dest.check_if_file_exists() or overwrite:
-            if pbar is not None:
-                pbar.set_description(f"Generating Ground Truth {name}...")
+        fsdest = utils.get_filesystem(s2_image_path_dest)
 
-            with rasterio.open(s2_image_path.full_path) as rst:
-                bands = rst.descriptions
-                cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
+        if not fsdest.exists(gt_path_dest) or not fsdest.exists(meta_json_path_dest) or overwrite:
+            if pbar is not None:
+                pbar.set_description(f"Generating Ground Truth {file_name}...")
+
+            # Copy s2_image_path to local before reading?
+            # If so we will need also to copy cloudprob_path and permanent_water_path
 
             gt, gt_meta = gt_fun(
-                s2_image_path.full_path,
+                s2_image_path,
                 floodmap,
                 metadata_floodmap=metadata_floodmap,
                 keep_streams=True,
-                cloudprob_image_path=cloudprob_path if cloudprob_path is None else cloudprob_path.full_path,
-                cloudprob_in_lastband=cloudprob_in_lastband,
-                permanent_water_image_path=permanent_water_path if permanent_water_path is None else permanent_water_path.full_path,  # Could be None!
+                cloudprob_image_path=cloudprob_path, # Could be None!
+                permanent_water_image_path=permanent_water_path,  # Could be None!
             )
 
             if len(gt.shape) == 2:
                 gt = gt[None]
 
             if pbar is not None:
-                pbar.set_description(f"Saving GT {name}...")
+                pbar.set_description(f"Saving GT {file_name}...")
 
-            save_cog.save_cog(gt, gt_path_dest.full_path,
+            save_cog.save_cog(gt, gt_path_dest,
                               {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
                                "compress": "lzw", "nodata": 0}, # In both gts 0 is nodata
                               tags=gt_meta)
 
             # upload meta json to bucket
             if pbar is not None:
-                pbar.set_description(f"Saving meta {name}...")
+                pbar.set_description(f"Saving meta {file_name}...")
 
             # save meta in local json file
             gt_meta["crs"] = str(gt_meta["crs"])
             gt_meta["transform"] = [gt_meta["transform"].a, gt_meta["transform"].b, gt_meta["transform"].c,
                                     gt_meta["transform"].d, gt_meta["transform"].e, gt_meta["transform"].f]
 
-            utils.write_json_to_gcp(meta_json_path_dest.full_path, gt_meta)
+            utils.write_json_to_gcp(meta_json_path_dest, gt_meta)
 
         # Copy floodmap shapefiles
-        if not floodmap_path_dest.check_if_file_exists() or overwrite:
+        if not fsdest.exists(floodmap_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving floodmap {name}...")
+                pbar.set_description(f"Saving floodmap {file_name}...")
 
-            utils.write_geojson_to_gcp(floodmap_path_dest.full_path, floodmap)
-
-        # Copy cloudprob, S2 and permanent water
-        if cloudprob_path is not None and (not cloudprob_path_dest.check_if_file_exists() or overwrite):
+            utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)                
+        
+        # Copy S2 image
+        if not fsdest.exists(s2_image_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving cloud probs {name}...")
-            fs.copy(cloudprob_path.full_path, cloudprob_path_dest.full_path)
-
-        if not s2_image_path_dest.check_if_file_exists() or overwrite:
+                pbar.set_description(f"Saving S2 image {file_name}...")
+            
+            _copy(s2_image_path, s2_image_path_dest, fs)
+        
+        # Copy cloudprob
+        if cloudprob_path is not None and cloudprob_path_dest and (not fsdest.exists(cloudprob_path_dest) or overwrite):
             if pbar is not None:
-                pbar.set_description(f"Saving S2 image {name}...")
-
-            fs.copy(s2_image_path.full_path, s2_image_path_dest.full_path)
-
-        if (permanent_water_image_path_dest is not None) and (not permanent_water_image_path_dest.check_if_file_exists() or overwrite):
+                pbar.set_description(f"Saving cloud probs {file_name}...")
+            
+            _copy(cloudprob_path, cloudprob_path_dest, fs)
+        
+        # Copy permanent water
+        if (permanent_water_image_path_dest is not None) and (not fsdest.exists(permanent_water_image_path_dest) or overwrite):
             if pbar is not None:
-                pbar.set_description(f"Saving permanent water image {name}...")
+                pbar.set_description(f"Saving permanent water image {file_name}...")
 
-            fs.copy(permanent_water_path.full_path, permanent_water_image_path_dest.full_path)
+            _copy(permanent_water_path, permanent_water_image_path_dest, fs)
 
     except Exception:
-        warnings.warn(f"File input: {main_path.file_name} output S2 file: {s2_image_path_dest.full_path} problem when computing Ground truth")
+        warnings.warn(f"File input: {main_path} output S2 file: {s2_image_path_dest} problem when computing Ground truth")
         traceback.print_exc(file=sys.stdout)
 
         if not delete_if_error:
             return False
 
+        fsdest = utils.get_filesystem(s2_image_path_dest)
         files_to_delete = [cloudprob_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest,
-                           s2_image_path_dest]
-        if floodmap_path_dest.suffix == "shp":
-            files_to_delete.extend([GCPPath(f) for f in floodmap_path_dest.get_files_in_parent_directory_with_name()])
-        else:
-            files_to_delete.append(floodmap_path_dest)
+                           s2_image_path_dest, floodmap_path_dest]
         for f in files_to_delete:
-            if f.check_if_file_exists():
-                print(f"Deleting file {f.full_path}")
-                f.delete()
+            if f and fsdest.exists(f):
+                print(f"Deleting file {f}")
+                fsdest.delete(f)
 
         return False
 
     return True
 
+
+def _copy(file_or, file_dest, fsor):    
+    if file_dest.startswith("gs"):
+        fsor.copy(file_or, file_dest)
+    else:
+        fsor.get_file(file_or, file_dest)
+    
 
 def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_permanent_water:bool=True):
     """
@@ -356,7 +379,9 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
 
 
 def worldfloods_output_files(output_path:str, file_name:str,
-                             permanent_water_available:bool=True) -> Tuple[GCPPath, GCPPath, GCPPath, GCPPath, Optional[GCPPath], GCPPath]:
+                             permanent_water_available:bool=True,
+                             clouds_available:bool=True,
+                             mkdirs:bool=False) -> Tuple[str, str, str, str, Optional[str], str]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
 
@@ -372,21 +397,35 @@ def worldfloods_output_files(output_path:str, file_name:str,
         output_path: Path to produce the outputs
         file_name:
         permanent_water_available:
+        clouds_available:
+        mkdirs: make dirs if needed for the output paths
 
     Returns:
         cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest
 
     """
     if permanent_water_available:
-        permanent_water_image_path_dest = GCPPath(os.path.join(output_path, "PERMANENTWATERJRC", file_name+".tif"))
+        permanent_water_image_path_dest = os.path.join(output_path, "PERMANENTWATERJRC", file_name+".tif").replace("\\", "/")
     else:
         permanent_water_image_path_dest = None
 
     output_path = str(output_path)
-    s2_image_path_dest = GCPPath(os.path.join(output_path,"S2",file_name+".tif"))
-    meta_parent_path = GCPPath(os.path.join(output_path,"meta",file_name+".json"))
-    cloudprob_path_dest = GCPPath(os.path.join(output_path, "cloudprob",file_name+".tif"))
-    floodmap_path_dest = GCPPath(os.path.join(output_path,"floodmaps",file_name+".geojson"))
-    gt_path = GCPPath(os.path.join(output_path,"gt",file_name+".tif"))
+    s2_image_path_dest = os.path.join(output_path,"S2",file_name+".tif").replace("\\", "/")
+    meta_parent_path = os.path.join(output_path,"meta",file_name+".json").replace("\\", "/")
+
+    if clouds_available:
+        cloudprob_path_dest = os.path.join(output_path, "cloudprob",file_name+".tif").replace("\\", "/")
+    else:
+        cloudprob_path_dest = None
+
+    floodmap_path_dest = os.path.join(output_path,"floodmaps",file_name+".geojson").replace("\\", "/")
+    gt_path = os.path.join(output_path,"gt",file_name+".tif").replace("\\", "/")
+
+    # makedir if not gs
+    if mkdirs and not s2_image_path_dest.startswith("gs"):
+        fs = utils.get_filesystem(s2_image_path_dest)
+        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path, permanent_water_image_path_dest]:
+            if f is not None:
+                fs.makedirs(os.path.dirname(f), exist_ok=True)
 
     return cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest

@@ -13,6 +13,7 @@ CODES_FLOODMAP = {
     # CopernicusEMS (flood)
     'Flooded area': 1,
     'Not Applicable': 1,
+    'Not Application': 1,
     'Flood trace': 1,
     'Dike breach': 1,
     'Standing water': 1,

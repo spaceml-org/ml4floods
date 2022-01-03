@@ -10,9 +10,11 @@ import sys
 
 def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
-         threshold_invalids_after:float, days_before:int, days_after:int):
+         threshold_invalids_after:float, days_before:int, days_after:int, 
+         requester_pays:bool = True):
+    
 
-    fs = fsspec.filesystem("gs")
+    fs = fsspec.filesystem("gs", requester_pays = requester_pays)
     files_metatada_pickled = [f"gs://{f}" for f in fs.glob(f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")]
     COLLECTION_NAME = "COPERNICUS/S2" # "COPERNICUS/S2_SR" for atmospherically corrected data
 
@@ -104,9 +106,16 @@ if __name__ == '__main__':
                         help="Days to search after the event")
     parser.add_argument('--days_after', default=20, type=int,
                         help="Days to search before the event")
+    
 
     args = parser.parse_args()
-    main(args.cems_code,aoi_code=args.aoi_code, threshold_clouds_before=args.threshold_clouds_before,
-         threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
-         threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
-         days_after=args.days_after)
+
+    # main(args.cems_code,aoi_code=args.aoi_code, threshold_clouds_before=args.threshold_clouds_before,
+    #      threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
+    #      threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
+    #      days_after=args.days_after)
+
+    main('EMSR470','AOI01', threshold_clouds_before=args.threshold_clouds_before,
+          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
+          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
+          days_after=args.days_after)
