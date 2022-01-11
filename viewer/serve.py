@@ -6,40 +6,19 @@ import io
 from typing import List
 from PIL import Image
 import numpy as np
-import rasterio
-import rasterio.windows
 import geopandas
-from rasterio import warp
 from ml4floods.data.config import BANDS_S2
+from ml4floods.serve.read_tile import read_tile
+from rasterio import warp
 
 from glob import glob
-import mercantile
-
-
-from contextlib import ExitStack
 
 STATIC_FOLDER = "web"
 app = Flask(__name__, static_url_path='/web')
 app.config['STATIC_FOLDER'] = STATIC_FOLDER
 
 SATURATION = 3_000
-SIZE = 256
-WEB_MERCATOR_CRS = "epsg:3857"
 
-PIXEL_PRECISION = 3
-# Required because we cant read in parallel with rasterio
-def pad_window(window: rasterio.windows.Window, pad_size) -> rasterio.windows.Window:
-    """ Add the provided pad to a rasterio window object """
-    return rasterio.windows.Window(window.col_off - pad_size[1],
-                                   window.row_off - pad_size[0],
-                                   width=window.width + 2 * pad_size[1],
-                                   height=window.height + 2 * pad_size[1])
-
-
-def round_outer_window(window:rasterio.windows.Window)-> rasterio.windows.Window:
-    """ Rounds a rasterio.windows.Window object to outer (larger) window """
-    return window.round_lengths(op="ceil", pixel_precision=PIXEL_PRECISION).round_offsets(op="floor",
-                                                                                          pixel_precision=PIXEL_PRECISION)
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def floodmap(subset:str, eventid:str):
@@ -64,66 +43,19 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     A route to get an RGB JPEG clipped from a given geotiff Sentinel-2 image for a given z,x,y TMS tile coordinate.
     """
 
-    ### get latlon bounding box from z,x,y tile request
-    bounds_wgs = mercantile.xy_bounds(int(x), int(y), int(z))
-
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
 
     bands = [1, 2] if productname == "gt" else [BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
     resampling = warp.Resampling.nearest if productname == "gt" else warp.Resampling.cubic_spline
 
-    OUTPUT_SHAPE = (len(bands), SIZE, SIZE)
+    output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
+                       resampling=resampling, dst_nodata=0)
 
-    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN=True, CPL_DEBUG=True), rasterio.open(image_address, 'r') as rst:
-        x1, y1, x2, y2 = rst.bounds
-        rst_bounds = min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)
-        if rst.crs != WEB_MERCATOR_CRS:
-            bounds_read_crs_dest = warp.transform_bounds({"init": WEB_MERCATOR_CRS}, rst.crs,
-                                                         left=bounds_wgs.left,
-                                                         top=bounds_wgs.top,
-                                                         bottom=bounds_wgs.bottom, right=bounds_wgs.right)
-        else:
-            bounds_read_crs_dest = (bounds_wgs.left, bounds_wgs.bottom, bounds_wgs.right, bounds_wgs.top)
+    if output is None:
+        # Not intersects return None
+        return app.send_static_file("border.png")
 
-        if rasterio.coords.disjoint_bounds(bounds_read_crs_dest, rst_bounds):
-            return app.send_static_file('border.png')
-
-        rst_transform = rst.transform
-        rst_crs = rst.crs
-        rst_nodata = rst.nodata or 0
-        rst_dtype = rst.meta["dtype"]
-
-        # Compute the window to read and read the data
-        window = rasterio.windows.from_bounds(*bounds_read_crs_dest, rst.transform)
-        if rst.crs != WEB_MERCATOR_CRS:
-            window = pad_window(window, (1, 1))  # Add padding for bicubic int or for co-registration
-            window = round_outer_window(window)
-
-        OUTPUT_SHAPE_READ = (len(bands), SIZE+1, SIZE+1)
-
-        # With out_shape it reads from the pyramids if rst is a COG GeoTIFF
-        src_arr = rst.read(bands, window=window, out_shape=OUTPUT_SHAPE_READ, boundless=True,
-                           fill_value=0)
-
-    # Compute transform of readed data and reproject to WEB_MERCATOR_CRS
-    input_output_factor = (window.height / OUTPUT_SHAPE_READ[1], window.width / OUTPUT_SHAPE_READ[2])
-
-    transform_window = rasterio.windows.transform(window, rst_transform)
-    transform_src = rasterio.Affine(transform_window.a * input_output_factor[1], transform_window.b, transform_window.c,
-                                    transform_window.d, transform_window.e * input_output_factor[0], transform_window.f)
-
-    transform_dst = rasterio.transform.from_bounds(west=bounds_wgs.left,north=bounds_wgs.top,
-                                                   east=bounds_wgs.right, south=bounds_wgs.bottom,
-                                                   width=SIZE, height=SIZE)
-
-    rst_arr = np.empty(shape=OUTPUT_SHAPE, dtype=rst_dtype)
-
-    rst_arr, rst_transform = warp.reproject(source=src_arr, destination=rst_arr,
-                                            src_transform=transform_src, src_crs=rst_crs,
-                                            src_nodata=rst_nodata,
-                                            dst_transform=transform_dst, dst_crs=WEB_MERCATOR_CRS,
-                                            dst_nodata=0,
-                                            resampling=resampling)
+    rst_arr, rst_transform = output
 
     alpha = (~np.all(rst_arr == 0, axis=0)).astype(np.uint8) * 255
 
@@ -135,7 +67,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
         v1gt = land_water.copy()  # {0: invalid, 1: land, 2: water}
         v1gt[clear_clouds == 2] = 3
-        img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colores=COLORS)
+        img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
 
     img_rgb = np.concatenate([img_rgb, alpha[...,None]], axis=-1)
 
@@ -163,20 +95,24 @@ def worldfloods_database():
     return send_file(app.config["DATABASE_NAME"])
 
 
-def mask_to_rgb(mask: np.ndarray, values: List[int], colores: np.ndarray) -> np.ndarray:
+def mask_to_rgb(mask: np.ndarray, values: List[int], colors: np.ndarray) -> np.ndarray:
     """
-    Given a 2D mask it assign each value of the mask the corresponding color
+    Given a 2D mask it assigns each value of the mask in `values` the corresponding color in `colors`
 
-    :param mask: (H, W)
-    :param values: (K,)
-    :param colores: (K, d) d could be 4 if mode is RGBA or 3
-    :return: (H, W, d)
+    Args:
+        mask: (H, W)
+        values: (K,)
+        colors: (K, d) d could be 4 if mode is RGBA or 3
+
+    Returns:
+        (H, W, d)
+
     """
-    assert len(values) == len(colores), "Values and colors should have same length {} {}".format(len(values),len(colores))
+    assert len(values) == len(colors), "Values and colors should have same length {} {}".format(len(values), len(colors))
 
-    mask_return = np.zeros(mask.shape[:2] + (colores.shape[-1],), dtype=np.uint8)
-    colores = np.array(colores)
-    for i, c in enumerate(colores):
+    mask_return = np.zeros(mask.shape[:2] + (colors.shape[-1],), dtype=np.uint8)
+    colors = np.array(colors)
+    for i, c in enumerate(colors):
         mask_return[mask == values[i], :] = c
 
     return mask_return
@@ -186,9 +122,9 @@ def mask_to_rgb(mask: np.ndarray, values: List[int], colores: np.ndarray) -> np.
 def root():
     return app.send_static_file('index.html')
 
+
 # KEYS_COPY_V2 = ["satellite", "event id", "satellite date", "ems_code", "aoi_code", "date_ems_code", "s2_date"]
 KEYS_COPY = ["satellite", "satellite date", "s2_date"]
-
 def worldfloods_files(rl:str):
 
     json_files = sorted(glob(os.path.join(rl, "*/meta/*.json")))

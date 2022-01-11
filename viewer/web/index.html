@@ -73,7 +73,7 @@
           let path_s2 = path_dest_base+"/S2/{z}/{x}/{y}.png";
           let path_gt = path_dest_base+"/gt/{z}/{x}/{y}.png";
           let tilelayer_s2 = L.tileLayer(path_s2);
-          let tilelayer_gt = L.tileLayer(path_gt)
+          let tilelayer_gt = L.tileLayer(path_gt);
           tileserver_objects[name] = [tilelayer_s2, tilelayer_gt];
           tilelayer_s2.addTo(mymap);
           tilelayer_gt.addTo(mymap);
