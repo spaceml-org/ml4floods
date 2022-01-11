@@ -823,13 +823,48 @@ def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
             geojson_val.to_file(fh, driver="GeoJSON")
 
 
+def check_requester_pays_gcp_available() -> bool:
+    """
+    Requester pays for GCP is available from GDAL 3.4
+
+    rasterio issue: https://github.com/rasterio/rasterio/issues/1948
+    Commit GDAL: https://github.com/OSGeo/gdal/pull/3883/commits/8d551953dea9290b21bd9747ec9ed22c81ca0409
+
+    Returns:
+        True if version >= 3.4
+
+    """
+    try:
+        version_gdal = rasterio.__gdal_version__
+        vnumber, vsubnumber = version_gdal.split(".")[:2]
+        vnumber, vsubnumber = int(vnumber), int(vsubnumber)
+        if (vnumber*100+vsubnumber) >= (3*100+4):
+            return True
+    except Exception as e:
+        pass
+
+    return False
+
+
+REQUESTER_PAYS_AVAILABLE = check_requester_pays_gcp_available()
+
+
 @contextmanager
 def rasterio_open_read(tifffile, requester_pays:bool=True) -> rasterio.DatasetReader:
     if requester_pays and tifffile.startswith("gs"):
-        fs = fsspec.filesystem("gs", requester_pays=True)
-        with fs.open(tifffile, "rb") as fh:
-            with rasterio.io.MemoryFile(fh.read()) as mem:
-                yield mem.open()
+        if REQUESTER_PAYS_AVAILABLE:
+            assert "GS_USER_PROJECT" in os.environ, \
+                "'GS_USER_PROJECT' env variable not found and requester_pays=True set a project name to read rasters from the bucket" \
+                "(i.e. -> export GS_USER_PROJECT='myprojectname'"
+
+            with rasterio.open(tifffile) as src:
+                yield src
+        else:
+            fs = fsspec.filesystem("gs", requester_pays=True)
+            with fs.open(tifffile, "rb") as fh:
+                with rasterio.io.MemoryFile(fh.read()) as mem:
+                    yield mem.open()
+
     else:
         with rasterio.open(tifffile) as src:
             yield src
