@@ -10,6 +10,7 @@ from rasterio import features
 
 from ml4floods.data.config import BANDS_S2, CODES_FLOODMAP
 from ml4floods.data import utils
+from skimage.morphology import binary_opening, disk
 
 
 def compute_water(
@@ -321,6 +322,7 @@ def generate_water_cloud_binary_gt(
         window=window,
         cloudprob_image_path=cloudprob_image_path,
     )
+    custom_cloud_mask = cloudprob_image_path is not None and cloudprob_image_path.endswith(".geojson")
 
     water_mask = compute_water(
         s2_image_path,
@@ -330,17 +332,17 @@ def generate_water_cloud_binary_gt(
         keep_streams=keep_streams,
     )
 
-    # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
-    if metadata_floodmap["satellite"] == "Sentinel-2":
-        invalid_clouds_threshold = 0.5
-    else:
-        invalid_clouds_threshold = None
+    # # TODO this should be invalid if it is Sentinel-2 and it is exactly the same date ('satellite date' is the same as the date of retrieval of s2tiff)
+    # if metadata_floodmap["satellite"] == "Sentinel-2":
+    #     invalid_clouds_threshold = 0.5
+    # else:
+    #     invalid_clouds_threshold = None
 
     gt = _generate_gt_fromarray(
         s2_img,
         cloudprob=cloud_mask,
         water_mask=water_mask,
-        invalid_clouds_threshold=invalid_clouds_threshold,
+        custom_clouds=custom_cloud_mask,
     )
 
     # Compute metadata of the ground truth
@@ -413,24 +415,41 @@ def _generate_gt_v1_fromarray(
 
     return gt
 
+def get_brightness(s2_image:np.ndarray) -> np.ndarray:
+    """
+
+    Args:
+        s2_image: (C, H, W) array
+
+    Returns:
+        (H, W) array
+    """
+
+    idxs = [BANDS_S2.index(b) for b in ["B4", "B3", "B2"]]
+    rgb_img = s2_image[idxs, ...]
+    return np.sqrt(np.sum(rgb_img**2, axis=0, keepdims=False))
+
+
+CLOUDS_THRESHOLD = .5
+BRIGHTNESS_THRESHOLD = .3
+
 
 def _generate_gt_fromarray(
     s2_img: np.ndarray,
     cloudprob: np.ndarray,
     water_mask: np.ndarray,
-    invalid_clouds_threshold: Optional[float] = 0.5,
+    custom_clouds: bool=False,
 ) -> np.ndarray:
     """
 
-    Generate Ground Truth of WorldFloods V2 (multi-output binary classification problem)
+    Generate Ground Truth of WorldFloods Extra (multi-output binary classification problem)
 
     Args:
         s2_img: (C, H, W) array
         cloudprob: (H, W) array
         water_mask: (H, W) array {-1: invalid, 0: land, 1: flood, 2: hydro, 3: permanentwaterjrc}
-        invalid_clouds_threshold: set in the land/water ground truth land pixels as invalid
-        (this is a safety check for Copernicus EMS data derived from optical satellites since
-        they don't mark cloudy pixels in the provided products), default=0.5
+        custom_clouds: whether it uses a custom gt or not.
+            If it is not custom it will mask the bright cloud pixels in the s2image in the water mask.
 
     Returns:
         (2, H, W) np.uint8 array where:
@@ -445,7 +464,7 @@ def _generate_gt_fromarray(
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
-    cloudgt[cloudprob > 0.5] = 2
+    cloudgt[cloudprob > CLOUDS_THRESHOLD] = 2
     cloudgt[invalids] = 0
 
     # For clouds we could set to invalid only if the s2_img is invalid (not the water mask)?
@@ -455,9 +474,24 @@ def _generate_gt_fromarray(
     watergt[water_mask >= 1] = 2  # only water is 2
     watergt[invalids] = 0
 
-    if invalid_clouds_threshold is not None:
-        # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
-        watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
+    clouds = cloudprob > CLOUDS_THRESHOLD
+    if custom_clouds:
+        # set to invalid in watergt clouds in gt (assume manually added to include only thick clouds!)
+        watergt[clouds] = 0
+    else:
+        # set to invalid in watergt for bright clouds
+        brightness = get_brightness(s2_img) # (H, W)
+        clouds &= (brightness >= BRIGHTNESS_THRESHOLD)
+
+        # binary opening of bright clouds
+        open_clouds = binary_opening(clouds, disk(3)).astype(np.bool)
+
+        # Set to invalid bright clouds
+        watergt[open_clouds] = 0
+
+    # if invalid_clouds_threshold is not None:
+    #     # Set to invalid land pixels that are cloudy if the satellite is Sentinel-2
+    #     watergt[(water_mask == 0) & (cloudprob > invalid_clouds_threshold)] = 0
 
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 

@@ -12,7 +12,7 @@ import pkg_resources
 
 
 def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems_code="", aoi_code="",
-         destination_parent_path=""):
+         destination_parent_path="", subset="all"):
     assert version in ["v1_0", "v2_0"], f"Unexpected ground truth version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
     assert dataset in ["", "original", "extra"], f"Unexpected dataset {dataset}"
@@ -45,13 +45,14 @@ def main(version="v1_0",overwrite=False, prod_dev="0_DEV", dataset="extra", cems
         main_worldlfoods_extra(destination_path=destination_parent_path,
                                train_test_split_file=train_test_split_file,
                                overwrite=overwrite, files_metadata_pickled=files_metadata_pickled,
-                               gt_fun=gt_fun)
+                               gt_fun=gt_fun, subset=subset)
 
 
 def main_worldlfoods_extra(destination_path:str,
                            train_test_split_file:str,
                            overwrite:bool=False, files_metadata_pickled:List[str]=[],
-                           gt_fun:Callable=generate_water_cloud_binary_gt):
+                           gt_fun:Callable=generate_water_cloud_binary_gt,
+                           subset:str="all"):
     """
     Creates the worldfloods_extra dataset in the folder `destination_path`. It copies the files from
     the bucket (from `staging_path`) and creates the ground truth tiff file used for training the models.
@@ -62,12 +63,17 @@ def main_worldlfoods_extra(destination_path:str,
         overwrite: Whether or not to overwrite the files if exists.
         files_metadata_pickled: Path to WorldFloods staging data.
         gt_fun: Function to create the ground truth (3 class ground truth or 2-bands multioutput binary)
+        subset: subset to generate the ground truth only for those images
     """
 
     # Read traintest split file
     fstraintest = utils.get_filesystem(train_test_split_file)
     with fstraintest.open(train_test_split_file, "r") as fh:
         train_val_test_split = json.load(fh)
+
+    if subset != "all":
+        train_val_test_split_new = {subset: train_val_test_split[subset]}
+        train_val_test_split = train_val_test_split_new
 
     for s in train_val_test_split:
         print(f"Subset {s} {len(train_val_test_split[s])} ids")
@@ -185,10 +191,14 @@ if __name__ == "__main__":
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
+    parser.add_argument('--subset', default="all",choices=["all", "train", "test", "val"],
+                        help="all/train/test/val subset to generate the ground truth only for those images"
+                             "Defaults to all")
     parser.add_argument('--destination_path', default="",
                         help="Destination path")
 
     args = parser.parse_args()
 
     main(version=args.version, overwrite=args.overwrite, prod_dev=args.prod_dev, dataset=args.dataset,
-         cems_code=args.cems_code, aoi_code=args.aoi_code,destination_parent_path=args.destination_path)
+         cems_code=args.cems_code, aoi_code=args.aoi_code,destination_parent_path=args.destination_path,
+         subset=args.subset)
