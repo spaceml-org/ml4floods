@@ -850,7 +850,7 @@ REQUESTER_PAYS_AVAILABLE = check_requester_pays_gcp_available()
 
 
 @contextmanager
-def rasterio_open_read(tifffile, requester_pays:bool=True) -> rasterio.DatasetReader:
+def rasterio_open_read(tifffile:str, requester_pays:bool=True) -> rasterio.DatasetReader:
     if requester_pays and tifffile.startswith("gs"):
         if REQUESTER_PAYS_AVAILABLE:
             assert "GS_USER_PROJECT" in os.environ, \
