@@ -71,6 +71,10 @@ def main_worldlfoods_extra(destination_path:str,
     with fstraintest.open(train_test_split_file, "r") as fh:
         train_val_test_split = json.load(fh)
 
+    cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
+    if "EMSR9284" in cems_codes_test:
+        cems_codes_test.add("EMSR284")
+
     if subset != "all":
         train_val_test_split_new = {subset: train_val_test_split[subset]}
         train_val_test_split = train_val_test_split_new
@@ -81,10 +85,6 @@ def main_worldlfoods_extra(destination_path:str,
         print(f"Subset {s} {len(train_val_test_split[s])} ids")
 
     print(f"Provided {len(files_metadata_pickled)} pickle files to generate the ML-ready dataset")
-
-    cems_codes_test = set(s.split("_")[0] for s in train_val_test_split["test"])
-    if "EMSR9284" in cems_codes_test:
-        cems_codes_test.add("EMSR284")
 
     # loop through files in the bucket
     problem_files = []
