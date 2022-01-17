@@ -75,6 +75,8 @@ def main_worldlfoods_extra(destination_path:str,
         train_val_test_split_new = {subset: train_val_test_split[subset]}
         train_val_test_split = train_val_test_split_new
 
+    skip_unused = subset != "all"
+
     for s in train_val_test_split:
         print(f"Subset {s} {len(train_val_test_split[s])} ids")
 
@@ -93,17 +95,21 @@ def main_worldlfoods_extra(destination_path:str,
             event_id = metadata_floodmap["event id"]
 
             # Find out which split to put the data in
-            subset = "unused"
+            subset_iter = "unused"
             for split in train_val_test_split.keys():
                 if (split != "test") and (metadata_floodmap["ems_code"] in cems_codes_test):
-                    subset = "banned"
+                    subset_iter = "banned"
 
                 if event_id in train_val_test_split[split]:
-                    subset = split
+                    subset_iter = split
                     break
 
+            # Do not process unused (when subset is passed to this function)
+            if skip_unused and (subset_iter == "unused"):
+                continue
+
             # Create destination folder if it doesn't exists
-            path_write = os.path.join(destination_path, subset).replace("\\", "/")
+            path_write = os.path.join(destination_path, subset_iter).replace("\\", "/")
             if not path_write.startswith("gs:") and not os.path.exists(path_write):
                 os.makedirs(path_write)
 
@@ -114,8 +120,8 @@ def main_worldlfoods_extra(destination_path:str,
                                    pbar=pbar, gt_fun=gt_fun,
                                    paths_function=worldfloods_extra_gcp_paths)
             if status:
-                if subset in count_files_per_split:
-                    count_files_per_split[subset]+= 1
+                if subset_iter in count_files_per_split:
+                    count_files_per_split[subset_iter]+= 1
             else:
                 problem_files.append(metadata_file)
 

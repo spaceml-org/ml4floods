@@ -22,4 +22,3 @@ fsspec
 gcsfs
 requests_html
 earthengine-api
-geemap
