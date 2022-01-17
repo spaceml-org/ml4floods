@@ -431,7 +431,7 @@ def get_brightness(s2_image:np.ndarray) -> np.ndarray:
 
 
 CLOUDS_THRESHOLD = .5
-BRIGHTNESS_THRESHOLD = .3
+BRIGHTNESS_THRESHOLD = 3_000
 
 
 def _generate_gt_fromarray(

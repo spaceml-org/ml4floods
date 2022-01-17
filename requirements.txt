@@ -22,3 +22,4 @@ fsspec
 gcsfs
 requests_html
 earthengine-api
+mercantile
