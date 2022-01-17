@@ -45,7 +45,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
 
-    bands = [1, 2] if productname == "gt" else [BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
+    bands = [2] if productname == "gt" else [BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
     resampling = warp.Resampling.nearest if productname == "gt" else warp.Resampling.cubic_spline
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
@@ -55,24 +55,25 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # Not intersects return None
         return app.send_static_file("border.png")
 
-    rst_arr, rst_transform = output
-
-    alpha = (~np.all(rst_arr == 0, axis=0)).astype(np.uint8) * 255
+    rst_arr, _ = output
 
     if productname == "S2":
+        alpha = (~np.all(rst_arr == 0, axis=0)).astype(np.uint8) * 255
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
+        img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
+        mode = "RGBA"
     else:
-        clear_clouds = rst_arr[0]
-        land_water = rst_arr[1]
+        land_water = rst_arr[0]
 
-        v1gt = land_water.copy()  # {0: invalid, 1: land, 2: water}
-        v1gt[clear_clouds == 2] = 3
-        img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
-
-    img_rgb = np.concatenate([img_rgb, alpha[...,None]], axis=-1)
+        # clear_clouds = rst_arr[0]
+        # v1gt = land_water.copy()  # {0: invalid, 1: land, 2: water}
+        # v1gt[clear_clouds == 2] = 3
+        # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
+        img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS)
+        mode = "RGB"
 
     buf = io.BytesIO()
-    Image.fromarray(img_rgb, mode="RGBA").save(buf, format="PNG")
+    Image.fromarray(img_rgb, mode=mode).save(buf, format="PNG")
     buf.seek(0, 0)
 
     return send_file(
@@ -82,11 +83,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         mimetype='image/png'
     )
 
-
 COLORS = np.array([[0, 0, 0], # invalid
                    [139, 64, 0], # land
-                   [0, 0, 139], # water
-                   [220, 220, 220]], # cloud
+                   [0, 0, 139]], # water
+                   # [220, 220, 220]], # cloud
                   dtype=np.uint8)
 
 
