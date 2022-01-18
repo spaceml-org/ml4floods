@@ -104,8 +104,8 @@ def main_worldlfoods_extra(destination_path:str,
                     subset_iter = split
                     break
 
-            # Do not process unused (when subset is passed to this function)
-            if skip_unused and (subset_iter == "unused"):
+            # Do not process if subset is different
+            if skip_unused and (subset_iter == subset):
                 continue
 
             # Create destination folder if it doesn't exists

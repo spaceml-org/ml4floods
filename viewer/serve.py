@@ -163,16 +163,13 @@ if __name__ == "__main__":
 
     pdb = os.path.join("web", database_name+".json")
 
-    if not os.path.exists(pdb):
-        print(f"Generate database from location {args.root_location}")
-        database = worldfloods_files(root_location)
+    # if not os.path.exists(pdb):
+    print(f"Generate database from location {args.root_location}")
+    database = worldfloods_files(root_location)
 
-        database[1]["selected"] = True
-        with open(pdb, "w") as fh:
-            json.dump(database, fh)
-    else:
-        print(f"Loading database: {pdb}")
-
+    database[1]["selected"] = True
+    with open(pdb, "w") as fh:
+        json.dump(database, fh)
 
     app.static_folder = app.config["STATIC_FOLDER"]
     app.config["ROOT_LOCATION"] = os.path.abspath(args.root_location)
