@@ -8,6 +8,7 @@ from scipy import ndimage as ndi
 import numpy as np
 from typing import List, Optional
 
+from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
 
 def preprocess_water_probabilities(prob_water_mask, thres_h=0.6, thres_l=0.4, distance= 5, conn=2, watershed_line=True):
     mask0 = prob_water_mask > thres_h
@@ -77,3 +78,34 @@ def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
     geojson_dict["coordinates"] = out_coords
 
     return shape(geojson_dict)
+
+def get_pred_mask_v2(inputs: np.ndarray, prediction: np.ndarray, 
+                     th_water:int = 0.5, th_cloud:int = 0.5, mask_clouds:bool = True) -> np.ndarray:
+    """
+    Receives an output of a WFV2 model (multioutput binary) and returns the corresponding segmentation mask 
+
+    Args:
+        inputs: S2 image (B, H, W)
+        prediction: corresponding model output(2, H, W)
+        th_water: threshold for the class water
+        th_cloud: threshhold for the class cloud
+        mask_clouds: If False ignores britghtness and outputs the prediction mask with thin clouds
+        
+    Returns:
+        Water mask (H, W) with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
+
+    """
+    mask_invalids = np.all(inputs==0, axis = 0).squeeze()
+    cloud_mask = (prediction[0] > th_cloud).astype(np.float64)
+    water_mask = (prediction[1] > th_water).astype(np.float64)
+    water_mask += 1
+    
+    if mask_clouds:
+        br = get_brightness(inputs)
+        br_th = br > BRIGHTNESS_THRESHOLD
+        water_mask[(cloud_mask==1) & (br_th == 1)] = 3
+    else:
+        water_mask[cloud_mask==1] = 3
+    
+    water_mask[mask_invalids] = 0
+    return water_mask

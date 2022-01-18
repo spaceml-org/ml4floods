@@ -14,7 +14,7 @@ ML4Floods is an open-source project funded by the United Kingdom Space Agency (U
  
 This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) *"Disaster Prevention, Progress and Response"* team which results are published in:
  
- > Mateo-Garcia, G. et al. [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021).
+ > G. Mateo-Garcia, J. Veitch-Michaelis, L. Smith, S. Oprea, G. Schumann, Y. Gal, Baydin G.A., Backes D.  [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021).
  
 This work is also part of the [SpaceML](http://spaceml.org/). [SpaceML](http://spaceml.org/) contains a set of tools for *"building the Machine Learning (ML) infrastructure needed to streamline 
 and super-charge intelligent applications, automation and robotics needed to explore deep space and better manage our planetary spaceship for mutual benefit"*.

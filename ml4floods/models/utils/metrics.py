@@ -240,8 +240,10 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         thresholds_water: list of threshold for precision/recall curves
         threshold: threshold to compute the confusion matrix
         plot: flag for calling plot method with metrics
-        mask_clouds:
-        convert_targets: if true converts targets from v2 to v1
+        mask_clouds: if True this will compute the confusion matrices for "land" and "water" classes only masking
+            the cloudy pixels. If mask_clouds the output confusion matrices will be (n_samples, 2, 2) otherwise they will
+            be (n_samples, 3, 3)
+        convert_targets: if True converts targets from v2 to v1
         
         returns: dictionary of metrics
     """
@@ -279,13 +281,16 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
             test_outputs_categorical = torch.argmax(test_outputs, dim=1).long()
             probs_water_pr_curve = test_outputs[:, 1]
 
+        # Ground truth version v1 is 1 channel tensor 3-classes (B, 1, H, W)  {0: invalid, 1: land, 2: water, 3: cloud}
+        # Ground truth version v2 is 2 channel tensor 2-classes (B, 2, H, W) [{0: invalid, 1: land, 2: cloud}, {0: invalid, 1: land, 2: water}]
         if ground_truth.shape[1] > 1:
+            # Version v2
             assert mask_clouds, f"Expected ground truth of one band found {ground_truth.shape}"
-            cloud_ground_truth = ground_truth[:, 0]
-            water_ground_truth = ground_truth[:, 1]
-            invalids = ((cloud_ground_truth != 1) | (water_ground_truth == 0)).to(test_outputs_categorical.device)
+            water_ground_truth = ground_truth[:, 1] # (batch_size, H, W)
+            invalids = (water_ground_truth == 0).to(test_outputs_categorical.device) # (batch_size, H, W)
             ground_truth_outputs = torch.clone(water_ground_truth).to(test_outputs_categorical.device)
         else:
+            # Version v1
             ground_truth_outputs = torch.clone(ground_truth[:, 0].to(test_outputs_categorical.device))
             # Save invalids to discount
             invalids = ground_truth_outputs == 0
@@ -294,7 +299,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
             if mask_clouds:
                 invalids |= (ground_truth_outputs == 3)
 
-        ground_truth_outputs[invalids] = 1
+        ground_truth_outputs[invalids] = 1 # (batch_size, H, W)
         ground_truth_outputs -= 1
         
         # Set invalids in pred to zero
@@ -305,7 +310,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
         # confusions_batch is (batch_size, num_class, num_class)
 
         # Discount invalids
-        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device)
+        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device) # (batch_size, )
 
         confusions_batch[:, 0, 0] -= inv_substract
         confusions.extend(confusions_batch.tolist())

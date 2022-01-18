@@ -1,0 +1,98 @@
+body{
+    font-family:sans-serif;
+    /*max-width:80em;*/
+    padding:0 1% 0 1%;
+    margin:auto;
+    overflow-x: hidden;
+}
+h1 {
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';
+    margin-top: 1%;
+    color: #444;
+}
+h2 {
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';
+    margin-top: 1%;
+    color: #444;
+    font-style: italic;
+    font-size: large;
+}
+a {
+    text-decoration: none;
+    color: #999;
+        cursor: pointer;
+}
+label{
+  font-size: small;
+}
+p {
+    text-align: justify;
+    color: #333;
+    width: 85%;
+}
+.div_imagenes_links{
+    padding: 0px;
+    max-width: 900px;
+    min-height: 900px;
+    min-width: 200px;
+    margin: auto;
+    /*background-color: #C4C4C4;*/
+}
+.imagenes_links{
+  max-width: 900px;
+  max-height: 900px;
+}
+.rowcont{
+   display: flex;
+}
+.selector{
+    padding: 3%;
+}
+ .span_title{
+    text-align: center;
+    font-size: small;
+    background-color: #FFFFFF;
+}
+#mapid {
+  /* display: block; */
+  padding: 0px;
+  margin: auto;
+  height: 85%;
+  width: 100%;
+}
+/* #mapid {
+    min-height:40%;
+    width: 90%;
+    padding: 3%;
+} */
+#toolbar{
+  width: 90%;
+  padding-bottom: 1%;
+}
+label:hover{
+  text-decoration: underline;
+}
+.tip{
+  padding: 1%;
+  width: 10%;
+  max-height: 45%;
+  font-size: small;
+  color: #333;
+}
+div.tip >p{
+  text-align: left;
+}
+#footnote{
+  width: 90%;
+  font-size: small;
+}
+#abstract{
+  display:none;
+  width: 60%;
+  font-size: small;
+  font-style: italic;
+  margin: 0 auto;
+  padding: 1%;
+  background-color: #dedede;
+  border:1px solid black;
+}
