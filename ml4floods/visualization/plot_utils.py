@@ -55,15 +55,28 @@ def plot_tiff_image(file_path: str, **kwargs):
     return fig
 
 
-def _read_data(input:str,
-              bands_rasterio:Optional[List[int]]=None,
-              window:Optional[rasterio.windows.Window]=None,
-              size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+def _read_data(filename:str,
+               bands_rasterio:Optional[List[int]]=None,
+               window:Optional[rasterio.windows.Window]=None,
+               size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+    """
+    Reads data from filename with rasterio possibly from the pyramids if `size_read` is not None.
+    Returns a tuple with the data read and the affine transformation.
 
-    with utils.rasterio_open_read(input) as rst:
+    Args:
+        filename:
+        bands_rasterio:
+        window:
+        size_read:
+
+    Returns:
+        (C, H, W) array and affine transformation
+    """
+
+    with utils.rasterio_open_read(filename) as rst:
         if size_read is not None:
             if bands_rasterio is None:
-                n_bands = 1
+                n_bands = rst.count
             else:
                 n_bands = len(bands_rasterio)
 
@@ -107,30 +120,46 @@ def plot_s2_cloud_prob_image(file_path: str, size_read:Optional[int]=None, **kwa
     return rasterioplt.show(output, transform=transform, vmin=0, vmax=100, cmap="gray", **kwargs)
 
 
-def get_image_transform(input:Union[str, np.ndarray],
+def get_image_transform(array_or_file:Union[str, np.ndarray],
                         transform:Optional[rasterio.Affine]=None,
                         bands:List[int]=None,
                         window:Optional[rasterio.windows.Window]=None,
                         size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+    """
+    Reads certain bands and window from `array_or_file`. If `array_or_file` is a file with `size_read` we can read
+    from the pyramids of the data to speed up plotting.
+
+    Args:
+        array_or_file: array or file to read the data.
+        transform: if `array_or_file` is a `np.array`, this current affine transform of it.
+        bands: 0-based bands to read.
+        window: `rasterio.windows.Window` to read
+        size_read: if `array_or_file` is a string, this will be the max size of height and width. It is used to read
+        from the pyramids  of the file.
+
+    Returns:
+        (C, H, W) array and affine transformation
+
+    """
 
     if bands is not None:
         bands_rasterio = [b+1 for b in bands]
     else:
         bands_rasterio = None
 
-    if isinstance(input, str):
-        return _read_data(input, bands_rasterio, window=window, size_read=size_read)
+    if isinstance(array_or_file, str):
+        return _read_data(array_or_file, bands_rasterio, window=window, size_read=size_read)
 
-    if hasattr(input, "cpu"):
-        input = input.cpu()
+    if hasattr(array_or_file, "cpu"):
+        array_or_file = array_or_file.cpu()
 
-    input = np.array(input)
+    array_or_file = np.array(array_or_file)
     if window is None:
         window_slices = (slice(None), slice(None), slice(None))
     else:
         window_slices = (slice(None),) + window.toslices()
 
-    output = input[bands, ...]
+    output = array_or_file[bands, ...]
     output = output[window_slices]
     if transform is not None:
         transform = transform if window is None else rasterio.windows.transform(window, transform)
