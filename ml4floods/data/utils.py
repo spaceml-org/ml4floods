@@ -809,7 +809,7 @@ def get_filesystem(path: Union[str, Path]):
         return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
     else:
         # use local filesystem
-        return fsspec.filesystem("file",requester_pays = True)
+        return fsspec.filesystem("file")
 
 
 def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:

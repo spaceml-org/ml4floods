@@ -1,4 +1,4 @@
-from flask import Flask, send_file
+from flask import Flask, send_file, request
 import os
 import argparse
 import json
@@ -10,6 +10,10 @@ import geopandas
 from ml4floods.data.config import BANDS_S2
 from ml4floods.serve.read_tile import read_tile
 from rasterio import warp
+from ml4floods.data import utils, create_gt, save_cog
+from shapely.geometry import shape
+import geopandas as gpd
+import logging
 
 from glob import glob
 
@@ -19,12 +23,78 @@ app.config['STATIC_FOLDER'] = STATIC_FOLDER
 
 SATURATION = 3_000
 
+@app.route("/<subset>/<eventid>/save_floodmap", methods = ['POST'])
+def save_floodmap(subset:str, eventid:str):
+    meta_path = os.path.join(app.config["ROOT_LOCATION"], subset, "meta", f"{eventid}.json")
+    meta = utils.read_json_from_gcp(meta_path)
+    aoi = shape(meta["area_of_interest_polygon"])
+
+    geojson = request.json
+    floodmap = gpd.GeoDataFrame.from_features(geojson, crs="epsg:4326")
+
+    # remove column id
+    floodmap = floodmap[["geometry", "w_class", "source"]]
+
+    # add AoI
+    floodmap = floodmap.append({"geometry": aoi, "w_class": "area_of_interest", "source": "area_of_interest"},
+                               ignore_index=True)
+    floodmap = floodmap.set_crs(epsg=4326)
+
+    # reproject to S2 crs
+    s2path = os.path.join(app.config["ROOT_LOCATION"], subset, "S2", f"{eventid}.tif")
+    with utils.rasterio_open_read(s2path) as src:
+        crs = str(src.crs)
+
+    floodmap.to_crs(crs, inplace=True)
+
+    # Save floodmap locally
+    floodmap_path = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
+    os.makedirs(os.path.dirname(floodmap_path), exist_ok=True)
+    floodmap.to_file(floodmap_path, driver="GeoJSON")
+
+    # Recompute gt
+    jrc_permanent_water_path = os.path.join(app.config["ROOT_LOCATION"], subset, "PERMANENTWATERJRC", f"{eventid}.tif")
+    water_mask = create_gt.compute_water(s2path,floodmap=floodmap,permanent_water_path=jrc_permanent_water_path,
+                                         keep_streams=True)
+    current_gt_path = os.path.join(app.config["ROOT_LOCATION"], subset, "gt", f"{eventid}.tif")
+    with utils.rasterio_open_read(current_gt_path) as rst:
+        current_gt = rst.read()
+        transform = rst.transform
+        crs = rst.crs
+        tags = rst.tags()
+
+    watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1
+    watergt[water_mask >= 1] = 2  # only water is 2
+    watergt[current_gt[1] == 0] = 0 # invalids to 0
+    current_gt[1,...] = watergt
+
+    # TODO update tags and meta with the number of valid pixels etc??
+
+    save_cog.save_cog(current_gt, current_gt_path,
+                      {"crs": crs, "transform": transform, "RESAMPLING": "NEAREST",
+                       "compress": "lzw", "nodata": 0},  # In both gts 0 is nodata
+                      tags=tags)
+
+
+    # save floodmap in stagging
+    stagging_path = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/{meta['ems_code']}/{meta['aoi_code']}/floodmap_edited/{meta['satellite date'][:10]}.geojson"
+    utils.write_geojson_to_gcp(stagging_path, floodmap)
+    logging.info(f"Saving file in {stagging_path}")
+
+    return '', 204
+
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
-def floodmap(subset:str, eventid:str):
+def read_floodmap(subset:str, eventid:str):
     floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
-    data = geopandas.read_file(floodmap_address).to_crs("epsg:4326")
+    data = geopandas.read_file(floodmap_address)
+
     data = data[data["source"] != "area_of_interest"]
+
+    # All parts of a simplified geometry will be no more than tolerance distance from the original
+    data["geometry"] = data["geometry"].simplify(tolerance=10)
+
+    data.to_crs("epsg:4326", inplace=True)
     data["id"] = np.arange(data.shape[0])
 
     buf = io.BytesIO()
@@ -33,8 +103,10 @@ def floodmap(subset:str, eventid:str):
     return send_file(buf,
                      as_attachment=True,
                      download_name=f'{subset}_{eventid}_floodmap.geojson',
-                     mimetype='application/geojson'
-                     )
+                     mimetype='application/geojson')
+
+
+# TODO post polygons and save
 
 
 @app.route("/<subset>/<eventid>/<productname>/<z>/<x>/<y>.png")
@@ -42,6 +114,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     """
     A route to get an RGB JPEG clipped from a given geotiff Sentinel-2 image for a given z,x,y TMS tile coordinate.
     """
+
+    # TODO Add JRC water
 
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
 
