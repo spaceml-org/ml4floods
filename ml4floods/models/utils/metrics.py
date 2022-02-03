@@ -10,7 +10,6 @@ import seaborn as sns
 import pandas as pd
 from collections import OrderedDict
 
-from ml4floods.models.postprocess import get_pred_mask_v2
 
 
 @torch.no_grad()
@@ -380,8 +379,8 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
 
 def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
                     pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
-                    threshold:float=.5,threshold_clouds=.5, threshold_br = 3000,
-                    plot=False, mask_clouds:bool=False) -> Dict:
+                    threshold:float=.5,threshold_clouds=.5,
+                    plot=False, mask_clouds:bool=True) -> Dict:
     """
     Run inference on a dataloader and compute metrics for that data
     
