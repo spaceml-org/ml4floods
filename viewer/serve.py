@@ -159,6 +159,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     """
 
+    # TODO Add MNDWI?
 
     if productname.startswith("S2"):
         band_composite = productname.replace("S2","")
@@ -168,7 +169,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
             bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
 
         productname = "S2"
-
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         bands = [2]
@@ -187,7 +187,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     if output is None:
         # Not intersects return None
-        return app.send_static_file("border.png")
+        return '', 204
 
     rst_arr, _ = output
 
