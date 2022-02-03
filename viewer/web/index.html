@@ -69,7 +69,7 @@
           // Disable all drawing controls except polygons
       'draw': {
              'circle': false,
-             'polyline': false,
+             // 'polyline': false,
              'rectangle': false,
              'marker': false
       },
@@ -105,16 +105,16 @@
           let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
                             + worldfloods[name]["subset"]+"/"+name;
 
-          // Adds the tilelayer of S2 and the GroundTruth
-          let path_s2 = path_dest_base+"/S2/{z}/{x}/{y}.png";
-          let path_gt = path_dest_base+"/gt/{z}/{x}/{y}.png";
-          let tilelayer_s2 = L.tileLayer(path_s2);
-          let tilelayer_gt = L.tileLayer(path_gt);
-           worldfloods[name]["tilelayers"] = [tilelayer_s2, tilelayer_gt];
-          tilelayer_s2.addTo(mymap);
-          tilelayer_gt.addTo(mymap);
-          control_layer.addOverlay(tilelayer_s2, "S2: "+name);
-          control_layer.addOverlay(tilelayer_gt, "gt: "+name);
+          // Adds the tilelayers of all the products
+          worldfloods[name]["tilelayers"] = [];
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC"]){
+            let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
+            let tilelayer = L.tileLayer(path);
+            worldfloods[name]["tilelayers"].push(tilelayer);
+            control_layer.addOverlay(tilelayer, `${product}: ${name}`);
+          }
+          // Add to the map only the S2 image
+          worldfloods[name]["tilelayers"][0].addTo(mymap);
         }
 
         //  zoom to location
@@ -156,7 +156,7 @@
            .on('click', function(e){
              if (currentEditable){
                currentEditable.editing.disable();
-               $( "#editpol" ).prop( "checked", false );
+               $( "#editpol" ).prop( "checked", false);
              }
              // layer.editing.enable();
              currentEditable = layer;
@@ -201,6 +201,7 @@
           floodmap_geojson.removeLayer(currentEditable);
           currentEditable = null;
         }
+	    $( "#editpol" ).prop( "checked", false);
       }
     }
 

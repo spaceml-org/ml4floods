@@ -94,6 +94,8 @@ def read_floodmap(subset:str, eventid:str):
     # All parts of a simplified geometry will be no more than tolerance distance from the original
     data["geometry"] = data["geometry"].simplify(tolerance=10)
 
+    # TODO flatten MultiPolygons
+
     data.to_crs("epsg:4326", inplace=True)
     data["id"] = np.arange(data.shape[0])
 
@@ -106,21 +108,46 @@ def read_floodmap(subset:str, eventid:str):
                      mimetype='application/geojson')
 
 
-# TODO post polygons and save
-
-
 @app.route("/<subset>/<eventid>/<productname>/<z>/<x>/<y>.png")
 def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     """
-    A route to get an RGB JPEG clipped from a given geotiff Sentinel-2 image for a given z,x,y TMS tile coordinate.
+     A route to get an RGB PNG from a given geotiff image for a given z,x,y TMS tile coordinate.
+
+    Args:
+        subset: {"train", "test", "val"}
+        eventid: name of the event (e.g EMSR342_07SOUTHNORMANTON_DEL_MONIT03_v2)
+        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC"}
+        z: zoom level
+        x:
+        y:
+
+    Returns:
+        PNG of shape 256x256
+
     """
 
-    # TODO Add JRC water
+
+    if productname.startswith("S2"):
+        band_composite = productname.replace("S2","")
+        if band_composite == "RGB":
+            bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
+        else:
+            bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
+
+        productname = "S2"
+
+        resampling = warp.Resampling.cubic_spline
+    elif productname == "gt":
+        bands = [2]
+        resampling = warp.Resampling.nearest
+    elif productname == "PERMANENTWATERJRC":
+        bands = [1]
+        resampling = warp.Resampling.nearest
+    else:
+        raise NotImplementedError(f"Productname {productname} not found")
+
 
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
-
-    bands = [2] if productname == "gt" else [BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
-    resampling = warp.Resampling.nearest if productname == "gt" else warp.Resampling.cubic_spline
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
                        resampling=resampling, dst_nodata=0)
@@ -136,7 +163,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
-    else:
+    elif productname == "gt":
         land_water = rst_arr[0]
 
         # clear_clouds = rst_arr[0]
@@ -145,6 +172,19 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS)
         mode = "RGB"
+    elif productname == "PERMANENTWATERJRC":
+        permanent_water = rst_arr[0]
+        permanent_water = (permanent_water == 3).astype(np.uint8)
+
+        img_rgb = mask_to_rgb(permanent_water, [0, 1], colors=COLORS[(0, 2), ...])
+
+        # Make transparent all pixels except permanent water
+        valids = permanent_water * 255
+        img_rgb = np.concatenate([img_rgb, valids[..., None]], axis=-1)
+        mode = "RGBA"
+    else:
+        raise NotImplementedError(f"Productname {productname} not found")
+
 
     buf = io.BytesIO()
     Image.fromarray(img_rgb, mode=mode).save(buf, format="PNG")
