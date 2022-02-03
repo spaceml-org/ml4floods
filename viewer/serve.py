@@ -84,6 +84,38 @@ def save_floodmap(subset:str, eventid:str):
     return '', 204
 
 
+def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Expand any multipolygons of the geopandas dataframe to polygons.
+    """
+
+    if all(shp_pd.geometry.apply(lambda geom: geom.geom_type) == "Polygon"):
+        return shp_pd
+
+    new_shp = []
+    for tp in shp_pd.itertuples():
+        # Skip empty or None geometries or empty
+        if tp.geometry is None or tp.geometry.is_empty:
+            continue
+
+        # Extend multipoligons
+        if tp.geometry.geom_type == "MultiPolygon":
+            new_shp.extend([
+                {
+                    "geometry": geom,
+                    "w_class": tp.w_class,
+                    "source": tp.source
+                }
+                for geom in list(tp.geometry)
+            ])
+        else:
+            new_shp.append({"geometry": tp.geometry,
+                            "w_class": tp.w_class,
+                            "source": tp.source})
+
+    return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
+
+
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
     floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
@@ -91,10 +123,11 @@ def read_floodmap(subset:str, eventid:str):
 
     data = data[data["source"] != "area_of_interest"]
 
+    # flatten MultiPolygons remove empty pols
+    data = expand_multipolygons(data)
+
     # All parts of a simplified geometry will be no more than tolerance distance from the original
     data["geometry"] = data["geometry"].simplify(tolerance=10)
-
-    # TODO flatten MultiPolygons
 
     data.to_crs("epsg:4326", inplace=True)
     data["id"] = np.arange(data.shape[0])
@@ -248,7 +281,6 @@ def worldfloods_files(rl:str):
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
-        # TODO handle date_s2 stuff between formats
         meta_copy = {k:meta[k] for k in KEYS_COPY}
         meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
         meta_copy["geometry"] = meta["area_of_interest_polygon"]
