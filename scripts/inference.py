@@ -19,9 +19,16 @@ import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, List
 
-def load_inference_function(model_folder:str, device_name:str) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
+def load_inference_function(model_path:str, device_name:str) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
 
-    config_fp = os.path.join(model_folder, "config.json").replace("\\", "/")
+    if model_path.endswith("/"):
+        experiment_name = os.path.basename(model_path[:-1])
+        model_folder = os.path.dirname(model_path[:-1])
+    else:
+        experiment_name = os.path.basename(model_path)
+        model_folder = os.path.dirname(model_path[:-1])
+
+    config_fp = os.path.join(model_path, "config.json").replace("\\", "/")
     config = get_default_config(config_fp)
 
     # The max_tile_size param controls the max size of patches that are fed to the NN. If you're in a memory constrained environment set this value to 128
@@ -191,9 +198,9 @@ if __name__ == "__main__":
     # Compute folder name to save the predictions if not provided
     if not args.output_folder:
         if args.model_path.endswith("/"):
-            experiment_name = os.path.basename(args.model_path[:-1])
+            en = os.path.basename(args.model_path[:-1])
         else:
-            experiment_name = os.path.basename(args.model_path)
+            en = os.path.basename(args.model_path)
         if args.s2.endswith(".tif"):
             base_output_folder = os.path.dirname(os.path.dirname(args.s2))
         elif args.s2.endswith("/"):
@@ -201,7 +208,7 @@ if __name__ == "__main__":
         else:
             base_output_folder = os.path.dirname(args.s2)
 
-        output_folder = os.path.join(base_output_folder, experiment_name)
+        output_folder = os.path.join(base_output_folder, en)
         print(f"Predictions will be saved in folder: {output_folder}")
     else:
         output_folder = args.output_folder
