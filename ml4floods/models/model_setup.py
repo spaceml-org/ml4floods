@@ -107,7 +107,7 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
         else:
             activation = "softmax"
 
-    if activation is "None":
+    if activation == "None":
         activation_fun = lambda ot: ot
     elif activation == "softmax":
         activation_fun = lambda ot: torch.softmax(ot, dim=1)
