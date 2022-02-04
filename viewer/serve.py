@@ -149,7 +149,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     Args:
         subset: {"train", "test", "val"}
         eventid: name of the event (e.g EMSR342_07SOUTHNORMANTON_DEL_MONIT03_v2)
-        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC"}
+        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"}
         z: zoom level
         x:
         y:
@@ -174,6 +174,9 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         bands = [2]
         resampling = warp.Resampling.nearest
     elif productname == "PERMANENTWATERJRC":
+        bands = [1]
+        resampling = warp.Resampling.nearest
+    elif productname == "WF2_unet_full_norm":
         bands = [1]
         resampling = warp.Resampling.nearest
     else:
@@ -203,7 +206,11 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # v1gt = land_water.copy()  # {0: invalid, 1: land, 2: water}
         # v1gt[clear_clouds == 2] = 3
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
-        img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS)
+        img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
+        mode = "RGB"
+    elif productname == "WF2_unet_full_norm":
+        pred = rst_arr[0]
+        img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         mode = "RGB"
     elif productname == "PERMANENTWATERJRC":
         permanent_water = rst_arr[0]
@@ -232,8 +239,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
 COLORS = np.array([[0, 0, 0], # invalid
                    [139, 64, 0], # land
-                   [0, 0, 139]], # water
-                   # [220, 220, 220]], # cloud
+                   [0, 0, 139], # water
+                   [220, 220, 220]], # cloud
                   dtype=np.uint8)
 
 

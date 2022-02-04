@@ -107,7 +107,7 @@
 
           // Adds the tilelayers of all the products
           worldfloods[name]["tilelayers"] = [];
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC"]){
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
             let tilelayer = L.tileLayer(path);
             worldfloods[name]["tilelayers"].push(tilelayer);
