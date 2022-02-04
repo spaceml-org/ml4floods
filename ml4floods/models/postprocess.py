@@ -118,5 +118,5 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     else:
         output[cloud_mask] = 3
     
-    water_mask[mask_invalids] = 0
-    return water_mask
+    output[mask_invalids] = 0
+    return output

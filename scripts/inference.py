@@ -68,7 +68,7 @@ def load_inference_function(model_path:str, device_name:str) -> Tuple[Callable[[
             with torch.no_grad():
                 pred = inference_function(s2tensor.unsqueeze(0))[0] # (3, H, W)
                 mask_invalids = torch.all(s2tensor == 0, dim=0) # (H, W)
-                prediction = torch.argmax(pred, dim=0).long() + 1 # (H, W)
+                prediction = torch.argmax(pred, dim=0).type(torch.uint8) + 1 # (H, W)
                 prediction[mask_invalids] = 0
 
             return prediction
@@ -121,7 +121,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str):
         if exists_tiff and fs_dest.exists(filename_save_vect):
             continue
 
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(s2files)}) Processing {filename}")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total+1}/{len(s2files)}) Processing {filename}")
         try:
             if exists_tiff:
                 with rasterio.open(filename_save) as rst:
