@@ -19,7 +19,7 @@ import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, List
 
-def load_inference_function(model_path:str, device_name:str) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
+def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
 
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
@@ -32,7 +32,7 @@ def load_inference_function(model_path:str, device_name:str) -> Tuple[Callable[[
     config = get_default_config(config_fp)
 
     # The max_tile_size param controls the max size of patches that are fed to the NN. If you're in a memory constrained environment set this value to 128
-    config["model_params"]["max_tile_size"] = 1024
+    config["model_params"]["max_tile_size"] = max_tile_size
 
     config["model_params"]['model_folder'] = model_folder
     config["model_params"]['test'] = True
@@ -77,7 +77,7 @@ def load_inference_function(model_path:str, device_name:str) -> Tuple[Callable[[
 
 
 @torch.no_grad()
-def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str):
+def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024):
 
     # This takes into account that this could be run on windows
     output_folder = output_folder.replace("\\", "/")
@@ -89,7 +89,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str):
     else:
         experiment_name = os.path.basename(model_path)
 
-    inference_function, channels = load_inference_function(model_path, device_name)
+    inference_function, channels = load_inference_function(model_path, device_name,max_tile_size=max_tile_size)
 
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
@@ -140,6 +140,8 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str):
             # Save data as vectors
             data_out = vectorize_outputv1(prediction, crs, transform)
             if data_out is not None:
+                if not filename_save_vect.startswith("gs"):
+                    fs_dest.makedirs(os.path.dirname(filename_save_vect), exist_ok=True)
                 utils.write_geojson_to_gcp(filename_save_vect, data_out)
 
             # Save data as COG GeoTIFF
@@ -148,6 +150,9 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str):
                        "compression": "lzw",
                        "RESAMPLING": "NEAREST",
                        "nodata": 0}
+
+            if not filename_save.startswith("gs"):
+                fs_dest.makedirs(os.path.dirname(filename_save), exist_ok=True)
 
             save_cog.save_cog(prediction[np.newaxis], filename_save, profile=profile,
                               tags={"model": experiment_name})
@@ -191,6 +196,7 @@ if __name__ == "__main__":
                         help="Path to save the files. The name of the prediction will be the same as the S2 image."
                              "If not provided it will be saved in dirname(s2)/basename(model_path)/",
                         required=False)
+    parser.add_argument("--max_tile_size", help="", type=int, default=1_024, required=False)
     parser.add_argument('--device_name', default="cuda", help="Device name")
 
     args = parser.parse_args()
@@ -214,7 +220,7 @@ if __name__ == "__main__":
         output_folder = args.output_folder
 
     main(model_path=args.model_path, s2folder_file=args.s2,device_name=args.device_name,
-         output_folder=output_folder)
+         output_folder=output_folder, max_tile_size=args.max_tile_size)
 
 
 
