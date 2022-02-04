@@ -267,7 +267,7 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
         slice_save = slice_prepend + slice_save
 
         vals_to_predict = input_batch[slice_pad]
-        cnn_out = pred_function(vals_to_predict)
+        cnn_out = pred_function(vals_to_predict).to(device)
 
         assert cnn_out.dim() == 4, "Expected 4-band prediction (after softmax)"
 

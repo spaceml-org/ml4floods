@@ -100,8 +100,9 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
 
     """
     if isinstance(inputs, torch.Tensor):
-        mask_invalids = torch.all(inputs == 0, dim=0)
-        output = torch.ones(prediction.shape[-2:], dtype=torch.uint8)
+        mask_invalids = torch.all(inputs == 0, dim=0).cpu()
+        output = torch.ones(prediction.shape[-2:], dtype=torch.uint8, device=torch.device("cpu"))
+        prediction = prediction.cpu()
     else:
         mask_invalids = np.all(inputs == 0, axis=0)
         output = np.ones(prediction.shape[-2:], dtype=np.uint8)
@@ -113,8 +114,10 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     output[water_mask] = 2
     
     if mask_clouds:
-        br = get_brightness(inputs, channels_input=channels_input)
-        output[cloud_mask & (br > BRIGHTNESS_THRESHOLD)] = 3
+        br = get_brightness(inputs, channels_input=channels_input) > BRIGHTNESS_THRESHOLD
+        if hasattr(br, "cpu"):
+            br = br.cpu()
+        output[cloud_mask & br] = 3
     else:
         output[cloud_mask] = 3
     
