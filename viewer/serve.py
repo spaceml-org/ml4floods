@@ -321,6 +321,8 @@ if __name__ == "__main__":
     app.config["ROOT_LOCATION"] = os.path.abspath(args.root_location)
     app.config["DATABASE_NAME"] = os.path.abspath(pdb)
 
+    # gunicorn core.asgi:application -w ${NUMBER_OF_WORKERS:-1} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+
     app.run(port=args.port, debug=True, host=args.host, threaded=False)
 
 

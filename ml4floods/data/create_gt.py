@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List, Union
 
 import geopandas as gpd
 import numpy as np
@@ -11,6 +11,7 @@ from rasterio import features
 from ml4floods.data.config import BANDS_S2, CODES_FLOODMAP
 from ml4floods.data import utils
 from skimage.morphology import binary_opening, disk
+import torch
 
 
 def compute_water(
@@ -415,19 +416,33 @@ def _generate_gt_v1_fromarray(
 
     return gt
 
-def get_brightness(s2_image:np.ndarray) -> np.ndarray:
+def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Optional[List[int]]=None) -> Union[np.ndarray, torch.Tensor]:
     """
-
+    Returns brightness of visible bands of s2
     Args:
         s2_image: (C, H, W) array
+        channels_input: 0-based list of indexes of s2_image channels (expected that len(channels_input) == s2_image.shape[0])
 
     Returns:
         (H, W) array
     """
+    if channels_input is not None:
+        assert len(channels_input) == s2_image.shape[0], \
+            f"Given {len(channels_input)} channels expected {s2_image.shape[0]}"
 
-    idxs = [BANDS_S2.index(b) for b in ["B4", "B3", "B2"]]
-    rgb_img = s2_image[idxs, ...]
-    return np.sqrt(np.sum(rgb_img**2, axis=0, keepdims=False))
+        bands_read_names = [BANDS_S2[i] for i in channels_input]
+    else:
+        assert len(BANDS_S2) == s2_image.shape[0], \
+            f"Given {len(BANDS_S2)} channels expected {s2_image.shape[0]}"
+        bands_read_names = BANDS_S2
+
+    idxs = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+
+    rgb_img = s2_image[idxs, ...]**2
+    if isinstance(rgb_img, torch.Tensor):
+        return torch.sqrt(torch.sum(rgb_img, dim=0))
+
+    return np.sqrt(np.sum(rgb_img, axis=0))
 
 
 CLOUDS_THRESHOLD = .5

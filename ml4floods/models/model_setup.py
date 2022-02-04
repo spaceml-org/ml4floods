@@ -1,6 +1,7 @@
 import torch
 import itertools
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
+from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 import numpy as np
 from pytorch_lightning.utilities.cloud_io import load
@@ -16,41 +17,54 @@ SUBSAMPLE_MODULE = {
     "unet_dropout": 8
 }
 
-def get_model(model_config, experiment_name=None, normalized_data:bool=True):
+def get_model(model_params:AttrDict,
+              experiment_name:Optional[str]=None, normalized_data:bool=True) -> Union[ML4FloodsModel, WorldFloodsModel]:
     """
-    Function to setup WorldFloodsModel
+    Creates a model from a model_params Dict. (i.e. config.model_params).
+    if model_params is in test or deploy model it will load the weights in the model_params.model_folder
+
+    Args:
+        model_params:
+        experiment_name:
+        normalized_data:
+
+    Returns:
+        pytorch lightning model (
     """
-    if model_config.get("test", False) or model_config.get("deploy", False):
+    if model_params.get("test", False) or model_params.get("deploy", False):
         assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
 
-        if model_config.get("model_version","v1") == "v2":
-            model = ML4FloodsModel(model_config)
+        if model_params.get("model_version", "v1") == "v2":
+            model = ML4FloodsModel(model_params)
         else:
-            model = WorldFloodsModel(model_config, normalized_data=normalized_data)
+            model = WorldFloodsModel(model_params, normalized_data=normalized_data)
 
-        path_to_models = os.path.join(model_config.model_folder,experiment_name, "model.pt").replace("\\","/")
+        path_to_models = os.path.join(model_params.model_folder, experiment_name, "model.pt").replace("\\", "/")
         model.load_state_dict(load(path_to_models))
         print(f"Loaded model weights: {path_to_models}")
         return model
 
-    elif model_config.get("train", False):
+    elif model_params.get("train", False):
 
-        if model_config.get("model_version", "v1") == "v2":
-            return ML4FloodsModel(model_config)
+        if model_params.get("model_version", "v1") == "v2":
+            return ML4FloodsModel(model_params)
 
-        return WorldFloodsModel(model_config)
+        return WorldFloodsModel(model_params)
 
     else:
         raise Exception("No model type set in config e.g model_params.test == True")
 
         
         
-def get_channel_configuration_bands(channel_configuration):
+def get_channel_configuration_bands(channel_configuration:str) -> List[int]:
+    """
+    Returns 0-based list of channels of a given configuration name
+    """
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
 def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True,
-                                 activation:Optional[str]="softmax") -> Callable:
+                                 activation:Optional[str]=None) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -60,7 +74,8 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
         config:
         apply_normalization:
         eval_mode: set for predicting model.eval()
-        activation: activation function to apply on inference time (softmax|sigmoid)
+        activation: activation function to apply on inference time (softmax|sigmoid). If None it will gess it from
+            the model_version
 
     Returns: callable function
     """
@@ -83,7 +98,16 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
     else:
         normalize = None
 
+    # Guess activation function
     if activation is None:
+        if model_type.endswith("ndwi"):
+            activation = "None"
+        elif config.model_params.get("model_version", "v1") == "v2":
+            activation = "sigmoid"
+        else:
+            activation = "softmax"
+
+    if activation is "None":
         activation_fun = lambda ot: ot
     elif activation == "softmax":
         activation_fun = lambda ot: torch.softmax(ot, dim=1)
@@ -100,14 +124,16 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
 
 
 def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=128,
-                      normalization: Optional[Callable] = None, activation_fun: Optional[Callable] = None, eval_mode: bool = True) -> Callable:
+                      normalization: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+                      activation_fun: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+                      eval_mode:bool=True) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Given a model it returns a callable function to make inferences that:
     1) Normalize the input tensor if provided a callable normalization fun
     2) Tile the input if it's bigger than max_tile_size to avoid memory errors (see pred_by_tile fun)
-    3) Checks the input to the network is divisible by module_shape and padd if needed
+    3) Checks the input to the network is divisible by module_shape and pads if needed
     (to avoid errors in U-Net like models)
-    4) Apply activation function to the outputs
+    4) Applies activation function to the outputs
 
     Args:
         model:
@@ -116,9 +142,10 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
         max_tile_size:
         normalization:
         activation_fun:
+        eval_mode:
 
     Returns:
-        Function to make inferences
+        Function to make inferences:  (B, C, H, W) -> (B, C, H, W)
 
     """
     if eval_mode:
@@ -139,7 +166,6 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
     else:
         pred_fun = lambda ti: activation_fun(model(ti.to(device)))
 
-    print('Max tile size:', max_tile_size)
     def pred_fun_final(ti):
         with torch.no_grad():
             ti_norm = normalization(ti)
@@ -196,7 +222,7 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
     return predict
 
 
-def predbytiles(pred_function: Callable, input_batch: torch.Tensor,
+def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_batch: torch.Tensor,
                 tile_size=1280, pad_size=32, device=torch.device("cpu")) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
