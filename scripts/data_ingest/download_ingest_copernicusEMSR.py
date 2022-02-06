@@ -98,7 +98,7 @@ def main():
 
             # Process downloaded data
             metadata_floodmap = activations.filter_register_copernicusems(unzipfullpath,
-                                                                          code_date, verbose=False)
+                                                                          code_date, verbose=True)
             if metadata_floodmap is None:
                 continue
 

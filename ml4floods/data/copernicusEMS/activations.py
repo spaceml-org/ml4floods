@@ -10,7 +10,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from requests_html import HTMLSession
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 
 from ml4floods.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
 from google.cloud import storage
@@ -423,7 +423,7 @@ def filter_register_copernicusems(
         area_of_interest.to_crs(crs="epsg:4326", inplace=True)
 
     # Save pol of area of interest in epsg:4326 (lat/lng)
-    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+    area_of_interest_pol = unary_union(area_of_interest["geometry"])
 
     if "obj_desc" in pd_geo:
         event_type = np.unique(pd_geo.obj_desc)
@@ -582,7 +582,7 @@ def generate_floodmap(
 
     crs = area_of_interest.crs
 
-    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+    area_of_interest_pol = unary_union(area_of_interest["geometry"])
 
     mapdf = filter_pols(
         gpd.read_file(
