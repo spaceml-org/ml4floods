@@ -106,7 +106,7 @@ def main():
             if metadata_floodmap['ems_code'] != emsr_code:
                 print(f"\tUnexpected EMSR code { metadata_floodmap['ems_code']} expected {emsr_code}")
                 continue
-            if metadata_floodmap['aoi_code'] == aoi_code:
+            if metadata_floodmap['aoi_code'] != aoi_code:
                 print(f"\tUnexpected aoi code {metadata_floodmap['aoi_code']} expected {aoi_code}")
                 continue
 
