@@ -240,6 +240,9 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
     source_file = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
     if len(source_file) == 1:
         return source_file[0]
+    elif len(source_file) > 1:
+        print(f"Found {len(source_file)} {file_extension_pattern} files in directory. We will not process it {parent_dir_of_file}")
+        return
     else:
         print(f"{file_extension_pattern} not found in directory {parent_dir_of_file}")
         return

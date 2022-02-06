@@ -61,9 +61,10 @@ def main():
                     continue
 
             name_zip = os.path.basename(zip_url)
+            product_name = os.path.splitext(name_zip)[0]
             print(f"\t{_j + 1}/{len(zip_files_activation_url_list)} Processing Code {emsr_code} AoI {aoi_code} file {name_zip}")
 
-            path_to_write_unzip_bucket = f"{PATH_TO_WRITE_UNZIP}/{emsr_code}/{aoi_code}/"
+            path_to_write_unzip_bucket = f"{PATH_TO_WRITE_UNZIP}/{emsr_code}/{aoi_code}/{product_name}/"
             path_to_write_zip_bucket = f"{PATH_TO_WRITE_ZIP}/{emsr_code}/{aoi_code}/{name_zip}"
 
             gcp_metadata_floodmap_dir = os.path.join(PATH_TO_WRITE_PROCESSED_DATA,
@@ -89,8 +90,7 @@ def main():
                                        os.path.join(path_to_write_unzip_bucket, os.path.basename(fextracted)))
             else:
                 print(f"\tFile {path_to_write_zip_bucket} and {path_to_write_unzip_bucket} exists. Obtaining from bucket")
-                unzipfullpath = os.path.join(output_temp_folder_unzip,
-                                                       os.path.basename(os.path.splitext(zip_url)[0]))
+                unzipfullpath = os.path.join(output_temp_folder_unzip, product_name)
                 os.makedirs(unzipfullpath, exist_ok=True)
                 for fextracted in filesunzip:
                     filename_local = os.path.join(unzipfullpath, os.path.basename(fextracted))
