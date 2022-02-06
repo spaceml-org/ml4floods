@@ -102,10 +102,12 @@ def main():
             if metadata_floodmap is None:
                 continue
 
-            assert metadata_floodmap['ems_code'] == emsr_code, \
-                f"Unexpected EMSR code { metadata_floodmap['ems_code']} expected {emsr_code}"
-            assert metadata_floodmap['aoi_code'] == aoi_code, \
-                f"Unexpected aoi code {metadata_floodmap['aoi_code']} expected {aoi_code}"
+            if metadata_floodmap['ems_code'] != emsr_code:
+                print(f"\tUnexpected EMSR code { metadata_floodmap['ems_code']} expected {emsr_code}")
+                continue
+            if metadata_floodmap['aoi_code'] == aoi_code:
+                print(f"\tUnexpected aoi code {metadata_floodmap['aoi_code']} expected {aoi_code}")
+                continue
 
             satellite_date = metadata_floodmap["satellite date"]
             gcp_metadata_floodmap_path = os.path.join(gcp_metadata_floodmap_dir,
@@ -115,6 +117,8 @@ def main():
                                              satellite_date.strftime("%Y-%m-%d") + ".geojson")
 
             if fs_bucket.exists(gcp_metadata_floodmap_path) and fs_bucket.exists(gcp_floodmap_path):
+                print(
+                    f"\tFile {gcp_metadata_floodmap_path} and {gcp_floodmap_path} exists. will not recompute")
                 continue
 
             floodmap = activations.generate_floodmap(metadata_floodmap, unzipfullpath)
