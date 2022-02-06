@@ -5,7 +5,7 @@ from glob import glob
 
 PATH_TO_WRITE_ZIP = 'gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
 PATH_TO_WRITE_UNZIP = 'gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
-PATH_TO_WRITE_PROCESSED_DATA = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods"
+PATH_TO_WRITE_PROCESSED_DATA = "gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods"
 
 def main():
 
@@ -60,10 +60,10 @@ def main():
                 if aoi_code != aoi_code_args:
                     continue
 
-            print(f"\t{_j + 1}/{len(zip_files_activation_url_list)} Processing AoI {aoi_code}")
+            name_zip = os.path.basename(zip_url)
+            print(f"\t{_j + 1}/{len(zip_files_activation_url_list)} Processing Code {emsr_code} AoI {aoi_code} file {name_zip}")
 
             path_to_write_unzip_bucket = f"{PATH_TO_WRITE_UNZIP}/{emsr_code}/{aoi_code}/"
-            name_zip = os.path.basename(zip_url)
             path_to_write_zip_bucket = f"{PATH_TO_WRITE_ZIP}/{emsr_code}/{aoi_code}/{name_zip}"
 
             gcp_metadata_floodmap_dir = os.path.join(PATH_TO_WRITE_PROCESSED_DATA,
@@ -93,8 +93,9 @@ def main():
                                                        os.path.basename(os.path.splitext(zip_url)[0]))
                 os.makedirs(unzipfullpath, exist_ok=True)
                 for fextracted in filesunzip:
-                    fs_bucket.get_file(fextracted,
-                                       os.path.join(unzipfullpath, os.path.basename(fextracted)))
+                    filename_local = os.path.join(unzipfullpath, os.path.basename(fextracted))
+                    if not os.path.exists(filename_local):
+                        fs_bucket.get_file(fextracted, filename_local)
 
             # Process downloaded data
             metadata_floodmap = activations.filter_register_copernicusems(unzipfullpath,
