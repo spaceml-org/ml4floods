@@ -20,7 +20,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
-        print(f"{_i}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
+        print(f"{_i+1}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
 
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
