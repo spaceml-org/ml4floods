@@ -123,7 +123,7 @@ def read_floodmap_pred(subset:str, eventid:str, predname:str):
     data = geopandas.read_file(floodmap_address)
 
     # All parts of a simplified geometry will be no more than tolerance distance from the original
-    # data["geometry"] = data["geometry"].simplify(tolerance=10)
+    data["geometry"] = data["geometry"].simplify(tolerance=10)
 
     data.to_crs("epsg:4326", inplace=True)
     # data["id"] = np.arange(data.shape[0])
@@ -180,8 +180,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         PNG of shape 256x256
 
     """
-
-    # TODO Add MNDWI?
 
     productnamefolder = productname
     if productname.startswith("S2"):
