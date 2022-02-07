@@ -116,6 +116,7 @@
             worldfloods[name]["tilelayers"].push(tilelayer);
 
             // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
+            // TODO opacity control: https://github.com/dayjournal/Leaflet.Control.Opacity
 
             // add to control (checkbox)
             control_layer.addOverlay(tilelayer, `${product}: ${name}`);
@@ -124,7 +125,7 @@
           worldfloods[name]["tilelayers"][0].addTo(mymap);
         } else if (!(mymap.hasLayer(worldfloods[name]["tilelayers"][0]))){
           worldfloods[name]["tilelayers"][0].addTo(mymap);
-      }
+        }
 
         // TODO uncheck all other tilelayers (uncheck all button?)
 
@@ -236,6 +237,9 @@
             mymap.removeLayer(layer_polygons);
           }
         });
+
+        // TODO add button to add the floodmap preg polygon to floodmap ground truth!
+
       }else if (!(mymap.hasLayer(worldfloods[name]["floodmap_pred"]))){
           worldfloods[name]["floodmap_pred"].addTo(mymap);
       }
