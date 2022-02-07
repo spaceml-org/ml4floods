@@ -110,13 +110,23 @@
           worldfloods[name]["tilelayers"] = [];
           for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
+
+            // TODO set maxZoom and minZoom? -> https://leafletjs.com/reference.html#tilelayer
             let tilelayer = L.tileLayer(path);
             worldfloods[name]["tilelayers"].push(tilelayer);
+
+            // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
+
+            // add to control (checkbox)
             control_layer.addOverlay(tilelayer, `${product}: ${name}`);
           }
           // Add to the map only the S2 image (first image)
           worldfloods[name]["tilelayers"][0].addTo(mymap);
-        }
+        } else if (!(mymap.hasLayer(worldfloods[name]["tilelayers"][0]))){
+          worldfloods[name]["tilelayers"][0].addTo(mymap);
+      }
+
+        // TODO uncheck all other tilelayers (uncheck all button?)
 
         //  zoom to location
         layer_polygons.addTo(mymap);
@@ -136,7 +146,7 @@
       return {color: "#ffff00", fillOpacity: 0.2};
     }
 
-    // Add style and callbacks to flood polygons
+    // Add style and callbacks to flood gt polygons
     function addStyleFloodPolygon(feature, layer){
       let style = style_fun(feature);
       layer.setStyle(style);
@@ -190,6 +200,8 @@
             mymap.removeLayer(layer_polygons);
           }
         });
+      } else if (!(mymap.hasLayer(worldfloods[name]["floodmap"]))){
+          worldfloods[name]["floodmap"].addTo(mymap);
       }
     }
 
@@ -209,6 +221,7 @@
 
 	  // Uncheck editing
 	  $( "#editpol" ).prop( "checked", false );
+
 	  // Avoids adding the floodmap twice
       if (!("floodmap_pred" in worldfloods[name])) {
         let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
@@ -223,6 +236,8 @@
             mymap.removeLayer(layer_polygons);
           }
         });
+      }else if (!(mymap.hasLayer(worldfloods[name]["floodmap_pred"]))){
+          worldfloods[name]["floodmap_pred"].addTo(mymap);
       }
     }
 
@@ -259,8 +274,6 @@
         stopEditPolygon();
       }
     });
-
-    // TODO show JRC water
 
     // Callback when a polygon is drawn
     mymap.on(L.Draw.Event.CREATED, function (e) {
@@ -303,7 +316,7 @@
         });
       }
     }
-
+     // onload function: loads the worldfloods locations
 	$(document).ready(function(){
       // Initialize select2 selector
        $('#image').select2({});
@@ -363,7 +376,7 @@
              polygons_all.push(pl);
         }
         layer_polygons = L.layerGroup(polygons_all).addTo(mymap);
-        control_layer.addOverlay(layer_polygons, "polygons");
+        control_layer.addOverlay(layer_polygons, "worldfloods_dataset");
 
         $("#image").select2("destroy").empty().select2({"data": dats_select2});
         if (searchParams.has('id')){
