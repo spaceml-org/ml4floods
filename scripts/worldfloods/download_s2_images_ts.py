@@ -20,7 +20,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
-        print(f"{_i}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
+        print(f"{_i+1}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
 
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
@@ -78,7 +78,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                 tasks.append(task_permanent)
 
         except Exception:
-            warnings.warn(f"Failed")
+            warnings.warn(f"Failed {files_metatada_pickled}")
             traceback.print_exc(file=sys.stdout)
 
     ee_download.wait_tasks(tasks)
@@ -110,12 +110,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # main(args.cems_code,aoi_code=args.aoi_code, threshold_clouds_before=args.threshold_clouds_before,
-    #      threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
-    #      threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
-    #      days_after=args.days_after)
+    main(args.cems_code,aoi_code=args.aoi_code, threshold_clouds_before=args.threshold_clouds_before,
+         threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
+         threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
+         days_after=args.days_after)
 
-    main('EMSR470','AOI01', threshold_clouds_before=args.threshold_clouds_before,
-          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
-          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
-          days_after=args.days_after)
+    # main('EMSR470','AOI01', threshold_clouds_before=args.threshold_clouds_before,
+    #       threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
+    #       threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
+    #       days_after=args.days_after)

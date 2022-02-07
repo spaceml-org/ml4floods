@@ -10,7 +10,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from requests_html import HTMLSession
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 
 from ml4floods.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
 from google.cloud import storage
@@ -23,7 +23,7 @@ from ml4floods.data.utils import filter_land, filter_pols
 
 
 
-copernicus_ems_webscrape_data  = {"confirmation": 1,
+COPERNICUS_EMS_WEBSCRAPE_DATA  = {"confirmation": 1,
                                   "op":  "Download file",
                                   "form_build_id": "xxxx",
                                   "form_id":"emsmapping_disclaimer_download_form"}
@@ -56,7 +56,7 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
     organized in columns {'Code', 'Title', 'CodeDate', 'Type', 'Country'}.
 
     Args:
-      event_start_data (str): The starting date for the span of time until
+      event_start_date (str): The starting date for the span of time until
         the present that the user would like to retrieve flood events for.
 
     Returns:
@@ -112,7 +112,7 @@ def fetch_zip_file_urls(code: str) -> List[str]:
     return zip_url_per_code
 
 
-def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
+def download_vector_cems(zipfile_url:str, folder_out:str="CopernicusEMS") -> str:
     """
     This function downloads the zip files from the zip file url of each
     Copernicus EMS hazard activation and saves them locally to a file
@@ -128,113 +128,37 @@ def download_vector_cems(zipfile_url, folder_out="CopernicusEMS"):
         EMS zip file download.
 
     Returns:
-      file_path_out (str): a filepath built from the folder_out handle and the
+      zipfullpath (str): a filepath built from the folder_out handle and the
         Copernicus EMS activation code name embedded in the file.
     """
     # Activation Code derived from zipfile_url
-    act_code = os.path.basename(zipfile_url)
+    zipbasename = os.path.basename(zipfile_url)
 
     # Create a directory called folder_out to hold zipped EMS activations
     if not os.path.exists(folder_out):
         os.mkdir(folder_out)
 
-    # Create a filepath from folder_out and act_code if it doesn't exist
-    file_path_out = os.path.join(folder_out, act_code)
-    if os.path.exists(file_path_out):
+    # Create a filepath from folder_out and zipbasename if it doesn't exist
+    zipfullpath = os.path.join(folder_out, zipbasename)
+    if os.path.exists(zipfullpath):
         print("\tFile %s already exists. Not downloaded" % zipfile_url)
-        return file_path_out
+        return zipfullpath
 
     # Check if zipfile_url is valid before making an url request
     if is_downloadable(zipfile_url):
         r = requests.get(zipfile_url, allow_redirects=True)
     else:
         r = requests.post(
-            zipfile_url, allow_redirects=True, data=copernicus_ems_webscrape_data
+            zipfile_url, allow_redirects=True, data=COPERNICUS_EMS_WEBSCRAPE_DATA
         )
 
-    open(file_path_out, "wb").write(r.content)
-    return file_path_out
+    with open(zipfullpath, "wb") as fh:
+        fh.write(r.content)
+
+    return zipfullpath
 
 
-def load_ems_zipfiles_to_gcp(
-    url_of_zip: str,
-    bucket_id: str,
-    path_to_write_to: str,
-    copernicus_ems_web_structure: Dict,
-):
-    """
-    Function to retrieve zipfiles from Copernicus EMS based on
-    EMSR code and webpage for each individual code and save it
-    to a Google Cloud Storage bucket.
-
-    Example:
-    https://emergency.copernicus.eu/mapping/list-of-components/EMSR502
-
-    is the page for EMSR code = 502, and contains the list of zipfiles
-    for this particular code. May include multiple areas of interests
-    for the same code.
-
-    Requirements:
-    requests
-    google.cloud.storage
-    io.BytesIO
-
-    Args:
-      url_of_zip (str): url of the zip file for a given ESMR code.
-      bucket_id (str): name of Google Cloud Storage bucket
-      path_to_write_to (str): path to write to in Google Cloud Storage bucket
-      copernicus_ems_web_structure (Dict): dictionary derived from json of
-          Copernicus EMSR url for a single code. Potentially brittle.
-
-    Returns:
-      None
-    """
-    client = storage.Client()
-    bucket = client.get_bucket(bucket_id)
-    blob = bucket.blob(path_to_write_to)
-
-    r = requests.post(
-        url_of_zip, allow_redirects=True, data=copernicus_ems_web_structure
-    )
-    f = BytesIO(r.content)
-    blob.upload_from_string(f.read(), content_type="application/zip")
-
-
-def extract_ems_zip_files_gcp(
-    bucket_id: str, file_path_to_zip: str, file_path_to_unzip: str
-):
-    """
-    Function to extract Copernicus EMS zip files from individual EMSR code
-    page.
-
-    Args:
-      bucket_id (str): name of Google Cloud Storage bucket.
-      file_path_to_zip (str): name of file path in bucket leading to zip file.
-      file_path_to_unzip (str): name of file path in bucket leading to extracted files.
-    """
-    client = storage.Client()
-    bucket = client.get_bucket(bucket_id)
-    blob_to_zip = bucket.blob(file_path_to_zip)
-
-    zip_file_from_gcpbucket = blob_to_zip.download_as_bytes()
-    f_from_gcp = BytesIO(zip_file_from_gcpbucket)
-
-    zipdict = {}
-    input_zip = ZipFile(f_from_gcp)
-    if is_zipfile(f_from_gcp):
-        for name in input_zip.namelist():
-            if (
-                "area" in name
-                or "hydrography" in name
-                or "observed" in name
-                or "source" in name
-            ):
-                zipdict[name] = input_zip.read(name)
-                blob_to_unzipped = bucket.blob(file_path_to_unzip + "/" + name)
-                blob_to_unzipped.upload_from_string(zipdict[name])
-
-
-def unzip_copernicus_ems(file_name: str, folder_out: str = "Copernicus_EMS_raw"):
+def unzip_copernicus_ems(file_name: str, folder_out: str = "Copernicus_EMS_raw") -> str:
     """
     This function unzips a single zip file from a Copernicus EMS hazard to a
     local directory folder_out with a subdirectory derived from the file handle of
@@ -299,15 +223,15 @@ formats = [
 ]
 
 
-def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> str:
+def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> Optional[str]:
     """
     Helper function that checks whether a file already exists in the parent
     directory.
 
     Args:
-      parent_dir_of_files (str): parent directory of the shape files extracted from
+      parent_dir_of_file (str): parent directory of the shape files extracted from
         Copernicus EMS.
-      string_pattern (str): keyword and file extension for the file of interest.
+      file_extension_pattern (str): keyword and file extension for the file of interest.
 
     Returns:
       A string of the file of interest if it exists in the parent directory, returns
@@ -316,6 +240,9 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
     source_file = glob(os.path.join(parent_dir_of_file, file_extension_pattern))
     if len(source_file) == 1:
         return source_file[0]
+    elif len(source_file) > 1:
+        print(f"Found {len(source_file)} {file_extension_pattern} files in directory. We will not process it {parent_dir_of_file}")
+        return
     else:
         print(f"{file_extension_pattern} not found in directory {parent_dir_of_file}")
         return
@@ -499,7 +426,7 @@ def filter_register_copernicusems(
         area_of_interest.to_crs(crs="epsg:4326", inplace=True)
 
     # Save pol of area of interest in epsg:4326 (lat/lng)
-    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+    area_of_interest_pol = unary_union(area_of_interest["geometry"])
 
     if "obj_desc" in pd_geo:
         event_type = np.unique(pd_geo.obj_desc)
@@ -658,7 +585,7 @@ def generate_floodmap(
 
     crs = area_of_interest.crs
 
-    area_of_interest_pol = cascaded_union(area_of_interest["geometry"])
+    area_of_interest_pol = unary_union(area_of_interest["geometry"])
 
     mapdf = filter_pols(
         gpd.read_file(
