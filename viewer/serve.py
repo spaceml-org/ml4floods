@@ -244,7 +244,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         band_diff = rst_arr[1] - rst_arr[0]
         dwi = band_diff / (band_sum + 1e-6)
         dwi_threshold = (dwi > 0).astype(np.uint8)
-        img_rgb = mask_to_rgb(dwi_threshold, [0, 1], colors=COLORS[(0, 2), ...])
+        img_rgb = mask_to_rgb(dwi_threshold, [0, 1], colors=COLORS[(1, 2), ...])
         mode = "RGB"
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
