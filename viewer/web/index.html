@@ -18,6 +18,7 @@
   <select id="image" class="selector" style="width:40%;" onChange="changeImage(this.value);"></select>
   <button type="button" onclick="loadTile()">Load Image</button>
   <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
+  <button type="button" onclick="loadFloodMapPred()">Load FloodMap Pred</button>
   <!-- Rounded switch -->
   Edit Polygon:
   <label class="switch"><input id="editpol" type="checkbox" /><div></div></label>
@@ -107,13 +108,13 @@
 
           // Adds the tilelayers of all the products
           worldfloods[name]["tilelayers"] = [];
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"]){
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
             let tilelayer = L.tileLayer(path);
             worldfloods[name]["tilelayers"].push(tilelayer);
             control_layer.addOverlay(tilelayer, `${product}: ${name}`);
           }
-          // Add to the map only the S2 image
+          // Add to the map only the S2 image (first image)
           worldfloods[name]["tilelayers"][0].addTo(mymap);
         }
 
@@ -184,6 +185,39 @@
           worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": onEachFeature});
           worldfloods[name]["floodmap"].addTo(mymap);
           control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
+          // hide polygons layer
+          if (mymap.hasLayer(layer_polygons)){
+            mymap.removeLayer(layer_polygons);
+          }
+        });
+      }
+    }
+
+    // style floodmaps based on property source
+    function style_fun_pred(feature){
+	  switch (feature.properties.class) {
+        case 'water':   return {color: "#0000ff", fillOpacity: 0.2};
+        case 'cloud':   return {fillColor: "#dddddd", color:"#000000", fillOpacity: 0.7};
+      }
+      console.log("Unknown source: "+feature.properties.class);
+      return {color: "#ffff00", fillOpacity: 0.2};
+    }
+
+    function loadFloodMapPred() {
+	  let name = $('#image :selected').val();
+	  let predname = "WF2_unet_full_norm_vec";
+
+	  // Uncheck editing
+	  $( "#editpol" ).prop( "checked", false );
+	  // Avoids adding the floodmap twice
+      if (!("floodmap_pred" in worldfloods[name])) {
+        let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
+                + worldfloods[name]["subset"] + "/" + name + "/" + predname +".geojson";
+
+        $.getJSON(path_dest_base, function (floodmap) {
+          worldfloods[name]["floodmap_pred"] = L.geoJSON(floodmap, {"style": style_fun_pred});
+          worldfloods[name]["floodmap_pred"].addTo(mymap);
+          control_layer.addOverlay(worldfloods[name]["floodmap_pred"], "floodmap Pred: " + name);
           // hide polygons layer
           if (mymap.hasLayer(layer_polygons)){
             mymap.removeLayer(layer_polygons);

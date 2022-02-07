@@ -116,6 +116,28 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
 
 
+@app.route("/<subset>/<eventid>/<predname>.geojson")
+def read_floodmap_pred(subset:str, eventid:str, predname:str):
+    # WF2_unet_full_norm_vec
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname, f"{eventid}.geojson")
+    data = geopandas.read_file(floodmap_address)
+
+    # All parts of a simplified geometry will be no more than tolerance distance from the original
+    # data["geometry"] = data["geometry"].simplify(tolerance=10)
+
+    data.to_crs("epsg:4326", inplace=True)
+    # data["id"] = np.arange(data.shape[0])
+
+    buf = io.BytesIO()
+    data.to_file(buf, driver="GeoJSON")
+
+    buf.seek(0,0)
+    return send_file(buf,
+                     as_attachment=True,
+                     download_name=f'{subset}_{eventid}_{predname}.geojson',
+                     mimetype='application/geojson')
+
+
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
     floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
@@ -161,18 +183,23 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     # TODO Add MNDWI?
 
+    productnamefolder = productname
     if productname.startswith("S2"):
         band_composite = productname.replace("S2","")
         if band_composite == "RGB":
             bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         else:
             bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
-
         productname = "S2"
+        productnamefolder = "S2"
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         bands = [2]
         resampling = warp.Resampling.nearest
+    elif productname == "MNDWI":
+        bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
+        resampling = warp.Resampling.cubic_spline
+        productnamefolder = "S2"
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
@@ -183,7 +210,11 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         raise NotImplementedError(f"Productname {productname} not found")
 
 
-    image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
+    image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productnamefolder, f"{eventid}.tif")
+
+    if not os.path.exists(image_address):
+        logging.error(f"{image_address} does not exist")
+        return '', 204
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
                        resampling=resampling, dst_nodata=0)
@@ -207,6 +238,13 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # v1gt[clear_clouds == 2] = 3
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
+        mode = "RGB"
+    elif productname == "MNDWI":
+        band_sum = rst_arr[1] + rst_arr[0]
+        band_diff = rst_arr[1] - rst_arr[0]
+        dwi = band_diff / (band_sum + 1e-6)
+        dwi_threshold = (dwi > 0).astype(np.uint8)
+        img_rgb = mask_to_rgb(dwi_threshold, [0, 1], colors=COLORS[(0, 2), ...])
         mode = "RGB"
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
