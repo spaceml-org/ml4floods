@@ -325,6 +325,9 @@ def worldfloods_files(rl:str):
     worldfloods = []
 
     for json_file in json_files:
+        json_file = json_file.replace("\\", "/")
+        if "/banned/" in json_file:
+            continue
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
