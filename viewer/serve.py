@@ -331,6 +331,7 @@ def worldfloods_files(rl:str):
             meta =  json.load(fh)
 
         meta_copy = {k:meta[k] for k in KEYS_COPY}
+        meta_copy["date_ems_code"] = meta.get("date_ems_code", "UNKNOWN")
         meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
         meta_copy["geometry"] = meta["area_of_interest_polygon"]
 
