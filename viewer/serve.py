@@ -222,9 +222,9 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         return '', 204
 
     rst_arr, _ = output
+    # rst_arr = np.nan_to_num(rst_arr, copy=False, nan=0)
 
     if productname == "S2":
-        np.nan_to_num(rst_arr, copy=False, nan=0)
         alpha = (~np.all(rst_arr == 0, axis=0)).astype(np.uint8) * 255
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
