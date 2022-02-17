@@ -29,7 +29,8 @@ def get_model(model_params:AttrDict,
         normalized_data:
 
     Returns:
-        pytorch lightning model (
+        pytorch lightning model
+
     """
     if model_params.get("test", False) or model_params.get("deploy", False):
         assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
@@ -63,25 +64,32 @@ def get_channel_configuration_bands(channel_configuration:str) -> List[int]:
     return CHANNELS_CONFIGURATIONS[channel_configuration]
         
         
-def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True,
-                                 activation:Optional[str]=None) -> Callable[[torch.Tensor], torch.Tensor]:
+def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
+                                 apply_normalization:bool=True, eval_mode:bool=True,
+                                 activation:Optional[str]=None,
+                                 device:Optional[torch.device]=None) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
 
     Args:
-        model :LightingModule
-        config:
+        model :LightingModule or torch.nn.Module
+        config: AttrDict with fields:
+            - config.model_params.hyperparameters.model_type
+            - config.model_params.hyperparameters.channel_configuration
+            - config.model_params.model_version
+            - config.model_params.max_tile_size
         apply_normalization:
         eval_mode: set for predicting model.eval()
         activation: activation function to apply on inference time (softmax|sigmoid). If None it will gess it from
             the model_version
+        device:
 
     Returns: callable function
     """
     print("Getting model inference function")
     model_type = config.model_params.hyperparameters.model_type
-    module_shape = SUBSAMPLE_MODULE[model_type] if model_type in SUBSAMPLE_MODULE else 1
+    module_shape = SUBSAMPLE_MODULE.get(model_type, 1)
 
     if apply_normalization:
         channel_configuration_bands = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
@@ -116,7 +124,9 @@ def get_model_inference_function(model, config, apply_normalization:bool=True, e
     else:
         raise NotImplementedError(f"Activation function {activation} not implemented")
 
-    return get_pred_function(model, model.device,
+    device = device if device is not None else model.device
+
+    return get_pred_function(model, device,
                              module_shape=module_shape,
                              max_tile_size=config.model_params.max_tile_size,
                              activation_fun=activation_fun,

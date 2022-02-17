@@ -19,7 +19,7 @@ class WorldFloodsModel(pl.LightningModule):
     It expects ground truths y (B, H, W) tensors to be encoded as: {0: invalid, 1: clear, 2:water, 3: cloud}
     The preds (model.forward(x)) will produce a tensor with shape (B, 3, H, W)
     """
-    def __init__(self, model_params: dict, normalized_data:bool=True):
+    def __init__(self, model_params: AttrDict, normalized_data:bool=True):
         super().__init__()
         self.save_hyperparameters()
         h_params_dict = model_params.get('hyperparameters', {})

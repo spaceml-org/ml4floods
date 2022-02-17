@@ -226,7 +226,6 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     Function to generate transformations object to pass to dataloader
     TODO: Build from config instead of using default values
     """
-    channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
 
     train_transform = [
         transformations.InversePermuteChannels(),
@@ -237,7 +236,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         warnings.warn("Train transformation not found in data config. Assume normalize is True")
         data_config["train_transformation"] = AttrDict({"normalize": True})
 
+    channel_mean = None
     if data_config.train_transformation.normalize:
+        channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
         train_transform.append(transformations.Normalize(
             mean=channel_mean,
             std=channel_std,
@@ -255,6 +256,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         data_config["test_transformation"] = AttrDict({"normalize": True})
     
     if data_config.test_transformation.normalize:
+        if channel_mean is None:
+            channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+
         test_transform = [
         transformations.InversePermuteChannels(), 
         transformations.Normalize(

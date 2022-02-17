@@ -255,7 +255,7 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
     """
     Prediction expected to be {0: land, 1: water, 2: cloud}
     Args:
-        prediction:
+        prediction: (1, H, W) tensor or path to tiff tile with codes {0: land, 1: water, 2: cloud}
         transform:
         window:
         legend:

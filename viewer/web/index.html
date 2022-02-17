@@ -359,7 +359,8 @@
             let pl = L.geoJSON(geojson_feature, {"style": mystyle})
                       .bindPopup(image+'</br>Floodmap date:'+meta["satellite date"]
                                       +'</br>Floodmap satellite:'+meta["satellite"]
-                                      +'</br>Sentinel-2 date:'+meta["s2_date"])
+                                      +'</br>Sentinel-2 date:'+meta["s2_date"]
+                                      + '<br> CEMS date: ' +meta["date_ems_code"])
                       .on('click', function() {
                         $('#image').val(image).trigger('change');
                      })
@@ -377,6 +378,10 @@
                                 });
 
              worldfloods[image]["polygon"] = pl;
+
+             // save meta just in case
+             worldfloods[image]["meta"] = meta;
+             
              polygons_all.push(pl);
         }
         layer_polygons = L.layerGroup(polygons_all).addTo(mymap);
