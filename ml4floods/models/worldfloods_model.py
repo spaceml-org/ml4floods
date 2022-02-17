@@ -12,6 +12,7 @@ from ml4floods.models.architectures.unets import UNet, UNet_dropout
 from ml4floods.models.architectures.hrnet_seg import HighResolutionNet
 from ml4floods.data.worldfloods.configs import COLORS_WORLDFLOODS, CHANNELS_CONFIGURATIONS, BANDS_S2, COLORS_WORLDFLOODS_INVLANDWATER, COLORS_WORLDFLOODS_INVCLEARCLOUD
 from pytorch_lightning.loggers import WandbLogger
+from ml4floods.data.utils import get_filesystem
 
 class WorldFloodsModel(pl.LightningModule):
     """
@@ -342,13 +343,24 @@ def configure_architecture(h_params:AttrDict) -> torch.nn.Module:
         model = HighResolutionNet(input_channels=num_channels, output_channels=num_classes)
         if num_channels == 3:
             print("3-channel model. Loading pre-trained weights from ImageNet")
-            pretrained_dict = load(PATH_TO_MODEL_HRNET_SMALL)
+            pretrained_dict = load_weights(PATH_TO_MODEL_HRNET_SMALL)
             model.init_weights(pretrained_dict)
 
     else:
         raise Exception(f'No model implemented for model_type: {h_params.model_type}')
 
     return model
+
+
+def load_weights(path_weights:str, map_location="cpu"):
+    fs = get_filesystem(path_weights)
+    if fs.exists(path_weights):
+        with fs.open(path_weights, "rb") as fh:
+            weights = torch.load(fh, map_location=map_location)
+
+        return weights
+
+    raise ValueError(f"Pretrained weights file: {path_weights} does not exists")
 
 
 def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_clip_val=3000.,
