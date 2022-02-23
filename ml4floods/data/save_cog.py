@@ -4,7 +4,7 @@ import rasterio.shutil as rasterio_shutil
 import os
 import tempfile
 import numpy as np
-import fsspec
+
 
 from typing import Optional, List
 
@@ -79,6 +79,7 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
     if cog_driver:
         # Save tiff locally and copy it to GCP with fsspec is path is a GCP path
         if path_tiff_save.startswith("gs://"):
+            import fsspec
             with tempfile.NamedTemporaryFile(dir=dir_tmpfiles, suffix=".tif", delete=True) as fileobj:
                 name_save = fileobj.name
         else:
