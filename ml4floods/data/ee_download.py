@@ -82,9 +82,9 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     n_images_s2cloudless = s2_cloudless_col.size().getInfo()
 
     if n_images_s2cloudless != n_images_col:
-        print(f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
-        img_col_all_join = img_col_all
+        raise NotImplementedError(f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
         # TODO add band probability from BQA60
+        # img_col_all_join = img_col_all
         # TODO use s2cloudless in the ones that exist?
 
     else:
