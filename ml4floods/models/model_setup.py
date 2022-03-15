@@ -1,10 +1,9 @@
 import torch
 import itertools
-from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
+from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
 from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 import numpy as np
-from pytorch_lightning.utilities.cloud_io import load
 import os
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
@@ -41,7 +40,7 @@ def get_model(model_params:AttrDict,
             model = WorldFloodsModel(model_params, normalized_data=normalized_data)
 
         path_to_models = os.path.join(model_params.model_folder, experiment_name, "model.pt").replace("\\", "/")
-        model.load_state_dict(load(path_to_models))
+        model.load_state_dict(load_weights(path_to_models))
         print(f"Loaded model weights: {path_to_models}")
         return model
 

@@ -201,7 +201,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     if bucket_name is not None:
         fs = fsspec.filesystem("gs", requester_pays=True)
     
-        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}')
+        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
         if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
@@ -277,6 +277,7 @@ def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
                                                         skipEmptyTiles=True,
                                                         bucket=bucket,
                                                         scale=scale,
+                                                        fileFormat="GeoTIFF",
                                                         formatOptions={"cloudOptimized": True},
                                                         fileDimensions=file_dims,
                                                         maxPixels=maxPixels)
@@ -289,6 +290,7 @@ def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
                                                  crs=crs.upper(),
                                                  skipEmptyTiles=True,
                                                  scale=scale,
+                                                 fileFormat="GeoTIFF",
                                                  formatOptions={"cloudOptimized": True},
                                                  fileDimensions=file_dims,
                                                  maxPixels=maxPixels)
@@ -548,7 +550,7 @@ def download_s2(area_of_interest: Polygon,
     threshold_clouds cloudy pixels.
 
     Args:
-        area_of_interest: polygon with the AoI to download
+        area_of_interest: shapely polygon with the AoI to download.
         date_start_search: start search date
         date_end_search: end search date
         path_bucket: path in the bucket to export the images. If the files in that bucket exists it does not download

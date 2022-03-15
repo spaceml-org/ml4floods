@@ -4,7 +4,6 @@ import pytorch_lightning as pl
 from typing import List, Optional, Dict, Tuple
 from ml4floods.preprocess.worldfloods import normalize
 from ml4floods.models.config_setup import  AttrDict
-from pytorch_lightning.utilities.cloud_io import load
 
 from ml4floods.models.utils import losses, metrics
 from ml4floods.models.architectures.baselines import SimpleLinear, SimpleCNN
