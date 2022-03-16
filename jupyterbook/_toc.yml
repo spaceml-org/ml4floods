@@ -16,13 +16,13 @@
 - part: Data prep
   chapters:
     - file: content/prep/full_data_ingest.ipynb
-    - file: content/prep/geographic_index_demo.ipynb
     - file: content/prep/gt_masks_generation.ipynb
     - file: content/prep/demo_pytorch_transforms.ipynb
 
 - part: MLOps
   chapters:
   - file: content/ml_overview.md
+  - file: content/worldfloods_dataset.md
   - file: content/ml4ops/HOWTO_Train_models.ipynb
   - file: content/ml4ops/HOWTO_performance_metrics_workflow.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb
