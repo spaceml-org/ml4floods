@@ -16,7 +16,7 @@ drive.mount('/content/drive')
 !ls '/content/drive/My Drive/Public WorldFloods Dataset'
 ```
 
-Alternatively you can download it manually or automatically with the [gdown](https://github.com/wkentaro/gdown) package. 
+Alternatively you can download it manually from that folder or even automatically with the [gdown](https://github.com/wkentaro/gdown) package. 
 
 ## Download the data from the Google Bucket
 
