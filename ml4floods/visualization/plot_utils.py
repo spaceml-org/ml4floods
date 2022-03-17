@@ -8,7 +8,6 @@ from typing import Union, Optional, List, Tuple
 from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods import configs
 from ml4floods.data import utils
-import os
 
 
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
@@ -42,17 +41,6 @@ def get_cmap_norm_colors(color_array, interpretation_array):
         patches.append(mpatches.Patch(color=c, label=interp))
     
     return cmap_categorical, norm_categorical, patches
-
-
-def plot_tiff_image(file_path: str, **kwargs):
-
-    # open image with rasterio
-    with rasterio.open(file_path) as src:
-        
-        # plot image
-        fig = rasterioplt.show(src.read(), transform=src.transform, **kwargs)
-    
-    return fig
 
 
 def _read_data(filename:str,
@@ -106,18 +94,6 @@ def _read_data(filename:str,
                                     transform.d, transform.e * input_output_factor, transform.f)
 
     return output, transform
-
-
-def plot_s2_cloud_prob_image(file_path: str, size_read:Optional[int]=None, **kwargs):
-    # open image with rasterio
-    with rasterio.open(file_path) as src:
-        # assert the image has 15 channels
-        assert src.meta["count"] == 15
-
-    output, transform = _read_data(file_path, bands_rasterio=[15], size_read=size_read)
-    output = output[0]
-    # plot image
-    return rasterioplt.show(output, transform=transform, vmin=0, vmax=100, cmap="gray", **kwargs)
 
 
 def get_image_transform(array_or_file:Union[str, np.ndarray],
@@ -349,7 +325,8 @@ def plot_gt_v2(target: Union[str, np.ndarray], transform:Optional[rasterio.Affin
                window:Optional[rasterio.windows.Window]=None,
                legend=True, size_read:Optional[int]=None, **kwargs):
     """
-    ground truth `target` expected to be 2 channel image [{0: invalid: 1: land, 2: cloud}, {0:invalid, 1:land, 2: water}]
+    ground truth `target` expected to be 2 channel image with the following code:
+        [{0: invalid: 1: land, 2: cloud}, {0:invalid, 1:land, 2: water}]
 
     We use the invalid values of the land/water mask
 
@@ -421,53 +398,8 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
     return ax
 
 
-def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
-                  folder_permanent_water: Optional[str] = None, requester_pays:bool=True) -> str:
-    """
-    Download a set of tiffs from the google bucket to a local folder
-
-    Args:
-        local_folder: local folder to download
-        tiff_input: input tiff file
-        folder_ground_truth: folder with ground truth images
-        folder_permanent_water: folder with permanent water images
-        requester_pays: Requester pays option of the bucket
-
-    Returns:
-        location of tiff_input in the local file system
-
-    """
-    import fsspec
-    fs = fsspec.filesystem("gs", requester_pays=requester_pays)
-
-    folders = ["/S2/", folder_ground_truth]
-    if folder_permanent_water is not None:
-        folders.append(folder_permanent_water)
-
-    for folder in folders:
-        file_to_download = tiff_input.replace("/S2/", folder)
-        if folder.startswith("/"):
-            folder = folder[1:]
-        folder_iter = os.path.join(local_folder, folder)  # remove /
-        file_local = os.path.join(folder_iter, os.path.basename(file_to_download))
-        if folder == "S2/":
-            return_folder = file_local
-        if os.path.exists(file_local):
-            continue
-        if not fs.exists(file_to_download):
-            print(f"WARNING!! file {file_to_download} does not exists")
-            continue
-
-        os.makedirs(folder_iter, exist_ok=True)
-        fs.get_file(file_to_download, file_local)
-        print(f"Downloaded file {file_local}")
-
-    return return_folder
-
-
-
-def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray ,title:Optional[str] = None, 
-                     transform:Optional[rasterio.Affine]=None, channel_configuration = 'all', **kwargs):
+def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray ,title:Optional[str] = None,
+                           transform:Optional[rasterio.Affine]=None, channel_configuration = 'all', **kwargs):
     """
     Plots a S2 image and overlapping FP, FN and TP with masked clouds, computed from 
     compute_positives function

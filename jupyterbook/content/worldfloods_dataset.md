@@ -8,9 +8,9 @@ It requires approximately 300GB of hard-disk storage. The *WorldFloods* database
 
 A subset of the data and the pretrained models are available in this [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH). 
 
-If you want to use this data from the Google Colab you can add a shortcut to that folder to your Google Drive and mount that directory:
+If you want to use this data from the Google Colab you can *'add a shortcut to your Google Drive'* from the [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH) and mount that directory:
 
-```jupyterpython
+```python
 from google.colab import drive
 drive.mount('/content/drive')
 !ls '/content/drive/My Drive/Public WorldFloods Dataset'

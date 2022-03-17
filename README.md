@@ -27,7 +27,7 @@ These tutorials may help you explore the datasets and models:
 
 The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z) contains 444 pairs of Sentinel-2 images and flood segmentation masks. It requires approximately 300GB of hard-disk storage. The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
-To download the *WorldFloods* database or the pretrained flood segmentation models for Sentinel-2 see [this](jupyterbook/content/worldfloods_dataset.md).
+To download the *WorldFloods* database or the pretrained flood segmentation models for Sentinel-2 see [the instructions to download the database](jupyterbook/content/worldfloods_dataset.md).
 
 ## Cite
 
