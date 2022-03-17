@@ -7,7 +7,7 @@ from typing import List
 from PIL import Image
 import numpy as np
 import geopandas
-from ml4floods.data.config import BANDS_S2
+from ml4floods.data.worldfloods.configs import BANDS_S2
 from ml4floods.serve.read_tile import read_tile
 from rasterio import warp
 from ml4floods.data import utils, create_gt, save_cog
