@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import shutil
 import zipfile
@@ -13,11 +12,8 @@ from requests_html import HTMLSession
 from shapely.ops import unary_union
 
 from ml4floods.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
-from google.cloud import storage
 import requests
-from io import BytesIO
 from typing import Dict
-from zipfile import ZipFile, is_zipfile
 
 from ml4floods.data.utils import filter_land, filter_pols
 
@@ -99,14 +95,14 @@ def fetch_zip_file_urls(code: str) -> List[str]:
     r = session.get(product_url)
 
     zip_url_per_code = []
-    for zipfile in r.html.find("a"):
+    for zf in r.html.find("a"):
         if (
-            ("zip" in zipfile.attrs["href"])
-            and ("REFERENCE_MAP" not in zipfile.attrs["href"])
-            and ("RTP01" not in zipfile.attrs["href"])
+            ("zip" in zf.attrs["href"])
+            and ("REFERENCE_MAP" not in zf.attrs["href"])
+            and ("RTP01" not in zf.attrs["href"])
         ):
             zip_url_per_code.append(
-                "https://emergency.copernicus.eu" + zipfile.attrs["href"]
+                "https://emergency.copernicus.eu" + zf.attrs["href"]
             )
 
     return zip_url_per_code
