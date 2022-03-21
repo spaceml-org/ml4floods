@@ -8,10 +8,6 @@ import numpy as np
 import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
-
-from ml4floods.data.utils import check_path_exists
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
-from ml4floods.data.worldfloods.prepare_data import prepare_data_func
 from ml4floods.preprocess.tiling import WindowSize
 from ml4floods.preprocess.utils import get_list_of_window_slices
 

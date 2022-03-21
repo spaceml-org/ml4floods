@@ -5,9 +5,8 @@
 <meta name="Description" content="Landsat 8 cloud cover assessment dataset."/>
 <link rel="icon" type="image/png" href="/web/ml4cc_logo.png">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
-   integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-   crossorigin=""/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
 <link rel="stylesheet" href="/web/css/main.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </head>
@@ -18,25 +17,40 @@
   <label for="image" title="Event id">Event id:</label>
   <select id="image" class="selector" style="width:40%;" onChange="changeImage(this.value);"></select>
   <button type="button" onclick="loadTile()">Load Image</button>
-    <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
+  <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
+  <button type="button" onclick="loadFloodMapPred()">Load FloodMap Pred</button>
+  <!-- Rounded switch -->
+  Edit Polygon:
+  <label class="switch"><input id="editpol" type="checkbox" /><div></div></label>
+  <button type="button" onclick="removePolygon()">Remove Polygon</button>
+  <button type="button" onclick="saveFloodMap()">Save FloodMap</button>
 </div>
 </div>
 
 <div id="mapid"></div>
 
 <div id="footnote">
-  Developed by <a href="https://www.uv.es/gonmagar/" target="_blank">Gonzalo Mateo-García</a>. This work has been partially supported by the Spanish Ministry of Economy and Competitiveness (MINECO-ERDF, TEC2016-77741-R projects)
+  Developed by <a href="https://www.uv.es/gonmagar/" target="_blank">Gonzalo Mateo-García</a>. This work has been partially supported by the Spanish Ministry of Science and Innovation projects TEC2016-77741-R and PID2019-109026RB-I00 (MINECO-ERDF)
 </div>
 
-<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
-   integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
-   crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
 
 <script>
+    /* Dict of loaded data
+       The key is the 'event id' of the flood. Values is a dict of stuff loaded:
+       worldfloods["EMSR271_02FARKADONA_DEL_v1"] = {"subset": "val", "polygon": L.Polygon(), ""
+    * */
     let worldfloods = {};
+
+    // LayerGroup with the area_of_interest of all the events. This is poped-up in the .ready function
     let layer_polygons = null;
+
+    // Current polygon in edit mode
+    let currentEditable = null;
 
     let COLOR_CODES = {"train": "#00DD00",
                        "val": "#DDDD00",
@@ -49,12 +63,32 @@
         {"control": true, "overlay":true}
       ).addTo(mymap);
 
-    let control_layer = L.control.layers({}, {"basemap": basemap}, {"collapsed":false}).addTo(mymap);
-    let tileserver_objects = {};
+    // Add drawControl layer to be able to draw new polygons
+    let drawnItems = new L.FeatureGroup();
+    // mymap.addLayer(drawnItems);
+    let drawControl = new L.Control.Draw({
+          // Disable all drawing controls except polygons
+      'draw': {
+             'circle': false,
+             // 'polyline': false,
+             'rectangle': false,
+             'marker': false
+      },
+      'edit': {
+            'featureGroup': drawnItems,
+            'edit': false,
+            'remove': false
+      }
+    });
+    mymap.addControl(drawControl);
 
+    // This is the tickbox in the upper right corner of the map
+    let control_layer = L.control.layers({}, {"basemap": basemap}, {"collapsed":false}).addTo(mymap);
+
+    // Zooms to the location of the `name` floodmap and opens the popup with the info of the floodmap
 	function changeImage(name){
       let searchParams = new URLSearchParams(window.location.search);
-      searchParams.set("id",name);
+      searchParams.set("id", name);
       var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname +'?'+ searchParams.toString();
       history.pushState({"path": newurl},'',newurl);
       mymap.closePopup();
@@ -63,23 +97,37 @@
       mymap.fitBounds(worldfloods[name]["polygon"].getBounds());
 	}
 
+	// Add tileserver of S2 and the Ground Truth
 	function loadTile(){
 	    let name = $('#image :selected').val();
 
-	    // Save the tileservers shown in tileserver_objects dict
-        if (!(name in tileserver_objects)){
+	    // This is to avoid adding the tilelayers twice
+        if (!("tilelayers" in worldfloods[name])){
           let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
                             + worldfloods[name]["subset"]+"/"+name;
-          let path_s2 = path_dest_base+"/S2/{z}/{x}/{y}.png";
-          let path_gt = path_dest_base+"/gt/{z}/{x}/{y}.png";
-          let tilelayer_s2 = L.tileLayer(path_s2);
-          let tilelayer_gt = L.tileLayer(path_gt);
-          tileserver_objects[name] = [tilelayer_s2, tilelayer_gt];
-          tilelayer_s2.addTo(mymap);
-          tilelayer_gt.addTo(mymap);
-          control_layer.addOverlay(tilelayer_s2, "S2: "+name);
-          control_layer.addOverlay(tilelayer_gt, "gt: "+name);
+
+          // Adds the tilelayers of all the products
+          worldfloods[name]["tilelayers"] = [];
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI"]){
+            let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
+
+            // TODO set maxZoom and minZoom? -> https://leafletjs.com/reference.html#tilelayer
+            let tilelayer = L.tileLayer(path);
+            worldfloods[name]["tilelayers"].push(tilelayer);
+
+            // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
+            // TODO opacity control: https://github.com/dayjournal/Leaflet.Control.Opacity
+
+            // add to control (checkbox)
+            control_layer.addOverlay(tilelayer, `${product}: ${name}`);
+          }
+          // Add to the map only the S2 image (first image)
+          worldfloods[name]["tilelayers"][0].addTo(mymap);
+        } else if (!(mymap.hasLayer(worldfloods[name]["tilelayers"][0]))){
+          worldfloods[name]["tilelayers"][0].addTo(mymap);
         }
+
+        // TODO uncheck all other tilelayers (uncheck all button?)
 
         //  zoom to location
         layer_polygons.addTo(mymap);
@@ -87,34 +135,192 @@
         layer_polygons.remove();
     }
 
-    // style floodmaps based on w_class and source
+    // style floodmaps based on property source
     function style_fun(feature){
 	  switch (feature.properties.source) {
-            case 'area_of_interest': return {color: "#ff0000", fillOpacity: 0};
-            case 'hydro_l':   return {color: "#0000ff", fillOpacity: 0.2};
-            case 'hydro':   return {color: "#0000ff", fillOpacity: 0.2};
-            case 'flood':   return {color: "#00ffff", fillOpacity: 0.2};
-        }
-    }
-    function onEachFeature(feature, layer) {
-	  layer.bindPopup('w_class: '+feature.properties.w_class+'<br> source: '+feature.properties.source+
-                                 '<br> id: '+feature.properties.id);
+        case 'area_of_interest': return {color: "#ff0000", fillOpacity: 0};
+        case 'hydro_l':   return {color: "#0000ff", fillOpacity: 0.2};
+        case 'hydro':   return {color: "#0000ff", fillOpacity: 0.2};
+        case 'flood':   return {color: "#00ffff", fillOpacity: 0.2};
+      }
+      console.log("Unknown source: "+feature.properties.source);
+      return {color: "#ffff00", fillOpacity: 0.2};
     }
 
+    // Add style and callbacks to flood gt polygons
+    function addStyleFloodPolygon(feature, layer){
+      let style = style_fun(feature);
+      layer.setStyle(style);
+      let numberofvertices = layer.getLatLngs()[0].length;
+      layer.bindPopup('w_class: '+feature.properties.w_class+'<br> source: '+feature.properties.source+
+                       '<br> id: '+feature.properties.id+'<br> type: '+feature.geometry.type+
+                       '<br> \# of vertices: '+numberofvertices)
+           .on('mouseover', function() {
+             this.setStyle({
+               fillOpacity: 0.7
+             });
+           })
+           .on('mouseout', function () {
+             this.setStyle({
+               fillOpacity: 0.2
+             });
+           })
+           .on('click', function(e){
+             if (currentEditable){
+               currentEditable.editing.disable();
+               $( "#editpol" ).prop( "checked", false);
+             }
+             // layer.editing.enable();
+             currentEditable = layer;
+           });
+    }
+
+    // Loads the floodmap
     function loadFloodMap(){
 	  let name = $('#image :selected').val();
+
+	  // Uncheck editing
+	  $( "#editpol" ).prop( "checked", false );
+
+	  // Avoids adding the floodmap twice
       if (!("floodmap" in worldfloods[name])) {
         let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
                 + worldfloods[name]["subset"] + "/" + name + "/floodmap.geojson";
+
+        // Add popup to each polygon in the floodmap
+        function onEachFeature(feature, layer) {
+          addStyleFloodPolygon(feature, layer);
+        }
+
         $.getJSON(path_dest_base, function (floodmap) {
-          let floodmap_leaflet = L.geoJSON(floodmap, {"style": style_fun, "onEachFeature": onEachFeature});
-          floodmap_leaflet.addTo(mymap);
-          worldfloods[name]["floodmap"] = floodmap_leaflet;
-          control_layer.addOverlay(floodmap_leaflet, "floodmap: " + name);
+          worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": onEachFeature});
+          worldfloods[name]["floodmap"].addTo(mymap);
+          control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
+          // hide polygons layer
+          if (mymap.hasLayer(layer_polygons)){
+            mymap.removeLayer(layer_polygons);
+          }
         });
+      } else if (!(mymap.hasLayer(worldfloods[name]["floodmap"]))){
+          worldfloods[name]["floodmap"].addTo(mymap);
       }
     }
 
+    // style floodmaps based on property source
+    function style_fun_pred(feature){
+	  switch (feature.properties.class) {
+        case 'water':   return {color: "#0000ff", fillOpacity: 0.2};
+        case 'cloud':   return {fillColor: "#dddddd", color:"#000000", fillOpacity: 0.7};
+      }
+      console.log("Unknown source: "+feature.properties.class);
+      return {color: "#ffff00", fillOpacity: 0.2};
+    }
+
+    function loadFloodMapPred() {
+	  let name = $('#image :selected').val();
+	  let predname = "WF2_unet_full_norm_vec";
+
+	  // Uncheck editing
+	  $( "#editpol" ).prop( "checked", false );
+
+	  // Avoids adding the floodmap twice
+      if (!("floodmap_pred" in worldfloods[name])) {
+        let path_dest_base = window.location.protocol + "//" + window.location.host + window.location.pathname
+                + worldfloods[name]["subset"] + "/" + name + "/" + predname +".geojson";
+
+        $.getJSON(path_dest_base, function (floodmap) {
+          worldfloods[name]["floodmap_pred"] = L.geoJSON(floodmap, {"style": style_fun_pred});
+          worldfloods[name]["floodmap_pred"].addTo(mymap);
+          control_layer.addOverlay(worldfloods[name]["floodmap_pred"], "floodmap Pred: " + name);
+          // hide polygons layer
+          if (mymap.hasLayer(layer_polygons)){
+            mymap.removeLayer(layer_polygons);
+          }
+        });
+
+        // TODO add button to add the floodmap preg polygon to floodmap ground truth!
+
+      }else if (!(mymap.hasLayer(worldfloods[name]["floodmap_pred"]))){
+          worldfloods[name]["floodmap_pred"].addTo(mymap);
+      }
+    }
+
+    // Removes a polygon from the floodmap_geojson
+    function removePolygon(){
+	  if (currentEditable){
+	    let name = $('#image :selected').val();
+	    if ("floodmap" in worldfloods[name]) {
+          let floodmap_geojson = worldfloods[name]["floodmap"];
+          floodmap_geojson.removeLayer(currentEditable);
+          currentEditable = null;
+        }
+	    $( "#editpol" ).prop( "checked", false);
+      }
+    }
+
+    function editPolygon(){
+	  if (currentEditable){
+	    currentEditable.editing.enable();
+      }
+    }
+
+    function stopEditPolygon(){
+	  if (currentEditable){
+	    currentEditable.editing.disable();
+      }
+    }
+
+    // Toggle to enable disable editing
+    $('#editpol').change(function () {
+      if ($(this).is(':checked')) {
+        editPolygon();
+      }else {
+        stopEditPolygon();
+      }
+    });
+
+    // Callback when a polygon is drawn
+    mymap.on(L.Draw.Event.CREATED, function (e) {
+       let name = $('#image :selected').val();
+       let floodmap_geojson = worldfloods[name]["floodmap"];
+       let layer = e.layer;
+
+       let feature = layer.feature = layer.toGeoJSON();
+       let props = feature.properties = feature.properties || {};
+
+       // TODO let edit w_class, source and id
+       props["w_class"] = "Not Applicable";
+       props["source"] = "flood";
+       props["id"] = -1;
+
+       // bindPopup and style
+       addStyleFloodPolygon(feature, layer);
+       floodmap_geojson.addLayer(layer);
+
+      // drawnItems.addLayer(layer);
+
+    });
+
+    // save GeoJSON button (use https://leafletjs.com/reference.html#featuregroup toGeoJSON function over let drawnItems = worldfloods[name]["floodmap"];
+    function saveFloodMap(){
+      let name = $('#image :selected').val();
+      if ("floodmap" in worldfloods[name]){
+        let floodmap = worldfloods[name]["floodmap"];
+        let floodmap_geo = floodmap.toGeoJSON();
+        let path_dest = window.location.protocol + "//" + window.location.host + window.location.pathname
+                            + worldfloods[name]["subset"]+"/"+name+"/save_floodmap";
+
+        console.log(path_dest);
+
+        $.ajax({
+          'url': path_dest,
+          'data': JSON.stringify(floodmap_geo),
+          'contentType' : 'application/json',
+          'type' : 'POST'
+        });
+      }
+    }
+     // onload function: loads the worldfloods locations
 	$(document).ready(function(){
       // Initialize select2 selector
        $('#image').select2({});
@@ -153,7 +359,8 @@
             let pl = L.geoJSON(geojson_feature, {"style": mystyle})
                       .bindPopup(image+'</br>Floodmap date:'+meta["satellite date"]
                                       +'</br>Floodmap satellite:'+meta["satellite"]
-                                      +'</br>Sentinel-2 date:'+meta["s2_date"])
+                                      +'</br>Sentinel-2 date:'+meta["s2_date"]
+                                      + '<br> CEMS date: ' +meta["date_ems_code"])
                       .on('click', function() {
                         $('#image').val(image).trigger('change');
                      })
@@ -166,16 +373,19 @@
                      .on('mouseout', function () {
                                     this.setStyle({
                                         opacity: 0.5,
-                                        fillOpacity: 0.1
-
+                                        fillOpacity: 0.4
                                     });
                                 });
 
              worldfloods[image]["polygon"] = pl;
+
+             // save meta just in case
+             worldfloods[image]["meta"] = meta;
+             
              polygons_all.push(pl);
         }
         layer_polygons = L.layerGroup(polygons_all).addTo(mymap);
-        control_layer.addOverlay(layer_polygons, "polygons");
+        control_layer.addOverlay(layer_polygons, "worldfloods_dataset");
 
         $("#image").select2("destroy").empty().select2({"data": dats_select2});
         if (searchParams.has('id')){

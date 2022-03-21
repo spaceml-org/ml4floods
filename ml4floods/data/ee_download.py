@@ -41,7 +41,8 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 
 def get_s2_collection(date_start:datetime, date_end:datetime,
                       bounds:ee.Geometry,
-                      collection_name:str="COPERNICUS/S2", bands:Optional[List[str]]=None, verbose:int=1) -> ee.ImageCollection:
+                      collection_name:str="COPERNICUS/S2", bands:Optional[List[str]]=None,
+                      verbose:int=1) -> Optional[ee.ImageCollection]:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
     (see collection COPERNICUS/S2_CLOUD_PROBABILITY). This function also filters repeated images of the same date
@@ -78,23 +79,31 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
         .filterBounds(bounds)
         .filterDate(date_start, date_end))
 
-    img_col_all = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
-        'primary': img_col_all,
-        'secondary': s2_cloudless_col,
-        'condition': ee.Filter.equals(**{
-            'leftField': 'system:index',
-            'rightField': 'system:index'
-        })
-    }))
+    n_images_s2cloudless = s2_cloudless_col.size().getInfo()
 
-    # Add s2cloudless as new band
-    img_col_all = img_col_all.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+    if n_images_s2cloudless != n_images_col:
+        raise NotImplementedError(f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
+        # TODO add band probability from BQA60
+        # img_col_all_join = img_col_all
+        # TODO use s2cloudless in the ones that exist?
 
-    daily_mosaic =  collection_mosaic_day(img_col_all, bounds)
+    else:
+        img_col_all_join = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
+            'primary': img_col_all,
+            'secondary': s2_cloudless_col,
+            'condition': ee.Filter.equals(**{
+                'leftField': 'system:index',
+                'rightField': 'system:index'
+            })
+        }))
+        # Add s2cloudless as new band
+        img_col_all_join = img_col_all_join.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+
+    daily_mosaic =  collection_mosaic_day(img_col_all_join, bounds)
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
 
     # Filter images with many invalids
-    def _count_valid_clouds(img):
+    def _count_valid_clouds(img:ee.Image) -> ee.Image:
         mascara_valids = img.mask()
         mascara_valids = mascara_valids.select(bands)
         mascara_valids = mascara_valids.reduce(ee.Reducer.allNonZero())
@@ -192,7 +201,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     if bucket_name is not None:
         fs = fsspec.filesystem("gs", requester_pays=True)
     
-        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}')
+        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
         if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
@@ -268,6 +277,7 @@ def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
                                                         skipEmptyTiles=True,
                                                         bucket=bucket,
                                                         scale=scale,
+                                                        fileFormat="GeoTIFF",
                                                         formatOptions={"cloudOptimized": True},
                                                         fileDimensions=file_dims,
                                                         maxPixels=maxPixels)
@@ -280,6 +290,7 @@ def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
                                                  crs=crs.upper(),
                                                  skipEmptyTiles=True,
                                                  scale=scale,
+                                                 fileFormat="GeoTIFF",
                                                  formatOptions={"cloudOptimized": True},
                                                  fileDimensions=file_dims,
                                                  maxPixels=maxPixels)
@@ -473,7 +484,7 @@ def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
         with fs.open(path_csv, "r") as fh:
             datas2 = pd.read_csv(fh)
     else:
-        datas2 = pd.read_csv(fh)
+        datas2 = pd.read_csv(path_csv)
         
                          # converters={'datetime': pd.Timestamp})
 
@@ -532,14 +543,14 @@ def download_s2(area_of_interest: Polygon,
                 path_bucket: str, collection_name="COPERNICUS/S2", crs:str='EPSG:4326',
                 filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
                 name_task:Optional[str]=None,
-                resolution_meters:float=10, requester_pays:bool = True) -> List[ee.batch.Task]:
+                resolution_meters:float=10) -> List[ee.batch.Task]:
     """
     Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
     path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
     threshold_clouds cloudy pixels.
 
     Args:
-        area_of_interest: polygon with the AoI to download
+        area_of_interest: shapely polygon with the AoI to download.
         date_start_search: start search date
         date_end_search: end search date
         path_bucket: path in the bucket to export the images. If the files in that bucket exists it does not download
@@ -563,7 +574,8 @@ def download_s2(area_of_interest: Polygon,
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    fs = fsspec.filesystem("gs", requester_pays = requester_pays)
+    fs = fsspec.filesystem("gs", requester_pays = True)
+
     path_csv = os.path.join(path_bucket, "s2info.csv")
     if fs.exists(path_csv):
         data = process_s2metadata(path_csv, fs=fs)
@@ -597,7 +609,8 @@ def download_s2(area_of_interest: Polygon,
     n_images_col = img_col_info_local.shape[0]
 
     # Save S2 images as csv
-    img_col_info_local.to_csv(path_csv, index=False)
+    with fs.open(path_csv, "wb") as fh:
+        img_col_info_local.to_csv(fh, index=False, mode="wb")
 
     print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()}")
 
@@ -622,7 +635,7 @@ def download_s2(area_of_interest: Polygon,
     tasks = []
     for good_images in img_col_info_local_good.itertuples():
         img_export = ee.Image(imgs_list.get(good_images.index_image_collection))
-        img_export = img_export.select(BANDS_S2_NAMES[collection_name] + ["probability"]).toFloat().clip(bounding_box_pol)
+        img_export = img_export.select(BANDS_S2_NAMES[collection_name] + ["probability"]).toUint16().clip(bounding_box_pol)
 
         date = good_images.datetime.strftime('%Y-%m-%d')
 
