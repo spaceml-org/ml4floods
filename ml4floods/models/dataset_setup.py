@@ -185,8 +185,9 @@ def get_dataset(data_config) -> pl.LightningDataModule:
                     "test": data_config.get("loader_type","local")=="local"}
 
     filenames_train_test = process_filename_train_test(data_config.get("train_test_split_file"),
-                                                       data_config.input_folder, data_config.target_folder,
-                                                       data_config.get("bucket_id"),
+                                                       input_folder=data_config.input_folder,
+                                                       target_folder=data_config.target_folder,
+                                                       bucket_id=data_config.get("bucket_id"),
                                                        path_to_splits=data_config.get("path_to_splits"),
                                                        download=download)
 
