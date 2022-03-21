@@ -4,6 +4,12 @@ The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z)
 It requires approximately 300GB of hard-disk storage. The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
+```{image} ./prep/images/worldfloods_v1.png
+:alt: WorldFloods dataset
+:width: 95%
+:align: center
+```
+
 ## Download the data from the Google Drive
 
 A subset of the data and the pretrained models are available in this [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH). 
@@ -17,6 +23,10 @@ drive.mount('/content/drive')
 ```
 
 Alternatively you can download it manually from that folder or even automatically with the [gdown](https://github.com/wkentaro/gdown) package. 
+
+```bash
+gdown --id 11O6aKZk4R6DERIx32o4mMTJ5dtzRRKgV
+```
 
 ## Download the data from the Google Bucket
 
