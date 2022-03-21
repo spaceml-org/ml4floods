@@ -26,6 +26,7 @@ import os
 import re
 import tempfile
 import sys
+from typing import List, Tuple, Union
 
 
 BANDS_S2 = ["B01", "B02","B03", "B04", "B05", "B06",
@@ -39,22 +40,22 @@ BANDS_RESOLUTION = OrderedDict({"B01": 60, "B02": 10,
                                 "B10": 60, "B11": 20, "B12": 20})
 
 
-def process_metadata_msi(xml_file):
+def process_metadata_msi(xml_file:str) -> Tuple[List[str], Polygon]:
     """
     Read the xml metadata and
     1) It gets the paths of the jp2 files of the SAFE product. It excludes the _TCI files.
     2) It gets the footprint of the image (polygon where image has valid values)
+    Params:
+        xml_file: description file found in root of .SAFE folder.  xxxx.SAFE/MTD_MSIL1C.xml or xxxx.SAFE/MTD_MSIL2A.xml
 
-    :param xml_file: description file found in root of .SAFE folder.  xxxx.SAFE/MTD_MSIL1C.xml or xxxx.SAFE/MTD_MSIL2A.xml
-    :return:
+    Returns:
+        List of jp2 files in the xml file
+        Polygon with the extent of the image
     """
     if xml_file.startswith("gs://"):
-        from google.cloud import storage
-        client = storage.Client()
-        with io.BytesIO() as file_obj:
-            client.download_blob_to_file(
-                xml_file, file_obj)
-            file_obj.seek(0)
+        import fsspec
+        fs = fsspec.filesystem("gs",requester_pays=True)
+        with fs.open(xml_file, "rb") as file_obj:
             root = ET.fromstring(file_obj.read())
     else:
         root = ET.parse(xml_file).getroot()
@@ -67,23 +68,6 @@ def process_metadata_msi(xml_file):
     footprint = Polygon([(float(lngstr), float(latstr)) for latstr, lngstr in zip(coords_split[::2], coords_split[1::2])])
 
     return jp2bands, footprint
-
-
-def s2loader(s2folder, out_res=10):
-    """
-    Loads a S2ImageL2A or S2ImageL1C depending on the product type
-
-    :param s2folder: .SAFE folder. Expected standard ESA naming convention (see s2_name_split fun)
-    :param out_res: default output resolution
-
-    """
-    _, producttype_nos2, _, _, _, _, _ = s2_name_split(s2folder)
-    if producttype_nos2 == "MSIL2A":
-        return S2ImageL2A(s2folder, out_res=out_res)
-    elif producttype_nos2 == "MSIL1C":
-        return S2ImageL1C(s2folder, out_res=out_res)
-
-    raise NotImplementedError(f"Don't know how to load {producttype_nos2} products")
 
 
 class S2Image:
@@ -130,6 +114,13 @@ class S2Image:
             self._transform = src.transform
             self._crs = src.crs
             self._bounds = src.bounds
+            self._dtype = src.dtype
+
+    @property
+    def dtype(self):
+        if not hasattr(self, "_dtype"):
+            self._load_attrs()
+        return self._dtype
 
     @property
     def shape(self):
@@ -151,7 +142,7 @@ class S2Image:
 
     @property
     def bounds(self):
-        if not hasattr(self, "_crs"):
+        if not hasattr(self, "_bounds"):
             self._load_attrs()
         return self._bounds
 
@@ -159,7 +150,7 @@ class S2Image:
         return self.folder
 
     def load_bands_bbox(self, bbox_read, dst_crs=None, bands=None, resolution_dst_crs=None,
-                        resampling=rasterio.warp.Resampling.cubic_spline):
+                        resampling=rasterio.warp.Resampling.cubic_spline) -> Tuple[np.ndarray, rasterio.Affine]:
         """
         Loads a list of bands in the bounding box provided at resolution_dst_crs
 
@@ -185,7 +176,7 @@ class S2Image:
         dst_tuple =  read_tiffs_bbox_crs([self.granule[b] for b in bands],
                                          bbox_read, dst_crs,
                                          resolution_dst_crs=resolution_dst_crs, resampling=resampling,
-                                         dtpye_dst=np.float32)
+                                         dtpye_dst=self.dtype)
         return dst_tuple
 
     def load_bands(self, bands=None, window=None):
@@ -199,12 +190,15 @@ class S2Image:
         if bands is None:
             bands = list(range(len(self.granule)))
 
-        window = self.get_window(window)
+        if window is None:
+            shape = self.shape
+            window = rasterio.windows.Window(col_off=0, row_off=0,
+                                             width=shape[1], height=shape[0])
 
         # Use src.read if all bands have the same resolution == out_res
         if all(BANDS_RESOLUTION[self.bands[iband]] == self.out_res  for iband in bands):
             shape_window = windows.shape(window)
-            dest_array = np.zeros((len(bands), ) + shape_window, dtype=np.float32)
+            dest_array = np.zeros((len(bands), ) + shape_window, dtype=self.dtype)
             for _i, iband in enumerate(bands):
                 with rasterio.open(self.granule[iband]) as src:
                     dest_array[_i] = src.read(1, window=window, boundless=True)
@@ -223,14 +217,6 @@ class S2Image:
         band_check_idx = self.bands.index(self.band_check)
         band = self.load_bands(bands=[band_check_idx], window=window)
         return (band == 0) | (band == (2**16)-1)
-
-    def get_window(self, window=None):
-        shape = self.shape
-        if window is None:
-            window = windows.Window(col_off=0, row_off=0, height=shape[0], width=shape[1])
-        else:
-            window = windows.evaluate(window, shape[0], shape[1], boundless=False)
-        return window
 
 
 class S2ImageL2A(S2Image):
@@ -491,9 +477,14 @@ class S2ImageL1C(S2Image):
 
             return msk
 
+        if window is None:
+            shape = self.shape
+            window = rasterio.windows.Window(col_off=0, row_off=0,
+                                             width=shape[1], height=shape[0])
+
         mask = self.load_mask(window=window)
 
-        slice_ = self.get_window(window).toslices()
+        slice_ = window.toslices()
 
         msk_op_cirr = [np.ma.MaskedArray(get_mask(mask_type=m)[slice_], mask=mask) for m in mask_types]
         msk_clouds = np.ma.MaskedArray(np.clip(np.sum(msk_op_cirr, axis=0), 0, 1), mask=mask)
@@ -513,6 +504,23 @@ class S2ImageL1C(S2Image):
             vals.append([np.float32(x) for x in text.strip().split()])
 
         return np.array(vals)
+
+
+def s2loader(s2folder:str, out_res:int=10) -> Union[S2ImageL2A, S2ImageL1C]:
+    """
+    Loads a S2ImageL2A or S2ImageL1C depending on the product type
+
+    :param s2folder: .SAFE folder. Expected standard ESA naming convention (see s2_name_split fun)
+    :param out_res: default output resolution
+
+    """
+    _, producttype_nos2, _, _, _, _, _ = s2_name_split(s2folder)
+    if producttype_nos2 == "MSIL2A":
+        return S2ImageL2A(s2folder, out_res=out_res)
+    elif producttype_nos2 == "MSIL1C":
+        return S2ImageL1C(s2folder, out_res=out_res)
+
+    raise NotImplementedError(f"Don't know how to load {producttype_nos2} products")
 
 
 NEW_FORMAT = "(S2\w{1})_(MSIL\w{2})_(\d{4}\d{2}\d{2}T\d{2}\d{2}\d{2})_(\w{5})_(\w{4})_T(\w{5})_(\w{15})"
@@ -699,6 +707,7 @@ def mosaic_s2(s2objs, bbox_read, dst_crs, res_s2, threshold_stop_invalid=1/1000.
             break
 
     return destination_array, current_clouds
+
 
 def generate_polygon(bbox):
     """
