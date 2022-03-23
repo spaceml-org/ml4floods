@@ -8,7 +8,6 @@ from typing import Union, Optional, List, Tuple
 from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods import configs
 from ml4floods.data import utils
-import os
 
 
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
@@ -44,26 +43,28 @@ def get_cmap_norm_colors(color_array, interpretation_array):
     return cmap_categorical, norm_categorical, patches
 
 
-def plot_tiff_image(file_path: str, **kwargs):
+def _read_data(filename:str,
+               bands_rasterio:Optional[List[int]]=None,
+               window:Optional[rasterio.windows.Window]=None,
+               size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+    """
+    Reads data from filename with rasterio possibly from the pyramids if `size_read` is not None.
+    Returns a tuple with the data read and the affine transformation.
 
-    # open image with rasterio
-    with rasterio.open(file_path) as src:
-        
-        # plot image
-        fig = rasterioplt.show(src.read(), transform=src.transform, **kwargs)
-    
-    return fig
+    Args:
+        filename:
+        bands_rasterio:
+        window:
+        size_read:
 
+    Returns:
+        (C, H, W) array and affine transformation
+    """
 
-def _read_data(input:str,
-              bands_rasterio:Optional[List[int]]=None,
-              window:Optional[rasterio.windows.Window]=None,
-              size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
-
-    with utils.rasterio_open_read(input) as rst:
+    with utils.rasterio_open_read(filename) as rst:
         if size_read is not None:
             if bands_rasterio is None:
-                n_bands = 1
+                n_bands = rst.count
             else:
                 n_bands = len(bands_rasterio)
 
@@ -95,42 +96,46 @@ def _read_data(input:str,
     return output, transform
 
 
-def plot_s2_cloud_prob_image(file_path: str, size_read:Optional[int]=None, **kwargs):
-    # open image with rasterio
-    with rasterio.open(file_path) as src:
-        # assert the image has 15 channels
-        assert src.meta["count"] == 15
-
-    output, transform = _read_data(file_path, bands_rasterio=[15], size_read=size_read)
-    output = output[0]
-    # plot image
-    return rasterioplt.show(output, transform=transform, vmin=0, vmax=100, cmap="gray", **kwargs)
-
-
-def get_image_transform(input:Union[str, np.ndarray],
+def get_image_transform(array_or_file:Union[str, np.ndarray],
                         transform:Optional[rasterio.Affine]=None,
                         bands:List[int]=None,
                         window:Optional[rasterio.windows.Window]=None,
                         size_read:Optional[int]=None) -> Tuple[np.ndarray, rasterio.Affine]:
+    """
+    Reads certain bands and window from `array_or_file`. If `array_or_file` is a file with `size_read` we can read
+    from the pyramids of the data to speed up plotting.
+
+    Args:
+        array_or_file: array or file to read the data.
+        transform: if `array_or_file` is a `np.array`, this current affine transform of it.
+        bands: 0-based bands to read.
+        window: `rasterio.windows.Window` to read
+        size_read: if `array_or_file` is a string, this will be the max size of height and width. It is used to read
+        from the pyramids  of the file.
+
+    Returns:
+        (C, H, W) array and affine transformation
+
+    """
 
     if bands is not None:
         bands_rasterio = [b+1 for b in bands]
     else:
         bands_rasterio = None
 
-    if isinstance(input, str):
-        return _read_data(input, bands_rasterio, window=window, size_read=size_read)
+    if isinstance(array_or_file, str):
+        return _read_data(array_or_file, bands_rasterio, window=window, size_read=size_read)
 
-    if hasattr(input, "cpu"):
-        input = input.cpu()
+    if hasattr(array_or_file, "cpu"):
+        array_or_file = array_or_file.cpu()
 
-    input = np.array(input)
+    array_or_file = np.array(array_or_file)
     if window is None:
         window_slices = (slice(None), slice(None), slice(None))
     else:
         window_slices = (slice(None),) + window.toslices()
 
-    output = input[bands, ...]
+    output = array_or_file[bands, ...]
     output = output[window_slices]
     if transform is not None:
         transform = transform if window is None else rasterio.windows.transform(window, transform)
@@ -226,7 +231,7 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
     """
     Prediction expected to be {0: land, 1: water, 2: cloud}
     Args:
-        prediction:
+        prediction: (1, H, W) tensor or path to tiff tile with codes {0: land, 1: water, 2: cloud}
         transform:
         window:
         legend:
@@ -320,7 +325,8 @@ def plot_gt_v2(target: Union[str, np.ndarray], transform:Optional[rasterio.Affin
                window:Optional[rasterio.windows.Window]=None,
                legend=True, size_read:Optional[int]=None, **kwargs):
     """
-    ground truth `target` expected to be 2 channel image [{0: invalid: 1: land, 2: cloud}, {0:invalid, 1:land, 2: water}]
+    ground truth `target` expected to be 2 channel image with the following code:
+        [{0: invalid: 1: land, 2: cloud}, {0:invalid, 1:land, 2: water}]
 
     We use the invalid values of the land/water mask
 
@@ -392,53 +398,8 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
     return ax
 
 
-def download_tiff(local_folder: str, tiff_input: str, folder_ground_truth: str,
-                  folder_permanent_water: Optional[str] = None, requester_pays:bool=True) -> str:
-    """
-    Download a set of tiffs from the google bucket to a local folder
-
-    Args:
-        local_folder: local folder to download
-        tiff_input: input tiff file
-        folder_ground_truth: folder with ground truth images
-        folder_permanent_water: folder with permanent water images
-        requester_pays: Requester pays option of the bucket
-
-    Returns:
-        location of tiff_input in the local file system
-
-    """
-    import fsspec
-    fs = fsspec.filesystem("gs", requester_pays=requester_pays)
-
-    folders = ["/S2/", folder_ground_truth]
-    if folder_permanent_water is not None:
-        folders.append(folder_permanent_water)
-
-    for folder in folders:
-        file_to_download = tiff_input.replace("/S2/", folder)
-        if folder.startswith("/"):
-            folder = folder[1:]
-        folder_iter = os.path.join(local_folder, folder)  # remove /
-        file_local = os.path.join(folder_iter, os.path.basename(file_to_download))
-        if folder == "S2/":
-            return_folder = file_local
-        if os.path.exists(file_local):
-            continue
-        if not fs.exists(file_to_download):
-            print(f"WARNING!! file {file_to_download} does not exists")
-            continue
-
-        os.makedirs(folder_iter, exist_ok=True)
-        fs.get_file(file_to_download, file_local)
-        print(f"Downloaded file {file_local}")
-
-    return return_folder
-
-
-
-def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray ,title:Optional[str] = None, 
-                     transform:Optional[rasterio.Affine]=None, channel_configuration = 'all', **kwargs):
+def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray ,title:Optional[str] = None,
+                           transform:Optional[rasterio.Affine]=None, channel_configuration = 'all', **kwargs):
     """
     Plots a S2 image and overlapping FP, FN and TP with masked clouds, computed from 
     compute_positives function

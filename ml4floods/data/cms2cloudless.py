@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 import rasterio
 from s2cloudless import S2PixelCloudDetector
-from ml4floods.data.config import BANDS_S2
+from ml4floods.data.worldfloods.configs import BANDS_S2
 
 
 def sentinel2_to_cloud_mask_preprocess(x):
@@ -52,7 +52,7 @@ def compute_cloud_mask_save(cp_path, x, profile):
 
 
 def compute_s2cloudless_probs(s2_image_path: str, window: Optional[rasterio.windows.Window]=None, **kwargs) -> np.ndarray:
-    bands_read = list(range(1, len(BANDS_S2)))
+    bands_read = list(range(1, len(BANDS_S2) + 1))
     
     # open the S2 Image
     with rasterio.open(s2_image_path, "r") as s2_rst:

@@ -45,8 +45,7 @@ def main(event_start_date, cems_code:str="", aoi_code:str=""):
             f"CEMS code: {cems_code} not in table of activations\n {table_activations_ems}"
     
     unzipped_activations_parent_dir = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip"
-    data_store = "1_Staging"
-    gcp_output_parent_dir = f"gs://ml4cc_data_lake/0_DEV/{data_store}/WorldFloods/"
+    gcp_output_parent_dir = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/"
 
     # ===== Generate and store registers per code ===========
     with tqdm(esmr_codes, total=len(esmr_codes), desc="Processing floodmaps") as pbar:
@@ -65,7 +64,7 @@ def main(event_start_date, cems_code:str="", aoi_code:str=""):
                         paths_to_copy_glob = os.path.join(f"gs://{aoi_dir}", f"{name_file}*")
 
                         with tempfile.TemporaryDirectory(prefix=name_file) as tmpdirname:
-                            # TODO remove dependency of subprocess
+                            # TODO remove dependency of subprocess (fs.glob and fs.get_file)
                             subprocess.run(["gsutil", "-m", "cp", paths_to_copy_glob, tmpdirname+"/"],
                                            capture_output=True)
                             metadata_floodmap = activations.filter_register_copernicusems(tmpdirname,

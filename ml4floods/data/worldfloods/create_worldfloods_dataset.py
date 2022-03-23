@@ -288,9 +288,15 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.set_description(f"Saving GT {file_name}...")
 
+            if gt.shape[0] == 2:
+                desc = ["invalid/clear/cloud", "invalid/land/water"]
+            else:
+                desc = ["invalid/land/water/cloud"]
+
             save_cog.save_cog(gt, gt_path_dest,
                               {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
                                "compress": "lzw", "nodata": 0}, # In both gts 0 is nodata
+                              descriptions=desc,
                               tags=gt_meta)
 
             # upload meta json to bucket

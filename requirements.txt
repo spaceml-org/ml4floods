@@ -8,16 +8,11 @@ scipy
 pandas
 rasterio
 geopandas
-fastprogress
 tqdm
-black
-isort
-mypy
 opencv-python
 albumentations
 seaborn
 google-cloud-storage
-pyprojroot
 fsspec
 gcsfs
 requests_html

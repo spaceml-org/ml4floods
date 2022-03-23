@@ -46,6 +46,47 @@ def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:
     return filenames_train_test
 
 
+def validate_worldfloods_data(path_to_splits:str,
+                              split_folders:List[str] = ["train", "val", "test"],
+                              folders_to_test:List[str] = ["S2", "gt"],
+                              verbose:bool=True):
+    """
+    Check the structure of the data follows the expected convention
+    Args:
+        path_to_splits: path where train/test/val splits are.
+        split_folders: Split folders to check
+        folders_to_test: products to test (i.e. this could be S2, PERMANENTWATERJRC, floodmaps,...)
+        verbose: prints success
+
+    Raises:
+        FileNotFoundError if something goes wrong
+
+    """
+    if not os.path.exists(path_to_splits):
+        raise FileNotFoundError(f" Path to splits folder not found {path_to_splits}")
+
+    for isplit in split_folders:
+        folder_split = os.path.join(path_to_splits, isplit)
+        if not os.path.exists(folder_split):
+            raise FileNotFoundError(f"Splits folder not found {folder_split}")
+
+        filenames = None
+        for foldername in folders_to_test:
+            folder_path = os.path.join(folder_split, foldername)
+            if not os.path.exists(folder_path):
+                raise FileNotFoundError(f" Folder not found {folder_path}")
+            filenames_folder = [os.path.basename(os.path.splitext(f)[0]) for f in sorted(glob(os.path.join(folder_path, "*")))]
+            if len(filenames_folder) == 0:
+                raise FileNotFoundError(f"Folder {folder_path} does not have any files on it")
+            if filenames is None:
+                filenames = filenames_folder
+            else:
+                if filenames != filenames_folder:
+                    raise FileNotFoundError(f"Different files {filenames} {filenames_folder}")
+    if verbose:
+        print("Data downloaded follows the expected format")
+
+
 def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_test_split.json",
                                 input_folder:str="S2",
                                 target_folder:str="gt",
@@ -144,8 +185,9 @@ def get_dataset(data_config) -> pl.LightningDataModule:
                     "test": data_config.get("loader_type","local")=="local"}
 
     filenames_train_test = process_filename_train_test(data_config.get("train_test_split_file"),
-                                                       data_config.input_folder, data_config.target_folder,
-                                                       data_config.get("bucket_id"),
+                                                       input_folder=data_config.input_folder,
+                                                       target_folder=data_config.target_folder,
+                                                       bucket_id=data_config.get("bucket_id"),
                                                        path_to_splits=data_config.get("path_to_splits"),
                                                        download=download)
 
@@ -226,7 +268,6 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     Function to generate transformations object to pass to dataloader
     TODO: Build from config instead of using default values
     """
-    channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
 
     train_transform = [
         transformations.InversePermuteChannels(),
@@ -237,7 +278,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         warnings.warn("Train transformation not found in data config. Assume normalize is True")
         data_config["train_transformation"] = AttrDict({"normalize": True})
 
+    channel_mean = None
     if data_config.train_transformation.normalize:
+        channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
         train_transform.append(transformations.Normalize(
             mean=channel_mean,
             std=channel_std,
@@ -255,6 +298,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         data_config["test_transformation"] = AttrDict({"normalize": True})
     
     if data_config.test_transformation.normalize:
+        if channel_mean is None:
+            channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+
         test_transform = [
         transformations.InversePermuteChannels(), 
         transformations.Normalize(
