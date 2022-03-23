@@ -7,7 +7,7 @@ from typing import List
 from PIL import Image
 import numpy as np
 import geopandas
-from ml4floods.data.config import BANDS_S2
+from ml4floods.data.worldfloods.configs import BANDS_S2
 from ml4floods.serve.read_tile import read_tile
 from rasterio import warp
 from ml4floods.data import utils, create_gt, save_cog
@@ -115,6 +115,31 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
 
+<<<<<<< HEAD
+=======
+
+@app.route("/<subset>/<eventid>/<predname>.geojson")
+def read_floodmap_pred(subset:str, eventid:str, predname:str):
+    # WF2_unet_full_norm_vec
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname, f"{eventid}.geojson")
+    data = geopandas.read_file(floodmap_address)
+
+    # All parts of a simplified geometry will be no more than tolerance distance from the original
+    data["geometry"] = data["geometry"].simplify(tolerance=10)
+
+    data.to_crs("epsg:4326", inplace=True)
+    # data["id"] = np.arange(data.shape[0])
+
+    buf = io.BytesIO()
+    data.to_file(buf, driver="GeoJSON")
+
+    buf.seek(0,0)
+    return send_file(buf,
+                     as_attachment=True,
+                     download_name=f'{subset}_{eventid}_{predname}.geojson',
+                     mimetype='application/geojson')
+
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
@@ -159,20 +184,36 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     """
 
+<<<<<<< HEAD
     # TODO Add MNDWI?
 
+=======
+    productnamefolder = productname
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     if productname.startswith("S2"):
         band_composite = productname.replace("S2","")
         if band_composite == "RGB":
             bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         else:
             bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
+<<<<<<< HEAD
 
         productname = "S2"
+=======
+        productname = "S2"
+        productnamefolder = "S2"
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         bands = [2]
         resampling = warp.Resampling.nearest
+<<<<<<< HEAD
+=======
+    elif productname == "MNDWI":
+        bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
+        resampling = warp.Resampling.cubic_spline
+        productnamefolder = "S2"
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
@@ -183,7 +224,15 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         raise NotImplementedError(f"Productname {productname} not found")
 
 
+<<<<<<< HEAD
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
+=======
+    image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productnamefolder, f"{eventid}.tif")
+
+    if not os.path.exists(image_address):
+        logging.error(f"{image_address} does not exist")
+        return '', 204
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
                        resampling=resampling, dst_nodata=0)
@@ -193,6 +242,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         return '', 204
 
     rst_arr, _ = output
+    # rst_arr = np.nan_to_num(rst_arr, copy=False, nan=0)
 
     if productname == "S2":
         alpha = (~np.all(rst_arr == 0, axis=0)).astype(np.uint8) * 255
@@ -208,6 +258,18 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
+<<<<<<< HEAD
+=======
+    elif productname == "MNDWI":
+        invalid = np.all(rst_arr == 0, axis=0)
+        band_sum = rst_arr[1] + rst_arr[0]
+        band_diff = rst_arr[1] - rst_arr[0]
+        dwi = band_diff / (band_sum + 1e-6)
+        dwi_threshold = (dwi > 0).astype(np.uint8) + 1
+        dwi_threshold[invalid] = 0
+        img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
+        mode = "RGB"
+>>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
@@ -285,10 +347,14 @@ def worldfloods_files(rl:str):
     worldfloods = []
 
     for json_file in json_files:
+        json_file = json_file.replace("\\", "/")
+        if "/banned/" in json_file:
+            continue
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
         meta_copy = {k:meta[k] for k in KEYS_COPY}
+        meta_copy["date_ems_code"] = meta.get("date_ems_code", "UNKNOWN")
         meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
         meta_copy["geometry"] = meta["area_of_interest_polygon"]
 

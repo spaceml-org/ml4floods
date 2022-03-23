@@ -8,7 +8,8 @@ import rasterio
 import rasterio.windows
 from rasterio import features
 
-from ml4floods.data.config import BANDS_S2, CODES_FLOODMAP
+from ml4floods.data.worldfloods.configs import BANDS_S2
+from ml4floods.data.config import CODES_FLOODMAP
 from ml4floods.data import utils
 from skimage.morphology import binary_opening, disk
 import torch
@@ -129,7 +130,7 @@ def read_s2img_cloudmask(
 
     """
     if bands_read is None:
-        bands_read = list(range(1, len(BANDS_S2)))
+        bands_read = list(range(1, len(BANDS_S2) + 1))
     else:
         bands_read = [b+1 for b in bands_read]
 
@@ -251,9 +252,9 @@ def generate_land_water_cloud_gt(
         if permanent_water_image_path is not None
         else "None"
     )
-    metadata["cloudprob_tiff"] = (
+    metadata["cloudprob_image_path"] = (
         os.path.basename(cloudprob_image_path)
-        if not cloudprob_image_path is not None
+        if cloudprob_image_path is not None
         else "None"
     )
     metadata["method clouds"] = "s2cloudless"
@@ -475,7 +476,7 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.any(np.isnan(s2_img), axis=0) | np.all(s2_img[:(len(BANDS_S2) - 1)] == 0, axis=0) | (water_mask == -1)
+    invalids = np.any(np.isnan(s2_img), axis=0) | np.all(s2_img[:len(BANDS_S2)] == 0, axis=0) | (water_mask == -1)
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
