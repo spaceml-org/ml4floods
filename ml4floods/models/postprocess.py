@@ -86,7 +86,6 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
                      th_water:int = 0.5, th_cloud:int = 0.5, mask_clouds:bool = True) -> Union[np.ndarray, torch.Tensor]:
     """
     Receives an output of a WFV2 model (multioutput binary) and returns the corresponding 3-class segmentation mask
-
     Args:
         inputs: S2 image (C, H, W)
         prediction: corresponding model output (2, H, W)
@@ -97,7 +96,6 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
         
     Returns:
         Water mask (H, W) with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
-
     """
     if isinstance(inputs, torch.Tensor):
         mask_invalids = torch.all(inputs == 0, dim=0).cpu()
