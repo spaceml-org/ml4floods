@@ -114,7 +114,7 @@ class S2Image:
             self._transform = src.transform
             self._crs = src.crs
             self._bounds = src.bounds
-            self._dtype = src.dtype
+            self._dtype = src.dtypes
 
     @property
     def dtype(self):
