@@ -115,8 +115,6 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
 
-<<<<<<< HEAD
-=======
 
 @app.route("/<subset>/<eventid>/<predname>.geojson")
 def read_floodmap_pred(subset:str, eventid:str, predname:str):
@@ -139,7 +137,6 @@ def read_floodmap_pred(subset:str, eventid:str, predname:str):
                      download_name=f'{subset}_{eventid}_{predname}.geojson',
                      mimetype='application/geojson')
 
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
@@ -184,36 +181,23 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
 
     """
 
-<<<<<<< HEAD
-    # TODO Add MNDWI?
-
-=======
     productnamefolder = productname
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     if productname.startswith("S2"):
         band_composite = productname.replace("S2","")
         if band_composite == "RGB":
             bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         else:
             bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
-<<<<<<< HEAD
-
-        productname = "S2"
-=======
         productname = "S2"
         productnamefolder = "S2"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         bands = [2]
         resampling = warp.Resampling.nearest
-<<<<<<< HEAD
-=======
     elif productname == "MNDWI":
         bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
         resampling = warp.Resampling.cubic_spline
         productnamefolder = "S2"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
@@ -224,15 +208,11 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         raise NotImplementedError(f"Productname {productname} not found")
 
 
-<<<<<<< HEAD
-    image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
-=======
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productnamefolder, f"{eventid}.tif")
 
     if not os.path.exists(image_address):
         logging.error(f"{image_address} does not exist")
         return '', 204
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
                        resampling=resampling, dst_nodata=0)
@@ -258,8 +238,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
-<<<<<<< HEAD
-=======
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
         band_sum = rst_arr[1] + rst_arr[0]
@@ -269,7 +247,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         dwi_threshold[invalid] = 0
         img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
@@ -397,5 +374,4 @@ if __name__ == "__main__":
     # gunicorn core.asgi:application -w ${NUMBER_OF_WORKERS:-1} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 
     app.run(port=args.port, debug=True, host=args.host, threaded=False)
-
 
