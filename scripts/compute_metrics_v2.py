@@ -1,12 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb  7 09:09:23 2022
 
-@author: 1
-
-Compute metrics for ml4floods package:
-compute_metrics_v2 uses water probability band to compute the metrics
-"""
 import numpy as np
 import os
 
@@ -67,10 +59,8 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
                 (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
             """
             with torch.no_grad():
-                #pred = inference_function(s2tensor.unsqueeze(0))[0] # (2, H, W)
                 pred = inference_function(s2tensor) # (2, H, W)
-                #pred = inference_function(s2tensor)[0] # (2, H, W) NO RESPETA EL BATCH
-            #return get_pred_mask_v2(s2tensor, pred, channels_input=channels)
+
             return pred
 
     else:
@@ -82,15 +72,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
                 (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
             """
             with torch.no_grad():
-                #pred = inference_function(s2tensor.unsqueeze(0))[0] # (3, H, W)
                 pred = inference_function(s2tensor) # (3, H, W)
-                #pred = inference_function(s2tensor)[0] # (2, H, W) NO RESPETA EL BATCH
-                # mask_invalids = torch.all(s2tensor == 0, dim=1).squeeze() # (H, W)
-                # prediction = torch.argmax(pred, dim=0).type(torch.uint8) + 1 # (H, W)
-                #prediction = (pred[1] > .5).type(torch.uint8) + 1 # (H, W)
-                #prediction[mask_invalids] = 0
-                
-            #return prediction
             return pred
 
     return predict, channels
@@ -157,7 +139,7 @@ if __name__ == '__main__':
     import traceback
     import sys
 
-    device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device("cuda:1")
 
     experiments_dev = ["WFV1_unet", "WF1_unet_all", "WF1_unet_bgr", "WF1_unet_rgbiswir", "WF1_unet_rgbi",
                        "WF1_hrnet_rgbbs32", "WF1_hrnet_allbs32", "WF2_unet",
@@ -168,10 +150,6 @@ if __name__ == '__main__':
     path_2_splits = "/worldfloods/worldfloods_v1_0/"
     experiment_path = "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart"
     
-    experiments_dev = ['WF1_unet_full_norm','WF2_unet_full_norm']
-    path_2_splits = r'X:\media\disk\databases\WORLDFLOODS\2_Mart\worldfloods_extra_v2_0_BRIGHTNESS'
-    experiment_path = r'X:\home\kike\Projectes\ml4floods\2_MLModelMart'
-
     for e in tqdm(experiments_dev):
         try:
             main(e, experiment_path=experiment_path, path_to_splits=path_2_splits, device=device)
