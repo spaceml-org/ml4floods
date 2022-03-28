@@ -46,8 +46,6 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
     else:
         inference_function = get_model_inference_function(model, config, apply_normalization=False,
                                                   activation='softmax')
-        
-
 
     if config.model_params.get("model_version", "v1") == "v2":
         # Add post-processing of binary mask
@@ -60,9 +58,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
             """
             with torch.no_grad():
                 pred = inference_function(s2tensor) # (2, H, W)
-
             return pred
-
     else:
         def predict(s2tensor: torch.Tensor) -> torch.Tensor:
             """
