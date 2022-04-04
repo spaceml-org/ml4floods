@@ -57,7 +57,8 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
         verbose: print stuff
 
     Returns:
-        image collection with S2 imaages and s2cloudless cloud masks
+        image collection with S2 imaages and s2cloudless cloud masks.
+        None if no image satisfies the condition in the collection
     """
 
     # GEE doesnt like time zones
