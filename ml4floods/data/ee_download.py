@@ -81,23 +81,27 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
 
     n_images_s2cloudless = s2_cloudless_col.size().getInfo()
 
-    if n_images_s2cloudless != n_images_col:
-        raise NotImplementedError(f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
-        # TODO add band probability from BQA60
-        # img_col_all_join = img_col_all
-        # TODO use s2cloudless in the ones that exist?
+    if n_images_col > n_images_s2cloudless:
+        raise NotImplementedError(
+            f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
 
-    else:
-        img_col_all_join = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
-            'primary': img_col_all,
-            'secondary': s2_cloudless_col,
-            'condition': ee.Filter.equals(**{
-                'leftField': 'system:index',
-                'rightField': 'system:index'
-            })
-        }))
-        # Add s2cloudless as new band
-        img_col_all_join = img_col_all_join.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+    img_col_all_join = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
+        'primary': img_col_all,
+        'secondary': s2_cloudless_col,
+        'condition': ee.Filter.equals(**{
+            'leftField': 'system:index',
+            'rightField': 'system:index'
+        })
+    }))
+    # Add s2cloudless as new band
+    img_col_all_join = img_col_all_join.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+
+    # Check no image is lost in the inner join
+    n_images_join = img_col_all_join.size().getInfo()
+
+    if n_images_join < n_images_col:
+        raise NotImplementedError(
+            f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We cannot continue")
 
     daily_mosaic =  collection_mosaic_day(img_col_all_join, bounds)
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
