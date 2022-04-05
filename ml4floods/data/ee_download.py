@@ -77,14 +77,14 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
 
     # Import and filter s2cloudless.
     s2_cloudless_col = (ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY')
-        .filterBounds(bounds)
+        # .filterBounds(bounds)
         .filterDate(date_start, date_end))
 
-    n_images_s2cloudless = s2_cloudless_col.size().getInfo()
+    # n_images_s2cloudless = s2_cloudless_col.size().getInfo()
 
-    if n_images_col > n_images_s2cloudless:
-        raise NotImplementedError(
-            f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
+    # if n_images_col > n_images_s2cloudless:
+    #     raise NotImplementedError(
+    #         f"Different number of S2 images in S2 collection {n_images_col} than in s2cloudless {n_images_s2cloudless} will not use s2cloudless")
 
     img_col_all_join = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
         'primary': img_col_all,
