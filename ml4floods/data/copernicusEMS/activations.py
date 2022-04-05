@@ -216,6 +216,7 @@ formats = [
     "%d/%m/%Y %H:%M:%S",
     "%Y/%m/%d %H:%M UTC",
     "%d/%m/%Y %H:%M:%S UTC",
+    "%m/%d/%Y T%H:%M:%SZ",
 ]
 
 
