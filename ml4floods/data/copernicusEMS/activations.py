@@ -479,7 +479,7 @@ def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Opt
     pd_geo = gpd.read_file(observed_event_file)
     if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
         print(
-            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}"
+            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'][~pd_geo.event_type.isna()])}"
         )
         return
 
