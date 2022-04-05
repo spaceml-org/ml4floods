@@ -12,7 +12,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Polygon, mapping
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 from datetime import datetime
 
 from ml4floods.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
@@ -36,7 +36,7 @@ def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         return gpddats_notland
 
     land_geometries = gpddats.geometry[~isnot_land]
-    land_geometries = cascaded_union(land_geometries.tolist())
+    land_geometries = unary_union(land_geometries.tolist())
 
     # Not all polygons are valid: filter to valid gpddats_notland
     gpddats_notland_valid = gpddats_notland[gpddats_notland["geometry"].is_valid]
