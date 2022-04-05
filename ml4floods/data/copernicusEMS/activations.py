@@ -344,7 +344,7 @@ def filter_register_copernicusems(
     if not area_of_interest_file:
         return
 
-    pd_source = load_source_file(source_file)
+    pd_source = load_source_file(source_file, verbose=verbose)
     if pd_source is None:
         return
 
