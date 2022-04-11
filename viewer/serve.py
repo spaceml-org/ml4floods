@@ -89,7 +89,7 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Expand any multipolygons of the geopandas dataframe to polygons.
     """
 
-    if all(shp_pd.geometry.apply(lambda geom: geom.geom_type) == "Polygon"):
+    if all(shp_pd.geometry.apply(lambda geom: (geom is not None) and (geom.geom_type == "Polygon"))):
         return shp_pd
 
     new_shp = []
