@@ -240,6 +240,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
+        rst_arr = rst_arr.astype(np.float32)
         band_sum = rst_arr[1] + rst_arr[0]
         band_diff = rst_arr[1] - rst_arr[0]
         dwi = band_diff / (band_sum + 1e-6)
