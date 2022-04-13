@@ -19,7 +19,8 @@ import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, List
 
-def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
+def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024,
+                            th_water:float=.5) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
 
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
@@ -54,7 +55,8 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
             """
             with torch.no_grad():
                 pred = inference_function(s2tensor.unsqueeze(0))[0] # (2, H, W)
-            return get_pred_mask_v2(s2tensor, pred, channels_input=channels)
+            return get_pred_mask_v2(s2tensor, pred, channels_input=channels,
+                                    th_water=th_water)
 
     else:
         def predict(s2tensor: torch.Tensor) -> torch.Tensor:
@@ -77,7 +79,8 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
 
 
 @torch.no_grad()
-def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024):
+def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024,
+         th_water:float=.5):
 
     # This takes into account that this could be run on windows
     output_folder = output_folder.replace("\\", "/")
@@ -89,7 +92,8 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
     else:
         experiment_name = os.path.basename(model_path)
 
-    inference_function, channels = load_inference_function(model_path, device_name, max_tile_size=max_tile_size)
+    inference_function, channels = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
+                                                           th_water=th_water)
 
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
@@ -197,9 +201,13 @@ if __name__ == "__main__":
                              "If not provided it will be saved in dirname(s2)/basename(model_path)/",
                         required=False)
     parser.add_argument("--max_tile_size", help="", type=int, default=1_024, required=False)
+    parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)", type=float, default=.5)
     parser.add_argument('--device_name', default="cuda", help="Device name")
 
     args = parser.parse_args()
+
+    if args.device_name != "cpu" and not torch.cuda.is_available():
+        raise NotImplementedError("Cuda is not available. run with --device_name cpu")
 
     # Compute folder name to save the predictions if not provided
     if not args.output_folder:
@@ -220,7 +228,7 @@ if __name__ == "__main__":
         output_folder = args.output_folder
 
     main(model_path=args.model_path, s2folder_file=args.s2,device_name=args.device_name,
-         output_folder=output_folder, max_tile_size=args.max_tile_size)
+         output_folder=output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water)
 
 
 

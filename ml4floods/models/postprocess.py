@@ -83,7 +83,7 @@ def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
 
 def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[np.ndarray, torch.Tensor],
                      channels_input:Optional[List[int]]=None,
-                     th_water:int = 0.5, th_cloud:int = 0.5, mask_clouds:bool = True) -> Union[np.ndarray, torch.Tensor]:
+                     th_water:float = 0.5, th_cloud:float = 0.5, mask_clouds:bool = True) -> Union[np.ndarray, torch.Tensor]:
     """
     Receives an output of a WFV2 model (multioutput binary) and returns the corresponding 3-class segmentation mask
     Args:
