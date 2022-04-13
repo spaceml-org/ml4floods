@@ -251,7 +251,7 @@ def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.wind
     Reads from a tiff the specified channel and window.
 
     Args:
-        tiff_input:
+        tiff_input: path to geotiff file
         window: rasterio.Window object to read (None to read all)
         channels: 0-based channels to read
 

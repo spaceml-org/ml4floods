@@ -89,7 +89,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
     else:
         experiment_name = os.path.basename(model_path)
 
-    inference_function, channels = load_inference_function(model_path, device_name,max_tile_size=max_tile_size)
+    inference_function, channels = load_inference_function(model_path, device_name, max_tile_size=max_tile_size)
 
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
