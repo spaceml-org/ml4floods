@@ -267,9 +267,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         mode = "RGB"
     elif productname == "BRIGHTNESS":
         invalid = np.all(rst_arr == 0, axis=0)
-        rst_arr = rst_arr.astype(np.float32) ** 2
-        rst_arr = np.sqrt(np.sum(rst_arr, axis=0))
-        brightness_threshold = (rst_arr >= 3_000).astype(np.uint8) + 1
+        brightness = create_gt.get_brightness(rst_arr, [1, 2, 3])
+        brightness_threshold = (brightness >= create_gt.BRIGHTNESS_THRESHOLD).astype(np.uint8) + 1
         brightness_threshold[invalid] = 0
         img_rgb = mask_to_rgb(brightness_threshold, [0, 1, 2], colors=COLORS[(0,1, 3),...])
         mode = "RGB"

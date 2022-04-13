@@ -3,6 +3,7 @@ from ml4floods.models.model_setup import get_model
 from ml4floods.models.model_setup import get_model_inference_function
 from ml4floods.models.model_setup import get_channel_configuration_bands
 from ml4floods.data.worldfloods import dataset
+from ml4floods.data import create_gt
 from ml4floods.models import postprocess
 import torch
 import rasterio
@@ -20,7 +21,7 @@ from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, List
 
 def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024,
-                            th_water:float=.5) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
+                            th_water:float=.5, th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
 
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
@@ -56,7 +57,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
             with torch.no_grad():
                 pred = inference_function(s2tensor.unsqueeze(0))[0] # (2, H, W)
             return get_pred_mask_v2(s2tensor, pred, channels_input=channels,
-                                    th_water=th_water)
+                                    th_water=th_water,th_brightness=th_brightness)
 
     else:
         def predict(s2tensor: torch.Tensor) -> torch.Tensor:
@@ -80,7 +81,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
 
 @torch.no_grad()
 def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024,
-         th_water:float=.5, overwrite:bool=False):
+         th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD, th_water:float=.5, overwrite:bool=False):
 
     # This takes into account that this could be run on windows
     output_folder = output_folder.replace("\\", "/")
@@ -93,7 +94,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
         experiment_name = os.path.basename(model_path)
 
     inference_function, channels = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
-                                                           th_water=th_water)
+                                                           th_water=th_water,th_brightness=th_brightness)
 
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
@@ -127,7 +128,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
 
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total+1}/{len(s2files)}) Processing {filename}")
         try:
-            if exists_tiff:
+            if not overwrite and exists_tiff:
                 with rasterio.open(filename_save) as rst:
                     prediction = rst.read(1)
                     crs  = rst.crs
@@ -203,7 +204,10 @@ if __name__ == "__main__":
     parser.add_argument("--max_tile_size", help="", type=int, default=1_024, required=False)
     parser.add_argument('--overwrite', default=False, action='store_true',
                         help="Overwrite the prediction if exists")
-    parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)", type=float, default=.5)
+    parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)",
+                        type=float, default=.5)
+    parser.add_argument("--th_brightness", help="Threshold brightness used to get cloud predictions",
+                        type=float, default=create_gt.BRIGHTNESS_THRESHOLD)
     parser.add_argument('--device_name', default="cuda", help="Device name")
 
     args = parser.parse_args()
@@ -231,7 +235,7 @@ if __name__ == "__main__":
 
     main(model_path=args.model_path, s2folder_file=args.s2,device_name=args.device_name,
          output_folder=output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water,
-         overwrite=args.overwrite)
+         overwrite=args.overwrite,th_brightness=args.th_brightness)
 
 
 
