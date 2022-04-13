@@ -110,7 +110,7 @@
 
           // Adds the tilelayers of all the products
           worldfloods[name]["tilelayers"] = [];
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI"]){
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "gtcloud", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI", "BRIGHTNESS"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
 
             // TODO set maxZoom and minZoom? -> https://leafletjs.com/reference.html#tilelayer
