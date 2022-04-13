@@ -80,7 +80,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
 
 @torch.no_grad()
 def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024,
-         th_water:float=.5):
+         th_water:float=.5, overwrite:bool=False):
 
     # This takes into account that this could be run on windows
     output_folder = output_folder.replace("\\", "/")
@@ -122,7 +122,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
         filename_save_vect = os.path.join(output_folder_vec, f"{os.path.splitext(os.path.basename(filename))[0]}.geojson")
 
         exists_tiff = fs_dest.exists(filename_save)
-        if exists_tiff and fs_dest.exists(filename_save_vect):
+        if not overwrite and exists_tiff and fs_dest.exists(filename_save_vect):
             continue
 
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total+1}/{len(s2files)}) Processing {filename}")
@@ -201,6 +201,8 @@ if __name__ == "__main__":
                              "If not provided it will be saved in dirname(s2)/basename(model_path)/",
                         required=False)
     parser.add_argument("--max_tile_size", help="", type=int, default=1_024, required=False)
+    parser.add_argument('--overwrite', default=False, action='store_true',
+                        help="Overwrite the prediction if exists")
     parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)", type=float, default=.5)
     parser.add_argument('--device_name', default="cuda", help="Device name")
 
@@ -228,7 +230,8 @@ if __name__ == "__main__":
         output_folder = args.output_folder
 
     main(model_path=args.model_path, s2folder_file=args.s2,device_name=args.device_name,
-         output_folder=output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water)
+         output_folder=output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water,
+         overwrite=args.overwrite)
 
 
 
