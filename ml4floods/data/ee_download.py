@@ -65,6 +65,8 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
         # Store images in S2 range
         img_radiances = img.select(BANDS_NAMES["Landsat"][:-1]).multiply(10_000).toUint16()
         img_return = img_radiances.addBands(img.select("QA_PIXEL")).addBands(clouds)
+        img_return = img_return.copyProperties(img)
+        img_return = img_return.set("system:time_start", img.get("system:time_start"))
         return img_return
 
     l89 = l89.map(add_cloud_prob)
