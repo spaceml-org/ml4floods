@@ -15,10 +15,10 @@ import math
 
 
 BANDS_S2_NAMES = {
-    # Sentinel-2 L1C
-    "COPERNICUS/S2" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60"],
-    # Sentinel-2 L2A
-    "COPERNICUS/S2_SR" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12", "SCL"]
+    # Sentinel-2 L1C COPERNICUS/S2 COPERNICUS/S2_HARMONIZED
+    "COPERNICUS/S2_HARMONIZED" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60"],
+    # Sentinel-2 L2A COPERNICUS/S2_SR
+    "COPERNICUS/S2_SR_HARMONIZED" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12", "SCL"]
 }
 
 
@@ -609,7 +609,7 @@ def download_s2(area_of_interest: Polygon,
         return []
 
     # Get info of the S2 images (convert to table)
-    img_col_info_local = s2_image_collection_fetch_metadata(img_col)
+    img_col_info_local = image_collection_fetch_metadata(img_col)
 
     n_images_col = img_col_info_local.shape[0]
 
@@ -667,7 +667,7 @@ def download_s2(area_of_interest: Polygon,
     return tasks
 
 
-def s2_image_collection_fetch_metadata(img_col:ee.ImageCollection) -> pd.DataFrame:
+def image_collection_fetch_metadata(img_col:ee.ImageCollection) -> pd.DataFrame:
     """
     Return the metadata of the provided image collection as a pandas dataframe.
     """
