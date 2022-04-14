@@ -124,7 +124,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser('Train WorldFloods model')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
-    parser.add_argument('--gpus', default='', type=str)
+    parser.add_argument('--gpus', default=1, type=int)
     # Mode: train, test or deploy
     parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
     # WandB fields
