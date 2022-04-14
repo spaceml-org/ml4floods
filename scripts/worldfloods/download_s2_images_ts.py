@@ -10,7 +10,8 @@ import sys
 
 def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
-         threshold_invalids_after:float, days_before:int, days_after:int, 
+         threshold_invalids_after:float, days_before:int, days_after:int,
+         collection_name:str = "S2",
          requester_pays:bool = True):
     """
 
@@ -23,6 +24,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
         threshold_invalids_after:
         days_before:
         days_after:
+        collection_name: S2 or Landsat
         requester_pays:
 
     Returns:
@@ -36,7 +38,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     assert len(files_metatada_pickled) > 0, f"Not files found at {path_to_glob}"
 
-    COLLECTION_NAME = "COPERNICUS/S2_HARMONIZED" # "COPERNICUS/S2_SR" for atmospherically corrected data
+    COLLECTION_NAME = "COPERNICUS/S2_HARMONIZED" if collection_name == "S2" else "Landsat" # "COPERNICUS/S2_SR" for atmospherically corrected data
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
@@ -45,14 +47,14 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
             pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
-            name_task = metadata_floodmap["ems_code"] + "_" + metadata_floodmap["aoi_code"]
+            name_task = collection_name + "_" + metadata_floodmap["ems_code"] + "_" + metadata_floodmap["aoi_code"]
             satellite_date = datetime.strptime(metadata_floodmap["satellite date"].strftime("%Y-%m-%d %H:%M:%S"),
                                                "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
             folder_dest = os.path.dirname(os.path.dirname(meta_floodmap_filepath))
 
             # Compute arguments to download the images
-            folder_dest_s2 = os.path.join(folder_dest, "S2")
+            folder_dest_s2 = os.path.join(folder_dest, collection_name)
 
             date_start_search = satellite_date + timedelta(days=-days_before)
             date_end_search = min(datetime.today().astimezone(timezone.utc),
@@ -114,6 +116,7 @@ if __name__ == '__main__':
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
+    parser.add_argument("--collection_name", choices=["Landsat","S2"],default="S2")
     parser.add_argument('--threshold_clouds_before', default=.3, type=float,
                         help="Threshold clouds before the event")
     parser.add_argument('--threshold_clouds_after', default=.95, type=float,
@@ -133,6 +136,7 @@ if __name__ == '__main__':
     main(args.cems_code,aoi_code=args.aoi_code, threshold_clouds_before=args.threshold_clouds_before,
          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
+         collection_name=args.collection_name,
          days_after=args.days_after)
 
     # main('EMSR470','AOI01', threshold_clouds_before=args.threshold_clouds_before,
