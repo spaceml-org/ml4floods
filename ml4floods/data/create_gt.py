@@ -447,7 +447,7 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
 
 
 CLOUDS_THRESHOLD = .5
-BRIGHTNESS_THRESHOLD = 4_000
+BRIGHTNESS_THRESHOLD = 3_500
 
 
 
