@@ -1,4 +1,5 @@
 import traceback
+import warnings
 
 import ee
 import time
@@ -42,6 +43,7 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 def get_s2_collection(date_start:datetime, date_end:datetime,
                       bounds:ee.Geometry,
                       collection_name:str="COPERNICUS/S2_HARMONIZED", bands:Optional[List[str]]=None,
+                      allow_missing_s2cloudless:bool=False,
                       verbose:int=1) -> Optional[ee.ImageCollection]:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
@@ -54,6 +56,8 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
         bounds: polygon with the AoI to download
         collection_name: "COPERNICUS/S2" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR" for L2A images.
         bands: list of bands to get
+        allow_missing_s2cloudless: if s2cloudless is missing for some S2 images it will skip those instead of raising
+        not implemented errors.
         verbose: print stuff
 
     Returns:
@@ -101,7 +105,10 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     n_images_join = img_col_all_join.size().getInfo()
 
     if n_images_join < n_images_col:
-        raise NotImplementedError(
+        if allow_missing_s2cloudless:
+            warnings.warn(f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We will skip the missing images")
+        else:
+            raise NotImplementedError(
             f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We cannot continue")
 
     daily_mosaic =  collection_mosaic_day(img_col_all_join, bounds)
