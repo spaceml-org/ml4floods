@@ -39,6 +39,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
     assert len(files_metatada_pickled) > 0, f"Not files found at {path_to_glob}"
 
     COLLECTION_NAME = "COPERNICUS/S2_HARMONIZED" if collection_name == "S2" else "Landsat" # "COPERNICUS/S2_SR" for atmospherically corrected data
+    resolution_meters = 10 if collection_name == "S2" else 30
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
@@ -82,6 +83,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                                                  filter_s2_fun=filter_s2_images,
                                                  path_bucket=folder_dest_s2,
                                                  name_task=name_task,
+                                                 resolution_meters=resolution_meters,
                                                  collection_name=COLLECTION_NAME)
 
             if len(tasks_iter) > 0:
