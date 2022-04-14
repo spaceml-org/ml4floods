@@ -379,14 +379,14 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
     model_input_npy = x.cpu().numpy()
 
     mean, std = normalize.get_normalisation("rgb")  # B, R, G!
-    mean = mean[np.newaxis]
-    std = std[np.newaxis]
+    mean = mean[np.newaxis] # (1, 1, 1, nchannels)
+    std = std[np.newaxis] # (1, 1, 1, nchannels)
 
     # Find the RGB indexes within the S2 bands
     bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
     bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
 
-    model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2, 3, 1)
+    model_input_rgb_npy = model_input_npy[:, bands_index_rgb, ...].transpose(0, 2, 3, 1)
     if unnormalize:
         model_input_rgb_npy = model_input_npy  * std + mean
         model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
