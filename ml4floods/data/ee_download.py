@@ -43,7 +43,7 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 def get_s2_collection(date_start:datetime, date_end:datetime,
                       bounds:ee.Geometry,
                       collection_name:str="COPERNICUS/S2_HARMONIZED", bands:Optional[List[str]]=None,
-                      allow_missing_s2cloudless:bool=False,
+                      allow_missing_s2cloudless:bool=True,
                       verbose:int=1) -> Optional[ee.ImageCollection]:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
