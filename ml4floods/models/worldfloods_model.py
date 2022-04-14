@@ -388,7 +388,7 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
 
     model_input_rgb_npy = model_input_npy[:, bands_index_rgb, ...].transpose(0, 2, 3, 1)
     if unnormalize:
-        model_input_rgb_npy = model_input_npy  * std + mean
+        model_input_rgb_npy = model_input_rgb_npy  * std + mean
         model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
 
     return model_input_rgb_npy
