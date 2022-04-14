@@ -212,6 +212,8 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
 
         im = ims_day.mosaic()
 
+        im = im.copyProperties(ee.Image(ims_day.first()))
+
         return im.set({
             "system:time_start": median_date,
             "system:id": solar_date.format("YYYY-MM-dd"),
