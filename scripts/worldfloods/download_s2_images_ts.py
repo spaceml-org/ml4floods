@@ -34,7 +34,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     fs = fsspec.filesystem("gs", requester_pays = requester_pays)
     path_to_glob = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle"
-    files_metatada_pickled = [f"gs://{f}" for f in fs.glob(path_to_glob)]
+    files_metatada_pickled = reversed(sorted([f"gs://{f}" for f in fs.glob(path_to_glob)]))
 
     assert len(files_metatada_pickled) > 0, f"Not files found at {path_to_glob}"
 
@@ -102,7 +102,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                 tasks.append(task_permanent)
 
         except Exception:
-            warnings.warn(f"Failed {files_metatada_pickled}")
+            warnings.warn(f"Failed {meta_floodmap_filepath}")
             traceback.print_exc(file=sys.stdout)
 
     ee_download.wait_tasks(tasks)
