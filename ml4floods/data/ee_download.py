@@ -41,7 +41,7 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 
 def get_s2_collection(date_start:datetime, date_end:datetime,
                       bounds:ee.Geometry,
-                      collection_name:str="COPERNICUS/S2", bands:Optional[List[str]]=None,
+                      collection_name:str="COPERNICUS/S2_HARMONIZED", bands:Optional[List[str]]=None,
                       verbose:int=1) -> Optional[ee.ImageCollection]:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
@@ -545,7 +545,7 @@ def _check_rerun(data:pd.DataFrame,
 
 def download_s2(area_of_interest: Polygon,
                 date_start_search: datetime, date_end_search: datetime,
-                path_bucket: str, collection_name="COPERNICUS/S2", crs:str='EPSG:4326',
+                path_bucket: str, collection_name="COPERNICUS/S2_HARMONIZED", crs:str='EPSG:4326',
                 filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
                 name_task:Optional[str]=None,
                 resolution_meters:float=10) -> List[ee.batch.Task]:
@@ -560,7 +560,7 @@ def download_s2(area_of_interest: Polygon,
         date_end_search: end search date
         path_bucket: path in the bucket to export the images. If the files in that bucket exists it does not download
         them.
-        collection_name: "COPERNICUS/S2" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR" for L2A images.
+        collection_name: "COPERNICUS/S2_HARMONIZED" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR_HARMONIZED" for L2A images.
         crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
         filter_s2_fun: function to filter the images to download. This function receives a dataframe with columns
             "cloud_probability", "valids" and "datetime" the output of this function should be boolean array of the

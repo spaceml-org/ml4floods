@@ -12,6 +12,22 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
          threshold_invalids_after:float, days_before:int, days_after:int, 
          requester_pays:bool = True):
+    """
+
+    Args:
+        cems_code:
+        aoi_code:
+        threshold_clouds_before:
+        threshold_clouds_after:
+        threshold_invalids_before:
+        threshold_invalids_after:
+        days_before:
+        days_after:
+        requester_pays:
+
+    Returns:
+
+    """
     
 
     fs = fsspec.filesystem("gs", requester_pays = requester_pays)
@@ -20,7 +36,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     assert len(files_metatada_pickled) > 0, f"Not files found at {path_to_glob}"
 
-    COLLECTION_NAME = "COPERNICUS/S2" # "COPERNICUS/S2_SR" for atmospherically corrected data
+    COLLECTION_NAME = "COPERNICUS/S2_HARMONIZED" # "COPERNICUS/S2_SR" for atmospherically corrected data
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
@@ -91,7 +107,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser('Download Copernicus EMS')
+    parser = argparse.ArgumentParser('Download Sentinel-2 images for floodmaps in Staging')
     parser.add_argument('--cems_code', default="",
                         help="CEMS Code to download images from. If empty string (default) download the images"
                              "from all the codes")
