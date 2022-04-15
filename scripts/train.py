@@ -86,7 +86,7 @@ def train(config):
         gradient_clip_val=0.0,
         auto_lr_find=False,
         benchmark=False,
-        gpus=config.gpus if config.gpus != '' else None,
+        gpus=config.gpus,
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
         log_gpu_memory=None,
