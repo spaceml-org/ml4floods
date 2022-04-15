@@ -103,7 +103,6 @@ def train(config):
     print("======================================================")
     from pytorch_lightning.utilities.cloud_io import atomic_save
     atomic_save(model.state_dict(), f"{experiment_path}/model.pt")
-    torch.save(model.state_dict(), os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.finish()
 
