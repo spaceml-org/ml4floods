@@ -80,13 +80,13 @@ def train(config):
         fast_dev_run=False,
         logger=wandb_logger,
         callbacks=callbacks,
+        auto_select_gpus=True,
         default_root_dir=f"{config.model_params.model_folder}/{config.experiment_name}",
         accumulate_grad_batches=1,
         gradient_clip_val=0.0,
         auto_lr_find=False,
         benchmark=False,
-        distributed_backend=None,
-        gpus=config.gpus if config.gpus != '' else None,
+        gpus=config.gpus,
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
         log_gpu_memory=None,
@@ -103,7 +103,6 @@ def train(config):
     print("======================================================")
     from pytorch_lightning.utilities.cloud_io import atomic_save
     atomic_save(model.state_dict(), f"{experiment_path}/model.pt")
-    torch.save(model.state_dict(), os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
     wandb.finish()
 
@@ -116,48 +115,6 @@ def train(config):
     return 1
 
 
-def test(config):
-    """
-    Test a model:
-    
-    1. Load a model architecture
-    
-    2. Load model weights from storage into model
-    
-    3. Load a test dataset
-    
-    4. Run inference over test set and compute metrics
-    
-    
-    5. Save metrics to:
-        a) local storage
-        b) gcp bucket storage
-        c) wandb dashboard
-        
-    6. Serve metrics to Visualisation Dashboards
-    """
-    print('Not yet implemented - please see notebook tutorials instead')
-    return 0
-
-
-def deploy(opt):
-    """
-    Deploy a model to serve predictions to Visualisation Dashboard
-    
-    1. Load a model architecture
-    
-    2. Load model weights from storage into model
-    
-    3. Load a dataset to deploy
-    
-    4. Run inference over dataset
-    
-    5. Serve predictions to Visualisation Dashboards
-    """
-    print('Not yet implemented - please see notebook tutorials instead')
-    return 0
-
-
 if __name__ == "__main__":
     import argparse
     import os
@@ -166,12 +123,9 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser('Train WorldFloods model')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
-    parser.add_argument('--gpus', default='', type=str)
+    parser.add_argument('--gpus', default=1, type=int)
     # Mode: train, test or deploy
-    parser.add_argument('--train', default=False, action='store_true')
     parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
-    parser.add_argument('--test', default=False, action='store_true')
-    parser.add_argument('--deploy', default=False, action='store_true')
     # WandB fields
     parser.add_argument('--wandb_entity', default='ipl_uv')
     parser.add_argument('--wandb_project', default='ml4floods-scripts')
@@ -188,14 +142,4 @@ if __name__ == "__main__":
     config['wandb_project'] = args.wandb_project
 
     # Run training
-    if args.train:
-        train(config)
-
-    # Run testing
-    if args.test:
-        raise NotImplementedError("Test mode not implemented")
-        # test(config)
-
-    # Run deployment ready inference
-    if args.deploy:
-        raise NotImplementedError("Deploy mode not implemented")
+    train(config)

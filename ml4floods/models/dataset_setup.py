@@ -236,9 +236,12 @@ def filter_windows_fun(data_version:str, train_test_split_file:str, local_destin
 
     """
     if local_destination_dir is not None:
-        split_name = os.path.basename(train_test_split_file)
+        if train_test_split_file:
+            split_name = "_"+os.path.basename(train_test_split_file)
+        else:
+            split_name =".json"
         #windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
-        windows_file = os.path.join(local_destination_dir, f"windows_{split_name}")
+        windows_file = os.path.join(local_destination_dir, f"windows{split_name}")
     else:
         windows_file = None
 

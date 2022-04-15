@@ -29,7 +29,7 @@ def filter_windows_v2(dataset: WorldFloodsDatasetTiled, threshold_clouds: float 
     """ filter windows from the dataset with more that threshold_clouds * 100 of clouds or invalids """
 
     # Assumes first channel is cloud second channel is water
-    return _filter_windows(lambda label: ((label[1] == 0) | (label[0] == 2)).sum() / np.prod(label.shape[1:]),
+    return _filter_windows(lambda label: (label[1] == 0).sum() / np.prod(label.shape[1:]),
                            dataset, threshold_clouds=threshold_clouds)
 
 
