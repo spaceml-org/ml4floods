@@ -77,15 +77,15 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                                       ((img_col_info_local["datetime"] >= satellite_date) | is_image_same_solar_day)
                 return filter_clouds_before | filter_clouds_after
 
-            tasks_iter = ee_download.download_s2(pol_scene_id,
-                                                 date_start_search=date_start_search,
-                                                 date_end_search=date_end_search,
-                                                 crs=crs,
-                                                 filter_s2_fun=filter_s2_images,
-                                                 path_bucket=folder_dest_s2,
-                                                 name_task=name_task,
-                                                 resolution_meters=resolution_meters,
-                                                 collection_name=COLLECTION_NAME)
+            tasks_iter = ee_download.download_s2l89(pol_scene_id,
+                                                    date_start_search=date_start_search,
+                                                    date_end_search=date_end_search,
+                                                    crs=crs,
+                                                    filter_fun=filter_s2_images,
+                                                    path_bucket=folder_dest_s2,
+                                                    name_task=name_task,
+                                                    resolution_meters=resolution_meters,
+                                                    collection_name=COLLECTION_NAME)
 
             if len(tasks_iter) > 0:
                 # Create csv and copy to bucket

@@ -126,6 +126,7 @@ def train(config):
     config_file_path = os.path.join(experiment_path, "config.json").replace("\\","/")
     save_json(config_file_path, config)
 
+    config["model_params"]["max_tile_size"] = 512
 
     # Compute metrics in test and val datasets
     if config.model_params.get("model_version", "v1") == "v2":
