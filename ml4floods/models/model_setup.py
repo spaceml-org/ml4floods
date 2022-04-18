@@ -82,7 +82,7 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
         eval_mode: set for predicting model.eval()
         activation: activation function to apply on inference time (softmax|sigmoid). If None it will gess it from
             the model_version
-        device:
+        device: if None uses model.device
 
     Returns: callable function
     """

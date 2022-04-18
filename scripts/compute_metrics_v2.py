@@ -58,20 +58,9 @@ def load_inference_function(model_path:str,
                                                           activation='sigmoid')
     else:
         inference_function = get_model_inference_function(model, config, apply_normalization=False,
-                                                  activation='softmax')
+                                                          activation='softmax')
 
-    def predict(s2tensor:torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            s2tensor: (C, H, W) tensor
-        Returns:
-            (2, H, W) mask (model v2) or (3, H, W) (model v1)
-        """
-        with torch.no_grad():
-            pred = inference_function(s2tensor) # (2, H, W)
-        return pred
-
-    return predict, channels
+    return inference_function, channels
 
 
 
@@ -102,19 +91,17 @@ def main(experiment_path:str, path_to_splits=None, overwrite=False, device:Optio
     
     ### METRICS COMPUTATION #### 
     data_module = dataset_setup.get_dataset(config["data_params"])
-    thresholds_water = [0, 1e-3, 1e-2] + np.arange(0.05, .96, .05).tolist() + [.99, .995, .999]
 
     for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:
     # for dl, dl_name in [ (data_module.val_dataloader(), "val")]:        
         metrics_file = os.path.join(experiment_path, f"{dl_name}.json").replace("\\","/")
-        if not overwrite and os.path.exists(metrics_file):
+        if not overwrite and fs.exists(metrics_file):
             print(f"File {metrics_file} exists. Continue")
             continue
 
         mets = compute_metrics_v2(
             dl,
             inference_function, threshold_water=0.5,
-            thresholds_water=thresholds_water,
             plot=False,
             mask_clouds=True)
 
@@ -123,7 +110,7 @@ def main(experiment_path:str, path_to_splits=None, overwrite=False, device:Optio
         else:
             mets["cems_code"] = [get_code(f.file_name) for f in dl.dataset.list_of_windows]
 
-        save_json(metrics_file,mets)
+        save_json(metrics_file, mets)
         
         
 if __name__ == '__main__':

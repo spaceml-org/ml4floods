@@ -7,12 +7,24 @@ from ml4floods.data.utils import get_filesystem
 from ml4floods.models.config_setup import save_json
 from pytorch_lightning import seed_everything
 from ml4floods.models.dataset_setup import get_dataset
-from ml4floods.models.model_setup import get_model
+from ml4floods.models.utils.metrics import compute_metrics_v2
+from ml4floods.models.model_setup import get_model, get_model_inference_function
 from ml4floods.models import worldfloods_model
 from ml4floods.models.config_setup import setup_config
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning import Trainer
+
+
+def get_code(x):
+    """" Get CEMS code """
+
+    bn = os.path.basename(x)
+    if bn.startswith("EMSR"):
+        cems_code = bn.split("_")[0]
+    else:
+        cems_code = os.path.splitext(bn)[0]
+    return cems_code
 
 
 def train(config):
@@ -26,9 +38,8 @@ def train(config):
     print("======================================================")
     print("SETTING UP DATASET")
     print("======================================================")
-    dataset = get_dataset(config.data_params)
-    
-    
+    data_module = get_dataset(config.data_params)
+
     # MODEL SETUP 
     print("======================================================")
     print("SETTING UP MODEL")
@@ -36,8 +47,7 @@ def train(config):
     config.model_params.test = False
     config.model_params.train = True
     model = get_model(config.model_params)
-    
-    
+
     # LOGGING SETUP 
     print("======================================================")
     print("SETTING UP LOGGERS")
@@ -82,7 +92,7 @@ def train(config):
         logger=wandb_logger,
         callbacks=callbacks,
         auto_select_gpus=True,
-        default_root_dir=f"{config.model_params.model_folder}/{config.experiment_name}",
+        default_root_dir=os.path.join(config.model_params.model_folder, config.experiment_name).replace("\\","/"),
         accumulate_grad_batches=1,
         gradient_clip_val=0.0,
         auto_lr_find=False,
@@ -94,7 +104,7 @@ def train(config):
         resume_from_checkpoint=checkpoint_path if config.resume_from_checkpoint else None
     )
     
-    trainer.fit(model, dataset)
+    trainer.fit(model, data_module)
     
     # ======================================================
     # SAVING SETUP 
@@ -103,7 +113,7 @@ def train(config):
     print("FINISHED TRAINING, SAVING MODEL")
     print("======================================================")
     fs = get_filesystem(experiment_path)
-    path_save_model = os.path.join(experiment_path, "model.pt")
+    path_save_model = os.path.join(experiment_path, "model.pt").replace("\\","/")
 
     # More details can be found here: https://github.com/pytorch/pytorch/issues/42239
     with fs.open(path_save_model, "wb") as fh:
@@ -113,11 +123,36 @@ def train(config):
     wandb.finish()
 
     # Save cofig file in experiment_path
-    config_file_path = os.path.join(experiment_path,"config.json")
-
+    config_file_path = os.path.join(experiment_path, "config.json").replace("\\","/")
     save_json(config_file_path, config)
 
-    # TODO compute metrics in test and val datasets?
+
+    # Compute metrics in test and val datasets
+    if config.model_params.get("model_version", "v1") == "v2":
+        inference_function = get_model_inference_function(model, config, apply_normalization=False,
+                                                          activation='sigmoid')
+    else:
+        inference_function = get_model_inference_function(model, config, apply_normalization=False,
+                                                          activation='softmax')
+
+
+    for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:
+        metrics_file = os.path.join(experiment_path, f"{dl_name}.json").replace("\\","/")
+        if fs.exists(metrics_file):
+            print(f"File {metrics_file} exists. Continue")
+            continue
+        mets = compute_metrics_v2(
+            dl,
+            inference_function, threshold_water=0.5,
+            plot=False,
+            mask_clouds=True)
+
+        if hasattr(dl.dataset, "image_files"):
+            mets["cems_code"] = [get_code(f) for f in dl.dataset.image_files]
+        else:
+            mets["cems_code"] = [get_code(f.file_name) for f in dl.dataset.list_of_windows]
+
+        save_json(metrics_file, mets)
 
 
 if __name__ == "__main__":

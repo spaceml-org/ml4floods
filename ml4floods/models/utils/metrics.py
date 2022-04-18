@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Optional
 import numpy as np
 import torch
 import torch.utils.data
@@ -378,7 +378,7 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
     return data_out
 
 def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
-                       pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
+                       pred_fun: Callable, thresholds_water:Optional[np.array]=None,
                        threshold_water:float=.5, threshold_clouds=.5,
                        plot=False, mask_clouds:bool=True) -> Dict:
     """
@@ -401,6 +401,11 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
     confusions = []
     
     # Sort thresholds from high to low
+    if not thresholds_water:
+        thresholds_water = [0, 1e-3, 1e-2] + np.arange(0.05, .96, .05).tolist() + [.99, .995, .999]
+        thresholds_water = np.array(thresholds_water)
+
+    # thresholds_water sorted from high to low
     thresholds_water = np.sort(thresholds_water)
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
