@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser.add_argument("--experiment_path", default="",
                         help="""
                         Path with config.json and model.pt files to load the model.
-                        If not provided will glob the --experiment_folder to compute metrics of all models
+                        If not provided it will glob the --experiment_folder to compute metrics of all models
                         """)
     parser.add_argument("--experiment_folder", default="",help="""
                         Folder with folders with models. Each of the model folder is expected to have a config.json and 
@@ -154,7 +154,11 @@ if __name__ == '__main__':
     if args.experiment_path == "":
         # glob experiment folder
         fs = get_filesystem(args.experiment_folder)
-        experiment_paths = [f"gs://{os.path.dirname(f)}" for f in fs.glob(os.path.join(args.experiment_folder,"*","config.json").replace("\\","/"))]
+        if args.experiment_folder.startswith("gs"):
+            prefix = "gs://"
+        else:
+            prefix = ""
+        experiment_paths = [f"{prefix}{os.path.dirname(f)}" for f in fs.glob(os.path.join(args.experiment_folder,"*","config.json").replace("\\","/"))]
         assert len(experiment_paths) > 0, "No models found in "+os.path.join(args.experiment_folder,"*","config.json").replace("\\","/")
     else:
         experiment_paths = [args.experiment_path]
