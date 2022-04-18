@@ -25,7 +25,7 @@ BANDS_NAMES = {
 }
 
 
-def permanent_water_image(year, bounds):
+def permanent_water_image(year, bounds=None):
     # permananet water files are only available pre-2021
     if year >= 2021:
         year = 2021
@@ -44,6 +44,21 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 def get_landsat_collection(date_start:datetime, date_end:datetime,
                            bounds:ee.Geometry,
                            verbose:int=1) -> Optional[ee.ImageCollection]:
+    """
+    Returns a Landsat-8 and Landsat-9 time series of daily mosaicked images over the bounds. It adds a probability band
+    to mimic the S2 case; additionally values are 10_000 and casted to uint16.
+    (also to maintain the similarity with S2 collections).
+
+    Args:
+        date_start: start search date
+        date_end: end search date
+        bounds: polygon with the AoI to download
+        verbose: print stuff
+
+    Returns:
+        ImageCollection
+
+    """
     # GEE doesnt like time zones
     date_start = date_start.replace(tzinfo=None)
     date_end = date_end.replace(tzinfo=None)
@@ -57,10 +72,9 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
         return
 
     # add cloud probability
-
     def add_cloud_prob(img:ee.Image) -> ee.Image:
         bqa = img.select(["QA_PIXEL"], ["probability"])
-        clouds = bqa.bitwise_and(int("0000000000001000",2)).multiply(100).toUint16()
+        clouds = bqa.bitwise_and(int("0000000000001000",2)).gt(0).multiply(100).toUint16()
 
         # Store images in S2 range
         img_radiances = img.select(BANDS_NAMES["Landsat"][:-1]).multiply(10_000).toUint16()
@@ -262,7 +276,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
                     fs.remove(f"gs://{b}")
             else:
                 if verbose >= 2:
-                    print("\tFile %s exists in the bucket, it will not be downloaded" % filename)
+                    print(f"\tFile {filename} exists in the bucket, it will not be downloaded")
                 return
     else:
         files = glob(f"{filename}*")
@@ -428,8 +442,8 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     )
 
 def download_merit_layer(area_of_interest: Polygon,
-                             path_bucket: str, crs:str='EPSG:4326',
-                             name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+                         path_bucket: str, crs:str='EPSG:4326',
+                         name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
     """
     Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1") from GEE
 
@@ -520,7 +534,7 @@ def convert_wgs_to_utm(lon: float, lat: float) -> str:
 
 def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
     """
-    Opens s2info.csv file that are exported in download_s2 function. It converts the date fields and
+    Opens s2info.csv file that are exported in download_s2l89 function. It converts the date fields and
     adds a column indicating which files are available.
 
     Args:
@@ -550,10 +564,21 @@ def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
     return datas2
 
 
-def _check_rerun(data:pd.DataFrame,
-                date_start_search: datetime, date_end_search: datetime,
-                filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]]) -> bool:
-    """ Check if any S2 image is missing to trigger download """
+def _check_all_downloaded(data:pd.DataFrame,
+                          date_start_search: datetime, date_end_search: datetime,
+                          filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]]) -> bool:
+    """
+    True if all images have been downloaded
+
+    Args:
+        data:
+        date_start_search:
+        date_end_search:
+        filter_s2_fun:
+
+    Returns:
+
+    """
 
     min_date = min(data["datetime"])
 
@@ -591,17 +616,16 @@ def _check_rerun(data:pd.DataFrame,
     return False
 
 
-def download_s2(area_of_interest: Polygon,
-                date_start_search: datetime, date_end_search: datetime,
-                path_bucket: str,
-                collection_name="COPERNICUS/S2_HARMONIZED", crs:str='EPSG:4326',
-                filter_s2_fun:Callable[[pd.DataFrame], pd.Series]=None,
-                name_task:Optional[str]=None,
-                resolution_meters:float=10) -> List[ee.batch.Task]:
+def download_s2l89(area_of_interest: Polygon,
+                   date_start_search: datetime, date_end_search: datetime,
+                   path_bucket: str,
+                   collection_name="COPERNICUS/S2_HARMONIZED", crs:str='EPSG:4326',
+                   filter_fun:Callable[[pd.DataFrame], pd.Series]=None,
+                   name_task:Optional[str]=None,
+                   resolution_meters:float=10) -> List[ee.batch.Task]:
     """
-    Download time series of S2 images between search dates over the given area of interest. It saves the S2 images on
-    path_bucket location. It only downloads images with less than threshold_invalid invalid pixels and with less than
-    threshold_clouds cloudy pixels.
+    Download time series of S2 or Landsat images between search dates over the given area of interest. It saves the images
+    on the path_bucket location. It only downloads images that satisfies the filter_s2 condition.
 
     Args:
         area_of_interest: shapely polygon with the AoI to download.
@@ -611,7 +635,7 @@ def download_s2(area_of_interest: Polygon,
         them.
         collection_name: "COPERNICUS/S2_HARMONIZED" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR_HARMONIZED" for L2A images.
         crs: crs to export the images. To export them in utm based on location use the `convert_wgs_to_utm` function.
-        filter_s2_fun: function to filter the images to download. This function receives a dataframe with columns
+        filter_fun: function to filter the images to download. This function receives a dataframe with columns
             "cloud_probability", "valids" and "datetime" the output of this function should be boolean array of the
             with the number of rows of the dataframe that indicates which images of the dataframe to download.
         name_task: if not provided will use the basename of `path_bucket`
@@ -637,9 +661,9 @@ def download_s2(area_of_interest: Polygon,
 
     if fs.exists(path_csv):
         data = process_s2metadata(path_csv, fs=fs)
-        if _check_rerun(data, date_start_search=date_start_search,
-                        date_end_search=date_end_search,
-                        filter_s2_fun=filter_s2_fun):
+        if _check_all_downloaded(data, date_start_search=date_start_search,
+                                 date_end_search=date_end_search,
+                                 filter_s2_fun=filter_fun):
             return []
         else:
             min_date = min(data["datetime"])
@@ -682,8 +706,8 @@ def download_s2(area_of_interest: Polygon,
         crs=crs,
         scale=resolution_meters,
     )
-    if filter_s2_fun is not None:
-        filter_good = filter_s2_fun(img_col_info_local)
+    if filter_fun is not None:
+        filter_good = filter_fun(img_col_info_local)
 
         if np.sum(filter_good) == 0:
             print("All images are bad")
