@@ -229,7 +229,7 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
                                              collection_name=collection_name)
     if collection_name == "S2":
         band_names_current_image = [BANDS_S2[iband] for iband in ibands]
-        bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
+        bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
     elif collection_name == "Landsat":
         band_names_current_image = [BANDS_L8[iband] for iband in ibands]
         bands = [band_names_current_image.index(b) for b in ["B6", "B5", "B4"]]

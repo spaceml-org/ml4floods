@@ -91,8 +91,8 @@ def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
     # 5: flood_trace
     water_mask_types = water_mask.copy()
     water_mask_types[(water_mask == 2) & (mndwi < 0)] = 5
-    if permanent_water:
-        water_mask_types[(water_mask == 2) & (permanent_water == 3)] = 4
+    if permanent_water is not None:
+        water_mask_types[(water_mask != 3) & (permanent_water == 3)] = 4
 
     return water_mask_types
 
