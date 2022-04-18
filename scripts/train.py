@@ -1,21 +1,31 @@
 import torch
+import wandb
+import argparse
+import os
+
+from ml4floods.data.utils import get_filesystem
 from ml4floods.models.config_setup import save_json
+from pytorch_lightning import seed_everything
+from ml4floods.models.dataset_setup import get_dataset
+from ml4floods.models.model_setup import get_model
+from ml4floods.models import worldfloods_model
+from ml4floods.models.config_setup import setup_config
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning import Trainer
 
 
 def train(config):
     # ======================================================
     # EXPERIMENT SETUP
-    # ====================================================== 
-    from pytorch_lightning import seed_everything
+    # ======================================================
     # Seed
     seed_everything(config.seed)
-    
     
     # DATASET SETUP
     print("======================================================")
     print("SETTING UP DATASET")
     print("======================================================")
-    from ml4floods.models.dataset_setup import get_dataset
     dataset = get_dataset(config.data_params)
     
     
@@ -23,36 +33,28 @@ def train(config):
     print("======================================================")
     print("SETTING UP MODEL")
     print("======================================================")
-    from ml4floods.models.model_setup import get_model
-    from ml4floods.models import worldfloods_model
     config.model_params.test = False
     config.model_params.train = True
     model = get_model(config.model_params)
-    
-
     
     
     # LOGGING SETUP 
     print("======================================================")
     print("SETTING UP LOGGERS")
     print("======================================================")
-    import wandb
-    from pytorch_lightning.loggers import WandbLogger
     wandb_logger = WandbLogger(
         name=config.experiment_name,
         project=config.wandb_project, 
         entity=config.wandb_entity,
-#         save_dir=f"{config.model_params.model_folder}/{config.experiment_name}"
     )
     
     # CHECKPOINTING SETUP
     print("======================================================")
     print("SETTING UP CHECKPOINTING")
     print("======================================================")
-    from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-    experiment_path = f"{config.model_params.model_folder}/{config.experiment_name}"
+    experiment_path = os.path.join(config.model_params.model_folder,config.experiment_name).replace("\\","/")
 
-    checkpoint_path = f"{experiment_path}/checkpoint"
+    checkpoint_path = os.path.join(experiment_path, "checkpoint").replace("\\","/")
     checkpoint_callback = ModelCheckpoint(
         dirpath=checkpoint_path,
         save_top_k=True,
@@ -75,7 +77,6 @@ def train(config):
     print("======================================================")
     print("START TRAINING")
     print("======================================================")
-    from pytorch_lightning import Trainer
     trainer = Trainer(
         fast_dev_run=False,
         logger=wandb_logger,
@@ -101,26 +102,25 @@ def train(config):
     print("======================================================")
     print("FINISHED TRAINING, SAVING MODEL")
     print("======================================================")
-    from pytorch_lightning.utilities.cloud_io import atomic_save
-    atomic_save(model.state_dict(), f"{experiment_path}/model.pt")
-    wandb.save(os.path.join(wandb_logger.save_dir, 'model.pt'))
+    fs = get_filesystem(experiment_path)
+    path_save_model = os.path.join(experiment_path, "model.pt")
+
+    # More details can be found here: https://github.com/pytorch/pytorch/issues/42239
+    with fs.open(path_save_model, "wb") as fh:
+        torch.save(model.state_dict(), fh, _use_new_zipfile_serialization=False)
+
+    wandb.save(path_save_model)
     wandb.finish()
 
-
     # Save cofig file in experiment_path
-    config_file_path = f"{experiment_path}/config.json"
+    config_file_path = os.path.join(experiment_path,"config.json")
 
-    save_json(config, config_file_path)
-    
-    return 1
+    save_json(config_file_path, config)
+
+    # TODO compute metrics in test and val datasets?
 
 
 if __name__ == "__main__":
-    import argparse
-    import os
-    
-    from ml4floods.models.config_setup import setup_config
-    
     parser = argparse.ArgumentParser('Train WorldFloods model')
     parser.add_argument('--config', default='configurations/worldfloods_template.json')
     parser.add_argument('--gpus', default=1, type=int)
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     # WandB fields
     parser.add_argument('--wandb_entity', default='ipl_uv')
     parser.add_argument('--wandb_project', default='ml4floods-scripts')
+    parser.add_argument("--experiment_name", default="")
     
     args = parser.parse_args()
     
@@ -140,6 +141,10 @@ if __name__ == "__main__":
     
     config['wandb_entity'] = args.wandb_entity
     config['wandb_project'] = args.wandb_project
+
+    # Use custom experiment name
+    if args.experiment_name != "":
+        config.experiment_name = args.experiment_name
 
     # Run training
     train(config)
