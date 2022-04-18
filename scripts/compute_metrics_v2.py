@@ -95,6 +95,7 @@ def main(experiment_path:str, path_to_splits=None, overwrite=False, device:Optio
     for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:
     # for dl, dl_name in [ (data_module.val_dataloader(), "val")]:        
         metrics_file = os.path.join(experiment_path, f"{dl_name}.json").replace("\\","/")
+        fs = get_filesystem(metrics_file)
         if not overwrite and fs.exists(metrics_file):
             print(f"File {metrics_file} exists. Continue")
             continue
