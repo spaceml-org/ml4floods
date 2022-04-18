@@ -112,14 +112,14 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser('Download Sentinel-2 images for floodmaps in Staging')
+    parser = argparse.ArgumentParser('Download Sentinel-2 and Landsat-8/9 images for floodmaps in Staging')
     parser.add_argument('--cems_code', default="",
                         help="CEMS Code to download images from. If empty string (default) download the images"
                              "from all the codes")
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
-    parser.add_argument("--collection_name", choices=["Landsat","S2"],default="S2")
+    parser.add_argument("--collection_name", choices=["Landsat", "S2"], default="S2")
     parser.add_argument('--threshold_clouds_before', default=.3, type=float,
                         help="Threshold clouds before the event")
     parser.add_argument('--threshold_clouds_after', default=.95, type=float,

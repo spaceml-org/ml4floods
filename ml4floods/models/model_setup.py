@@ -2,7 +2,7 @@ import torch
 import itertools
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
 from ml4floods.models.utils.configuration import AttrDict
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT
 import numpy as np
 import os
 
@@ -56,11 +56,17 @@ def get_model(model_params:AttrDict,
 
         
         
-def get_channel_configuration_bands(channel_configuration:str) -> List[int]:
+def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2") -> List[int]:
     """
     Returns 0-based list of channels of a given configuration name
     """
-    return CHANNELS_CONFIGURATIONS[channel_configuration]
+    if collection_name == "S2":
+        return CHANNELS_CONFIGURATIONS[channel_configuration]
+    elif collection_name =="Landsat":
+        return CHANNELS_CONFIGURATIONS_LANDSAT[channel_configuration]
+    else:
+        raise NotImplementedError(f"Collection {collection_name} not implemented")
+
         
         
 def get_model_inference_function(model: torch.nn.Module, config: AttrDict,

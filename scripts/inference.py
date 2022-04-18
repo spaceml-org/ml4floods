@@ -2,6 +2,7 @@ from ml4floods.models.config_setup import get_default_config, get_filesystem
 from ml4floods.models.model_setup import get_model
 from ml4floods.models.model_setup import get_model_inference_function
 from ml4floods.models.model_setup import get_channel_configuration_bands
+from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data.worldfloods import dataset
 from ml4floods.data import create_gt
 from ml4floods.models import postprocess
@@ -18,10 +19,11 @@ import warnings
 import sys
 import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
-from typing import Tuple, Callable, List
+from typing import Tuple, Callable
 
 def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024,
-                            th_water:float=.5, th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD) -> Tuple[Callable[[torch.Tensor], torch.Tensor], List[int]]:
+                            th_water:float=.5,
+                            th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD) -> Tuple[Callable[[torch.Tensor], torch.Tensor], AttrDict]:
 
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
@@ -40,11 +42,15 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
     config["model_params"]['test'] = True
     model = get_model(config.model_params, experiment_name)
     model.to(device_name)
-    channels = get_channel_configuration_bands(config.data_params.channel_configuration)
     inference_function = get_model_inference_function(model, config, apply_normalization=True,
                                                       activation=None)
 
     if config.model_params.get("model_version", "v1") == "v2":
+
+        # TODO implement better if collection_name=="L8"
+        channels = get_channel_configuration_bands(config.data_params.channel_configuration,
+                                                   collection_name="S2")
+
         # Add post-processing of binary mask
         def predict(s2tensor:torch.Tensor) -> torch.Tensor:
             """
@@ -57,7 +63,7 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
             with torch.no_grad():
                 pred = inference_function(s2tensor.unsqueeze(0))[0] # (2, H, W)
             return get_pred_mask_v2(s2tensor, pred, channels_input=channels,
-                                    th_water=th_water,th_brightness=th_brightness)
+                                    th_water=th_water, th_brightness=th_brightness)
 
     else:
         def predict(s2tensor: torch.Tensor) -> torch.Tensor:
@@ -76,12 +82,13 @@ def load_inference_function(model_path:str, device_name:str,max_tile_size:int=10
 
             return prediction
 
-    return predict, channels
+    return predict, config
 
 
 @torch.no_grad()
 def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, max_tile_size:int=1_024,
-         th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD, th_water:float=.5, overwrite:bool=False):
+         th_brightness:float=create_gt.BRIGHTNESS_THRESHOLD, th_water:float=.5, overwrite:bool=False,
+         collection_name:str="S2"):
 
     # This takes into account that this could be run on windows
     output_folder = output_folder.replace("\\", "/")
@@ -93,8 +100,11 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
     else:
         experiment_name = os.path.basename(model_path)
 
-    inference_function, channels = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
-                                                           th_water=th_water,th_brightness=th_brightness)
+    inference_function, config = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
+                                                         th_water=th_water,th_brightness=th_brightness)
+
+    channels = get_channel_configuration_bands(config.data_params.channel_configuration,
+                                               collection_name=collection_name)
 
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
@@ -126,7 +136,7 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
         if not overwrite and exists_tiff and fs_dest.exists(filename_save_vect):
             continue
 
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total+1}/{len(s2files)}) Processing {filename}")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total+1}/{len(s2files)}) Processing {collection_name} {filename}")
         try:
             if not overwrite and exists_tiff:
                 with rasterio.open(filename_save) as rst:
@@ -193,7 +203,7 @@ def vectorize_outputv1(prediction, crs, transform):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Run inference on S2 images')
-    parser.add_argument("--s2", required=True, help="Path to folder with tif files or tif file to make prediction")
+    parser.add_argument("--image", required=True, help="Path to folder with tif files or tif file to make prediction")
     parser.add_argument("--model_path",
                         help="Path to experiment folder. Inside this folder there should be a config.json file and  a model weights file model.pt",
                         required=True)
@@ -209,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--th_brightness", help="Threshold brightness used to get cloud predictions",
                         type=float, default=create_gt.BRIGHTNESS_THRESHOLD)
     parser.add_argument('--device_name', default="cuda", help="Device name")
+    parser.add_argument("--collection_name", choices=["Landsat", "S2"], default="S2")
 
     args = parser.parse_args()
 
@@ -221,21 +232,21 @@ if __name__ == "__main__":
             en = os.path.basename(args.model_path[:-1])
         else:
             en = os.path.basename(args.model_path)
-        if args.s2.endswith(".tif"):
-            base_output_folder = os.path.dirname(os.path.dirname(args.s2))
-        elif args.s2.endswith("/"):
-            base_output_folder = os.path.dirname(args.s2[:-1])
+        if args.image.endswith(".tif"):
+            base_output_folder = os.path.dirname(os.path.dirname(args.image))
+        elif args.image.endswith("/"):
+            base_output_folder = os.path.dirname(args.image[:-1])
         else:
-            base_output_folder = os.path.dirname(args.s2)
+            base_output_folder = os.path.dirname(args.image)
 
         output_folder = os.path.join(base_output_folder, en)
         print(f"Predictions will be saved in folder: {output_folder}")
     else:
         output_folder = args.output_folder
 
-    main(model_path=args.model_path, s2folder_file=args.s2,device_name=args.device_name,
+    main(model_path=args.model_path, s2folder_file=args.image,device_name=args.device_name,
          output_folder=output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water,
-         overwrite=args.overwrite,th_brightness=args.th_brightness)
+         overwrite=args.overwrite,th_brightness=args.th_brightness, collection_name=args.collection_name)
 
 
 
