@@ -201,7 +201,7 @@ if __name__ == "__main__":
                         help="Path to save the files. The name of the prediction will be the same as the S2 image."
                              "If not provided it will be saved in dirname(s2)/basename(model_path)/",
                         required=False)
-    parser.add_argument("--max_tile_size", help="", type=int, default=1_024, required=False)
+    parser.add_argument("--max_tile_size", help="Size to tile the GeoTIFFs", type=int, default=1_024)
     parser.add_argument('--overwrite', default=False, action='store_true',
                         help="Overwrite the prediction if exists")
     parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)",

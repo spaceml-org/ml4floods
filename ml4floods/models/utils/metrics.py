@@ -378,9 +378,9 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
     return data_out
 
 def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
-                    pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
-                    threshold:float=.5,threshold_clouds=.5,
-                    plot=False, mask_clouds:bool=True) -> Dict:
+                       pred_fun: Callable, thresholds_water=np.arange(0,1,.05),
+                       threshold_water:float=.5, threshold_clouds=.5,
+                       plot=False, mask_clouds:bool=True) -> Dict:
     """
     Run inference on a dataloader and compute metrics for that data
     
@@ -388,9 +388,8 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
         dataloader: pytorch Dataloader for test set
         pred_fun: function to perform inference using a model
         thresholds_water: list of threshold for precision/recall curves
-        threshold: threshold of water to compute the confusion matrix
+        threshold_water: threshold of water to compute the confusion matrix
         threshold_clouds: threshold of clouds to compute the confusion matrix
-        threshold_br: threshold for brightness post processing of thin clouds
         plot: flag for calling plot method with metrics
         mask_clouds: if True this will compute the confusion matrices for "land" and "water" classes only masking
             the cloudy pixels. If mask_clouds the output confusion matrices will be (n_samples, 2, 2) otherwise they will
@@ -405,7 +404,6 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
     thresholds_water = np.sort(thresholds_water)
     thresholds_water = thresholds_water[-1::-1]
     confusions_thresh = []
-    
 
     # This is constant: we're using this class convention to compute the PR curve
     if mask_clouds:
@@ -418,7 +416,7 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
 
         test_outputs = pred_fun(test_inputs)
       
-        test_outputs_categorical = test_outputs[:,1] > threshold
+        test_outputs_categorical = test_outputs[:,1] > threshold_water
         probs_water_pr_curve = test_outputs[:, 1]
         water_ground_truth = ground_truth[:, 1] # (batch_size, H, W)
         invalids = (water_ground_truth == 0).to(test_outputs_categorical.device) # (batch_size, H, W)
@@ -431,7 +429,6 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
             invalids |= (ground_truth[:, 0] == 0).to(test_outputs_categorical.device)
 
         # Ground truth version v2 is 2 channel tensor 2-classes (B, 2, H, W) [{0: invalid, 1: land, 2: cloud}, {0: invalid, 1: land, 2: water}]
-
 
         ground_truth_outputs[invalids] = 1 # (batch_size, H, W)
         ground_truth_outputs -= 1
