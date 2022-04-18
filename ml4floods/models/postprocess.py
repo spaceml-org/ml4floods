@@ -81,6 +81,22 @@ def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
 
     return shape(geojson_dict)
 
+
+def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
+                        water_mask:Union[np.ndarray, torch.Tensor],
+                        permanent_water:Optional[Union[np.ndarray, torch.Tensor]]=None):
+    "Water mask (H, W) with interpretation {0: invalids, 1: land, 2: flood water, 3: thick cloud, 4:permanent water, 5: flood trace}"
+    # 2: flood water
+    # 4: permanent_water
+    # 5: flood_trace
+    water_mask_types = water_mask.copy()
+    water_mask_types[(water_mask == 2) & (mndwi < 0)] = 5
+    if permanent_water:
+        water_mask_types[(water_mask == 2) & (permanent_water == 3)] = 4
+
+    return water_mask_types
+
+
 def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[np.ndarray, torch.Tensor],
                      channels_input:Optional[List[int]]=None,
                      th_water:float = 0.5, th_cloud:float = 0.5, mask_clouds:bool = True,
