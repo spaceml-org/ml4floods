@@ -7,6 +7,7 @@ BANDS_S2 = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", 
 CHANNELS_CONFIGURATIONS = {
     "all": list(range(0,len(BANDS_S2))),
     "rgb": [3, 2, 1],
+    "swirnirred": [11, 7, 3],
     "bgr": [1, 2, 3],
     "bgri": [1, 2, 3, 7],
     "riswir" : [3, 7, 11],
@@ -22,6 +23,7 @@ BANDS_L8 = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B9", "B10", "B11"]
 # 0 based channels based on BANDS_L8
 CHANNELS_CONFIGURATIONS_LANDSAT = {
     "rgb": [3, 2, 1],
+    "swirnirred": [5, 4, 3],
     "bgr": [1, 2, 3],
     "bgri": [1, 2, 3, 4],
     "riswir" : [3, 4, 5],
