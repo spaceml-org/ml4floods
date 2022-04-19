@@ -52,7 +52,8 @@ class WorldFloodsModel(pl.LightningModule):
             self.log("loss", loss)
         
         if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
-            self.log_images(x, y, logits,prefix="train_")
+            with torch.no_grad():
+                self.log_images(x, y, logits,prefix="train_")
             
         return loss
     
@@ -208,7 +209,8 @@ class ML4FloodsModel(pl.LightningModule):
             self.log("loss", loss)
 
         if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
-            self.log_images(x, y, logits, prefix="train_")
+            with torch.no_grad():
+                self.log_images(x, y, logits, prefix="train_")
 
         return loss
 
