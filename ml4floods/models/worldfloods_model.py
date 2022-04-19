@@ -381,10 +381,10 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
 
     # Find the RGB indexes within the S2 bands
     bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
-    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"] if b in bands_read_names]
     if len(bands_index_rgb) != 3:
         # try swir/nir/red
-        bands_index_rgb = [bands_read_names.index(b) for b in ["B11", "B8", "B4"]]
+        bands_index_rgb = [bands_read_names.index(b) for b in ["B11", "B8", "B4"] if b in bands_read_names]
         if len(bands_index_rgb) != 3:
             return
 
