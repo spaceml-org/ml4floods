@@ -29,7 +29,7 @@ CHANNELS_CONFIGURATIONS_LANDSAT = {
     "riswir" : [3, 4, 5],
     "bgriswir" : [1, 2, 3, 4, 5],
     "bgriswirs" : [1, 2, 3, 4, 5, 6],
-    "l89s2": [0, 1, 2, 3, 4, 5, 6, 7],
+    "l89s2": [0, 1, 2, 3, 4, 7, 5, 6],
 }
 
 
