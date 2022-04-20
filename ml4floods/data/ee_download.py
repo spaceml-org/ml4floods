@@ -27,8 +27,8 @@ BANDS_NAMES = {
 
 def permanent_water_image(year, bounds=None):
     # permananet water files are only available pre-2021
-    if year >= 2021:
-        year = 2021
+    if year >= 2020:
+        year = 2020
     return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}")
 
 
@@ -656,6 +656,9 @@ def download_s2l89(area_of_interest: Polygon,
 
     if collection_name == "Landsat":
         path_csv = os.path.join(path_bucket, "landsatinfo.csv")
+    elif collection_name == "S2":
+        collection_name = "COPERNICUS/S2_HARMONIZED"
+        path_csv = os.path.join(path_bucket, "s2info.csv")
     else:
         path_csv = os.path.join(path_bucket, "s2info.csv")
 
@@ -680,11 +683,11 @@ def download_s2l89(area_of_interest: Polygon,
 
     # Grab the S2 images
     if collection_name == "Landsat":
-        img_col = get_landsat_collection(date_start_search, date_end_search, pol)
+        img_col = get_landsat_collection(date_start_search, date_end_search, pol, verbose=2)
     else:
         img_col = get_s2_collection(date_start_search, date_end_search, pol,
                                     bands=BANDS_NAMES[collection_name],
-                                    collection_name=collection_name)
+                                    collection_name=collection_name, verbose=2)
     if img_col is None:
         return []
 
