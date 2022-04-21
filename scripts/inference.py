@@ -19,7 +19,7 @@ import warnings
 import sys
 import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Any, Optional
 
 def load_inference_function(model_path:str, device_name:str,max_tile_size:int=1024,
                             th_water:float=.5,
@@ -180,12 +180,16 @@ def main(model_path:str, s2folder_file:str, device_name:str, output_folder:str, 
         print(f"Files with errors:\n {files_with_errors}")
 
 
-def vectorize_outputv1(prediction, crs, transform):
+def vectorize_outputv1(prediction:np.ndarray, crs:Any, transform:rasterio.Affine)-> Optional[gpd.GeoDataFrame]:
     data_out = []
     start = 0
-    class_name = {2: "water", 3: "cloud"}
-    for c in [2, 3]:
-        geoms_polygons = postprocess.get_water_polygons(prediction == c, transform=transform)
+    class_name = {0:"area_imaged", 2: "water", 3: "cloud"}
+    for c in [0, 2, 3]:
+        if c == 0:
+            mask = prediction != c
+        else:
+            mask = prediction == c
+        geoms_polygons = postprocess.get_water_polygons(mask, transform=transform)
         if len(geoms_polygons) > 0:
             data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
                                               "id": np.arange(start, start + len(geoms_polygons)),
