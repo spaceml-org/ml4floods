@@ -103,9 +103,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.device_name != "cpu" and not torch.cuda.is_available():
-        raise NotImplementedError("Cuda is not available. run with --device_name cpu")
-
     main(folder_image=args.image, overwrite=args.overwrite)
 
 
