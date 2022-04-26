@@ -52,7 +52,8 @@ class WorldFloodsModel(pl.LightningModule):
             self.log("loss", loss)
         
         if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
-            self.log_images(x, y, logits,prefix="train_")
+            with torch.no_grad():
+                self.log_images(x, y, logits,prefix="train_")
             
         return loss
     
@@ -67,7 +68,7 @@ class WorldFloodsModel(pl.LightningModule):
         """
         return self.network(x)
 
-    def image_to_logger(self, x:torch.Tensor) -> np.ndarray:
+    def image_to_logger(self, x:torch.Tensor) -> Optional[np.ndarray]:
         return batch_to_unnorm_rgb(x,
                                    self.hparams["model_params"]["hyperparameters"]['channel_configuration'],
                                    unnormalize=self.normalized_data)
@@ -80,10 +81,11 @@ class WorldFloodsModel(pl.LightningModule):
 
         img_data = self.image_to_logger(x)
 
-        self.logger.experiment.log(
-            {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+        if img_data is not None:
+            self.logger.experiment.log(
+                {f"{prefix}overlay": [self.wb_mask(img, pred, mask) for (img, pred, mask) in zip(img_data, pred_data, mask_data)]})
+            self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
 
-        self.logger.experiment.log({f"{prefix}image": [wandb.Image(img) for img in img_data]})
         self.logger.experiment.log({f"{prefix}y": [wandb.Image(mask_to_rgb(img)) for img in mask_data]})
         self.logger.experiment.log({f"{prefix}pred": [wandb.Image(mask_to_rgb(img + 1)) for img in pred_data]})
 
@@ -207,7 +209,8 @@ class ML4FloodsModel(pl.LightningModule):
             self.log("loss", loss)
 
         if (batch_idx == 0) and (self.logger is not None) and isinstance(self.logger, WandbLogger):
-            self.log_images(x, y, logits, prefix="train_")
+            with torch.no_grad():
+                self.log_images(x, y, logits, prefix="train_")
 
         return loss
 
@@ -225,7 +228,7 @@ class ML4FloodsModel(pl.LightningModule):
         """
         return self.network(x)
 
-    def image_to_logger(self, x:torch.Tensor) -> np.ndarray:
+    def image_to_logger(self, x:torch.Tensor) -> Optional[np.ndarray]:
         return batch_to_unnorm_rgb(x,
                                    self.hparams["model_params"]["hyperparameters"]['channel_configuration'],
                                    unnormalize=self.normalized_data)
@@ -363,7 +366,7 @@ def load_weights(path_weights:str, map_location="cpu"):
 
 
 def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_clip_val=3000.,
-                        unnormalize:bool=True) -> np.ndarray:
+                        unnormalize:bool=True) -> Optional[np.ndarray]:
     """
     Unnorm x images and get rgb channels for visualization
 
@@ -378,17 +381,22 @@ def batch_to_unnorm_rgb(x:torch.Tensor, channel_configuration:str="all", max_cli
     """
     model_input_npy = x.cpu().numpy()
 
-    mean, std = normalize.get_normalisation("rgb")  # B, R, G!
-    mean = mean[np.newaxis]
-    std = std[np.newaxis]
-
     # Find the RGB indexes within the S2 bands
     bands_read_names = [BANDS_S2[i] for i in CHANNELS_CONFIGURATIONS[channel_configuration]]
-    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
+    bands_index_rgb = [bands_read_names.index(b) for b in ["B4", "B3", "B2"] if b in bands_read_names]
+    if len(bands_index_rgb) != 3:
+        # try swir/nir/red
+        bands_index_rgb = [bands_read_names.index(b) for b in ["B11", "B8", "B4"] if b in bands_read_names]
+        if len(bands_index_rgb) != 3:
+            return
 
-    model_input_rgb_npy = model_input_npy[:, bands_index_rgb].transpose(0, 2, 3, 1)
+    mean, std = normalize.get_normalisation("rgb")  # B, R, G!
+    mean = mean[np.newaxis] # (1, 1, 1, nchannels)
+    std = std[np.newaxis] # (1, 1, 1, nchannels)
+
+    model_input_rgb_npy = model_input_npy[:, bands_index_rgb, ...].transpose(0, 2, 3, 1)
     if unnormalize:
-        model_input_rgb_npy = model_input_npy  * std + mean
+        model_input_rgb_npy = model_input_rgb_npy  * std + mean
         model_input_rgb_npy = np.clip(model_input_rgb_npy / max_clip_val, 0., 1.)
 
     return model_input_rgb_npy

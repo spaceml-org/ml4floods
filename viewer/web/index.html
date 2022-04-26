@@ -18,10 +18,7 @@
   <select id="image" class="selector" style="width:40%;" onChange="changeImage(this.value);"></select>
   <button type="button" onclick="loadTile()">Load Image</button>
   <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
-<<<<<<< HEAD
-=======
   <button type="button" onclick="loadFloodMapPred()">Load FloodMap Pred</button>
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
   <!-- Rounded switch -->
   Edit Polygon:
   <label class="switch"><input id="editpol" type="checkbox" /><div></div></label>
@@ -33,7 +30,7 @@
 <div id="mapid"></div>
 
 <div id="footnote">
-  Developed by <a href="https://www.uv.es/gonmagar/" target="_blank">Gonzalo Mateo-García</a>. This work has been partially supported by the Spanish Ministry of Science and Innovation projects TEC2016-77741-R and PID2019-109026RB-I00 (MINECO-ERDF)
+  Developed by <a href="https://www.uv.es/gonmagar/" target="_blank">Gonzalo Mateo-García</a>. This work has been partially supported by the Spanish Ministry of Science and Innovation project PID2019-109026RB-I00 (MINECO-ERDF)
 </div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
@@ -57,6 +54,8 @@
 
     let COLOR_CODES = {"train": "#00DD00",
                        "val": "#DDDD00",
+                       "banned": "#770000",
+                       "unused": "#222222",
                        "test": "#DD0000"};
 
     // Initialize js map
@@ -111,16 +110,7 @@
 
           // Adds the tilelayers of all the products
           worldfloods[name]["tilelayers"] = [];
-<<<<<<< HEAD
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"]){
-            let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
-            let tilelayer = L.tileLayer(path);
-            worldfloods[name]["tilelayers"].push(tilelayer);
-            control_layer.addOverlay(tilelayer, `${product}: ${name}`);
-          }
-          // Add to the map only the S2 image
-=======
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI"]){
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "gtcloud", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI", "BRIGHTNESS"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
 
             // TODO set maxZoom and minZoom? -> https://leafletjs.com/reference.html#tilelayer
@@ -136,7 +126,6 @@
           // Add to the map only the S2 image (first image)
           worldfloods[name]["tilelayers"][0].addTo(mymap);
         } else if (!(mymap.hasLayer(worldfloods[name]["tilelayers"][0]))){
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
           worldfloods[name]["tilelayers"][0].addTo(mymap);
         }
 
@@ -160,11 +149,7 @@
       return {color: "#ffff00", fillOpacity: 0.2};
     }
 
-<<<<<<< HEAD
-    // Add style and callbacks to flood polygons
-=======
     // Add style and callbacks to flood gt polygons
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     function addStyleFloodPolygon(feature, layer){
       let style = style_fun(feature);
       layer.setStyle(style);
@@ -209,12 +194,6 @@
           addStyleFloodPolygon(feature, layer);
         }
 
-<<<<<<< HEAD
-        $.getJSON(path_dest_base, function (floodmap) {
-          worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": onEachFeature});
-          worldfloods[name]["floodmap"].addTo(mymap);
-          control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
-=======
         $.getJSON(path_dest_base, function (floodmap) {
           worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": onEachFeature});
           worldfloods[name]["floodmap"].addTo(mymap);
@@ -255,92 +234,10 @@
           worldfloods[name]["floodmap_pred"] = L.geoJSON(floodmap, {"style": style_fun_pred});
           worldfloods[name]["floodmap_pred"].addTo(mymap);
           control_layer.addOverlay(worldfloods[name]["floodmap_pred"], "floodmap Pred: " + name);
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
           // hide polygons layer
           if (mymap.hasLayer(layer_polygons)){
             mymap.removeLayer(layer_polygons);
           }
-<<<<<<< HEAD
-        });
-      }
-    }
-
-    // Removes a polygon from the floodmap_geojson
-    function removePolygon(){
-	  if (currentEditable){
-	    let name = $('#image :selected').val();
-	    if ("floodmap" in worldfloods[name]) {
-          let floodmap_geojson = worldfloods[name]["floodmap"];
-          floodmap_geojson.removeLayer(currentEditable);
-          currentEditable = null;
-        }
-	    $( "#editpol" ).prop( "checked", false);
-      }
-    }
-
-    function editPolygon(){
-	  if (currentEditable){
-	    currentEditable.editing.enable();
-      }
-    }
-
-    function stopEditPolygon(){
-	  if (currentEditable){
-	    currentEditable.editing.disable();
-      }
-    }
-
-    // Toggle to enable disable editing
-    $('#editpol').change(function () {
-      if ($(this).is(':checked')) {
-        editPolygon();
-      }else {
-        stopEditPolygon();
-      }
-    });
-
-    // TODO show JRC water
-
-    // Callback when a polygon is drawn
-    mymap.on(L.Draw.Event.CREATED, function (e) {
-       let name = $('#image :selected').val();
-       let floodmap_geojson = worldfloods[name]["floodmap"];
-       let layer = e.layer;
-
-       let feature = layer.feature = layer.toGeoJSON();
-       let props = feature.properties = feature.properties || {};
-
-       // TODO let edit w_class, source and id
-       props["w_class"] = "Not Applicable";
-       props["source"] = "flood";
-       props["id"] = -1;
-
-       // bindPopup and style
-       addStyleFloodPolygon(feature, layer);
-       floodmap_geojson.addLayer(layer);
-
-      // drawnItems.addLayer(layer);
-
-    });
-
-    // save GeoJSON button (use https://leafletjs.com/reference.html#featuregroup toGeoJSON function over let drawnItems = worldfloods[name]["floodmap"];
-    function saveFloodMap(){
-      let name = $('#image :selected').val();
-      if ("floodmap" in worldfloods[name]){
-        let floodmap = worldfloods[name]["floodmap"];
-        let floodmap_geo = floodmap.toGeoJSON();
-        let path_dest = window.location.protocol + "//" + window.location.host + window.location.pathname
-                            + worldfloods[name]["subset"]+"/"+name+"/save_floodmap";
-
-        console.log(path_dest);
-
-        $.ajax({
-          'url': path_dest,
-          'data': JSON.stringify(floodmap_geo),
-          'contentType' : 'application/json',
-          'type' : 'POST'
-=======
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
         });
 
         // TODO add button to add the floodmap preg polygon to floodmap ground truth!

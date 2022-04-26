@@ -81,9 +81,26 @@ def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
 
     return shape(geojson_dict)
 
+
+def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
+                        water_mask:Union[np.ndarray, torch.Tensor],
+                        permanent_water:Optional[Union[np.ndarray, torch.Tensor]]=None):
+    "Water mask (H, W) with interpretation {0: invalids, 1: land, 2: flood water, 3: thick cloud, 4:permanent water, 5: flood trace}"
+    # 2: flood water
+    # 4: permanent_water
+    # 5: flood_trace
+    water_mask_types = water_mask.copy()
+    water_mask_types[(water_mask == 2) & (mndwi < 0)] = 5
+    if permanent_water is not None:
+        water_mask_types[(water_mask != 3) & (permanent_water == 3)] = 4
+
+    return water_mask_types
+
+
 def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[np.ndarray, torch.Tensor],
                      channels_input:Optional[List[int]]=None,
-                     th_water:int = 0.5, th_cloud:int = 0.5, mask_clouds:bool = True) -> Union[np.ndarray, torch.Tensor]:
+                     th_water:float = 0.5, th_cloud:float = 0.5, mask_clouds:bool = True,
+                     th_brightness:float=BRIGHTNESS_THRESHOLD) -> Union[np.ndarray, torch.Tensor]:
     """
     Receives an output of a WFV2 model (multioutput binary) and returns the corresponding 3-class segmentation mask
     Args:
@@ -92,6 +109,7 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
         channels_input: 0-based list of indexes of s2_image channels (expected that len(channels_input) == s2_image.shape[0])
         th_water: threshold for the class water
         th_cloud: threshold for the class cloud
+        th_brightness: threshold for the brightness to differenciate thick from thin clouds
         mask_clouds: If False ignores brightness and outputs the prediction mask with thin clouds
         
     Returns:
@@ -112,7 +130,7 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     output[water_mask] = 2
     
     if mask_clouds:
-        br = get_brightness(inputs, channels_input=channels_input) > BRIGHTNESS_THRESHOLD
+        br = get_brightness(inputs, channels_input=channels_input) > th_brightness
         if hasattr(br, "cpu"):
             br = br.cpu()
         output[cloud_mask & br] = 3

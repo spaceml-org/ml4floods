@@ -1,5 +1,5 @@
 import tqdm
-from ml4floods.data.utils import GCPPath, write_json_to_gcp
+from ml4floods.data.utils import write_json_to_gcp
 from pathlib import Path
 from ml4floods.data.worldfloods.create_worldfloods_dataset import generate_item, worldfloods_output_files, worldfloods_extra_gcp_paths
 from ml4floods.data.create_gt import generate_land_water_cloud_gt, generate_water_cloud_binary_gt

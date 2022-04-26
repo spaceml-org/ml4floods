@@ -5,7 +5,8 @@ from matplotlib import colors
 import matplotlib.patches as mpatches
 import numpy as np
 from typing import Union, Optional, List, Tuple
-from ml4floods.data.worldfloods.configs import BANDS_S2, CHANNELS_CONFIGURATIONS
+from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
+from ml4floods.models.model_setup import get_channel_configuration_bands
 from ml4floods.data.worldfloods import configs
 from ml4floods.data import utils
 
@@ -143,13 +144,14 @@ def get_image_transform(array_or_file:Union[str, np.ndarray],
     return output, transform
 
 
-def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
-                      window:Optional[rasterio.windows.Window]=None,
-                      max_clip_val:Optional[float]=3000.,
-                      min_clip_val:Optional[float]=0.,
-                      channel_configuration:str="all",
-                      size_read:Optional[int]=None,
-                      **kwargs):
+def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
+                   window:Optional[rasterio.windows.Window]=None,
+                   max_clip_val:Optional[float]=3000.,
+                   min_clip_val:Optional[float]=0.,
+                   channel_configuration:str="all",
+                   collection_name:str="S2",
+                   size_read:Optional[int]=None,
+                   **kwargs):
     """
     Plot bands B4, B3, B2 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
     (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
@@ -163,6 +165,7 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
         max_clip_val: value to clip the the input for visualization
         min_clip_val: value to clip the the input for visualization
         channel_configuration: Expected bands of the inputs
+        collection_name: S2 or Landsat
         size_read: max size to read. Use this to read from the overviews of the image.
         **kwargs: extra args for rasterio.plot.show
 
@@ -171,7 +174,15 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
             Axes with plot.
 
     """
-    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    ibands = get_channel_configuration_bands(channel_configuration,
+                                             collection_name=collection_name)
+    if collection_name == "S2":
+        band_names_current_image = [BANDS_S2[iband] for iband in ibands]
+    elif collection_name == "Landsat":
+        band_names_current_image = [BANDS_L8[iband] for iband in ibands]
+    else:
+        raise NotImplementedError(f"Collection name {collection_name} not implemented")
+
     bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
                                            size_read=size_read)
@@ -183,14 +194,15 @@ def plot_s2_rbg_image(input: Union[str, np.ndarray], transform:Optional[rasterio
     return rasterioplt.show(image, transform=transform, **kwargs)
 
 
-def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
-                             transform:Optional[rasterio.Affine]=None,
-                             window:Optional[rasterio.windows.Window]=None,
-                             max_clip_val: Optional[float] = 3000.,
-                             min_clip_val: Optional[float] = 0.,
-                             channel_configuration="all",
-                             size_read:Optional[int]=None,
-                             **kwargs):
+def plot_swirnirred_image(input: Union[str, np.ndarray],
+                          transform:Optional[rasterio.Affine]=None,
+                          window:Optional[rasterio.windows.Window]=None,
+                          max_clip_val: Optional[float] = 3000.,
+                          min_clip_val: Optional[float] = 0.,
+                          channel_configuration="all",
+                          collection_name="S2",
+                          size_read:Optional[int]=None,
+                          **kwargs):
     """
     Plot bands B11, B8, B4 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
     (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
@@ -205,6 +217,7 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
         min_clip_val: value to clip the the input for visualization
         channel_configuration: Expected bands of the inputs
         size_read: max size to read. Use this to read from the overviews of the image.
+        collection_name: S2 or Landsat
         **kwargs: extra args for rasterio.plot.show
 
     Returns:
@@ -212,8 +225,17 @@ def plot_s2_swirnirred_image(input: Union[str, np.ndarray],
             Axes with plot.
 
     """
-    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
-    bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
+    ibands = get_channel_configuration_bands(channel_configuration,
+                                             collection_name=collection_name)
+    if collection_name == "S2":
+        band_names_current_image = [BANDS_S2[iband] for iband in ibands]
+        bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
+    elif collection_name == "Landsat":
+        band_names_current_image = [BANDS_L8[iband] for iband in ibands]
+        bands = [band_names_current_image.index(b) for b in ["B6", "B5", "B4"]]
+    else:
+        raise NotImplementedError(f"Collection name {collection_name} not implemented")
+
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
                                            size_read=size_read)
 
@@ -405,7 +427,7 @@ def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray 
     compute_positives function
 
     """
-    band_names_current_image = [BANDS_S2[iband] for iband in CHANNELS_CONFIGURATIONS[channel_configuration]]
+    band_names_current_image = [BANDS_S2[iband] for iband in get_channel_configuration_bands(channel_configuration)]
     bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
     image = get_image_transform(input, transform=transform, bands=bands)[0]
     image = np.clip((image-0)/(3000 - 0), 0, 1)

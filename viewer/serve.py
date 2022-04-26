@@ -89,7 +89,7 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Expand any multipolygons of the geopandas dataframe to polygons.
     """
 
-    if all(shp_pd.geometry.apply(lambda geom: geom.geom_type) == "Polygon"):
+    if all(shp_pd.geometry.apply(lambda geom: (geom is not None) and (geom.geom_type == "Polygon"))):
         return shp_pd
 
     new_shp = []
@@ -115,8 +115,6 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
 
-<<<<<<< HEAD
-=======
 
 @app.route("/<subset>/<eventid>/<predname>.geojson")
 def read_floodmap_pred(subset:str, eventid:str, predname:str):
@@ -139,7 +137,6 @@ def read_floodmap_pred(subset:str, eventid:str, predname:str):
                      download_name=f'{subset}_{eventid}_{predname}.geojson',
                      mimetype='application/geojson')
 
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
@@ -174,46 +171,42 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     Args:
         subset: {"train", "test", "val"}
         eventid: name of the event (e.g EMSR342_07SOUTHNORMANTON_DEL_MONIT03_v2)
-        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"}
+        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm",
+                      "MNDWI", "BRIGHTNESS", "gtcloud"}
         z: zoom level
-        x:
-        y:
+        x: x location mercantile
+        y: y location mercantile
 
     Returns:
         PNG of shape 256x256
 
     """
 
-<<<<<<< HEAD
-    # TODO Add MNDWI?
-
-=======
     productnamefolder = productname
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     if productname.startswith("S2"):
         band_composite = productname.replace("S2","")
         if band_composite == "RGB":
             bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         else:
             bands =[BANDS_S2.index(b) + 1 for b in ["B11", "B8", "B4"]]
-<<<<<<< HEAD
-
-        productname = "S2"
-=======
         productname = "S2"
         productnamefolder = "S2"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         bands = [2]
         resampling = warp.Resampling.nearest
-<<<<<<< HEAD
-=======
+    elif productname == "gtcloud":
+        productnamefolder = "gt"
+        bands = [1]
+        resampling = warp.Resampling.nearest
     elif productname == "MNDWI":
         bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
         resampling = warp.Resampling.cubic_spline
         productnamefolder = "S2"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
+    elif productname == "BRIGHTNESS":
+        bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
+        resampling = warp.Resampling.cubic_spline
+        productnamefolder = "S2"
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
@@ -224,15 +217,11 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         raise NotImplementedError(f"Productname {productname} not found")
 
 
-<<<<<<< HEAD
-    image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productname, f"{eventid}.tif")
-=======
     image_address = os.path.join(app.config["ROOT_LOCATION"], subset, productnamefolder, f"{eventid}.tif")
 
     if not os.path.exists(image_address):
         logging.error(f"{image_address} does not exist")
         return '', 204
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 
     output = read_tile(image_address, x=int(x),  y=int(y), z=int(z), indexes=bands,
                        resampling=resampling, dst_nodata=0)
@@ -258,10 +247,13 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
-<<<<<<< HEAD
-=======
+    elif productname == "gtcloud":
+        clear_cloud = rst_arr[0]
+        img_rgb = mask_to_rgb(clear_cloud, [0, 1, 2], colors=COLORS[(0,1, 3), ...])
+        mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
+        rst_arr = rst_arr.astype(np.float32)
         band_sum = rst_arr[1] + rst_arr[0]
         band_diff = rst_arr[1] - rst_arr[0]
         dwi = band_diff / (band_sum + 1e-6)
@@ -269,10 +261,16 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         dwi_threshold[invalid] = 0
         img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
+        mode = "RGB"
+    elif productname == "BRIGHTNESS":
+        invalid = np.all(rst_arr == 0, axis=0)
+        brightness = create_gt.get_brightness(rst_arr, [1, 2, 3])
+        brightness_threshold = (brightness >= create_gt.BRIGHTNESS_THRESHOLD).astype(np.uint8) + 1
+        brightness_threshold[invalid] = 0
+        img_rgb = mask_to_rgb(brightness_threshold, [0, 1, 2], colors=COLORS[(0,1, 3),...])
         mode = "RGB"
     elif productname == "PERMANENTWATERJRC":
         permanent_water = rst_arr[0]
@@ -348,8 +346,6 @@ def worldfloods_files(rl:str):
 
     for json_file in json_files:
         json_file = json_file.replace("\\", "/")
-        if "/banned/" in json_file:
-            continue
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
@@ -397,5 +393,4 @@ if __name__ == "__main__":
     # gunicorn core.asgi:application -w ${NUMBER_OF_WORKERS:-1} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 
     app.run(port=args.port, debug=True, host=args.host, threaded=False)
-
 

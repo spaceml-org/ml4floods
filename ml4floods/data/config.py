@@ -12,6 +12,7 @@ The meaning of the codes are:
 CODES_FLOODMAP = {
     # CopernicusEMS (flood)
     'Flooded area': 1,
+    'Previous flooded area': 1,
     'Not Applicable': 1,
     'Not Application': 1,
     'Flood trace': 1,
