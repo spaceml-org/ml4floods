@@ -104,7 +104,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # TODO: here we can check for correspondence between the files
         pass
 
-    def setup(self):
+    def setup(self, stage=None):
         """This creates the PyTorch dataset given the preconfigured
         file paths.
         """

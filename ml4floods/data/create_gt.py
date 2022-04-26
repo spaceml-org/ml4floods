@@ -324,7 +324,7 @@ def generate_water_cloud_binary_gt(
         window=window,
         cloudprob_image_path=cloudprob_image_path,
     )
-    custom_cloud_mask = cloudprob_image_path is not None and cloudprob_image_path.endswith(".geojson")
+    custom_cloud_mask = (cloudprob_image_path is not None) and cloudprob_image_path.endswith(".geojson")
 
     water_mask = compute_water(
         s2_image_path,
@@ -423,7 +423,6 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
     Args:
         s2_image: (C, H, W) array
         channels_input: 0-based list of indexes of s2_image channels (expected that len(channels_input) == s2_image.shape[0])
-
     Returns:
         (H, W) array
     """
@@ -439,15 +438,17 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
 
     idxs = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
 
-    rgb_img = s2_image[idxs, ...]**2
-    if isinstance(rgb_img, torch.Tensor):
+    if isinstance(s2_image, torch.Tensor):
+        rgb_img = s2_image[idxs, ...].float() ** 2
         return torch.sqrt(torch.sum(rgb_img, dim=0))
 
+    rgb_img = s2_image[idxs, ...].astype(np.float32) ** 2
     return np.sqrt(np.sum(rgb_img, axis=0))
 
 
 CLOUDS_THRESHOLD = .5
-BRIGHTNESS_THRESHOLD = 3_000
+BRIGHTNESS_THRESHOLD = 3_500
+
 
 
 def _generate_gt_fromarray(

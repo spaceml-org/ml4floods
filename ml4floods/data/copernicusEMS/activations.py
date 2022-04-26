@@ -216,6 +216,7 @@ formats = [
     "%d/%m/%Y %H:%M:%S",
     "%Y/%m/%d %H:%M UTC",
     "%d/%m/%Y %H:%M:%S UTC",
+    "%m/%d/%Y T%H:%M:%SZ",
 ]
 
 
@@ -344,7 +345,7 @@ def filter_register_copernicusems(
     if not area_of_interest_file:
         return
 
-    pd_source = load_source_file(source_file)
+    pd_source = load_source_file(source_file, verbose=verbose)
     if pd_source is None:
         return
 
@@ -478,7 +479,7 @@ def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Opt
     pd_geo = gpd.read_file(observed_event_file)
     if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
         print(
-            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'])}"
+            f"{observed_event_file} Event type is not Flood {np.unique(pd_geo['event_type'][~pd_geo.event_type.isna()])}"
         )
         return
 

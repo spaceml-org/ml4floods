@@ -1,12 +1,8 @@
 import torch
 import itertools
-<<<<<<< HEAD
-from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel
-=======
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
 from ml4floods.models.utils.configuration import AttrDict
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT
 import numpy as np
 import os
 
@@ -32,12 +28,8 @@ def get_model(model_params:AttrDict,
         normalized_data:
 
     Returns:
-<<<<<<< HEAD
-        pytorch lightning model (
-=======
         pytorch lightning model
 
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     """
     if model_params.get("test", False) or model_params.get("deploy", False):
         assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
@@ -48,11 +40,7 @@ def get_model(model_params:AttrDict,
             model = WorldFloodsModel(model_params, normalized_data=normalized_data)
 
         path_to_models = os.path.join(model_params.model_folder, experiment_name, "model.pt").replace("\\", "/")
-<<<<<<< HEAD
-        model.load_state_dict(load(path_to_models))
-=======
         model.load_state_dict(load_weights(path_to_models))
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
         print(f"Loaded model weights: {path_to_models}")
         return model
 
@@ -68,22 +56,23 @@ def get_model(model_params:AttrDict,
 
         
         
-def get_channel_configuration_bands(channel_configuration:str) -> List[int]:
+def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2") -> List[int]:
     """
     Returns 0-based list of channels of a given configuration name
     """
-    return CHANNELS_CONFIGURATIONS[channel_configuration]
+    if collection_name == "S2":
+        return CHANNELS_CONFIGURATIONS[channel_configuration]
+    elif collection_name =="Landsat":
+        return CHANNELS_CONFIGURATIONS_LANDSAT[channel_configuration]
+    else:
+        raise NotImplementedError(f"Collection {collection_name} not implemented")
+
         
         
-<<<<<<< HEAD
-def get_model_inference_function(model, config, apply_normalization:bool=True, eval_mode:bool=True,
-                                 activation:Optional[str]=None) -> Callable[[torch.Tensor], torch.Tensor]:
-=======
 def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
                                  apply_normalization:bool=True, eval_mode:bool=True,
                                  activation:Optional[str]=None,
                                  device:Optional[torch.device]=None) -> Callable[[torch.Tensor], torch.Tensor]:
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -99,10 +88,7 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
         eval_mode: set for predicting model.eval()
         activation: activation function to apply on inference time (softmax|sigmoid). If None it will gess it from
             the model_version
-<<<<<<< HEAD
-=======
-        device:
->>>>>>> d640c90e498e4a9e7e540913f55267215a403f6d
+        device: if None uses model.device
 
     Returns: callable function
     """

@@ -246,12 +246,13 @@ def rasterio_read(
     return im_tif
 
 
-def load_input(tiff_input:str, channels:List[int], window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
+def load_input(tiff_input:str, channels:List[int],
+               window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
     """
     Reads from a tiff the specified channel and window.
 
     Args:
-        tiff_input:
+        tiff_input: path to geotiff file
         window: rasterio.Window object to read (None to read all)
         channels: 0-based channels to read
 

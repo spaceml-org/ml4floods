@@ -2,6 +2,9 @@ from ml4floods.data.copernicusEMS import activations
 from ml4floods.data import utils
 import os
 from glob import glob
+import warnings
+import traceback
+import sys
 
 PATH_TO_WRITE_ZIP = 'gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_zip'
 PATH_TO_WRITE_UNZIP = 'gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/copernicus_ems/copernicus_ems_unzip'
@@ -98,37 +101,42 @@ def main():
                         fs_bucket.get_file(fextracted, filename_local)
 
             # Process downloaded data
-            metadata_floodmap = activations.filter_register_copernicusems(unzipfullpath,
-                                                                          code_date, verbose=True)
-            if metadata_floodmap is None:
-                continue
+            try:
+                metadata_floodmap = activations.filter_register_copernicusems(unzipfullpath,
+                                                                              code_date, verbose=True)
+                if metadata_floodmap is None:
+                    continue
 
-            if metadata_floodmap['ems_code'] != emsr_code:
-                print(f"\tUnexpected EMSR code { metadata_floodmap['ems_code']} expected {emsr_code}")
-                continue
-            if metadata_floodmap['aoi_code'] != aoi_code:
-                print(f"\tUnexpected aoi code {metadata_floodmap['aoi_code']} expected {aoi_code}")
-                continue
+                if metadata_floodmap['ems_code'] != emsr_code:
+                    print(f"\tUnexpected EMSR code { metadata_floodmap['ems_code']} expected {emsr_code}")
+                    continue
+                if metadata_floodmap['aoi_code'] != aoi_code:
+                    print(f"\tUnexpected aoi code {metadata_floodmap['aoi_code']} expected {aoi_code}")
+                    continue
 
-            satellite_date = metadata_floodmap["satellite date"]
-            gcp_metadata_floodmap_path = os.path.join(gcp_metadata_floodmap_dir,
-                                                      satellite_date.strftime("%Y-%m-%d") + ".pickle")
+                satellite_date = metadata_floodmap["satellite date"]
+                gcp_metadata_floodmap_path = os.path.join(gcp_metadata_floodmap_dir,
+                                                          satellite_date.strftime("%Y-%m-%d") + ".pickle")
 
-            gcp_floodmap_path = os.path.join(gcp_floodmap_dir,
-                                             satellite_date.strftime("%Y-%m-%d") + ".geojson")
+                gcp_floodmap_path = os.path.join(gcp_floodmap_dir,
+                                                 satellite_date.strftime("%Y-%m-%d") + ".geojson")
 
-            if fs_bucket.exists(gcp_metadata_floodmap_path) and fs_bucket.exists(gcp_floodmap_path):
-                print(
-                    f"\tFile {gcp_metadata_floodmap_path} and {gcp_floodmap_path} exists. will not recompute")
-                continue
+                if fs_bucket.exists(gcp_metadata_floodmap_path) and fs_bucket.exists(gcp_floodmap_path):
+                    print(
+                        f"\tFile {gcp_metadata_floodmap_path} and {gcp_floodmap_path} exists. will not recompute")
+                    continue
 
-            floodmap = activations.generate_floodmap(metadata_floodmap, unzipfullpath)
+                floodmap = activations.generate_floodmap(metadata_floodmap, unzipfullpath)
 
-            utils.write_pickle_to_gcp(gs_path=gcp_metadata_floodmap_path,
-                                      dict_val=metadata_floodmap)
+                utils.write_pickle_to_gcp(gs_path=gcp_metadata_floodmap_path,
+                                          dict_val=metadata_floodmap)
 
-            # push floodmap to bucket
-            utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
+                # push floodmap to bucket
+                utils.write_geojson_to_gcp(gs_path=gcp_floodmap_path, geojson_val=floodmap)
+
+            except Exception:
+                warnings.warn(f"Failed EMSR Code: {emsr_code}  AoI Code: {aoi_code}")
+                traceback.print_exc(file=sys.stdout)
     
     
 if __name__ == "__main__":

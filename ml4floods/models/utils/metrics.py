@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Optional
 import numpy as np
 import torch
 import torch.utils.data
@@ -9,6 +9,7 @@ import json
 import seaborn as sns
 import pandas as pd
 from collections import OrderedDict
+
 
 
 @torch.no_grad()
@@ -360,6 +361,7 @@ def compute_metrics(dataloader:torch.utils.data.dataloader.DataLoader,
     return out_dict
 
 
+
 def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
                    label_names:List[str]) ->List[Dict[str, Any]]:
     CMs = OrderedDict({c:[] for c in sorted(np.unique(cems_code))})
@@ -374,6 +376,125 @@ def group_confusion(confusions:torch.Tensor, cems_code:np.ndarray,fun:Callable,
         data_out.append(ious)
     
     return data_out
+
+def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
+                       pred_fun: Callable, thresholds_water:Optional[np.array]=None,
+                       threshold_water:float=.5, threshold_clouds=.5,
+                       plot=False, mask_clouds:bool=True) -> Dict:
+    """
+    Run inference on a dataloader and compute metrics for that data
+    
+    Args:
+        dataloader: pytorch Dataloader for test set
+        pred_fun: function to perform inference using a model
+        thresholds_water: list of threshold for precision/recall curves
+        threshold_water: threshold of water to compute the confusion matrix
+        threshold_clouds: threshold of clouds to compute the confusion matrix
+        plot: flag for calling plot method with metrics
+        mask_clouds: if True this will compute the confusion matrices for "land" and "water" classes only masking
+            the cloudy pixels. If mask_clouds the output confusion matrices will be (n_samples, 2, 2) otherwise they will
+            be (n_samples, 3, 3)
+
+        
+        returns: dictionary of metrics
+    """
+    confusions = []
+    
+    # Sort thresholds from high to low
+    if not thresholds_water:
+        thresholds_water = [0, 1e-3, 1e-2] + np.arange(0.05, .96, .05).tolist() + [.99, .995, .999]
+        thresholds_water = np.array(thresholds_water)
+
+    # thresholds_water sorted from high to low
+    thresholds_water = np.sort(thresholds_water)
+    thresholds_water = thresholds_water[-1::-1]
+    confusions_thresh = []
+
+    # This is constant: we're using this class convention to compute the PR curve
+    if mask_clouds:
+        num_class, label_names = 2, ["land", "water"]
+    else:
+        num_class, label_names = 3, ["land", "water", "cloud"]
+
+    for i, batch in tqdm(enumerate(dataloader), total=int(len(dataloader.dataset)/dataloader.batch_size)):
+        test_inputs, ground_truth = batch["image"], batch["mask"]
+
+        test_outputs = pred_fun(test_inputs)
+      
+        test_outputs_categorical = test_outputs[:,1] > threshold_water
+        probs_water_pr_curve = test_outputs[:, 1]
+        water_ground_truth = ground_truth[:, 1] # (batch_size, H, W)
+        invalids = (water_ground_truth == 0).to(test_outputs_categorical.device) # (batch_size, H, W)
+        ground_truth_outputs = torch.clone(water_ground_truth).to(test_outputs_categorical.device)
+        
+        if not mask_clouds:
+            assert test_outputs.shape[1] == 2, f"Mode mask clouds expects 2 channel output image found {test_outputs.shape}"
+            test_outputs_categorical[test_outputs[:, 0] > threshold_clouds] = 2
+            water_ground_truth[ground_truth[:, 0] == 2] = 3 # (batch_size, H, W)
+            invalids |= (ground_truth[:, 0] == 0).to(test_outputs_categorical.device)
+
+        # Ground truth version v2 is 2 channel tensor 2-classes (B, 2, H, W) [{0: invalid, 1: land, 2: cloud}, {0: invalid, 1: land, 2: water}]
+
+        ground_truth_outputs[invalids] = 1 # (batch_size, H, W)
+        ground_truth_outputs -= 1
+        
+        # Set invalids in pred to zero
+        test_outputs_categorical[invalids] = 0  # (batch_size, H, W)
+
+        confusions_batch = compute_confusions(ground_truth_outputs, test_outputs_categorical,
+                                              num_class=num_class, remove_class_zero=False)
+        # confusions_batch is (batch_size, num_class, num_class)
+
+        # Discount invalids
+        inv_substract = torch.sum(invalids, dim=(1, 2)).to(confusions_batch.device) # (batch_size, )
+
+        confusions_batch[:, 0, 0] -= inv_substract
+        confusions.extend(confusions_batch.tolist())
+        
+        # Thresholded version for precision recall curves
+        # Set clouds to land
+        test_outputs_categorical_thresh = torch.zeros(ground_truth_outputs.shape, dtype=torch.long,
+                                                      device=ground_truth_outputs.device)
+
+        ground_truth_outputs[ground_truth_outputs == 2] = 0
+
+        results = []
+        valids = ~invalids
+        
+        # thresholds_water sorted from high to low
+        for thr in thresholds_water:
+            # keep invalids in pred to zero
+            test_outputs_categorical_thresh[valids & (probs_water_pr_curve > thr)] = 1
+
+            confusions_batch = compute_confusions(ground_truth_outputs,
+                                                  test_outputs_categorical_thresh, num_class=2, remove_class_zero=False)   # [batch_size, 2, 2]
+
+            # Discount invalids
+            confusions_batch[:, 0, 0] -= torch.sum(invalids.to(confusions_batch.device))
+
+            results.append(confusions_batch.numpy())
+
+        # results is [len(thresholds), batch_size, 2, 2]
+        confusions_thresh.append(np.stack(results))
+
+    confusions_thresh = np.concatenate(confusions_thresh, axis=1)
+    
+    iou = calculate_iou(confusions, labels=label_names)
+    recall = calculate_recall(confusions, labels=label_names)
+    
+    out_dict = {
+        'confusions': confusions,
+        'confusions_thresholded': confusions_thresh,
+        'thresholds': thresholds_water,
+        'iou': iou,
+        "recall": recall
+    }
+    
+    if plot:
+        plot_metrics(out_dict, label_names)
+    
+    return out_dict
+
 
 def compute_positives(ground_truth_outputs: torch.Tensor,
                        water_outputs_categorical: torch.Tensor, convert_targets:bool = True) -> torch.Tensor:

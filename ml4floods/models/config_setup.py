@@ -29,10 +29,7 @@ def setup_config(args) -> AttrDict:
     from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 
     config['resume_from_checkpoint'] = args.resume_from_checkpoint
-    config['train'] = args.train
     config['gpus'] = args.gpus
-    config['test'] = args.test
-    config['deploy'] = args.deploy
 
     # TODO check channel_configuration is the same in all the parts. Populate this to transforms!
     assert config['model_params']['hyperparameters']['channel_configuration'] ==  config['data_params']['channel_configuration'],\
