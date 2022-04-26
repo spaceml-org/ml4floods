@@ -89,7 +89,7 @@ def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Expand any multipolygons of the geopandas dataframe to polygons.
     """
 
-    if all(shp_pd.geometry.apply(lambda geom: (geom is not None) and (geom.geom_type == "Polygon"))):
+    if all(shp_pd.geometry.apply(lambda geom: geom.geom_type) == "Polygon"):
         return shp_pd
 
     new_shp = []
@@ -171,11 +171,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     Args:
         subset: {"train", "test", "val"}
         eventid: name of the event (e.g EMSR342_07SOUTHNORMANTON_DEL_MONIT03_v2)
-        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm",
-                      "MNDWI", "BRIGHTNESS", "gtcloud"}
+        productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm"}
         z: zoom level
-        x: x location mercantile
-        y: y location mercantile
+        x:
+        y:
 
     Returns:
         PNG of shape 256x256
@@ -195,16 +194,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     elif productname == "gt":
         bands = [2]
         resampling = warp.Resampling.nearest
-    elif productname == "gtcloud":
-        productnamefolder = "gt"
-        bands = [1]
-        resampling = warp.Resampling.nearest
     elif productname == "MNDWI":
         bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
-        resampling = warp.Resampling.cubic_spline
-        productnamefolder = "S2"
-    elif productname == "BRIGHTNESS":
-        bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         resampling = warp.Resampling.cubic_spline
         productnamefolder = "S2"
     elif productname == "PERMANENTWATERJRC":
@@ -247,13 +238,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
         img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
         mode = "RGB"
-    elif productname == "gtcloud":
-        clear_cloud = rst_arr[0]
-        img_rgb = mask_to_rgb(clear_cloud, [0, 1, 2], colors=COLORS[(0,1, 3), ...])
-        mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
-        rst_arr = rst_arr.astype(np.float32)
         band_sum = rst_arr[1] + rst_arr[0]
         band_diff = rst_arr[1] - rst_arr[0]
         dwi = band_diff / (band_sum + 1e-6)
@@ -264,13 +250,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     elif productname == "WF2_unet_full_norm":
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
-        mode = "RGB"
-    elif productname == "BRIGHTNESS":
-        invalid = np.all(rst_arr == 0, axis=0)
-        brightness = create_gt.get_brightness(rst_arr, [1, 2, 3])
-        brightness_threshold = (brightness >= create_gt.BRIGHTNESS_THRESHOLD).astype(np.uint8) + 1
-        brightness_threshold[invalid] = 0
-        img_rgb = mask_to_rgb(brightness_threshold, [0, 1, 2], colors=COLORS[(0,1, 3),...])
         mode = "RGB"
     elif productname == "PERMANENTWATERJRC":
         permanent_water = rst_arr[0]
@@ -346,6 +325,8 @@ def worldfloods_files(rl:str):
 
     for json_file in json_files:
         json_file = json_file.replace("\\", "/")
+        if "/banned/" in json_file:
+            continue
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
