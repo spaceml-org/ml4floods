@@ -161,6 +161,7 @@ def deploy(opt):
 if __name__ == "__main__":
     import argparse
     import os
+    os.environ['KMP_DUPLICATE_LIB_OK']='True'
     
     from ml4floods.models.config_setup import setup_config
     
@@ -169,6 +170,7 @@ if __name__ == "__main__":
     parser.add_argument('--gpus', default='', type=str)
     # Mode: train, test or deploy
     parser.add_argument('--train', default=False, action='store_true')
+    parser.add_argument('--nruns', default='', type=int)
     parser.add_argument('--resume_from_checkpoint', default=False, action='store_true')
     parser.add_argument('--test', default=False, action='store_true')
     parser.add_argument('--deploy', default=False, action='store_true')
@@ -189,7 +191,13 @@ if __name__ == "__main__":
 
     # Run training
     if args.train:
-        train(config)
+        if args.nruns:
+            experiment_name = config.experiment_name
+            for run in range(args.nruns):
+                config.experiment_name = experiment_name + '_run_' + str(run)
+                train(config)
+        else:
+            train(config)
 
     # Run testing
     if args.test:
