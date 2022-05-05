@@ -10,7 +10,7 @@ import sys
 def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
          threshold_invalids_after:float, days_before:int, days_after:int,
-         collection_placeholder:str = "S2",
+         collection_placeholder:str = "S2", only_one_previous:bool=False,
          metadatas_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/"):
     """
 
@@ -24,6 +24,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
         days_before:
         days_after:
         collection_placeholder: S2, Landsat or both
+        only_one_previous:
         metadatas_path:
 
     Returns:
@@ -75,12 +76,18 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
             lon, lat = list(pol_scene_id.centroid.coords)[0]
             crs = ee_download.convert_wgs_to_utm(lon=lon, lat=lat)
 
-            def filter_s2_images(img_col_info_local:pd.DataFrame)->pd.Series:
+            def filter_s2_images(img_col_info_local:pd.DataFrame) -> pd.Series:
                 is_image_same_solar_day = img_col_info_local["datetime"].apply(lambda x: (satellite_date - x).total_seconds() / 3600. < 10)
                 filter_clouds_before = (img_col_info_local["cloud_probability"] <= threshold_clouds_before) & \
                                        (img_col_info_local["valids"] > (1 - threshold_invalids_before)) & \
                                        (img_col_info_local["datetime"] < satellite_date) & \
                                         ~is_image_same_solar_day
+
+                if only_one_previous and filter_clouds_before.any():
+                    max_date = img_col_info_local.loc[filter_clouds_before, "datetime"].max()
+                    filter_clouds_before &= (img_col_info_local["datetime"] == max_date)
+
+
                 filter_clouds_after = (img_col_info_local["cloud_probability"] <= threshold_clouds_after) & \
                                       (img_col_info_local["valids"] > (1 - threshold_invalids_after)) & \
                                       ((img_col_info_local["datetime"] >= satellite_date) | is_image_same_solar_day)
@@ -134,6 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
+    parser.add_argument('--only_one_previous', action='store_true')
     parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="S2")
     parser.add_argument("--metadatas_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/",
                         help="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/ for WorldFloods or "
@@ -158,5 +166,6 @@ if __name__ == '__main__':
          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
          collection_placeholder=args.collection_name, metadatas_path=args.metadatas_path,
+         only_one_previous=args.only_one_previous,
          days_after=args.days_after)
 
