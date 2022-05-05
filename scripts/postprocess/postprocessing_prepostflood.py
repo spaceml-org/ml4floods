@@ -51,8 +51,19 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
     assert len(geojsons) > 0, f"No products found in {path_to_search}"
     aois = np.unique(sorted([g.split("/")[-4] for g in geojsons]))
     for _iaoi, aoi in enumerate(aois):
+        floodmaps_post_aoi = [g for g in geojsons if (f"/{aoi}/" in g) and (os.path.splitext(os.path.basename(g))[0] >= flooding_date_post)]
+
+        all_processed = True
+        for floodmap_post in floodmaps_post_aoi:
+            filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
+            if not fs.exists(filename_out):
+                all_processed = False
+                break
+
+        if all_processed:
+            continue
+
         # Get pre-flood floodmap with lowest cloud coverage and all post-flood maps
-        floodmaps_post_aoi = []
         best_floodmap_pre = None
         cloud_cover = 1
         print(f"({_iaoi+1}/{len(aois)}) Processing AoI: {aoi}")
@@ -64,8 +75,6 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
                 if cc_iter < cloud_cover:
                     best_floodmap_pre = g
                     cloud_cover = cc_iter
-            elif (f"/{aoi}/" in g) and (date_iter >= flooding_date_post):
-                floodmaps_post_aoi.append(g)
 
         if best_floodmap_pre is None:
             print(f"\tNo pre-flood image found for aoi:{aoi}")
@@ -75,9 +84,11 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
         best_pre_flood_data = utils.read_geojson_from_gcp(best_floodmap_pre)
 
         for floodmap_post in floodmaps_post_aoi:
+            filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
+            if fs.exists(filename_out):
+                continue
             floodmap_post_data = utils.read_geojson_from_gcp(floodmap_post)
             floodmap_post_data_pre_post = compute_flood_water(floodmap_post_data, best_pre_flood_data)
-            filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
             print(f"\tSaving {filename_out}")
             utils.write_geojson_to_gcp(filename_out, floodmap_post_data_pre_post)
 
