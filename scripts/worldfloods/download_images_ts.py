@@ -32,7 +32,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
     
 
     fs = utils.get_filesystem(metadatas_path)
-    path_to_glob = os.path.join(metadatas_path,f"*{cems_code}",f"*{aoi_code}", "flood_meta", "*.pickle").replace("\\", "/")
+    path_to_glob = os.path.join(metadatas_path,f"{cems_code}*",f"{aoi_code}*", "flood_meta", "*.pickle").replace("\\", "/")
     prefix = "gs://" if metadatas_path.startswith("gs") else ""
     # path_to_glob = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/*{cems_code}/*{aoi_code}/flood_meta/*.pickle"
     files_metatada_pickled = sorted([f"{prefix}{f}" for f in fs.glob(path_to_glob)])
@@ -135,7 +135,9 @@ if __name__ == '__main__':
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
     parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="S2")
-    parser.add_argument("--metadatas_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/")
+    parser.add_argument("--metadatas_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/",
+                        help="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/ for WorldFloods or "
+                             "gs://ml4cc_data_lake/0_DEV/1_Staging/operational/ for operational floods")
     parser.add_argument('--threshold_clouds_before', default=.3, type=float,
                         help="Threshold clouds before the event")
     parser.add_argument('--threshold_clouds_after', default=.95, type=float,
