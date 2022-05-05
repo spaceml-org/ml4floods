@@ -6,6 +6,8 @@ from ml4floods.data import utils
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import warnings
+warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)
 
 
 def compute_cloud_coverage(path_to_file:str) -> float:
@@ -24,7 +26,7 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
     pre_flood_water = unary_union(best_pre_flood_data[best_pre_flood_data["class"] == "water"].geometry)
     geoms_flood = floodmap_post_data[floodmap_post_data["class"] == "water"].geometry.apply(
         lambda g: g.difference(pre_flood_water))
-    geoms_flood = geoms_flood[~geoms_flood.isna()]
+    geoms_flood = geoms_flood[~geoms_flood.isna() | geoms_flood.is_empty]
     data_post_flood = gpd.GeoDataFrame(geometry=geoms_flood, crs=floodmap_post_data.crs)
     data_post_flood["class"] = "water-post-flood"
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "water", "class"] = "water-pre-flood"
@@ -48,11 +50,12 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
     geojsons = sorted([f"{prefix}{f}" for f in fs.glob(os.path.join(model_output_folder, "*", "*.geojson").replace("\\", "/"))])
     assert len(geojsons) > 0, f"No products found in {path_to_search}"
     aois = np.unique(sorted([g.split("/")[-4] for g in geojsons]))
-    for aoi in aois:
+    for _iaoi, aoi in enumerate(aois):
         # Get pre-flood floodmap with lowest cloud coverage and all post-flood maps
         floodmaps_post_aoi = []
         best_floodmap_pre = None
         cloud_cover = 1
+        print(f"({_iaoi+1}/{len(aois)}) Processing AoI: {aoi}")
         for g in geojsons:
             date_iter = os.path.splitext(os.path.basename(g))[0]
 
@@ -65,7 +68,7 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
                 floodmaps_post_aoi.append(g)
 
         if best_floodmap_pre is None:
-            print(f"No pre-flood image found for aoi:{aoi}")
+            print(f"\tNo pre-flood image found for aoi:{aoi}")
             continue
 
         # Iterate over the post-flood maps, add pre-flood water and relabel water as "flooding water"
@@ -75,18 +78,19 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str)
             floodmap_post_data = utils.read_geojson_from_gcp(floodmap_post)
             floodmap_post_data_pre_post = compute_flood_water(floodmap_post_data, best_pre_flood_data)
             filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
-            print(f"Saving {filename_out}")
+            print(f"\tSaving {filename_out}")
             utils.write_geojson_to_gcp(filename_out, floodmap_post_data_pre_post)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Post-processing of ML4Floods output to produce pre/post floodmaps')
-    parser.add_argument("--model_output_folder", required=True, help="Path to model output folder (with sub)")
+    parser.add_argument("--model_output_folder", required=True, help="Path to model output folder (with sub) e.g."
+                                                                     "gs://ml4cc_data_lake/0_DEV/1_Staging/operational/EMSR570/*/WF2_unet_rbgiswirs_vec")
     parser.add_argument("--flooding_date_post",
-                        help="Flooding date to consider pre-flood maps (%Y-%m-%d in UTC)",
+                        help="Flooding date to consider pre-flood maps (Y-m-d in UTC)",
                         required=True)
     parser.add_argument("--flooding_date_pre",
-                        help="Flooding date to consider pre-flood maps (%Y-%m-%d in UTC). "
+                        help="Flooding date to consider pre-flood maps (Y-m-d in UTC). "
                              "If not provided one day before post",
                         required=False)
     args = parser.parse_args()

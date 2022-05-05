@@ -136,7 +136,6 @@ def main(model_path: str, s2folder_file: str, device_name: str,
             base_output_folder = os.path.dirname(os.path.dirname(filename))
             output_folder_iter = os.path.join(base_output_folder, experiment_name, collection_name).replace("\\", "/")
             output_folder_iter_vec = os.path.join(base_output_folder, experiment_name + "_vec", collection_name).replace("\\", "/")
-            print(f"Predictions will be saved in folder: {output_folder_iter}")
         else:
             output_folder_iter = output_folder
 
@@ -151,6 +150,8 @@ def main(model_path: str, s2folder_file: str, device_name: str,
 
         print(
             f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total + 1}/{len(s2files)}) Processing {collection_name} {filename}")
+        if not output_folder:
+            print(f"Predictions will be saved in folder: {output_folder_iter}")
         try:
             if not overwrite and exists_tiff:
                 with rasterio.open(filename_save) as rst:
