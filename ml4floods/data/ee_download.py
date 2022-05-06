@@ -94,11 +94,35 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
 
     return daily_mosaic
 
+def add_probability_from_BQA(img:ee.Image) -> ee.Image:
+    """
+    Adds to the image the cloud probability in [0,100] computed from BQA layer
+
+    # Code taken from https://github.com/IPL-UV/ee_ipl_uv
+
+    var qa = image.select('QA60');
+    // Bits 10 and 11 are clouds and cirrus, respectively.
+    var cloudBitMask = 1 << 10;
+    var cirrusBitMask = 1 << 11;
+
+    // Both flags should be set to zero, indicating clear conditions.
+    var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+    """
+    qa = img.select(['QA60'], ["probability"])
+    cloud_bit_mask =  1 << 10 # int("0000010000000000", 2)
+    cirrus_bit_mask = int("0000100000000000", 2)
+    # qa.bitwiseAnd(cloud_bit_mask).gt(0).Or(qa.bitwiseAnd(cirrus_bit_mask).gt(0))
+
+    # Ignore cirrus since we can predict on water in those areas
+    cloud_mask = qa.bitwiseAnd(cloud_bit_mask).gt(0).multiply(100).toUint16()
+    return img.addBands(cloud_mask)
+
 
 def get_s2_collection(date_start:datetime, date_end:datetime,
                       bounds:ee.Geometry,
                       collection_name:str="COPERNICUS/S2_HARMONIZED", bands:Optional[List[str]]=None,
-                      allow_missing_s2cloudless:bool=True,
+                      force_s2cloudless:bool=True,
                       verbose:int=1) -> Optional[ee.ImageCollection]:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
@@ -111,7 +135,7 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
         bounds: polygon with the AoI to download
         collection_name: "COPERNICUS/S2" for L1C Sentinel-2 images and ""COPERNICUS/S2_SR" for L2A images.
         bands: list of bands to get
-        allow_missing_s2cloudless: if s2cloudless is missing for some S2 images it will skip those instead of raising
+        force_s2cloudless: if s2cloudless is missing for some S2 images it will skip those instead of raising
         not implemented errors.
         verbose: print stuff
 
@@ -154,11 +178,15 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     n_images_join = img_col_all_join.size().getInfo()
 
     if n_images_join < n_images_col:
-        if allow_missing_s2cloudless:
-            warnings.warn(f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We will skip the missing images")
+        if not force_s2cloudless:
+            # TODO compute cloud mask from BQA band and add it as probability layer
+            warnings.warn(
+                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. WE WILL IGNORE CLOUDS!")
+            img_col_all_join = img_col_all.map(add_probability_from_BQA)
+
         else:
-            raise NotImplementedError(
-            f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We cannot continue")
+            warnings.warn(
+                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We will skip images with missing cloud masks")
 
     daily_mosaic =  collection_mosaic_day(img_col_all_join, bounds)
                                     #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
@@ -622,6 +650,7 @@ def download_s2l89(area_of_interest: Polygon,
                    collection_name="COPERNICUS/S2_HARMONIZED", crs:str='EPSG:4326',
                    filter_fun:Callable[[pd.DataFrame], pd.Series]=None,
                    name_task:Optional[str]=None,
+                   force_s2cloudless:bool=True,
                    resolution_meters:float=10) -> List[ee.batch.Task]:
     """
     Download time series of S2 or Landsat images between search dates over the given area of interest. It saves the images
@@ -639,6 +668,7 @@ def download_s2l89(area_of_interest: Polygon,
             "cloud_probability", "valids" and "datetime" the output of this function should be boolean array of the
             with the number of rows of the dataframe that indicates which images of the dataframe to download.
         name_task: if not provided will use the basename of `path_bucket`
+        force_s2cloudless:
         resolution_meters: resolution in meters to export the images
 
     Returns:
@@ -687,6 +717,7 @@ def download_s2l89(area_of_interest: Polygon,
     else:
         img_col = get_s2_collection(date_start_search, date_end_search, pol,
                                     bands=BANDS_NAMES[collection_name],
+                                    force_s2cloudless=force_s2cloudless,
                                     collection_name=collection_name, verbose=2)
     if img_col is None:
         return []

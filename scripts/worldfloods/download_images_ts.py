@@ -11,6 +11,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
          threshold_invalids_after:float, days_before:int, days_after:int,
          collection_placeholder:str = "S2", only_one_previous:bool=False,
+         force_s2cloudless:bool=True,
          metadatas_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/"):
     """
 
@@ -25,6 +26,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
         days_after:
         collection_placeholder: S2, Landsat or both
         only_one_previous:
+        force_s2cloudless:
         metadatas_path:
 
     Returns:
@@ -105,6 +107,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                                                              filter_fun=filter_s2_images,
                                                              path_bucket=folder_dest_s2,
                                                              name_task=name_task,
+                                                             force_s2cloudless=force_s2cloudless,
                                                              resolution_meters=resolution_meters,
                                                              collection_name=collection_name_trigger))
 
@@ -142,6 +145,9 @@ if __name__ == '__main__':
                         help="CEMS AoI to download images from. If empty string (default) download the images"
                              "from all the AoIs")
     parser.add_argument('--only_one_previous', action='store_true')
+    parser.add_argument('--force_s2cloudless', action='store_true')
+    parser.add_argument('--no-force_s2cloudless', action='store_false')
+    parser.set_defaults(feature=True)
     parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="S2")
     parser.add_argument("--metadatas_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/",
                         help="gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/ for WorldFloods or "
@@ -158,7 +164,6 @@ if __name__ == '__main__':
                         help="Days to search after the event")
     parser.add_argument('--days_after', default=20, type=int,
                         help="Days to search before the event")
-    
 
     args = parser.parse_args()
 
@@ -166,6 +171,6 @@ if __name__ == '__main__':
          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
          collection_placeholder=args.collection_name, metadatas_path=args.metadatas_path,
-         only_one_previous=args.only_one_previous,
+         only_one_previous=args.only_one_previous,force_s2cloudless=args.force_s2cloudless,
          days_after=args.days_after)
 
