@@ -84,38 +84,6 @@ def save_floodmap(subset:str, eventid:str):
     return '', 204
 
 
-def expand_multipolygons(shp_pd: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """
-    Expand any multipolygons of the geopandas dataframe to polygons.
-    """
-
-    if all(shp_pd.geometry.apply(lambda geom: (geom is not None) and (geom.geom_type == "Polygon"))):
-        return shp_pd
-
-    new_shp = []
-    for tp in shp_pd.itertuples():
-        # Skip empty or None geometries or empty
-        if tp.geometry is None or tp.geometry.is_empty:
-            continue
-
-        # Extend multipoligons
-        if tp.geometry.geom_type == "MultiPolygon":
-            new_shp.extend([
-                {
-                    "geometry": geom,
-                    "w_class": tp.w_class,
-                    "source": tp.source
-                }
-                for geom in list(tp.geometry)
-            ])
-        else:
-            new_shp.append({"geometry": tp.geometry,
-                            "w_class": tp.w_class,
-                            "source": tp.source})
-
-    return gpd.GeoDataFrame(new_shp, crs=shp_pd.crs)
-
-
 @app.route("/<subset>/<eventid>/<predname>.geojson")
 def read_floodmap_pred(subset:str, eventid:str, predname:str):
     # WF2_unet_full_norm_vec
@@ -146,7 +114,7 @@ def read_floodmap(subset:str, eventid:str):
     data = data[data["source"] != "area_of_interest"]
 
     # flatten MultiPolygons remove empty pols
-    data = expand_multipolygons(data)
+    data = data.explode(ignore_index=True)
 
     # All parts of a simplified geometry will be no more than tolerance distance from the original
     data["geometry"] = data["geometry"].simplify(tolerance=10)

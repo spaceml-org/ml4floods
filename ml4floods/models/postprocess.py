@@ -7,9 +7,14 @@ from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
 import numpy as np
 from typing import List, Optional, Union
-from ml4floods.data.worldfloods.configs import BANDS_S2
 from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
+from ml4floods.data import utils
 import torch
+import geopandas as gpd
+import os
+from shapely.ops import unary_union
+import pandas as pd
+import warnings
 
 
 def preprocess_water_probabilities(prob_water_mask, thres_h=0.6, thres_l=0.4, distance= 5, conn=2, watershed_line=True):
@@ -140,3 +145,81 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     
     output[mask_invalids] = 0
     return output
+
+def compute_cloud_coverage(data:gpd.GeoDataFrame) -> float:
+    area_total = data[data["class"] == "area_imaged"].geometry.area.sum()
+    area_clouds = data[data["class"] == "cloud"].geometry.area.sum()
+    return float(area_clouds / area_total)
+
+
+def get_floodmap_pre(flooding_date_pre:str, geojsons:List[str]) -> Optional[gpd.GeoDataFrame]:
+    """
+    From a list of predicted geojsons returns the GeoDataFrame with lowest cloud coverage
+
+    Args:
+        flooding_date_pre:
+        geojsons:
+
+    Returns:
+        floodmap with lowest cloud coverage
+
+    """
+    best_floodmap_pre = None
+    cloud_cover = 1
+    for g in geojsons:
+        date_iter = os.path.splitext(os.path.basename(g))[0]
+
+        if date_iter < flooding_date_pre:
+            data = utils.read_geojson_from_gcp(g)
+            cc_iter = compute_cloud_coverage(data)
+            if cc_iter < cloud_cover:
+                best_floodmap_pre = data
+                cloud_cover = cc_iter
+
+    return best_floodmap_pre
+
+
+def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+
+    Args:
+        floodmap_post_data:
+        best_pre_flood_data:
+
+    Returns:
+
+    """
+    warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)
+
+    if floodmap_post_data.crs != best_pre_flood_data.crs:
+        best_pre_flood_data = best_pre_flood_data.to_crs(floodmap_post_data.crs)
+    else:
+        best_pre_flood_data = best_pre_flood_data.copy()
+
+    pre_flood_water_or_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "water") | (best_pre_flood_data["class"] == "cloud")].geometry)
+
+    # TODO deal with valid pixels in pre-post flood (area_imaged)
+
+    # pre_flood_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "cloud")].geometry)
+    # pre_flood_water_minus_cloud = pre_flood_water.difference(pre_flood_cloud)
+
+    geoms_flood = floodmap_post_data[floodmap_post_data["class"] == "water"].geometry.apply(
+        lambda g: g.difference(pre_flood_water_or_cloud))
+    geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
+
+    data_post_flood = gpd.GeoDataFrame(geometry=geoms_flood, crs=floodmap_post_data.crs)
+    data_post_flood["class"] = "water-post-flood"
+
+    data_post_flood = data_post_flood.explode(ignore_index=True)
+
+    # simplify small polygons
+    data_post_flood["geometry"] = data_post_flood["geometry"].simplify(tolerance=10)
+
+    best_pre_flood_data.loc[best_pre_flood_data["class"] == "water", "class"] = "water-pre-flood"
+    best_pre_flood_data.loc[best_pre_flood_data["class"] == "cloud", "class"] = "cloud-pre-flood"
+    best_pre_flood_data.loc[best_pre_flood_data["class"] == "area_imaged", "class"] = "area_imaged-pre-flood"
+
+    # TODO remove/simplify small polygons
+
+    return pd.concat([best_pre_flood_data, data_post_flood, floodmap_post_data[floodmap_post_data["class"] != "water"]],
+                     ignore_index=True)
