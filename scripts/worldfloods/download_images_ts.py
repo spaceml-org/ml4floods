@@ -87,7 +87,6 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                     max_date = img_col_info_local.loc[filter_clouds_before, "datetime"].max()
                     filter_clouds_before &= (img_col_info_local["datetime"] == max_date)
 
-
                 filter_clouds_after = (img_col_info_local["cloud_probability"] <= threshold_clouds_after) & \
                                       (img_col_info_local["valids"] > (1 - threshold_invalids_after)) & \
                                       ((img_col_info_local["datetime"] >= satellite_date) | is_image_same_solar_day)
