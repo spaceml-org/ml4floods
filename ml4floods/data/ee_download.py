@@ -179,7 +179,7 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
 
     if n_images_join < n_images_col:
         if not force_s2cloudless:
-            # TODO compute cloud mask from BQA band and add it as probability layer
+            # Compute cloud mask from BQA band and add it as probability layer
             warnings.warn(
                 f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. WE WILL IGNORE CLOUDS!")
             img_col_all_join = img_col_all.map(add_probability_from_BQA)
