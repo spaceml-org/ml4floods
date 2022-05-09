@@ -51,6 +51,9 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str,
             filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
             if (not overwrite) and fs.exists(filename_out):
                 continue
+            if not filename_out.startswith("gs://"):
+                fs.makedirs(os.path.dirname(filename_out), exist_ok=True)
+
             floodmap_post_data = utils.read_geojson_from_gcp(floodmap_post)
             floodmap_post_data_pre_post = postprocess.compute_flood_water(floodmap_post_data, best_pre_flood_data)
             floodmap_post_data_pre_post["id"] = np.arange(0, floodmap_post_data_pre_post.shape[0])

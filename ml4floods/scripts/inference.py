@@ -19,12 +19,14 @@ import sys
 import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, Any, Optional
+from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 
 
 def load_inference_function(model_path: str, device_name: str, max_tile_size: int = 1024,
                             th_water: float = .5,
-                            th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD) -> Tuple[
-    Callable[[torch.Tensor], torch.Tensor], AttrDict]:
+                            th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD,
+                            collection_name:str="S2") -> Tuple[
+    Callable[[torch.Tensor], Tuple[torch.Tensor,torch.Tensor]], AttrDict]:
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
         model_folder = os.path.dirname(model_path[:-1])
@@ -47,40 +49,72 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
 
     if config.model_params.get("model_version", "v1") == "v2":
 
-        # TODO implement better if collection_name=="L8"
         channels = get_channel_configuration_bands(config.data_params.channel_configuration,
-                                                   collection_name="S2")
+                                                   collection_name=collection_name)
+        if collection_name == "S2":
+            band_names_current_image = [BANDS_S2[iband] for iband in channels]
+            mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B11"]]
+        elif collection_name == "Landsat":
+            band_names_current_image = [BANDS_L8[iband] for iband in channels]
+            # TODO ->  if not all(b in band_names_current_image for b in ["B3","B6"])
+            mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B6"]]
 
         # Add post-processing of binary mask
-        def predict(s2tensor: torch.Tensor) -> torch.Tensor:
+        def predict(s2l89tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
             """
             Args:
-                s2tensor: (C, H, W) tensor
+                s2l89tensor: (C, H, W) tensor
 
             Returns:
-                (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
+                (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: think cloud, 4: flood trace}
             """
             with torch.no_grad():
-                pred = inference_function(s2tensor.unsqueeze(0))[0]  # (2, H, W)
-            return get_pred_mask_v2(s2tensor, pred, channels_input=channels,
-                                    th_water=th_water, th_brightness=th_brightness)
+                pred = inference_function(s2l89tensor.unsqueeze(0))[0]  # (2, H, W)
+                land_water_cloud =  get_pred_mask_v2(s2l89tensor, pred, channels_input=channels,
+                                                     th_water=th_water, th_brightness=th_brightness,
+                                                     collection_name=collection_name)
+
+                # Set invalids in continuous pred to -1
+                invalids = land_water_cloud == 0
+                pred[0][invalids] = -1
+                pred[1][invalids] = -1
+
+                s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
+
+                # Green − SWIR1)/(Green + SWIR1)
+                mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
+
+                land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
+
+            return land_water_cloud, pred
 
     else:
-        def predict(s2tensor: torch.Tensor) -> torch.Tensor:
+        def predict(s2l89tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
             """
             Args:
-                s2tensor: (C, H, W) tensor
+                s2l89tensor: (C, H, W) tensor
 
             Returns:
-                (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
+                (H, W) mask with interpretation {0: invalids, 1: land, 2: water, 3: cloud, 4: flood trace}
             """
             with torch.no_grad():
-                pred = inference_function(s2tensor.unsqueeze(0))[0]  # (3, H, W)
-                mask_invalids = torch.all(s2tensor == 0, dim=0)  # (H, W)
-                prediction = torch.argmax(pred, dim=0).type(torch.uint8) + 1  # (H, W)
-                prediction[mask_invalids] = 0
+                pred = inference_function(s2l89tensor.unsqueeze(0))[0]  # (3, H, W)
+                invalids = torch.all(s2l89tensor == 0, dim=0)  # (H, W)
+                land_water_cloud = torch.argmax(pred, dim=0).type(torch.uint8) + 1  # (H, W)
+                land_water_cloud[invalids] = 0
 
-            return prediction
+                # Set invalids in continuous pred to -1
+                pred[0][invalids] = -1
+                pred[1][invalids] = -1
+                pred[2][invalids] = -1
+
+                s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
+
+                # Green − SWIR1)/(Green + SWIR1)
+                mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
+                land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
+
+            return land_water_cloud, pred
 
     return predict, config
 
@@ -101,7 +135,8 @@ def main(model_path: str, s2folder_file: str, device_name: str,
         experiment_name = os.path.basename(model_path)
 
     inference_function, config = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
-                                                         th_water=th_water, th_brightness=th_brightness)
+                                                         th_water=th_water, th_brightness=th_brightness,
+                                                         collection_name=collection_name)
 
     channels = get_channel_configuration_bands(config.data_params.channel_configuration,
                                                collection_name=collection_name)
@@ -125,8 +160,10 @@ def main(model_path: str, s2folder_file: str, device_name: str,
         fs_dest = get_filesystem(output_folder)
         if output_folder.endswith("/"):
             output_folder_iter_vec = output_folder[:-1] + "_vec"
+            output_folder_iter_cont = output_folder[:-1] + "_cont"
         else:
             output_folder_iter_vec = output_folder + "_vec"
+            output_folder_iter_cont = output_folder + "_cont"
     else:
         fs_dest = fs
 
@@ -136,16 +173,18 @@ def main(model_path: str, s2folder_file: str, device_name: str,
             base_output_folder = os.path.dirname(os.path.dirname(filename))
             output_folder_iter = os.path.join(base_output_folder, experiment_name, collection_name).replace("\\", "/")
             output_folder_iter_vec = os.path.join(base_output_folder, experiment_name + "_vec", collection_name).replace("\\", "/")
+            output_folder_iter_cont = os.path.join(base_output_folder, experiment_name + "_cont",
+                                                  collection_name).replace("\\", "/")
         else:
             output_folder_iter = output_folder
 
 
         filename_save = os.path.join(output_folder_iter, os.path.basename(filename))
+        filename_save_cont = os.path.join(output_folder_iter_cont, os.path.basename(filename))
         filename_save_vect = os.path.join(output_folder_iter_vec,
                                           f"{os.path.splitext(os.path.basename(filename))[0]}.geojson")
 
-        exists_tiff = fs_dest.exists(filename_save)
-        if not overwrite and exists_tiff and fs_dest.exists(filename_save_vect):
+        if not overwrite and all(fs_dest.exists(f) for f in [filename_save, filename_save_cont, filename_save_vect]):
             continue
 
         print(
@@ -153,19 +192,16 @@ def main(model_path: str, s2folder_file: str, device_name: str,
         if not output_folder:
             print(f"Predictions will be saved in folder: {output_folder_iter}")
         try:
-            if not overwrite and exists_tiff:
-                with rasterio.open(filename_save) as rst:
-                    prediction = rst.read(1)
-                    crs = rst.crs
-                    transform = rst.transform
-            else:
-                torch_inputs, transform = dataset.load_input(filename,
-                                                             window=None, channels=channels)
 
-                with rasterio.open(filename) as src:
-                    crs = src.crs
+            torch_inputs, transform = dataset.load_input(filename,
+                                                         window=None, channels=channels)
 
-                prediction = inference_function(torch_inputs).cpu().numpy()
+            with rasterio.open(filename) as src:
+                crs = src.crs
+
+            prediction, pred_cont = inference_function(torch_inputs)
+            prediction = prediction.cpu().numpy()
+            pred_cont = pred_cont.cpu().numpy()
 
             # Save data as vectors
             data_out = vectorize_outputv1(prediction, crs, transform)
@@ -184,8 +220,23 @@ def main(model_path: str, s2folder_file: str, device_name: str,
             if not filename_save.startswith("gs"):
                 fs_dest.makedirs(os.path.dirname(filename_save), exist_ok=True)
 
-            save_cog.save_cog(prediction[np.newaxis], filename_save, profile=profile,
+            save_cog.save_cog(prediction[np.newaxis], filename_save, profile=profile.copy(),
+                              descriptions=["invalid/land/water/cloud/trace"],
+                              tags={"invalid":0, "land":1, "water":2, "cloud":3 , "trace":4, "model": experiment_name})
+
+            if not filename_save_cont.startswith("gs"):
+                fs_dest.makedirs(os.path.dirname(filename_save_cont), exist_ok=True)
+
+            if pred_cont.shape[0] == 2:
+                descriptions = ["clear/cloud", "land/water"]
+            else:
+                descriptions = ["prob_clear","prob_water", "prob_cloud"]
+
+            profile["nodata"] = -1
+            save_cog.save_cog(pred_cont, filename_save_cont, profile=profile.copy(),
+                              descriptions=descriptions,
                               tags={"model": experiment_name})
+
         except Exception:
             warnings.warn(f"Failed")
             traceback.print_exc(file=sys.stdout)
@@ -198,8 +249,9 @@ def main(model_path: str, s2folder_file: str, device_name: str,
 def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Affine) -> Optional[gpd.GeoDataFrame]:
     data_out = []
     start = 0
-    class_name = {0: "area_imaged", 2: "water", 3: "cloud"}
-    for c in [0, 2, 3]:
+    class_name = {0: "area_imaged", 2: "water", 3: "cloud", 4: "flood_trace"}
+
+    for c, cn in class_name.items():
         if c == 0:
             mask = prediction != c
         else:
@@ -209,7 +261,7 @@ def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Aff
         if len(geoms_polygons) > 0:
             data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
                                               "id": np.arange(start, start + len(geoms_polygons)),
-                                              "class": class_name[c]},
+                                              "class": cn},
                                              crs=crs))
         start += len(geoms_polygons)
 

@@ -105,7 +105,8 @@ def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
 def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[np.ndarray, torch.Tensor],
                      channels_input:Optional[List[int]]=None,
                      th_water:float = 0.5, th_cloud:float = 0.5, mask_clouds:bool = True,
-                     th_brightness:float=BRIGHTNESS_THRESHOLD) -> Union[np.ndarray, torch.Tensor]:
+                     th_brightness:float=BRIGHTNESS_THRESHOLD,
+                     collection_name:str="S2") -> Union[np.ndarray, torch.Tensor]:
     """
     Receives an output of a WFV2 model (multioutput binary) and returns the corresponding 3-class segmentation mask
 
@@ -117,6 +118,7 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
         th_cloud: threshold for the class cloud
         th_brightness: threshold for the brightness to differenciate thick from thin clouds
         mask_clouds: If False ignores brightness and outputs the prediction mask with thin clouds
+        collection_name:
         
     Returns:
         Water mask (H, W) with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
@@ -136,7 +138,8 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     output[water_mask] = 2
     
     if mask_clouds:
-        br = get_brightness(inputs, channels_input=channels_input) > th_brightness
+        br = get_brightness(inputs, channels_input=channels_input,
+                            collection_name=collection_name) > th_brightness
         if hasattr(br, "cpu"):
             br = br.cpu()
         output[cloud_mask & br] = 3
@@ -154,7 +157,7 @@ def compute_cloud_coverage(data:gpd.GeoDataFrame) -> float:
 
 def get_floodmap_pre(flooding_date_pre:str, geojsons:List[str]) -> Optional[gpd.GeoDataFrame]:
     """
-    From a list of predicted geojsons returns the GeoDataFrame with lowest cloud coverage
+    From a list of predicted geojsons returns the GeoDataFrame with lowest cloud coverage.
 
     Args:
         flooding_date_pre:
@@ -181,6 +184,7 @@ def get_floodmap_pre(flooding_date_pre:str, geojsons:List[str]) -> Optional[gpd.
 
 def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
+    Computes the difference between water in the pre and post floodmap
 
     Args:
         floodmap_post_data:
@@ -207,9 +211,17 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
         lambda g: g.difference(pre_flood_water_or_cloud))
     geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
 
+    geoms_trace = floodmap_post_data[(floodmap_post_data["class"] =="flood_trace")].geometry.apply(
+        lambda g: g.difference(pre_flood_water_or_cloud))
+    geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
+
     data_post_flood = gpd.GeoDataFrame(geometry=geoms_flood, crs=floodmap_post_data.crs)
     data_post_flood["class"] = "water-post-flood"
+    data_post_flood_trace = gpd.GeoDataFrame(geometry=geoms_trace, crs=floodmap_post_data.crs)
+    data_post_flood_trace["class"] = "flood-trace"
+    data_post_flood = pd.concat([data_post_flood_trace, data_post_flood], ignore_index=True)
 
+    # Expand multipolygons to single polygons
     data_post_flood = data_post_flood.explode(ignore_index=True)
 
     # simplify small polygons
@@ -219,7 +231,5 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "cloud", "class"] = "cloud-pre-flood"
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "area_imaged", "class"] = "area_imaged-pre-flood"
 
-    # TODO remove/simplify small polygons
-
-    return pd.concat([best_pre_flood_data, data_post_flood, floodmap_post_data[floodmap_post_data["class"] != "water"]],
+    return pd.concat([best_pre_flood_data, floodmap_post_data[floodmap_post_data["class"] != "water"], data_post_flood],
                      ignore_index=True)

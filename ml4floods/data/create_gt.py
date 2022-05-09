@@ -8,7 +8,7 @@ import rasterio
 import rasterio.windows
 from rasterio import features
 
-from ml4floods.data.worldfloods.configs import BANDS_S2
+from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 from ml4floods.data.config import CODES_FLOODMAP
 from ml4floods.data import utils
 from skimage.morphology import binary_opening, disk
@@ -417,7 +417,8 @@ def _generate_gt_v1_fromarray(
 
     return gt
 
-def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Optional[List[int]]=None) -> Union[np.ndarray, torch.Tensor]:
+def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Optional[List[int]]=None,
+                   collection_name:str="S2") -> Union[np.ndarray, torch.Tensor]:
     """
     Returns brightness of visible bands of s2
     Args:
@@ -430,11 +431,17 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
         assert len(channels_input) == s2_image.shape[0], \
             f"Given {len(channels_input)} channels expected {s2_image.shape[0]}"
 
-        bands_read_names = [BANDS_S2[i] for i in channels_input]
+        if collection_name == "Landsat":
+            bands_read_names = [BANDS_L8[iband] for iband in channels_input]
+        else:
+            bands_read_names = [BANDS_S2[i] for i in channels_input]
     else:
         assert len(BANDS_S2) == s2_image.shape[0], \
             f"Given {len(BANDS_S2)} channels expected {s2_image.shape[0]}"
-        bands_read_names = BANDS_S2
+        if collection_name == "Landsat":
+            bands_read_names = BANDS_L8
+        else:
+            bands_read_names = BANDS_S2
 
     idxs = [bands_read_names.index(b) for b in ["B4", "B3", "B2"]]
 
