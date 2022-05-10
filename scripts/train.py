@@ -14,6 +14,7 @@ from ml4floods.models.config_setup import setup_config
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning import Trainer
+import numpy as np
 
 
 def get_code(x):
@@ -166,6 +167,11 @@ if __name__ == "__main__":
     parser.add_argument('--wandb_entity', default='ipl_uv')
     parser.add_argument('--wandb_project', default='ml4floods-scripts')
     parser.add_argument("--experiment_name", default="")
+    parser.add_argument(
+        "--n_runs",
+        action='store', type=int, default=1,
+        help='Number of runs with different seed',
+    )
     
     args = parser.parse_args()
     
@@ -182,5 +188,16 @@ if __name__ == "__main__":
     if args.experiment_name != "":
         config.experiment_name = args.experiment_name
 
-    # Run training
-    train(config)
+    if args.n_runs == 1:
+        config["seed"] = 42
+        train(config)
+
+    else:
+        seeds = np.random.randint(0, 2 ** 14, args.n_runs)
+
+        # train several times with different seed
+        for _i, s in enumerate(seeds):
+            config["seed"] = s
+            config["experiment_name"] = f"{config.experiment_name}_{_i:02d}"
+            # Run training
+            train(config)
