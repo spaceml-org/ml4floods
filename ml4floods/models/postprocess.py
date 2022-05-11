@@ -230,6 +230,7 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "water", "class"] = "water-pre-flood"
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "cloud", "class"] = "cloud-pre-flood"
     best_pre_flood_data.loc[best_pre_flood_data["class"] == "area_imaged", "class"] = "area_imaged-pre-flood"
+    post_flood_propagate = floodmap_post_data[(floodmap_post_data["class"] == "area_imaged") | (floodmap_post_data["class"] == "cloud")]
 
-    return pd.concat([best_pre_flood_data, floodmap_post_data[floodmap_post_data["class"] != "water"], data_post_flood],
+    return pd.concat([best_pre_flood_data, post_flood_propagate, data_post_flood],
                      ignore_index=True)

@@ -60,8 +60,6 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
 
     tasks = []
     for _i, meta_floodmap_filepath in enumerate(files_metatada_pickled):
-        print(f"{_i+1}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath}")
-
         try:
             metadata_floodmap = utils.read_pickle_from_gcp(meta_floodmap_filepath)
             pol_scene_id = metadata_floodmap["area_of_interest_polygon"]
@@ -76,26 +74,30 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
             date_end_search = min(datetime.today().astimezone(timezone.utc),
                                   satellite_date + timedelta(days=days_after))
 
+            print(f"{_i + 1}/{len(files_metatada_pickled)} processing {meta_floodmap_filepath} between {date_start_search.strftime('%Y-%m-%d')} and {date_end_search.strftime('%Y-%m-%d')}")
+
             # Set the crs to UTM of the center polygon
             lon, lat = list(pol_scene_id.centroid.coords)[0]
             crs = ee_download.convert_wgs_to_utm(lon=lon, lat=lat)
 
             date_pre_flood = satellite_date - timedelta(days=margin_pre_search)
 
-            def filter_s2_images(img_col_info_local:pd.DataFrame) -> pd.Series:
+            def filter_images(img_col_info_local:pd.DataFrame) -> pd.Series:
                 is_image_same_solar_day = img_col_info_local["datetime"].apply(lambda x: (satellite_date - x).total_seconds() / 3600. < 10)
                 filter_before = (img_col_info_local["cloud_probability"] <= threshold_clouds_before) & \
-                                 (img_col_info_local["valids"] > (1 - threshold_invalids_before)) & \
-                                 (img_col_info_local["datetime"] < date_pre_flood) & \
-                                 ~is_image_same_solar_day
+                                (img_col_info_local["valids"] > (1 - threshold_invalids_before)) & \
+                                (img_col_info_local["datetime"] < date_pre_flood) & \
+                                (img_col_info_local["datetime"] >= date_start_search) & \
+                                ~is_image_same_solar_day
 
                 if only_one_previous and filter_before.any():
                     max_date = img_col_info_local.loc[filter_before, "datetime"].max()
                     filter_before &= (img_col_info_local["datetime"] == max_date)
 
                 filter_after = (img_col_info_local["cloud_probability"] <= threshold_clouds_after) & \
-                                      (img_col_info_local["valids"] > (1 - threshold_invalids_after)) & \
-                                      ((img_col_info_local["datetime"] >= satellite_date) | is_image_same_solar_day)
+                               (img_col_info_local["valids"] > (1 - threshold_invalids_after)) & \
+                               (img_col_info_local["datetime"] <= date_end_search) & \
+                               ((img_col_info_local["datetime"] >= satellite_date) | is_image_same_solar_day)
                 return filter_before | filter_after
 
             tasks_iter = []
@@ -107,7 +109,7 @@ def main(cems_code:str, aoi_code:str, threshold_clouds_before:float,
                                                              date_start_search=date_start_search,
                                                              date_end_search=date_end_search,
                                                              crs=crs,
-                                                             filter_fun=filter_s2_images,
+                                                             filter_fun=filter_images,
                                                              path_bucket=folder_dest_s2,
                                                              name_task=name_task,
                                                              force_s2cloudless=force_s2cloudless,
