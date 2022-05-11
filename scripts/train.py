@@ -194,10 +194,10 @@ if __name__ == "__main__":
 
     else:
         seeds = np.random.randint(0, 2 ** 14, args.n_runs)
-
+        experiment_name = config["experiment_name"]
         # train several times with different seed
         for _i, s in enumerate(seeds):
             config["seed"] = s
-            config["experiment_name"] = f"{config.experiment_name}_{_i:02d}"
+            config["experiment_name"] = f"{experiment_name}_{_i:02d}"
             # Run training
             train(config)
