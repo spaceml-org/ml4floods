@@ -200,4 +200,10 @@ if __name__ == "__main__":
             config["seed"] = s
             config["experiment_name"] = f"{experiment_name}_{_i:02d}"
             # Run training
-            train(config)
+            path_model = os.path.join(config.model_params.model_folder, config.experiment_name,"model.pt")
+
+            if os.path.exists(path_model):
+                print(f"Model {path_model} exist, it will not be trained again")
+            else:
+                print(f"Model {path_model} does not exist. Training")
+                train(config)
