@@ -17,6 +17,8 @@ if __name__ == "__main__":
     parser.add_argument("--max_tile_size", help="Size to tile the GeoTIFFs", type=int, default=1_024)
     parser.add_argument('--overwrite', default=False, action='store_true',
                         help="Overwrite the prediction if exists")
+    parser.add_argument('--distinguish_flood_traces', default=False, action='store_true',
+                        help="Use MNDWI to distinguish flood traces")
     parser.add_argument("--th_water", help="Threshold water used in v2 models (multioutput binary)",
                         type=float, default=.5)
     parser.add_argument("--th_brightness", help="Threshold brightness used to get cloud predictions",
@@ -31,7 +33,8 @@ if __name__ == "__main__":
 
     main(model_path=args.model_path, s2folder_file=args.image, device_name=args.device_name,
          output_folder=args.output_folder, max_tile_size=args.max_tile_size, th_water=args.th_water,
-         overwrite=args.overwrite, th_brightness=args.th_brightness, collection_name=args.collection_name)
+         overwrite=args.overwrite, th_brightness=args.th_brightness, collection_name=args.collection_name,
+         distinguish_flood_traces=args.distinguish_flood_traces)
 
 
 

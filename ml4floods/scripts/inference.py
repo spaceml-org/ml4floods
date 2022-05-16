@@ -25,7 +25,8 @@ from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 def load_inference_function(model_path: str, device_name: str, max_tile_size: int = 1024,
                             th_water: float = .5,
                             th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD,
-                            collection_name:str="S2") -> Tuple[
+                            collection_name:str="S2",
+                            distinguish_flood_traces:bool=False) -> Tuple[
     Callable[[torch.Tensor], Tuple[torch.Tensor,torch.Tensor]], AttrDict]:
     if model_path.endswith("/"):
         experiment_name = os.path.basename(model_path[:-1])
@@ -51,13 +52,14 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
 
         channels = get_channel_configuration_bands(config.data_params.channel_configuration,
                                                    collection_name=collection_name)
-        if collection_name == "S2":
-            band_names_current_image = [BANDS_S2[iband] for iband in channels]
-            mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B11"]]
-        elif collection_name == "Landsat":
-            band_names_current_image = [BANDS_L8[iband] for iband in channels]
-            # TODO ->  if not all(b in band_names_current_image for b in ["B3","B6"])
-            mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B6"]]
+        if distinguish_flood_traces:
+            if collection_name == "S2":
+                band_names_current_image = [BANDS_S2[iband] for iband in channels]
+                mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B11"]]
+            elif collection_name == "Landsat":
+                band_names_current_image = [BANDS_L8[iband] for iband in channels]
+                # TODO ->  if not all(b in band_names_current_image for b in ["B3","B6"])
+                mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B6"]]
 
         # Add post-processing of binary mask
         def predict(s2l89tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -79,12 +81,13 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
                 pred[0][invalids] = -1
                 pred[1][invalids] = -1
 
-                s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
+                if distinguish_flood_traces:
+                    s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
 
-                # Green − SWIR1)/(Green + SWIR1)
-                mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
+                    # Green − SWIR1)/(Green + SWIR1)
+                    mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
 
-                land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
+                    land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
 
             return land_water_cloud, pred
 
@@ -108,11 +111,11 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
                 pred[1][invalids] = -1
                 pred[2][invalids] = -1
 
-                s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
-
-                # Green − SWIR1)/(Green + SWIR1)
-                mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
-                land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
+                if distinguish_flood_traces:
+                    s2l89mndwibands = s2l89tensor[mndwi_indexes_current_image, ...].float()
+                    # Green − SWIR1)/(Green + SWIR1)
+                    mndwi = (s2l89mndwibands[0] - s2l89mndwibands[1]) / (s2l89mndwibands[0] + s2l89mndwibands[1] + 1e-6)
+                    land_water_cloud[(land_water_cloud == 2) & (mndwi < 0)] = 4
 
             return land_water_cloud, pred
 
@@ -123,7 +126,7 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
 def main(model_path: str, s2folder_file: str, device_name: str,
          output_folder: Optional[str]=None, max_tile_size: int = 1_024,
          th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD, th_water: float = .5, overwrite: bool = False,
-         collection_name: str = "S2"):
+         collection_name: str = "S2",distinguish_flood_traces:bool=False):
 
     # This takes into account that this could be run on windows
     s2folder_file = s2folder_file.replace("\\", "/")
@@ -136,7 +139,8 @@ def main(model_path: str, s2folder_file: str, device_name: str,
 
     inference_function, config = load_inference_function(model_path, device_name, max_tile_size=max_tile_size,
                                                          th_water=th_water, th_brightness=th_brightness,
-                                                         collection_name=collection_name)
+                                                         collection_name=collection_name,
+                                                         distinguish_flood_traces=distinguish_flood_traces)
 
     channels = get_channel_configuration_bands(config.data_params.channel_configuration,
                                                collection_name=collection_name)
