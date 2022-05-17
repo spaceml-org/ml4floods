@@ -1,3 +1,4 @@
+import matplotlib.axes
 import rasterio
 from rasterio import plot as rasterioplt
 import rasterio.windows
@@ -9,7 +10,8 @@ from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 from ml4floods.models.model_setup import get_channel_configuration_bands
 from ml4floods.data.worldfloods import configs
 from ml4floods.data import utils
-
+from matplotlib.patches import Patch
+import geopandas as gpd
 
 COLORS_WORLDFLOODS = np.array(configs.COLORS_WORLDFLOODS)
 
@@ -193,6 +195,37 @@ def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Af
 
     return rasterioplt.show(image, transform=transform, **kwargs)
 
+COLORS = {"water": "#0010F6",
+          # "cloud": "#CFCFCF",
+          "cloud": "#4B4B4B",
+          "flood_trace": "#F66F00",
+          "flood-trace": "#F66F00",
+          "water-post-flood": "#FF09E3",
+          "water-pre-flood": "#0010F6",
+          "cloud-pre-flood": "#2B2B2B"}
+
+def plot_floodmap(floodmap:gpd.GeoDataFrame, legend:bool=True,
+                  ax:Optional[matplotlib.axes.Axes]=None,
+                  figsize:Tuple[int,int]=(10,10)) -> matplotlib.axes.Axes:
+    """
+    Plot floodmap as produced by inference.py
+
+    Args:
+        floodmap:
+        legend:
+        ax:
+        figsize:
+
+    Returns:
+
+    """
+    floodmap_plot = floodmap[(floodmap["class"] != "area_imaged") & (floodmap["class"] != "area_imaged-pre-flood")].copy()
+    floodmap_plot["color"] = floodmap_plot["class"].apply(lambda x: COLORS[x])
+    ax = floodmap_plot.plot(color=floodmap_plot["color"], figsize=figsize, ax=ax)
+    if legend:
+        legend_elements = [Patch(facecolor=COLORS[c], label=c) for c in floodmap_plot["class"].unique()]
+        ax.legend(handles=legend_elements)
+    return ax
 
 def plot_swirnirred_image(input: Union[str, np.ndarray],
                           transform:Optional[rasterio.Affine]=None,
@@ -202,7 +235,7 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
                           channel_configuration="all",
                           collection_name="S2",
                           size_read:Optional[int]=None,
-                          **kwargs):
+                          **kwargs)-> matplotlib.axes.Axes:
     """
     Plot bands B11, B8, B4 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
     (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
@@ -280,7 +313,7 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
 
 
 def plots_preds_v2(prediction: Union[str, np.ndarray],transform:Optional[rasterio.Affine]=None,
-                   window:Optional[rasterio.windows.Window]=None, legend=True,
+                   window:Optional[rasterio.windows.Window]=None, legend:bool=True,
                    size_read:Optional[int]=None,
                    **kwargs):
     """

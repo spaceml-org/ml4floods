@@ -6,7 +6,7 @@ import tqdm
 import pandas as pd
 from datetime import datetime
 from ml4floods.data import utils
-from ml4floods.data.ee_download import process_s2metadata
+from ml4floods.data.ee_download import process_metadata
 import os
 
 from pathlib import Path
@@ -60,7 +60,7 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
         permanent_water_path = None
 
     csv_path = os.path.join(path_aoi, "S2", "s2info.csv")
-    metadatas2 = process_s2metadata(csv_path, fs=fs)
+    metadatas2 = process_metadata(csv_path, fs=fs)
     metadatas2 = metadatas2.set_index("names2file")
 
     assert any(metadatas2.s2available), f"Not available S2 files for {main_path}. {metadatas2}"

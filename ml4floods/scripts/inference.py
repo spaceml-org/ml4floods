@@ -20,6 +20,7 @@ import traceback
 from ml4floods.models.postprocess import get_pred_mask_v2
 from typing import Tuple, Callable, Any, Optional
 from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
+from skimage.morphology import binary_dilation, disk
 
 
 def load_inference_function(model_path: str, device_name: str, max_tile_size: int = 1024,
@@ -257,7 +258,8 @@ def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Aff
 
     for c, cn in class_name.items():
         if c == 0:
-            mask = prediction != c
+            # To remove stripes in area imaged
+            mask = binary_dilation(prediction != c, disk(3)).astype(np.bool)
         else:
             mask = prediction == c
 

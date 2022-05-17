@@ -24,6 +24,8 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str,
     aois = np.unique(sorted([g.split("/")[-4] for g in geojsons]))
     for _iaoi, aoi in enumerate(aois):
         geojsons_iter = [g for g in geojsons if (f"/{aoi}/" in g)]
+        # Sort geojsons by date
+        geojsons_iter.sort(key=lambda x: os.path.splitext(os.path.basename(x))[0])
 
         # Do not compute if not needed
         floodmaps_post_aoi = [g for g in geojsons_iter if (os.path.splitext(os.path.basename(g))[0] >= flooding_date_post)]
@@ -41,12 +43,12 @@ def main(model_output_folder:str, flooding_date_pre:str, flooding_date_post:str,
         print(f"({_iaoi + 1}/{len(aois)}) Processing AoI: {aoi}")
 
         # Get pre-flood floodmap with lowest cloud coverage and all post-flood maps
-        best_pre_flood_data = postprocess.get_floodmap_pre(flooding_date_pre, geojsons_iter)
-
-        if best_pre_flood_data is None:
+        geojsons_pre = [g for g in geojsons_iter if os.path.splitext(os.path.basename(g))[0] < flooding_date_pre]
+        if len(geojsons_pre) == 0:
             print(f"\tNo pre-flood image found for aoi:{aoi}")
             continue
 
+        best_pre_flood_data = postprocess.get_floodmap_pre(geojsons_pre)
         for floodmap_post in floodmaps_post_aoi:
             filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
             if (not overwrite) and fs.exists(filename_out):

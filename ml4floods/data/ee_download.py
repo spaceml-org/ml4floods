@@ -560,7 +560,7 @@ def convert_wgs_to_utm(lon: float, lat: float) -> str:
     return epsg_code
 
 
-def process_s2metadata(path_csv:str, fs=None) -> pd.DataFrame:
+def process_metadata(path_csv:str, fs=None) -> pd.DataFrame:
     """
     Opens s2info.csv file that are exported in download_s2l89 function. It converts the date fields and
     adds a column indicating which files are available.
@@ -693,7 +693,7 @@ def download_s2l89(area_of_interest: Polygon,
         path_csv = os.path.join(path_bucket, "s2info.csv")
 
     if fs.exists(path_csv):
-        data = process_s2metadata(path_csv, fs=fs)
+        data = process_metadata(path_csv, fs=fs)
         if _check_all_downloaded(data, date_start_search=date_start_search,
                                  date_end_search=date_end_search,
                                  filter_s2_fun=filter_fun):

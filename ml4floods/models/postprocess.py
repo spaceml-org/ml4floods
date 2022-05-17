@@ -1,6 +1,6 @@
 from rasterio import features
 import rasterio
-from shapely.geometry import shape, mapping, Polygon
+from shapely.geometry import shape, mapping, Polygon, GeometryCollection
 from skimage import measure
 from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
@@ -11,7 +11,7 @@ from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
 from ml4floods.data import utils
 import torch
 import geopandas as gpd
-import os
+from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
 import pandas as pd
 import warnings
@@ -149,37 +149,202 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     output[mask_invalids] = 0
     return output
 
-def compute_cloud_coverage(data:gpd.GeoDataFrame) -> float:
-    area_total = data[data["class"] == "area_imaged"].geometry.area.sum()
+def compute_cloud_coverage(data:gpd.GeoDataFrame, area_imaged:Optional[Union[Polygon,MultiPolygon]]=None) -> float:
+    if area_imaged is None:
+        area_total = data[data["class"] == "area_imaged"].geometry.area.sum()
+    else:
+        area_total = area_imaged.area
+
     area_clouds = data[data["class"] == "cloud"].geometry.area.sum()
     return float(area_clouds / area_total)
 
 
-def get_floodmap_pre(flooding_date_pre:str, geojsons:List[str]) -> Optional[gpd.GeoDataFrame]:
+def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
+                              area_imaged:Union[Polygon,MultiPolygon]) -> Union[Polygon, MultiPolygon]:
+
+    area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
+    clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
+    area_missing_or_cloud =  clouds.union(area_missing)
+    if area_missing_or_cloud.type == "GeometryCollection":
+        area_missing_or_cloud = unary_union(
+            [gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+
+    return area_missing_or_cloud
+
+
+def get_area_valid(floodmap:gpd.GeoDataFrame) -> Union[Polygon,MultiPolygon]:
+    area_valid = unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry)
+    clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
+    return area_valid.difference(clouds)
+
+
+def get_floodmap_pre(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
     """
-    From a list of predicted geojsons returns the GeoDataFrame with lowest cloud coverage.
+    From a list of predicted GeoJSONs returns the GeoDataFrame with all water.
+
 
     Args:
-        flooding_date_pre:
-        geojsons:
+        geojsons: each with classes: {"water", "cloud", "area_imaged", "flood_trace"}
+        verbose:
 
     Returns:
-        floodmap with lowest cloud coverage
+        floodmap with lowest cloud coverage. Classes: {"water", "cloud", "area_imaged"}
 
     """
-    best_floodmap_pre = None
-    cloud_cover = 1
+
+    # fill the clouds in pre with data from other geojsons
+
+    datas = []
+    # Compute total area observed
+    area_imaged = Polygon() # empty polygon
+    crs = None
     for g in geojsons:
-        date_iter = os.path.splitext(os.path.basename(g))[0]
+        data = utils.read_geojson_from_gcp(g)
+        if crs is None:
+            crs = data.crs
+        elif crs != data.crs:
+            data = data.to_crs(crs=crs)
+        data = data[["class","geometry"]].copy()
 
-        if date_iter < flooding_date_pre:
-            data = utils.read_geojson_from_gcp(g)
-            cc_iter = compute_cloud_coverage(data)
-            if cc_iter < cloud_cover:
-                best_floodmap_pre = data
-                cloud_cover = cc_iter
+        area_imaged = unary_union(data[data["class"] == "area_imaged"].geometry).union(area_imaged)
+        datas.append(data)
 
-    return best_floodmap_pre
+    # Compute cloud coverage of all pre-flood data taking into account area observed
+    ccs = []
+    for data in datas:
+        ccs.append(compute_cloud_coverage(data, area_imaged=area_imaged))
+
+    # Sort data based on ccs
+    idx_sorted = np.argsort(ccs)
+    datas_sorted = [datas[idxdates] for idxdates in idx_sorted]
+
+    return join_floodmaps(datas_sorted, area_imaged,verbose=verbose)
+
+
+def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
+    """
+    From a list of sorted GeoJSONs returns the GeoDataFrame with all flood water smartly joined
+
+    Args:
+        geojsons: each with classes: {"water", "cloud", "area_imaged", "flood_trace"}
+        verbose:
+
+    Returns:
+        floodmap with lowest cloud coverage. Classes: {"water", "cloud", "area_imaged"}
+
+    """
+
+    # fill the clouds in pre with data from other geojsons
+
+    datas = []
+    # Compute total area observed
+    area_imaged = Polygon() # empty polygon
+    crs = None
+    for g in geojsons:
+        data = utils.read_geojson_from_gcp(g)
+        if crs is None:
+            crs = data.crs
+        elif crs != data.crs:
+            data = data.to_crs(crs=crs)
+        data = data[["class","geometry"]].copy()
+
+        area_imaged = unary_union(data[data["class"] == "area_imaged"].geometry).union(area_imaged)
+        datas.append(data)
+
+    return join_floodmaps(datas, area_imaged, classes_water=["water", "flood_trace"],verbose=verbose)
+
+
+def join_floodmaps(datas:List[gpd.GeoDataFrame],
+                   area_imaged:Union[Polygon, MultiPolygon],
+                   classes_water:List[str]=["water"],
+                   verbose:bool=False) -> gpd.GeoDataFrame:
+    """
+
+    Args:
+        datas:
+        area_imaged:
+        classes_water:
+        verbose:
+
+    Returns:
+
+    """
+
+    # Loop data computing pre-flood water
+    warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)
+    best_floodmap = datas[0]
+    crs = best_floodmap.crs
+    area_missing_or_cloud = get_area_missing_or_cloud(best_floodmap, area_imaged=area_imaged)
+
+    # This dataframe will be filled with water polygons
+    condition = None
+    for c in classes_water:
+        if condition is None:
+            condition = best_floodmap["class"] == c
+        else:
+            condition|= (best_floodmap["class"] == c)
+
+    best_floodmap = best_floodmap[condition].copy()
+    for idx, data in enumerate(datas[1:]):
+        if area_missing_or_cloud.is_empty or not (area_missing_or_cloud.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+            if verbose:
+                print(f"All area is covered in idx {idx+1}. Area missing empty: {area_missing_or_cloud.is_empty} Geom type: {area_missing_or_cloud.type}")
+            break
+
+        if data.crs != best_floodmap.crs:
+            data = data.to_crs(data.crs, inplace=False)
+
+        # Add water polygons that intersect the missing data
+        for c in classes_water:
+            water_geoms = data[data["class"] == c].geometry.apply(lambda g: g.intersection(area_missing_or_cloud))
+
+            water_geoms = water_geoms[~water_geoms.isna() & ~water_geoms.is_empty]
+            water_geoms = water_geoms.explode(ignore_index=True)
+            water_geoms = water_geoms[water_geoms.geometry.type == "Polygon"]
+
+            if water_geoms.shape[0] > 0:
+                water_data = gpd.GeoDataFrame(geometry=water_geoms, crs=data.crs)
+                water_data["class"] = c
+                best_floodmap = pd.concat([best_floodmap, water_data], ignore_index=True)
+
+        # Update area missing or cloud
+        area_missing_or_cloud = get_area_missing_or_cloud(data, area_imaged).intersection(area_missing_or_cloud)
+
+        # Remove points or LineStrings
+        if area_missing_or_cloud.type == "GeometryCollection":
+            area_missing_or_cloud = unary_union([gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+
+
+    # Join adjacent polygons
+    best_floodmap = best_floodmap.dissolve(by="class").reset_index()
+    # Explode multipoligons to polygons
+    best_floodmap = best_floodmap.explode(ignore_index=True)
+    stuff_concat = [best_floodmap]
+
+    # Add clouds
+    if not area_missing_or_cloud.is_empty and (area_missing_or_cloud.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+        # If there is something missing must be cloud (because area_imaged is the union of all the area missing in all the pre-floodmaps)
+        cloud_data = gpd.GeoDataFrame(geometry=[area_missing_or_cloud], crs=crs)
+        cloud_data = cloud_data.explode(ignore_index=True)
+        cloud_data["class"] = "cloud"
+        stuff_concat.append(cloud_data)
+
+    # Add area_imaged
+    area_imaged_data = gpd.GeoDataFrame(geometry=[area_imaged], crs=crs)
+    area_imaged_data = area_imaged_data.explode(ignore_index=True)
+    area_imaged_data["class"] = "area_imaged"
+    stuff_concat.append(area_imaged_data)
+
+    # Filter stuff that are not polygons
+    result =  pd.concat(stuff_concat, ignore_index=True)
+    assert (result.geometry.type != "MultiPolygon").all(), "Everything should be flattened! found some MultiPolygon"
+    assert (result.geometry.type != "GeometryCollection").all(), "Everything should be flattened! found some GeometryCollection"
+    # Remove geometries that are not polyongs and exclude polygons with area >= 400m^2
+    result = result[(result.geometry.type == "Polygon") & (result.geometry.area >= 20*20)].copy()
+    result["geometry"] = result["geometry"].simplify(tolerance=10)
+
+    return result
+
 
 
 def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -195,7 +360,7 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
                                'water-post-flood',
                                'water-pre-flood,
                                 'cloud',
-                                'flood_trace',
+                                'flood-trace',
                                 'area_imaged-pre-flood',
                                 'cloud-pre-flood'}
 
@@ -204,23 +369,27 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
 
     if floodmap_post_data.crs != best_pre_flood_data.crs:
         best_pre_flood_data = best_pre_flood_data.to_crs(floodmap_post_data.crs)
-    else:
-        best_pre_flood_data = best_pre_flood_data.copy()
 
-    pre_flood_water_or_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "water") | (best_pre_flood_data["class"] == "cloud")].geometry)
+    area_imaged_post = unary_union(floodmap_post_data[floodmap_post_data["class"] == "area_imaged"].geometry)
 
-    # TODO deal with valid pixels in pre-post flood (area_imaged)
+    area_missing_pre = get_area_missing_or_cloud(best_pre_flood_data, area_imaged_post)
+    pre_flood_water_or_missing_pre = unary_union(best_pre_flood_data[best_pre_flood_data["class"] == "water"].geometry).union(area_missing_pre)
 
     # pre_flood_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "cloud")].geometry)
     # pre_flood_water_minus_cloud = pre_flood_water.difference(pre_flood_cloud)
 
     geoms_flood = floodmap_post_data[floodmap_post_data["class"] == "water"].geometry.apply(
-        lambda g: g.difference(pre_flood_water_or_cloud))
+        lambda g: g.difference(pre_flood_water_or_missing_pre))
     geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
+    geoms_flood = geoms_flood.explode(ignore_index=True)
+    geoms_flood = geoms_flood[geoms_flood.geometry.type == "Polygon"]
 
     geoms_trace = floodmap_post_data[(floodmap_post_data["class"] =="flood_trace")].geometry.apply(
-        lambda g: g.difference(pre_flood_water_or_cloud))
+        lambda g: g.difference(pre_flood_water_or_missing_pre))
+
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
+    geoms_trace = geoms_trace.explode(ignore_index=True)
+    geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
 
     data_post_flood = gpd.GeoDataFrame(geometry=geoms_flood, crs=floodmap_post_data.crs)
     data_post_flood["class"] = "water-post-flood"
@@ -231,8 +400,13 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
     # Expand multipolygons to single polygons
     data_post_flood = data_post_flood.explode(ignore_index=True)
 
-    # simplify small polygons
+    # Remove geometries that are not polyongs and exclude polygons with area >= 400m^2
+    data_post_flood = data_post_flood[(data_post_flood.geometry.type == "Polygon") & (data_post_flood.geometry.area >= 20 * 20)].copy()
+
+    # simplify polygons
     data_post_flood["geometry"] = data_post_flood["geometry"].simplify(tolerance=10)
+
+    # Copy stuff from pre-flood data
     best_pre_flood_data_propagate = best_pre_flood_data[best_pre_flood_data["class"] != "flood_trace"].copy()
     best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "water", "class"] = "water-pre-flood"
     best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "cloud", "class"] = "cloud-pre-flood"
