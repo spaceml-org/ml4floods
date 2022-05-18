@@ -70,14 +70,14 @@ def main(model_output_folder:str, flooding_date_pre:str,
         prepost_flood_path = os.path.join(aoi_folder, "pre_post_products",
                                           f"prepostflood_{flooding_date_pre}_{flooding_date_post_start}_{flooding_date_post_end}.geojson").replace("\\", "/")
 
-        floodmaps_post_aoi = [g for g in geojsons_iter if (os.path.splitext(os.path.basename(g))[0] >= flooding_date_post_start) and (os.path.splitext(os.path.basename(g))[0] <= flooding_date_post_end)]
+        geojsons_post = [g for g in geojsons_iter if (os.path.splitext(os.path.basename(g))[0] >= flooding_date_post_start) and (os.path.splitext(os.path.basename(g))[0] <= flooding_date_post_end)]
 
         # Check if all output products exist
         if not overwrite:
             all_processed = all(fs.exists(f) for f in [pre_flood_path, post_flood_path, prepost_flood_path])
             if all_processed:
-                for floodmap_post in floodmaps_post_aoi:
-                    filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
+                for geojson_post in geojsons_post:
+                    filename_out = geojson_post.replace("_vec/", "_vec_prepost/")
                     if not fs.exists(filename_out):
                         all_processed = False
                         break
@@ -87,13 +87,16 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
         print(f"({_iaoi + 1}/{len(aois)}) Processing AoI: {aoi}")
 
+        if len(geojsons_post) == 0:
+            print(f"\tNo post-flood images found for aoi:{aoi}")
+            continue
 
         try:
             # Compute join postflood map (one for the whole period)
             if (not overwrite) and fs.exists(post_flood_path):
                 best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
             else:
-                best_post_flood_data = postprocess.get_floodmap_post(floodmaps_post_aoi)
+                best_post_flood_data = postprocess.get_floodmap_post(geojsons_post)
                 print(f"\tSaving {post_flood_path}")
                 utils.write_geojson_to_gcp(post_flood_path, best_post_flood_data)
 
@@ -112,14 +115,14 @@ def main(model_output_folder:str, flooding_date_pre:str,
                 utils.write_geojson_to_gcp(pre_flood_path, best_pre_flood_data)
 
             # Compute prepost for each floodmap after the flood
-            for floodmap_post in floodmaps_post_aoi:
-                filename_out = floodmap_post.replace("_vec/", "_vec_prepost/")
+            for geojson_post in geojsons_post:
+                filename_out = geojson_post.replace("_vec/", "_vec_prepost/")
                 if (not overwrite) and fs.exists(filename_out):
                     continue
                 if not filename_out.startswith("gs://"):
                     fs.makedirs(os.path.dirname(filename_out), exist_ok=True)
 
-                floodmap_post_data = utils.read_geojson_from_gcp(floodmap_post)
+                floodmap_post_data = utils.read_geojson_from_gcp(geojson_post)
                 floodmap_post_data_pre_post = postprocess.compute_flood_water(floodmap_post_data, best_pre_flood_data)
                 floodmap_post_data_pre_post["id"] = np.arange(0, floodmap_post_data_pre_post.shape[0])
                 print(f"\tSaving {filename_out}")
