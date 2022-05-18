@@ -6,7 +6,9 @@ import os
 from datetime import datetime, timedelta
 import traceback
 import sys
+import warnings
 
+warnings.filterwarnings('ignore', 'pandas.Int64Index', FutureWarning)
 
 # Sort by date (name of the file) and satellite
 def _key_sort(x):
