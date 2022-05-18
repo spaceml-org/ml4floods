@@ -87,7 +87,16 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
         print(f"({_iaoi + 1}/{len(aois)}) Processing AoI: {aoi}")
 
+
         try:
+            # Compute join postflood map (one for the whole period)
+            if (not overwrite) and fs.exists(post_flood_path):
+                best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
+            else:
+                best_post_flood_data = postprocess.get_floodmap_post(floodmaps_post_aoi)
+                print(f"\tSaving {post_flood_path}")
+                utils.write_geojson_to_gcp(post_flood_path, best_post_flood_data)
+
             # Get pre-flood floodmap with lowest cloud coverage and all post-flood maps
             geojsons_pre = [g for g in geojsons_iter if os.path.splitext(os.path.basename(g))[0] < flooding_date_pre]
             if len(geojsons_pre) == 0:
@@ -115,14 +124,6 @@ def main(model_output_folder:str, flooding_date_pre:str,
                 floodmap_post_data_pre_post["id"] = np.arange(0, floodmap_post_data_pre_post.shape[0])
                 print(f"\tSaving {filename_out}")
                 utils.write_geojson_to_gcp(filename_out, floodmap_post_data_pre_post)
-
-            # Compute join postflood map (one for the whole period)
-            if (not overwrite) and fs.exists(post_flood_path):
-                best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
-            else:
-                best_post_flood_data = postprocess.get_floodmap_post(floodmaps_post_aoi)
-                print(f"\tSaving {post_flood_path}")
-                utils.write_geojson_to_gcp(post_flood_path, best_post_flood_data)
 
             # Compute difference between pre and post floodmap for the whole period
             if overwrite or not fs.exists(prepost_flood_path):
