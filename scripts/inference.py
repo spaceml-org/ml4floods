@@ -2,6 +2,9 @@ import torch
 import argparse
 from ml4floods.data import create_gt
 from ml4floods.scripts.inference import main
+import warnings
+
+warnings.filterwarnings('ignore', 'pandas.Int64Index', FutureWarning)
 
 
 if __name__ == "__main__":
