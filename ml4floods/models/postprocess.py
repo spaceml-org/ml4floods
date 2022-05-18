@@ -1,6 +1,6 @@
 from rasterio import features
 import rasterio
-from shapely.geometry import shape, mapping, Polygon, GeometryCollection
+from shapely.geometry import shape, mapping, Polygon, MultiPolygon
 from skimage import measure
 from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
@@ -11,7 +11,6 @@ from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
 from ml4floods.data import utils
 import torch
 import geopandas as gpd
-from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
 import pandas as pd
 import warnings
@@ -165,6 +164,8 @@ def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
     area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
     area_missing_or_cloud =  clouds.union(area_missing)
+
+    # Remove Lines or Points from missing area
     if area_missing_or_cloud.type == "GeometryCollection":
         area_missing_or_cloud = unary_union(
             [gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
@@ -303,7 +304,7 @@ def join_floodmaps(datas:List[gpd.GeoDataFrame],
             water_geoms = water_geoms[water_geoms.geometry.type == "Polygon"]
 
             if water_geoms.shape[0] > 0:
-                water_data = gpd.GeoDataFrame(geometry=water_geoms, crs=data.crs)
+                water_data = gpd.GeoDataFrame(geometry=water_geoms, crs=crs)
                 water_data["class"] = c
                 best_floodmap = pd.concat([best_floodmap, water_data], ignore_index=True)
 
