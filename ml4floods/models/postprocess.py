@@ -343,6 +343,7 @@ def join_floodmaps(datas:List[gpd.GeoDataFrame],
     # Remove geometries that are not polyongs and exclude polygons with area >= 400m^2
     result = result[(result.geometry.type == "Polygon") & (result.geometry.area >= 20*20)].copy()
     result["geometry"] = result["geometry"].simplify(tolerance=10)
+    result = result[~result.geometry.isna() & ~result.geometry.is_empty]
 
     return result
 
@@ -415,5 +416,7 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
 
     post_flood_propagate = floodmap_post_data[(floodmap_post_data["class"] == "area_imaged") | (floodmap_post_data["class"] == "cloud")]
 
-    return pd.concat([best_pre_flood_data_propagate, post_flood_propagate, data_post_flood],
+    result = pd.concat([best_pre_flood_data_propagate, post_flood_propagate, data_post_flood],
                      ignore_index=True)
+    result = result[~result.geometry.isna() & ~result.geometry.is_empty]
+    return result

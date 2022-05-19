@@ -255,11 +255,13 @@ def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Aff
     data_out = []
     start = 0
     class_name = {0: "area_imaged", 2: "water", 3: "cloud", 4: "flood_trace"}
-
+    # Dilate invalid mask
+    invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(np.bool)
+    prediction[invalid_mask] = 0
     for c, cn in class_name.items():
         if c == 0:
             # To remove stripes in area imaged
-            mask = binary_dilation(prediction != c, disk(3)).astype(np.bool)
+            mask = prediction != c
         else:
             mask = prediction == c
 
