@@ -251,12 +251,31 @@ def main(model_path: str, s2folder_file: str, device_name: str,
         print(f"Files with errors:\n {files_with_errors}")
 
 
-def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Affine) -> Optional[gpd.GeoDataFrame]:
+def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Affine,
+                       border:int=2) -> Optional[gpd.GeoDataFrame]:
+    """
+
+    Args:
+        prediction: (H, W) array with 4 posible values  0: "invalid", 2: "water", 3: "cloud", 4: "flood_trace"
+        crs:
+        transform:
+        border:
+
+    Returns:
+
+    """
     data_out = []
     start = 0
     class_name = {0: "area_imaged", 2: "water", 3: "cloud", 4: "flood_trace"}
     # Dilate invalid mask
     invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(np.bool)
+
+    # Set borders to zero to avoid border effects when vectorizing
+    prediction[:border,:] = 0
+    prediction[:, :border] = 0
+    prediction[-border:, :] = 0
+    prediction[:, -border:] = 0
+
     prediction[invalid_mask] = 0
     for c, cn in class_name.items():
         if c == 0:
