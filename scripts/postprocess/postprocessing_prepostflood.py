@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 import traceback
 import sys
 import warnings
+from tqdm import tqdm
+import rasterio.warp
+from shapely.geometry import shape
+import pandas as pd
 
 warnings.filterwarnings('ignore', 'pandas.Int64Index', FutureWarning)
 
@@ -54,6 +58,7 @@ def main(model_output_folder:str, flooding_date_pre:str,
     aois = np.unique([g.split("/")[-4] for g in geojsons]).tolist()
     aois.sort(reverse=True)
 
+    pre_flood_paths, post_flood_paths, prepost_flood_paths = [], [], []
     for _iaoi, aoi in enumerate(aois):
         geojsons_iter = [g for g in geojsons if (f"/{aoi}/" in g)]
 
@@ -63,12 +68,15 @@ def main(model_output_folder:str, flooding_date_pre:str,
         geojsons_iter.sort(key=_key_sort)
         pre_flood_path = os.path.join(aoi_folder, "pre_post_products",
                                       f"preflood_{flooding_date_pre}.geojson" ).replace("\\","/")
+        pre_flood_paths.append(pre_flood_path)
 
         post_flood_path = os.path.join(aoi_folder, "pre_post_products",
                                        f"postflood_{flooding_date_post_start}_{flooding_date_post_end}.geojson").replace("\\", "/")
+        post_flood_paths.append(post_flood_path)
 
         prepost_flood_path = os.path.join(aoi_folder, "pre_post_products",
                                           f"prepostflood_{flooding_date_pre}_{flooding_date_post_start}_{flooding_date_post_end}.geojson").replace("\\", "/")
+        prepost_flood_paths.append(prepost_flood_path)
 
         geojsons_post = [g for g in geojsons_iter if (os.path.splitext(os.path.basename(g))[0] >= flooding_date_post_start) and (os.path.splitext(os.path.basename(g))[0] <= flooding_date_post_end)]
 
@@ -92,7 +100,7 @@ def main(model_output_folder:str, flooding_date_pre:str,
             continue
 
         try:
-            # Compute join postflood map (one for the whole period)
+            # Compute joint postflood map (one map for the whole period)
             if (not overwrite) and fs.exists(post_flood_path):
                 best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
             else:
@@ -136,6 +144,68 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
         except Exception:
             traceback.print_exc(file=sys.stdout)
+
+    print("AGGREGATE POSTFLOOD MAPS")
+    path_aggregated_post = os.path.join(activation_folder, f"postflood_{flooding_date_post_start}_{flooding_date_post_end}.geojson")
+    path_aggregated_prepost = os.path.join(activation_folder, f"prepostflood_{flooding_date_pre}_{flooding_date_post_start}_{flooding_date_post_end}.geojson")
+
+    # TODO extract a function if it works
+    data_all = None
+    for f in tqdm(post_flood_paths):
+        data = utils.read_geojson_from_gcp(f)
+        # Convert to CRS with rasterio!
+        data = data[~data.geometry.isna() & ~data.geometry.is_empty & (data.geometry.area > 10 ** 2)].copy()
+        geometry = rasterio.warp.transform_geom(
+            src_crs=data.crs,
+            dst_crs="EPSG:4326",
+            geom=data.geometry.values,
+        )
+        data = data.set_geometry(
+            [shape(geom) for geom in geometry],
+            crs="EPSG:4326",
+        )
+        is_valid_geoms = data.is_valid
+        if is_valid_geoms.any():
+            print(f"\tThere are still {is_valid_geoms} geoms invalid")
+            data = data[is_valid_geoms]
+
+        if data_all is None:
+            data_all = data
+        else:
+            data_all =  pd.concat([data_all, data], ignore_index=True)
+            # Join polygons of the same class that are touching each other (i.e. dissolve)
+            # data_all = data_all.dissolve(by="class").reset_index()
+
+            # data_all = data_all[data_all.is_valid & (data.geometry.area > 10**2)]
+            # Explode multipoligons to polygons
+            # data_all = data_all.explode(ignore_index=True)
+
+    print(f"\t{len(post_flood_paths)} Products joined {data_all.shape}")
+
+    # Save as geojson
+    data_all.to_file()
+    data_all = data_all.dissolve(by="class").reset_index()
+    print(f"\tCorrectly dissolved")
+    data_all = data_all.explode(ignore_index=True)
+    print(f"\tCorrectly exploded")
+    data_all["geometry"] = data_all["geometry"].simplify(tolerance=10)
+    data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty & (data_all.geometry.area > 10 ** 2)]
+    utils.write_geojson_to_gcp(path_aggregated_post, data_all)
+    print(f"\tSaved: {path_aggregated_post}")
+
+    # data_water = data_all[(data_all["class"] == "water") | (data_all["class"] == "flood_trace")]
+    # assert set(data_water["class"].unique()) == {"water", "flood_trace"}, f'BAD: {data_water["class"].unique()}'
+    #
+    # data_water.to_file(f"{dirname}/{period}_flood.shp")
+    #
+    # # Save clouds in different file
+    # data_clouds = data_all[(data_all["class"] == "cloud")]
+    # data_clouds.to_file(f"{dirname}/{period}_cloud.shp")
+    #
+    # data_water = data_water.dissolve(by="class").reset_index()
+    # data_water = data_water.explode(ignore_index=True)
+    # data_water.to_file(f"{dirname}/{period}_flood.shp")
+
 
 
 if __name__ == "__main__":
