@@ -165,8 +165,8 @@ def main(model_output_folder:str, flooding_date_pre:str,
             crs="EPSG:4326",
         )
         is_valid_geoms = data.is_valid
-        if is_valid_geoms.any():
-            print(f"\tThere are still {is_valid_geoms} geoms invalid")
+        if not is_valid_geoms.all():
+            print(f"\tThere are still {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}")
             data = data[is_valid_geoms]
 
         if data_all is None:
@@ -183,13 +183,12 @@ def main(model_output_folder:str, flooding_date_pre:str,
     print(f"\t{len(post_flood_paths)} Products joined {data_all.shape}")
 
     # Save as geojson
-    data_all.to_file()
     data_all = data_all.dissolve(by="class").reset_index()
     print(f"\tCorrectly dissolved")
     data_all = data_all.explode(ignore_index=True)
     print(f"\tCorrectly exploded")
     data_all["geometry"] = data_all["geometry"].simplify(tolerance=10)
-    data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty & (data_all.geometry.area > 10 ** 2)]
+    data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
     utils.write_geojson_to_gcp(path_aggregated_post, data_all)
     print(f"\tSaved: {path_aggregated_post}")
 
