@@ -153,10 +153,10 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
     if overwrite or not fs.exists(path_aggregated_post):
         print("AGGREGATE POSTFLOOD MAPS")
-        spatial_aggregation(activation_folder, post_flood_paths)
+        spatial_aggregation(path_aggregated_post, post_flood_paths)
     if overwrite or not fs.exists(path_aggregated_prepost):
         print("AGGREGATE PRE-POSTFLOOD MAPS")
-        spatial_aggregation(activation_folder, prepost_flood_paths)
+        spatial_aggregation(path_aggregated_prepost, prepost_flood_paths)
 
 
 def spatial_aggregation(path_aggregated_post:str, floodmaps_paths:List[str], dst_crs:str= "EPSG:4326"):
