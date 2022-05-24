@@ -11,6 +11,8 @@ from tqdm import tqdm
 import rasterio.warp
 from shapely.geometry import shape
 import pandas as pd
+from typing import List
+
 
 warnings.filterwarnings('ignore', 'pandas.Int64Index', FutureWarning)
 
@@ -145,24 +147,34 @@ def main(model_output_folder:str, flooding_date_pre:str,
         except Exception:
             traceback.print_exc(file=sys.stdout)
 
-    print("AGGREGATE POSTFLOOD MAPS")
     path_aggregated_post = os.path.join(activation_folder, f"postflood_{flooding_date_post_start}_{flooding_date_post_end}.geojson")
-    path_aggregated_prepost = os.path.join(activation_folder, f"prepostflood_{flooding_date_pre}_{flooding_date_post_start}_{flooding_date_post_end}.geojson")
+    path_aggregated_prepost = os.path.join(activation_folder,
+                                           f"prepostflood_{flooding_date_pre}_{flooding_date_post_start}_{flooding_date_post_end}.geojson")
 
-    # TODO extract a function if it works
+    if overwrite or not fs.exists(path_aggregated_post):
+        print("AGGREGATE POSTFLOOD MAPS")
+        spatial_aggregation(activation_folder, post_flood_paths)
+    if overwrite or not fs.exists(path_aggregated_prepost):
+        print("AGGREGATE PRE-POSTFLOOD MAPS")
+        spatial_aggregation(activation_folder, prepost_flood_paths)
+
+
+def spatial_aggregation(path_aggregated_post:str, floodmaps_paths:List[str], dst_crs:str= "EPSG:4326"):
+    """ Join the list of floodmaps from different AoIs into a single one """
     data_all = None
-    for f in tqdm(post_flood_paths):
+
+    for f in tqdm(floodmaps_paths):
         data = utils.read_geojson_from_gcp(f)
         # Convert to CRS with rasterio!
         data = data[~data.geometry.isna() & ~data.geometry.is_empty & (data.geometry.area > 10 ** 2)].copy()
         geometry = rasterio.warp.transform_geom(
             src_crs=data.crs,
-            dst_crs="EPSG:4326",
+            dst_crs=dst_crs,
             geom=data.geometry.values,
         )
         data = data.set_geometry(
             [shape(geom) for geom in geometry],
-            crs="EPSG:4326",
+            crs=dst_crs,
         )
         is_valid_geoms = data.is_valid
         if not is_valid_geoms.all():
@@ -172,39 +184,16 @@ def main(model_output_folder:str, flooding_date_pre:str,
         if data_all is None:
             data_all = data
         else:
-            data_all =  pd.concat([data_all, data], ignore_index=True)
-            # Join polygons of the same class that are touching each other (i.e. dissolve)
-            # data_all = data_all.dissolve(by="class").reset_index()
-
-            # data_all = data_all[data_all.is_valid & (data.geometry.area > 10**2)]
-            # Explode multipoligons to polygons
-            # data_all = data_all.explode(ignore_index=True)
-
-    print(f"\t{len(post_flood_paths)} Products joined {data_all.shape}")
-
+            data_all = pd.concat([data_all, data], ignore_index=True)
+    print(f"\t{len(floodmaps_paths)} Products joined {data_all.shape}")
     # Save as geojson
     data_all = data_all.dissolve(by="class").reset_index()
-    print(f"\tCorrectly dissolved")
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly dissolved. New shape: {data_all.shape}")
     data_all = data_all.explode(ignore_index=True)
-    print(f"\tCorrectly exploded")
-    data_all["geometry"] = data_all["geometry"].simplify(tolerance=10)
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly exploded. New shape: {data_all.shape}")
     data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
     utils.write_geojson_to_gcp(path_aggregated_post, data_all)
-    print(f"\tSaved: {path_aggregated_post}")
-
-    # data_water = data_all[(data_all["class"] == "water") | (data_all["class"] == "flood_trace")]
-    # assert set(data_water["class"].unique()) == {"water", "flood_trace"}, f'BAD: {data_water["class"].unique()}'
-    #
-    # data_water.to_file(f"{dirname}/{period}_flood.shp")
-    #
-    # # Save clouds in different file
-    # data_clouds = data_all[(data_all["class"] == "cloud")]
-    # data_clouds.to_file(f"{dirname}/{period}_cloud.shp")
-    #
-    # data_water = data_water.dissolve(by="class").reset_index()
-    # data_water = data_water.explode(ignore_index=True)
-    # data_water.to_file(f"{dirname}/{period}_flood.shp")
-
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Saved: {path_aggregated_post}")
 
 
 if __name__ == "__main__":
