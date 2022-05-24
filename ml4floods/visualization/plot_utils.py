@@ -1,3 +1,5 @@
+import os.path
+
 import matplotlib.axes
 import rasterio
 from rasterio import plot as rasterioplt
@@ -176,14 +178,18 @@ def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Af
             Axes with plot.
 
     """
-    ibands = get_channel_configuration_bands(channel_configuration,
-                                             collection_name=collection_name)
-    if collection_name == "S2":
-        band_names_current_image = [BANDS_S2[iband] for iband in ibands]
-    elif collection_name == "Landsat":
-        band_names_current_image = [BANDS_L8[iband] for iband in ibands]
+
+    # Take into account channel_configuration if input is a np.Array
+    assert collection_name in {"Landsat", "S2"}, f"Collection name {collection_name} not implemented"
+    if not isinstance(input, str):
+        ibands = get_channel_configuration_bands(channel_configuration,
+                                                 collection_name=collection_name)
+        if collection_name == "S2":
+            band_names_current_image = [BANDS_S2[iband] for iband in ibands]
+        else:
+            band_names_current_image = [BANDS_L8[iband] for iband in ibands]
     else:
-        raise NotImplementedError(f"Collection name {collection_name} not implemented")
+        band_names_current_image = BANDS_S2 if collection_name == "S2" else BANDS_L8
 
     bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
@@ -195,35 +201,43 @@ def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Af
 
     return rasterioplt.show(image, transform=transform, **kwargs)
 
-COLORS = {"water": "#0010F6",
-          # "cloud": "#CFCFCF",
-          "cloud": "#4B4B4B",
-          "flood_trace": "#F66F00",
-          "flood-trace": "#F66F00",
-          "water-post-flood": "#FF09E3",
-          "water-pre-flood": "#0010F6",
-          "cloud-pre-flood": "#2B2B2B"}
+COLORS_FLOODMAP = {"water": "#0010F6",
+                   # "cloud": "#CFCFCF",
+                   "cloud": "#4B4B4B",
+                   "flood_trace": "#F66F00",
+                   "flood-trace": "#F66F00",
+                   "water-post-flood": "#FF09E3",
+                   "water-pre-flood": "#0010F6",
+                   "cloud-pre-flood": "#2B2B2B"}
 
-def plot_floodmap(floodmap:gpd.GeoDataFrame, legend:bool=True,
+def plot_floodmap(floodmap:Union[str, gpd.GeoDataFrame], legend:bool=True,
                   ax:Optional[matplotlib.axes.Axes]=None,
                   figsize:Tuple[int,int]=(10,10)) -> matplotlib.axes.Axes:
     """
-    Plot floodmap as produced by inference.py
+    Plot the vectorized floodmaps as they are produced by inference.py script
 
     Args:
-        floodmap:
-        legend:
+        floodmap: GeoDataFrame or path to geojson file. The function expects that the floodmap have columns "geometry" and "class".
+                 Values of columns class are mapped to COLORS_FLOODMAP
+        legend (bool): add legend to the plot
         ax:
         figsize:
 
     Returns:
 
     """
+    if isinstance(floodmap, str):
+        _, ext = os.path.splitext(floodmap)
+        if ext == ".geojson":
+            floodmap = utils.read_geojson_from_gcp(floodmap)
+        else:
+            floodmap = gpd.read_file(floodmap)
+
     floodmap_plot = floodmap[(floodmap["class"] != "area_imaged") & (floodmap["class"] != "area_imaged-pre-flood")].copy()
-    floodmap_plot["color"] = floodmap_plot["class"].apply(lambda x: COLORS[x])
+    floodmap_plot["color"] = floodmap_plot["class"].apply(lambda x: COLORS_FLOODMAP[x])
     ax = floodmap_plot.plot(color=floodmap_plot["color"], figsize=figsize, ax=ax)
     if legend:
-        legend_elements = [Patch(facecolor=COLORS[c], label=c) for c in floodmap_plot["class"].unique()]
+        legend_elements = [Patch(facecolor=COLORS_FLOODMAP[c], label=c) for c in floodmap_plot["class"].unique()]
         ax.legend(handles=legend_elements)
     return ax
 
@@ -258,16 +272,21 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
             Axes with plot.
 
     """
-    ibands = get_channel_configuration_bands(channel_configuration,
-                                             collection_name=collection_name)
-    if collection_name == "S2":
-        band_names_current_image = [BANDS_S2[iband] for iband in ibands]
-        bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
-    elif collection_name == "Landsat":
-        band_names_current_image = [BANDS_L8[iband] for iband in ibands]
-        bands = [band_names_current_image.index(b) for b in ["B6", "B5", "B4"]]
+    assert collection_name in {"Landsat", "S2"}, f"Collection name {collection_name} not implemented"
+    if not isinstance(input, str):
+        ibands = get_channel_configuration_bands(channel_configuration,
+                                                 collection_name=collection_name)
+        if collection_name == "S2":
+            band_names_current_image = [BANDS_S2[iband] for iband in ibands]
+        else:
+            band_names_current_image = [BANDS_L8[iband] for iband in ibands]
     else:
-        raise NotImplementedError(f"Collection name {collection_name} not implemented")
+        band_names_current_image = BANDS_S2 if collection_name == "S2" else BANDS_L8
+
+    if collection_name == "S2":
+        bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
+    else:
+        bands = [band_names_current_image.index(b) for b in ["B6", "B5", "B4"]]
 
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
                                            size_read=size_read)
