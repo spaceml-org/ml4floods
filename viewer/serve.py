@@ -338,8 +338,12 @@ if __name__ == "__main__":
                                                                   "the server available externally as well")
     parser.add_argument('--root_location', help='Root folder', type=str,
                         default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
+    parser.add_argument('--no_check_env_var', help='Do not check if GOOGLE_APPLICATION_CREDENTIALS is set (if not set it cannot save edited floodmaps)', action='store_true')
 
     args = parser.parse_args()
+    
+    if not args.no_check_env_var:
+        assert os.environ["GOOGLE_APPLICATION_CREDENTIALS"], "GOOGLE_APPLICATION_CREDENTIALS env varible not set. This is needed to save floodmaps!"
 
     root_location = args.root_location[:-1] if args.root_location.endswith("/") else args.root_location
     database_name = os.path.basename(root_location)
