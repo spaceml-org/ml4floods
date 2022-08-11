@@ -594,7 +594,8 @@ def process_metadata(path_csv:str, fs=None) -> pd.DataFrame:
 
 def _check_all_downloaded(data:pd.DataFrame,
                           date_start_search: datetime, date_end_search: datetime,
-                          filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]]) -> bool:
+                          filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]],
+                          collection_name:str="S2") -> bool:
     """
     True if all images have been downloaded
 
@@ -626,12 +627,12 @@ def _check_all_downloaded(data:pd.DataFrame,
         data = data[filter_good]
         images_available = data["s2available"].sum()
         print(
-            f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
+            f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
             f"{np.sum(filter_good)} satisfies the criteria "
             f"{images_available} are already downloaded")
     else:
         images_available = data["s2available"].sum()
-        print(f"Found {n_images_col} S2 images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
+        print(f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
               f"all satisfies the criteria "
               f"{images_available} are already downloaded")
 
@@ -696,7 +697,8 @@ def download_s2l89(area_of_interest: Polygon,
         data = process_metadata(path_csv, fs=fs)
         if _check_all_downloaded(data, date_start_search=date_start_search,
                                  date_end_search=date_end_search,
-                                 filter_s2_fun=filter_fun):
+                                 filter_s2_fun=filter_fun,
+                                 collection_name=collection_name):
             return []
         else:
             min_date = min(data["datetime"])
