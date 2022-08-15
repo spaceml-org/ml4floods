@@ -4,11 +4,8 @@ The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z)
 It requires approximately 300GB of hard-disk storage. The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
-```{image} ./prep/images/worldfloods_v1.png
-:alt: WorldFloods dataset
-:width: 95%
-:align: center
-```
+<img align="center" width="95%" src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/images/worldfloods_v1.png" alt="WorldFloods dataset">
+
 
 ## Download the data from the Google Drive
 
