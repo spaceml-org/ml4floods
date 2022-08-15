@@ -13,6 +13,10 @@ A subset of the data and the pretrained models are available in this [public Goo
 
 If you want to use this data from the Google Colab you can *'add a shortcut to your Google Drive'* from the [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH) and mount that directory:
 
+<p align="center">
+<img width=60% src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/images/add_shortcut_drive.png" alt="Add shortcut">
+</p>
+	
 ```python
 from google.colab import drive
 drive.mount('/content/drive')
