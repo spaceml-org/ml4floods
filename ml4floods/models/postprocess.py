@@ -14,9 +14,27 @@ import geopandas as gpd
 from shapely.ops import unary_union
 import pandas as pd
 import warnings
+from tqdm import tqdm
+from datetime import datetime
+import os
 
 
-def preprocess_water_probabilities(prob_water_mask, thres_h=0.6, thres_l=0.4, distance= 5, conn=2, watershed_line=True):
+def _watershed_processing(prob_water_mask, thres_h=0.6, thres_l=0.4, distance= 5, conn=2, watershed_line=True):
+    """
+    Ancilliary function used to apply the watershed algorithm (to go from river lines river polygons). It doesn't
+    work very well but maybe worth keeping in case it's useful in the future.
+
+    Args:
+        prob_water_mask:
+        thres_h:
+        thres_l:
+        distance:
+        conn:
+        watershed_line:
+
+    Returns:
+
+    """
     mask0 = prob_water_mask > thres_h
     local_maxi = peak_local_max(prob_water_mask, indices=False, footprint=np.ones((distance * 2 + 1, distance * 2 + 1)),
                                 labels=(prob_water_mask > thres_l))
@@ -30,12 +48,13 @@ def preprocess_water_probabilities(prob_water_mask, thres_h=0.6, thres_l=0.4, di
 def get_water_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
                        polygon_buffer:int=0, tolerance:float=1., transform: Optional[rasterio.Affine]=None) -> List[Polygon]:
     """
+    Vectorize a binary mask excluding polygons smaller than `min_area` pixels.
 
     Args:
         binary_water_mask: (H, W) binary mask to rasterise
         min_area: polygons with pixel area lower than this will be filtered
         polygon_buffer: buffering of the polygons
-        tolerance: to simplify the polygons
+        tolerance: to simplify the polygons, in pixel units
         transform: affine transformation of the binary_water_mask raster
 
     Returns:
@@ -88,8 +107,20 @@ def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
 
 def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
                         water_mask:Union[np.ndarray, torch.Tensor],
-                        permanent_water:Optional[Union[np.ndarray, torch.Tensor]]=None):
-    "Water mask (H, W) with interpretation {0: invalids, 1: land, 2: flood water, 3: thick cloud, 4:permanent water, 5: flood trace}"
+                        permanent_water:Optional[Union[np.ndarray, torch.Tensor]]=None) -> Union[np.ndarray, torch.Tensor]:
+    """
+    This function returns a single mask that differenciates flood_water from permanent_water and flood traces.
+    We distinguish flood traces using the mndwi index.
+
+    Args:
+        mndwi: (H, W) tensor MNDWI index
+        water_mask:  (H, W) tensor with output classes provided by the model {0:invalid, 1: land, 2:water, 3:thick cloud}
+        permanent_water: (H, W) tensor of the JRC permanent water layer coded as:
+         https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_3_YearlyHistory
+
+    Returns:
+        Water mask (H, W) with interpretation {0: invalids, 1: land, 2: flood water, 3: thick cloud, 4:permanent water, 5: flood trace}
+    """
     # 2: flood water
     # 4: permanent_water
     # 5: flood_trace
@@ -131,7 +162,7 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
         output = np.ones(prediction.shape[-2:], dtype=np.uint8)
 
     cloud_mask = (prediction[0] > th_cloud)
-    # TODO erode cloud mask as in create_gt??
+    # erode cloud mask as in create_gt??
 
     water_mask = (prediction[1] > th_water)
     output[water_mask] = 2
@@ -148,18 +179,39 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     output[mask_invalids] = 0
     return output
 
-def compute_cloud_coverage(data:gpd.GeoDataFrame, area_imaged:Optional[Union[Polygon,MultiPolygon]]=None) -> float:
+def compute_cloud_coverage(floodmap:gpd.GeoDataFrame, area_imaged:Optional[Union[Polygon, MultiPolygon]]=None) -> float:
+    """
+    Returns cloud coverage from a vectorized floodmap
+
+    Args:
+        floodmap: GeoDataFrame with column 'class' with values 'area_imaged' and 'cloud'
+        area_imaged: Polygon that indicates the area imaged. if not provided it will take it from the floodmap
+
+    Returns:
+        percentage of the image covered by clouds
+    """
     if area_imaged is None:
-        area_total = data[data["class"] == "area_imaged"].geometry.area.sum()
+        area_total = floodmap[floodmap["class"] == "area_imaged"].geometry.area.sum()
     else:
         area_total = area_imaged.area
 
-    area_clouds = data[data["class"] == "cloud"].geometry.area.sum()
+    area_clouds = floodmap[floodmap["class"] == "cloud"].geometry.area.sum()
     return float(area_clouds / area_total)
 
 
 def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
                               area_imaged:Union[Polygon,MultiPolygon]) -> Union[Polygon, MultiPolygon]:
+    """
+    Returns a Polygon with the area of the floodmap that hasn't been imaged (i.e. is out of `floodmap[floodmap['class'] == "area_imaged"]`)
+    and that is not covered by clouds.
+
+    Args:
+        floodmap: GeoDataFrame with column 'class' with values 'area_imaged' and 'cloud'
+        area_imaged: Polygon that indicates the area imaged.
+
+    Returns:
+        Polygon with the area of the floodmap that hasn't been imaged and that is not covered by clouds
+    """
 
     area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
@@ -173,23 +225,33 @@ def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
     return area_missing_or_cloud
 
 
-def get_area_valid(floodmap:gpd.GeoDataFrame) -> Union[Polygon,MultiPolygon]:
+def get_area_valid(floodmap:gpd.GeoDataFrame) -> Union[Polygon, MultiPolygon]:
+    """
+    Returns the polygon with the area valid (i.e. area that is imaged and is not cloud)
+
+    Args:
+        floodmap: GeoDataFrame with column 'class' with values 'area_imaged' and 'cloud'
+
+    Returns:
+        Polygon with the area valid
+
+    """
     area_valid = unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry)
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
     return area_valid.difference(clouds)
 
 
-def get_floodmap_pre(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
+def get_floodmap_pre(geojsons:List[str], verbose:bool=False) -> gpd.GeoDataFrame:
     """
     From a list of predicted GeoJSONs returns the GeoDataFrame with all water.
 
 
     Args:
-        geojsons: each with classes: {"water", "cloud", "area_imaged", "flood_trace"}
+        geojsons: List[GeoDataFrame] with column 'class' with values {"water", "cloud", "area_imaged", "flood_trace"}
         verbose:
 
     Returns:
-        floodmap with lowest cloud coverage. Classes: {"water", "cloud", "area_imaged"}
+        floodmap with the lowest cloud coverage. Classes: {"water", "cloud", "area_imaged"}
 
     """
 
@@ -219,7 +281,7 @@ def get_floodmap_pre(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
     idx_sorted = np.argsort(ccs)
     datas_sorted = [datas[idxdates] for idxdates in idx_sorted]
 
-    return join_floodmaps(datas_sorted, area_imaged,verbose=verbose)
+    return mosaic_floodmaps(datas_sorted, area_imaged, verbose=verbose)
 
 
 def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
@@ -227,7 +289,7 @@ def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame
     From a list of sorted GeoJSONs returns the GeoDataFrame with all flood water smartly joined
 
     Args:
-        geojsons: each with classes: {"water", "cloud", "area_imaged", "flood_trace"}
+        geojsons: List[GeoDataFrame] with column 'class' with values {"water", "cloud", "area_imaged", "flood_trace"}
         verbose:
 
     Returns:
@@ -252,23 +314,25 @@ def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame
         area_imaged = unary_union(data[data["class"] == "area_imaged"].geometry).union(area_imaged)
         datas.append(data)
 
-    return join_floodmaps(datas, area_imaged, classes_water=["water", "flood_trace"],verbose=verbose)
+    return mosaic_floodmaps(datas, area_imaged, classes_water=["water", "flood_trace"], verbose=verbose)
 
 
-def join_floodmaps(datas:List[gpd.GeoDataFrame],
-                   area_imaged:Union[Polygon, MultiPolygon],
-                   classes_water:List[str]=["water"],
-                   verbose:bool=False) -> gpd.GeoDataFrame:
+def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
+                     area_imaged:Union[Polygon, MultiPolygon],
+                     classes_water:List[str]=["water"],
+                     verbose:bool=False) -> gpd.GeoDataFrame:
     """
+    Mosaics the floodmaps iteratively taking into account the valid area of each of them.
 
     Args:
-        datas:
-        area_imaged:
-        classes_water:
+        datas: List[GeoDataFrame] with column 'class' with values {"water", "cloud", "area_imaged", "flood_trace"}
+        area_imaged: Polygon with the total area imaged
+        classes_water: which water classes from ["water", "flood_trace"] to include in the output floodmap. For pre-flood
+        maps we don't include the flood_trace class.
         verbose:
 
     Returns:
-
+        a GeoDataFrame with the mosaic of the input dataframes
     """
 
     # Loop data computing pre-flood water
@@ -349,7 +413,7 @@ def join_floodmaps(datas:List[gpd.GeoDataFrame],
 
 
 
-def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Computes the difference between water in the pre and post floodmap
 
@@ -420,3 +484,169 @@ def compute_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_flood_data
                      ignore_index=True)
     result = result[~result.geometry.isna() & ~result.geometry.is_empty]
     return result
+
+def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> gpd.GeoDataFrame:
+    """
+    Mosaics all the pre-post floodmaps into a single map reprojecting the polygons to the specified CRS
+
+    Args:
+        floodmaps_paths: List of paths to floodmaps as generated with get_floodmap_post and get_floodmaps_pre
+        dst_crs:
+
+    Returns:
+        geoDataFrame with same classes as floodmaps_paths files
+
+    """
+    data_all = None
+    data_all_invalid = None
+
+    for f in tqdm(floodmaps_paths):
+        data = utils.read_geojson_from_gcp(f)
+        # Convert to CRS with rasterio!
+        data = data[~data.geometry.isna() & ~data.geometry.is_empty & (data.geometry.area > 10 ** 2)].copy()
+        geometry = rasterio.warp.transform_geom(
+            src_crs=data.crs,
+            dst_crs=dst_crs,
+            geom=data.geometry.values,
+        )
+        data = data.set_geometry(
+            [shape(geom) for geom in geometry],
+            crs=dst_crs,
+        )
+        is_valid_geoms = data.is_valid
+        if not is_valid_geoms.all():
+            print(f"\tThere are still {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}")
+            data_invalid = data[~is_valid_geoms]
+            if data_all_invalid is None:
+                data_all_invalid = data_invalid
+            else:
+                data_all_invalid = pd.concat([data_all_invalid, data_invalid], ignore_index=True)
+
+            data = data[is_valid_geoms]
+
+
+        if data_all is None:
+            data_all = data
+        else:
+            data_all = pd.concat([data_all, data], ignore_index=True)
+    print(f"\t{len(floodmaps_paths)} Products joined {data_all.shape}")
+    # Save as geojson
+    data_all = data_all.dissolve(by="class").reset_index()
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly dissolved. New shape: {data_all.shape}")
+    data_all = data_all.explode(ignore_index=True)
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly exploded. New shape: {data_all.shape}")
+
+    data_all = pd.concat([data_all, data_all_invalid], ignore_index=True)
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Added invalid Polygons. New shape: {data_all.shape}")
+
+    data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
+    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Removed NA or empty polygons. New shape: {data_all.shape}")
+
+    return data_all
+
+
+def vectorize_jrc_permanent_water_layer(permanent_water:np.ndarray,
+                                        crs:str, transform:rasterio.transform.Affine) -> Optional[gpd.GeoDataFrame]:
+    """
+    Vectorize cloud class
+
+    Args:
+        permanent_water: (H, W) array with predictions.
+        https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_3_YearlyHistory?hl=en
+        Values 0 nodata 1 not water, 2 seasonal water, 3: permanent water
+        crs:
+        transform:
+
+    Returns:
+        gpd.GeoDataFrame with column "class" with values "seasonal" and "permanent"
+    """
+
+    data_out = []
+    for c, class_name in zip([2, 3],["seasonal", "permanent"]):
+        geoms_polygons = get_water_polygons(permanent_water == c,
+                                            transform=transform)
+        if len(geoms_polygons) > 0:
+            data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
+                                              "class": class_name},
+                                             crs=crs))
+
+    if len(data_out) == 1:
+        return data_out[0]
+    elif len(data_out) > 1:
+        return pd.concat(data_out, ignore_index=True)
+    return None
+
+def load_vectorized_permanent_water(aoi_folder:str, year:Optional[str] = None) -> Optional[gpd.GeoDataFrame]:
+    """
+    This function caches the vectorized permanent water product as a GeoJSON if it doesn't exist and return the vectorized
+    product as a GeoDataFrame
+
+    Args:
+        aoi_folder: in this folder there should exist a subfolder called "PERMANENTWATERJRC" with the tif file
+        (JRC water product exported from the GEE)
+        https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_3_YearlyHistory?hl=en
+        year: year to load (must exist in {aoi_folder}/PERMANENTWATERJRC/{year}.tif)
+
+    Returns:
+        gpd.GeoDataFrame with column "class" with values "seasonal" and "permanent"
+
+    """
+    fs = utils.get_filesystem(aoi_folder)
+    if year is None:
+        year = "*"
+    files_permanent = fs.glob(os.path.join(aoi_folder, "PERMANENTWATERJRC", f"{year}.tif").replace("\\", "/"))
+    if len(files_permanent) == 0:
+        permanent_water_floodmap = None
+    else:
+        namefile_permanent = os.path.basename(os.path.splitext(files_permanent[0])[0])
+        path_permanent_water_vec = os.path.join(aoi_folder, "PERMANENTWATERJRC_vec",
+                                                namefile_permanent + ".geojson").replace("\\", "/")
+        if not fs.exists(path_permanent_water_vec):
+            with rasterio.open(f"gs://{files_permanent[0]}") as rst:
+                permanent_raster = rst.read(1)
+                crs = rst.crs
+                transform = rst.transform
+
+            permanent_water_floodmap = vectorize_jrc_permanent_water_layer(permanent_raster, crs=crs,
+                                                                           transform=transform)
+            utils.write_geojson_to_gcp(path_permanent_water_vec, permanent_water_floodmap)
+        else:
+            permanent_water_floodmap = utils.read_geojson_from_gcp(path_permanent_water_vec)
+
+    return permanent_water_floodmap
+
+def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodmap:gpd.GeoDataFrame,
+                                    water_class:Optional[str]=None) -> gpd.GeoDataFrame:
+    """
+    Adds the "permanent" polygons of jrc_vectorized_map to floodmap
+
+    Args:
+        jrc_vectorized_map:
+        floodmap:
+        water_class:
+
+    Returns:
+        floodmap with permanent water polygons
+    """
+
+    if water_class is None:
+        classes = floodmap["class"].unique()
+        if "water" in classes:
+            water_class = "water"
+        elif "water-pre-flood" in classes:
+            water_class = "water-pre-flood"
+        else:
+            raise AttributeError(f"water_class not provided and we couldn't guess it")
+
+    jrc_vectorized_map_copy = jrc_vectorized_map[jrc_vectorized_map["class"] == "permanent"].copy()
+    jrc_vectorized_map_copy = jrc_vectorized_map_copy[["geometry", "class"]]
+    if jrc_vectorized_map_copy.shape[0] == 0:
+        return floodmap
+
+    jrc_vectorized_map_copy["class"] = water_class
+
+    floodmap = pd.concat([floodmap, jrc_vectorized_map_copy], ignore_index=True)
+    floodmap = floodmap.dissolve(by="class").reset_index()
+    floodmap = floodmap.explode(ignore_index=True)
+    return floodmap
+

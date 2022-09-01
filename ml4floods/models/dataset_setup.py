@@ -14,6 +14,7 @@ from ml4floods.preprocess.worldfloods import prepare_patches
 from ml4floods.models.config_setup import load_json, get_filesystem
 import warnings
 
+import ee.cli.eecli
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
     """
