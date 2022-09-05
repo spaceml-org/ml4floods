@@ -208,7 +208,11 @@ COLORS_FLOODMAP = {"water": "#0010F6",
                    "flood-trace": "#F66F00",
                    "water-post-flood": "#FF09E3",
                    "water-pre-flood": "#0010F6",
-                   "cloud-pre-flood": "#2B2B2B"}
+                   "cloud-pre-flood": "#2B2B2B",
+                   "permanent": "#021d5c", # for vectorized JRC Permanent Water Layer
+                   "seasonal": "#33aba7",
+                   "area_imaged": "#EE0000",
+                   "area_imaged-pre-flood": "#AA0000"}
 
 def plot_floodmap(floodmap:Union[str, gpd.GeoDataFrame], legend:bool=True,
                   ax:Optional[matplotlib.axes.Axes]=None,
@@ -224,7 +228,7 @@ def plot_floodmap(floodmap:Union[str, gpd.GeoDataFrame], legend:bool=True,
         figsize:
 
     Returns:
-
+           Axes with plot.
     """
     if isinstance(floodmap, str):
         _, ext = os.path.splitext(floodmap)
@@ -233,11 +237,19 @@ def plot_floodmap(floodmap:Union[str, gpd.GeoDataFrame], legend:bool=True,
         else:
             floodmap = gpd.read_file(floodmap)
 
-    floodmap_plot = floodmap[(floodmap["class"] != "area_imaged") & (floodmap["class"] != "area_imaged-pre-flood")].copy()
-    floodmap_plot["color"] = floodmap_plot["class"].apply(lambda x: COLORS_FLOODMAP[x])
-    ax = floodmap_plot.plot(color=floodmap_plot["color"], figsize=figsize, ax=ax)
+    floodmap_color = floodmap["class"].apply(lambda x: COLORS_FLOODMAP[x])
+
+    polygons_plot_boundary = (floodmap["class"] == "area_imaged") | (floodmap["class"] == "area_imaged-pre-flood")
+
+    if not polygons_plot_boundary.all():
+        ax = floodmap[~polygons_plot_boundary].plot(color=floodmap_color[~polygons_plot_boundary], figsize=figsize, ax=ax)
+
+    # Plot area imaged
+    if polygons_plot_boundary.any():
+        ax = floodmap[polygons_plot_boundary].boundary.plot(color=floodmap_color[polygons_plot_boundary], ax=ax)
+
     if legend:
-        legend_elements = [Patch(facecolor=COLORS_FLOODMAP[c], label=c) for c in floodmap_plot["class"].unique()]
+        legend_elements = [Patch(facecolor=COLORS_FLOODMAP[c], label=c) for c in floodmap["class"].unique()]
         ax.legend(handles=legend_elements)
     return ax
 
@@ -249,7 +261,7 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
                           channel_configuration="all",
                           collection_name="S2",
                           size_read:Optional[int]=None,
-                          **kwargs)-> matplotlib.axes.Axes:
+                          **kwargs) -> matplotlib.axes.Axes:
     """
     Plot bands B11, B8, B4 of a Sentinel-2 image. Input could be an array or a str. Values are clipped to 3000
     (it assumes the image has values in [0, 10_000] -> https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2 )
@@ -260,8 +272,8 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
         input: str of array with (C, H, W) configuration.
         transform: geospatial transform if input is an array
         window: window to read from the input
-        max_clip_val: value to clip the the input for visualization
-        min_clip_val: value to clip the the input for visualization
+        max_clip_val: value to clip the input for visualization
+        min_clip_val: value to clip the input for visualization
         channel_configuration: Expected bands of the inputs
         size_read: max size to read. Use this to read from the overviews of the image.
         collection_name: S2 or Landsat
@@ -301,7 +313,7 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
 def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasterio.Affine]=None,
                    window:Optional[rasterio.windows.Window]=None, legend=True,
                    size_read:Optional[int]=None,
-                   **kwargs):
+                   **kwargs) -> matplotlib.axes.Axes:
     """
     Prediction expected to be {0: land, 1: water, 2: cloud}
     Args:
@@ -313,6 +325,8 @@ def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasteri
         **kwargs:
 
     Returns:
+         ax : matplotlib Axes
+            Axes with plot.
 
     """
     prediction, transform = get_image_transform(prediction,transform=transform, bands=[0], window=window,
