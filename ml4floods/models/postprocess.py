@@ -628,9 +628,8 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
     Returns:
         floodmap with permanent water polygons
     """
-
+    classes = floodmap["class"].unique()
     if water_class is None:
-        classes = floodmap["class"].unique()
         if "water" in classes:
             water_class = "water"
         elif "water-pre-flood" in classes:
@@ -648,5 +647,26 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
     floodmap = pd.concat([floodmap, jrc_vectorized_map_copy], ignore_index=True)
     floodmap = floodmap.dissolve(by="class").reset_index()
     floodmap = floodmap.explode(ignore_index=True)
+
+    # fix water in flood_trace or flood-trace classes
+    if "flood_trace" in classes:
+        class_flood_trace = "flood_trace"
+    elif "flood-trace" in classes:
+        class_flood_trace = "flood-trace"
+    else:
+        return floodmap
+
+    water_polygon = unary_union(floodmap[floodmap["class"] == water_class].geometry)
+    geoms_trace = floodmap[(floodmap["class"] == class_flood_trace)].geometry.apply(
+        lambda g: g.difference(water_polygon))
+
+    geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
+    floodmap = floodmap[floodmap["class"] != class_flood_trace].reset_index()
+
+    floodmap_trace = gpd.GeoDataFrame(geometry=geoms_trace)
+    floodmap_trace["class"] = class_flood_trace
+
+    floodmap = pd.concat([floodmap, floodmap_trace], ignore_index=True)
+        
     return floodmap
 
