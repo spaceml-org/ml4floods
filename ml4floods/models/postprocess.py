@@ -661,9 +661,13 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
         lambda g: g.difference(water_polygon))
 
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
+    geoms_trace = geoms_trace.explode(ignore_index=True)
+    geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
+
+    # Add back to floodmap
     floodmap = floodmap[floodmap["class"] != class_flood_trace].reset_index()
 
-    floodmap_trace = gpd.GeoDataFrame(geometry=geoms_trace)
+    floodmap_trace = gpd.GeoDataFrame(geometry=geoms_trace, crs=floodmap.crs)
     floodmap_trace["class"] = class_flood_trace
 
     floodmap = pd.concat([floodmap, floodmap_trace], ignore_index=True)
