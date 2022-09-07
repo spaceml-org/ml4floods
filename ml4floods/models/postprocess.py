@@ -609,7 +609,8 @@ def load_vectorized_permanent_water(aoi_folder:str, year:Optional[str] = None) -
 
             permanent_water_floodmap = vectorize_jrc_permanent_water_layer(permanent_raster, crs=crs,
                                                                            transform=transform)
-            utils.write_geojson_to_gcp(path_permanent_water_vec, permanent_water_floodmap)
+            if permanent_water_floodmap is not None:
+                utils.write_geojson_to_gcp(path_permanent_water_vec, permanent_water_floodmap)
         else:
             permanent_water_floodmap = utils.read_geojson_from_gcp(path_permanent_water_vec)
 
