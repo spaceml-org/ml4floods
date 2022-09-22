@@ -170,12 +170,12 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
     if overwrite or not fs.exists(path_aggregated_post):
         print("AGGREGATE POSTFLOOD MAPS")
-        data_all = postprocess.spatial_aggregation(path_aggregated_post, [p for p in post_flood_paths if fs.exists(p)])
+        data_all = postprocess.spatial_aggregation([p for p in post_flood_paths if fs.exists(p)])
         utils.write_geojson_to_gcp(path_aggregated_post, data_all)
         print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Saved: {path_aggregated_post}")
     if overwrite or not fs.exists(path_aggregated_prepost):
         print("AGGREGATE PRE-POSTFLOOD MAPS")
-        data_all = postprocess.spatial_aggregation(path_aggregated_prepost, [p for p in prepost_flood_paths if fs.exists(p)])
+        data_all = postprocess.spatial_aggregation([p for p in prepost_flood_paths if fs.exists(p)])
         utils.write_geojson_to_gcp(path_aggregated_prepost, data_all)
         print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Saved: {path_aggregated_prepost}")
 
