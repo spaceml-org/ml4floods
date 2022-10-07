@@ -8,14 +8,14 @@ import sys
 import geopandas as gpd
 
 
-def main(cems_code:str, path_aois:str,flood_date:datetime,
+def main(cems_code:str, path_aois:str, flood_date:datetime,
          aoi_code:str, threshold_clouds_before:float,
          threshold_clouds_after:float, threshold_invalids_before:float,
          threshold_invalids_after:float, days_before:int, days_after:int,
          collection_placeholder:str = "S2", only_one_previous:bool=False,
          margin_pre_search:int=0,
          force_s2cloudless:bool=True,
-         metadatas_path:str="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/"):
+         bucket_path:str= "gs://ml4cc_data_lake/0_DEV/1_Staging/operational/"):
     """
 
     Args:
@@ -33,14 +33,14 @@ def main(cems_code:str, path_aois:str,flood_date:datetime,
         only_one_previous:
         margin_pre_search:
         force_s2cloudless:
-        metadatas_path:
+        bucket_path:
 
     Returns:
 
     """
     
 
-    fs = utils.get_filesystem(metadatas_path)
+    fs = utils.get_filesystem(bucket_path)
 
     fs_pathaois = utils.get_filesystem(path_aois)
     assert fs_pathaois.exists(path_aois), f"File {path_aois} not found"
@@ -73,7 +73,7 @@ def main(cems_code:str, path_aois:str,flood_date:datetime,
         try:
             pol_scene_id = row.geometry
 
-            folder_dest = os.path.join(metadatas_path, cems_code, row.name).replace("\\","/")
+            folder_dest = os.path.join(bucket_path, cems_code, row.name).replace("\\", "/")
 
             # Compute arguments to download the images
 
@@ -157,36 +157,39 @@ if __name__ == '__main__':
                              "from all the codes")
     parser.add_argument('--flood_date', required=True, help="Date to download the images (YYYY-mm-dd)")
     parser.add_argument('--aoi_code', default="",
-                        help="CEMS AoI to download images from. If empty string (default) download the images"
-                             "from all the AoIs")
-    parser.add_argument('--only_one_previous', action='store_true')
-    parser.add_argument('--noforce_s2cloudless', action='store_true')
-    parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="both")
-    parser.add_argument("--metadatas_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/",
-                        help="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/ for operational floods")
+                        help="CEMS AoI to download images from. If not provided download the images"
+                             "from all the AoIs in path_aois")
+    parser.add_argument('--only_one_previous', action='store_true',
+                        help="Download only one image in the pre-flood period")
+    parser.add_argument('--noforce_s2cloudless', action='store_true',
+                        help="Do not force s2cloudless product to be available in Sentinel-2 images")
+    parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="both",
+                        help="Default: %(default)s")
+    parser.add_argument("--bucket_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/",
+                        help="Path to inference activations in bucket")
     parser.add_argument('--threshold_clouds_before', default=.1, type=float,
-                        help="Threshold clouds before the event")
+                        help="Threshold clouds before the event. Default: %(default)s")
     parser.add_argument('--threshold_invalids_before', default=.1, type=float,
-                        help="Threshold invalids before the event")
+                        help="Threshold invalids before the event. Default: %(default)s")
     parser.add_argument('--threshold_clouds_after', default=.95, type=float,
-                        help="Threshold clouds after the event")
+                        help="Threshold clouds after the event. Default: %(default)s")
     parser.add_argument('--threshold_invalids_after', default=.70, type=float,
-                        help="Threshold invalids after the event")
+                        help="Threshold invalids after the event. Default: %(default)s")
     parser.add_argument('--days_before', default=20, type=int,
-                        help="Days to search after the event")
+                        help="Days to search after the event. Default: %(default)s")
     parser.add_argument('--days_after', default=20, type=int,
-                        help="Days to search before the event")
+                        help="Days to search before the event. Default: %(default)s")
     parser.add_argument('--margin_pre_search', default=0, type=int,
-                        help="Days to include as margin to search for pre-flood images")
+                        help="Days to include as margin to search for pre-flood images. Default: %(default)s")
 
     args = parser.parse_args()
     flood_date = datetime.strptime(args.flood_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    main(args.cems_code, path_aois=args.path_aois,flood_date=flood_date,
+    main(args.cems_code, path_aois=args.path_aois, flood_date=flood_date,
          aoi_code=args.aoi_code,
          threshold_clouds_before=args.threshold_clouds_before,
          threshold_clouds_after=args.threshold_clouds_after, threshold_invalids_before=args.threshold_invalids_before,
          threshold_invalids_after=args.threshold_invalids_after, days_before=args.days_before,
-         collection_placeholder=args.collection_name, metadatas_path=args.metadatas_path,
+         collection_placeholder=args.collection_name, bucket_path=args.bucket_path,
          only_one_previous=args.only_one_previous, force_s2cloudless=not args.noforce_s2cloudless,
          margin_pre_search=args.margin_pre_search,
          days_after=args.days_after)
