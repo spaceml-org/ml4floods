@@ -159,14 +159,10 @@ if __name__ == '__main__':
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If not provided download the images"
                              "from all the AoIs in path_aois")
-    parser.add_argument('--only_one_previous', action='store_true',
-                        help="Download only one image in the pre-flood period")
-    parser.add_argument('--noforce_s2cloudless', action='store_true',
-                        help="Do not force s2cloudless product to be available in Sentinel-2 images")
+    parser.add_argument("--bucket_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/",
+                        help="Path to inference activations in bucket. Default %(default)s")
     parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="both",
                         help="Default: %(default)s")
-    parser.add_argument("--bucket_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/",
-                        help="Path to inference activations in bucket")
     parser.add_argument('--threshold_clouds_before', default=.1, type=float,
                         help="Threshold clouds before the event. Default: %(default)s")
     parser.add_argument('--threshold_invalids_before', default=.1, type=float,
@@ -181,6 +177,10 @@ if __name__ == '__main__':
                         help="Days to search before the event. Default: %(default)s")
     parser.add_argument('--margin_pre_search', default=0, type=int,
                         help="Days to include as margin to search for pre-flood images. Default: %(default)s")
+    parser.add_argument('--only_one_previous', action='store_true',
+                        help="Download only one image in the pre-flood period")
+    parser.add_argument('--noforce_s2cloudless', action='store_true',
+                        help="Do not force s2cloudless product to be available in Sentinel-2 images")
 
     args = parser.parse_args()
     flood_date = datetime.strptime(args.flood_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
