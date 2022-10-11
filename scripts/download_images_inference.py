@@ -44,8 +44,12 @@ def main(cems_code:str, path_aois:str, flood_date:datetime,
 
     fs_pathaois = utils.get_filesystem(path_aois)
     assert fs_pathaois.exists(path_aois), f"File {path_aois} not found"
+    
+    if path_aois.endswith(".geojson"):
+        aois_data = utils.read_geojson_from_gcp(path_aois)
+    else:
+        aois_data = gpd.read_file(path_aois)
 
-    aois_data = gpd.read_file(path_aois)
     assert "name" in aois_data.columns, f"File {path_aois} must have column 'name'"
 
     # Filter by aoi if provided
