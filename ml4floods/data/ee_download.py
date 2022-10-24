@@ -5,7 +5,7 @@ import ee
 import time
 import os
 from glob import glob
-from typing import Optional, Callable, List, Tuple
+from typing import Optional, Callable, List, Tuple, Union
 from shapely.geometry import mapping, Polygon
 import numpy as np
 import geopandas as gpd
@@ -13,7 +13,6 @@ import pandas as pd
 import fsspec
 from datetime import datetime, timezone
 import math
-
 
 BANDS_NAMES = {
     # Sentinel-2 L1C COPERNICUS/S2 COPERNICUS/S2_HARMONIZED
@@ -29,7 +28,7 @@ def permanent_water_image(year, bounds=None):
     # permananet water files are only available pre-2021
     if year >= 2020:
         year = 2020
-    return ee.Image(f"JRC/GSW1_3/YearlyHistory/{year}")
+    return ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
 
 
 def _get_collection(collection_name, date_start, date_end, bounds):
@@ -62,13 +61,13 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
     # GEE doesnt like time zones
     date_start = date_start.replace(tzinfo=None)
     date_end = date_end.replace(tzinfo=None)
-    l8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA").filterDate(date_start, date_end).filterBounds(bounds)
+    l8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_RT_TOA").filterDate(date_start, date_end).filterBounds(bounds)
     l9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_TOA").filterDate(date_start, date_end).filterBounds(bounds)
     l89 = l8.merge(l9)
     n_images = int(l89.size().getInfo())
     if n_images <= 0:
         if verbose > 1:
-            print(f"Not images found for collection LANDSAT/LC08/C02/T1_TOA and LANDSAT/LC09/C02/T1_TOA date start: {date_start} date end: {date_end}")
+            print(f"Not images found for collection LANDSAT/LC08/C02/T1_RT_TOA and LANDSAT/LC09/C02/T1_TOA date start: {date_start} date end: {date_end}")
         return
 
     # add cloud probability
@@ -268,7 +267,8 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
 
 PROPERTIES_DEFAULT = ["system:index", "system:time_start"]
 def img_collection_to_feature_collection(img_col:ee.ImageCollection,
-                                         properties:List[str]=PROPERTIES_DEFAULT) -> ee.FeatureCollection:
+                                         properties:List[str]=PROPERTIES_DEFAULT,
+                                         as_geopandas:bool=False) -> Union[ee.FeatureCollection, gpd.GeoDataFrame]:
     """Transforms the image collection to a feature collection """
 
     properties = ee.List(properties)
@@ -278,7 +278,14 @@ def img_collection_to_feature_collection(img_col:ee.ImageCollection,
         dictio = ee.Dictionary.fromLists(properties, values)
         return ee.Feature(img.geometry(), dictio)
 
-    return ee.FeatureCollection(img_col.map(extractFeatures))
+    feature_collection = ee.FeatureCollection(img_col.map(extractFeatures))
+    if as_geopandas:
+        geodf = gpd.GeoDataFrame.from_features(feature_collection.getInfo(), crs="EPSG:4326")
+        if "system:time_start" in geodf.columns:
+            geodf["datetime"] = pd.to_datetime(geodf["system:time_start"],unit="ms")
+        return geodf
+
+    return feature_collection
 
 
 def _istaskrunning(description:str) -> bool:
