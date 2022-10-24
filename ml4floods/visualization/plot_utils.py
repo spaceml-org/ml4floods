@@ -189,7 +189,9 @@ def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Af
         else:
             band_names_current_image = [BANDS_L8[iband] for iband in ibands]
     else:
-        band_names_current_image = BANDS_S2 if collection_name == "S2" else BANDS_L8
+        with rasterio.open(input) as rst:
+            band_names_current_image = list(rst.descriptions)
+        # band_names_current_image = BANDS_S2 if collection_name == "S2" else BANDS_L8
 
     bands = [band_names_current_image.index(b) for b in ["B4", "B3", "B2"]]
     image, transform = get_image_transform(input, transform=transform, bands=bands, window=window,
@@ -293,7 +295,8 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
         else:
             band_names_current_image = [BANDS_L8[iband] for iband in ibands]
     else:
-        band_names_current_image = BANDS_S2 if collection_name == "S2" else BANDS_L8
+        with rasterio.open(input) as rst:
+            band_names_current_image = list(rst.descriptions)
 
     if collection_name == "S2":
         bands = [band_names_current_image.index(b) for b in ["B11", "B8", "B4"]]
