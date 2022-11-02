@@ -143,7 +143,7 @@ def rasterio_open_read(tifffile:str, requester_pays:bool=True) -> rasterio.Datas
         if REQUESTER_PAYS_AVAILABLE:
             assert "GS_USER_PROJECT" in os.environ, \
                 "'GS_USER_PROJECT' env variable not found and requester_pays=True set a project name to read rasters from the bucket" \
-                "(i.e. -> export GS_USER_PROJECT='myprojectname'"
+                "(i.e. -> export GS_USER_PROJECT='myprojectname')"
 
             with rasterio.open(tifffile) as src:
                 yield src
