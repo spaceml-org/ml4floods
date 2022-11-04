@@ -40,6 +40,18 @@ def _get_collection(collection_name, date_start, date_end, bounds):
 
     return collection_filtered, n_images
 
+    # add cloud probability
+def add_cloud_prob_landsat(img:ee.Image) -> ee.Image:
+    bqa = img.select(["QA_PIXEL"], ["probability"])
+    clouds = bqa.bitwise_and(int("0000000000001000",2)).gt(0).multiply(100).toUint16()
+
+    # Store images in S2 range
+    img_radiances = img.select(BANDS_NAMES["Landsat"][:-1]).multiply(10_000).toUint16()
+    img_return = img_radiances.addBands(img.select("QA_PIXEL")).addBands(clouds)
+    img_return = img_return.copyProperties(img)
+    img_return = img_return.set("system:time_start", img.get("system:time_start"))
+    return img_return
+
 def get_landsat_collection(date_start:datetime, date_end:datetime,
                            bounds:ee.Geometry,
                            verbose:int=1) -> Optional[ee.ImageCollection]:
@@ -70,19 +82,7 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
             print(f"Not images found for collection LANDSAT/LC08/C02/T1_RT_TOA and LANDSAT/LC09/C02/T1_TOA date start: {date_start} date end: {date_end}")
         return
 
-    # add cloud probability
-    def add_cloud_prob(img:ee.Image) -> ee.Image:
-        bqa = img.select(["QA_PIXEL"], ["probability"])
-        clouds = bqa.bitwise_and(int("0000000000001000",2)).gt(0).multiply(100).toUint16()
-
-        # Store images in S2 range
-        img_radiances = img.select(BANDS_NAMES["Landsat"][:-1]).multiply(10_000).toUint16()
-        img_return = img_radiances.addBands(img.select("QA_PIXEL")).addBands(clouds)
-        img_return = img_return.copyProperties(img)
-        img_return = img_return.set("system:time_start", img.get("system:time_start"))
-        return img_return
-
-    l89 = l89.map(add_cloud_prob)
+    l89 = l89.map(add_cloud_prob_landsat)
 
     daily_mosaic = collection_mosaic_day(l89, bounds)
     # fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
@@ -288,7 +288,7 @@ def img_collection_to_feature_collection(img_col:ee.ImageCollection,
     return feature_collection
 
 
-def _istaskrunning(description:str) -> bool:
+def istaskrunning(description:str) -> bool:
     task_list = ee.data.getTaskList()
     for t in task_list:
         if t["description"] == description:
@@ -325,7 +325,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
                     print(f"\tFile {filename} exists , it will not be downloaded")
                 return
 
-    if not dry_run and _istaskrunning(desc):
+    if not dry_run and istaskrunning(desc):
         if verbose >= 2:
             print("\ttask %s already running!" % desc)
         return
