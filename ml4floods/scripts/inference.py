@@ -130,7 +130,7 @@ def main(model_path: str, s2folder_file: str, device_name: str,
          output_folder: Optional[str]=None, max_tile_size: int = 1_024,
          th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD, th_water: float = .5, overwrite: bool = False,
          collection_name: str = "S2",distinguish_flood_traces:bool=False):
-    import pdb;pdb.set_trace()
+
     # This takes into account that this could be run on windows
     s2folder_file = s2folder_file.replace("\\", "/")
     model_path = model_path.replace("\\", "/")
