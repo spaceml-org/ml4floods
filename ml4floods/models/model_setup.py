@@ -32,7 +32,7 @@ def get_model(model_params:AttrDict,
 
     """
     if model_params.get("test", False) or model_params.get("deploy", False):
-        assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
+        assert experiment_name is not None, f"Experiment name must be set on test or deploy mode"
 
         if model_params.get("model_version", "v1") == "v2":
             model = ML4FloodsModel(model_params)

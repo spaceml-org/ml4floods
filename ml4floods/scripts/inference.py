@@ -1,3 +1,4 @@
+from ml4floods.data.db_utils import DB
 from ml4floods.models.config_setup import get_default_config, get_filesystem
 from ml4floods.models.model_setup import get_model
 from ml4floods.models.model_setup import get_model_inference_function
@@ -11,6 +12,7 @@ import rasterio
 from ml4floods.data import save_cog, utils
 import numpy as np
 import os
+import json
 from datetime import datetime
 import geopandas as gpd
 import pandas as pd
@@ -128,7 +130,7 @@ def main(model_path: str, s2folder_file: str, device_name: str,
          output_folder: Optional[str]=None, max_tile_size: int = 1_024,
          th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD, th_water: float = .5, overwrite: bool = False,
          collection_name: str = "S2",distinguish_flood_traces:bool=False):
-
+    import pdb;pdb.set_trace()
     # This takes into account that this could be run on windows
     s2folder_file = s2folder_file.replace("\\", "/")
     model_path = model_path.replace("\\", "/")
@@ -142,7 +144,7 @@ def main(model_path: str, s2folder_file: str, device_name: str,
                                                          th_water=th_water, th_brightness=th_brightness,
                                                          collection_name=collection_name,
                                                          distinguish_flood_traces=distinguish_flood_traces)
-
+    
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
     if s2folder_file.endswith(".tif"):
@@ -155,6 +157,16 @@ def main(model_path: str, s2folder_file: str, device_name: str,
             s2files = [f"gs://{s2}" for s2 in s2files]
 
         assert len(s2files) > 0, f"No Tiff files found in {s2folder_file}*.tif"
+    
+    db_conn = DB()
+
+    if s2files and all(fname.startswith("gs://") for fname in s2files):
+        s2_image_ids = [f"{x.split('/')[-3]}_{x.split('/')[-2]}_{os.path.basename(x).split('.')[0]}" for x in s2files]
+        df = db_conn.run_query(f"SELECT image_id, name, satellite, date FROM model_inference WHERE image_id in {tuple(s2_image_ids)}", fetch=True)
+        num_done = len(df)
+        s2files = [img for img, img_id in zip(s2files, s2_image_ids) if img_id not in df.image_id.values]
+        print(f"Found {num_done} images already done, {len(s2files)} to do")
+
 
     files_with_errors = []
 
@@ -239,15 +251,26 @@ def main(model_path: str, s2folder_file: str, device_name: str,
             save_cog.save_cog(pred_cont, filename_save_cont, profile=profile.copy(),
                               descriptions=descriptions,
                               tags={"model": experiment_name})
-
+            
+            # Update DB with the new predictions
+            gridid = base_output_folder.split("/")[-1]
+            download_date = os.path.basename(filename).split(".")[0]
+            pred_url = filename_save.replace("gs://", "https://storage.cloud.google.com/")
+            pred_cont_url = filename_save_cont.replace("gs://", "https://storage.cloud.google.com/")
+            pred_vec_url = filename_save_vect.replace("gs://", "https://storage.cloud.google.com/")
+            image_id = gridid + "_" + collection_name + "_" + download_date
+            db_conn.run_query(f"INSERT INTO model_inference (image_id, name, satellite, date, prediction_url, prediction_cont_url, prediction_vec_url, model_id, session_data) VALUES ('{image_id}', '{gridid}', '{collection_name}', '{download_date}', '{pred_url}', '{pred_cont_url}', '{pred_vec_url}', '{experiment_name}', {json.dumps(config)})", fetch = False)
+            
         except Exception:
             warnings.warn(f"Failed")
             traceback.print_exc(file=sys.stdout)
             files_with_errors.append(filename)
 
+    db_conn.close_connection()
     if len(files_with_errors) > 0:
         print(f"Files with errors:\n {files_with_errors}")
 
+    
 
 def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Affine,
                        border:int=2) -> Optional[gpd.GeoDataFrame]:
