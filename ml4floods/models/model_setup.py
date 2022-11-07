@@ -57,7 +57,7 @@ def get_model(model_params:AttrDict,
         
         
 def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2",
-                                    as_string:bool=False) -> List[int]:
+                                    as_string:bool=False) -> Union[List[int], List[str]]:
     """
     Returns 0-based list of channels of a given configuration name
     """

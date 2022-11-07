@@ -24,13 +24,6 @@ BANDS_NAMES = {
 }
 
 
-def permanent_water_image(year, bounds=None):
-    # permananet water files are only available pre-2021
-    if year >= 2020:
-        year = 2020
-    return ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
-
-
 def _get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
     collection_filtered = collection.filterDate(date_start, date_end) \
@@ -449,15 +442,20 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
-    img_export = permanent_water_image(date_search.year, pol)
+    if date_search.year >= 2021:
+        year = 2021
+    else:
+        year = date_search.year
+
+    img_export = ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
 
     if name_task is None:
         name_for_desc = os.path.basename(path_no_bucket_name)
     else:
         name_for_desc = name_task
 
-    filename = os.path.join(path_no_bucket_name, f"{date_search.year}")
-    desc = f"{name_for_desc}_{date_search.year}"
+    filename = os.path.join(path_no_bucket_name, f"{year}")
+    desc = f"{name_for_desc}_{year}"
 
     export_task_fun_img = export_task_image(
         bucket=bucket_name,
