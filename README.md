@@ -17,11 +17,12 @@ pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 
 These tutorials may help you explore the datasets and models:
 * [Project rationale](http://trillium.tech/ml4floods/content/intro/introduction.html).
-* [Data Preprocessing](http://trillium.tech/ml4floods/content/prep/full_data_ingest.html)
-* [ML-based flood segmentation models](http://trillium.tech/ml4floods/content/ml_overview.html)
+* [Run the model on time series of Sentinel-2 images](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_inference_on_image_time_series.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb)
+* [ML-models step by step](http://trillium.tech/ml4floods/content/ml_overview.html)
     * [Training](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Train_models.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
     * [Inference on new data](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Run_Inference_on_new_data.html) (a Sentinel-2 image) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
     * [Perf metrics](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
+* [Data Preprocessing](http://trillium.tech/ml4floods/content/prep/full_data_ingest.html)
 
 ## The *WorldFloods* database
 
