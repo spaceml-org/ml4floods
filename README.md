@@ -22,7 +22,7 @@ These tutorials may help you explore the datasets and models:
     * [Training](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Train_models.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
     * [Inference on new data](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_Run_Inference_on_new_data.html) (a Sentinel-2 image) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
     * [Perf metrics](http://trillium.tech/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
-* [Data Preprocessing](http://trillium.tech/ml4floods/content/prep/full_data_ingest.html)
+* [Ingest data from Copernicus EMS](http://trillium.tech/ml4floods/content/prep/full_data_ingest.html)
 
 ## The *WorldFloods* database
 
