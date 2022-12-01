@@ -1,12 +1,12 @@
 
 <p align="center">
-    <img src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
+    <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
 
 ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
 
 <p align="center">
-    <img src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
+    <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
 </p>
 
 Install the package:
