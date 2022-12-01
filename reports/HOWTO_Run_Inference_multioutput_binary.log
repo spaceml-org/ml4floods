@@ -1,0 +1,196 @@
+Traceback (most recent call last):
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/jupyter_cache/executors/utils.py", line 51, in single_nb_execution
+    executenb(
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/client.py", line 1204, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/util.py", line 84, in wrapped
+    return just_run(coro(*args, **kwargs))
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/util.py", line 62, in just_run
+    return loop.run_until_complete(coro)
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/asyncio/base_events.py", line 642, in run_until_complete
+    return future.result()
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/client.py", line 663, in async_execute
+    await self.async_execute_cell(
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/client.py", line 965, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/nbclient/client.py", line 862, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+import rasterio
+import numpy as np
+from rasterio import plot as rasterioplt
+import matplotlib.pyplot as plt
+from matplotlib import colors
+import matplotlib.patches as mpatches
+
+from typing import Optional, Tuple, Union
+
+import torch
+from ml4floods.data.worldfloods.configs import BANDS_S2
+from ml4floods.visualization.plot_utils import download_tiff
+
+
+@torch.no_grad()
+def read_inference_pair(tiff_inputs:str, folder_ground_truth:str, 
+                        window:Optional[Union[rasterio.windows.Window, Tuple[slice,slice]]], 
+                        return_ground_truth: bool=False, channels:bool=None, 
+                        folder_permanent_water=Optional[str],
+                       cache_folder=None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, rasterio.Affine]:
+    """
+    Read a pair of layers from the worldfloods bucket and return them as Tensors to pass to a model, return the transform for plotting with lat/long
+    
+    Args:
+        tiff_inputs: filename for layer in worldfloods bucket
+        folder_ground_truth: folder name to be replaced by S2 in the input
+        window: window of layer to use
+        return_ground_truth: flag to indicate if paired gt layer should be returned
+        channels: list of channels to read from the image
+        return_permanent_water: Read permanent water layer raster
+    
+    Returns:
+        (torch_inputs, torch_targets, transform): inputs Tensor, gt Tensor, transform for plotting with lat/long
+    """
+    
+    if cache_folder is not None and tiff_inputs.startswith("gs"):
+        tiff_inputs = download_tiff(cache_folder, tiff_inputs, folder_ground_truth, folder_permanent_water)
+    
+    tiff_targets = tiff_inputs.replace("/S2/", folder_ground_truth)
+
+    with rasterio.open(tiff_inputs, "r") as rst:
+        inputs = rst.read((np.array(channels) + 1).tolist(), window=window)
+        # Shifted transform based on the given window (used for plotting)
+        transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+        torch_inputs = torch.Tensor(inputs.astype(np.float32)).unsqueeze(0)
+    
+    if folder_permanent_water is not None:
+        tiff_permanent_water = tiff_inputs.replace("/S2/", folder_permanent_water)
+        with rasterio.open(tiff_permanent_water, "r") as rst:
+            permanent_water = rst.read(1, window=window)  
+            torch_permanent_water = torch.tensor(permanent_water)
+    else:
+        torch_permanent_water = torch.zeros_like(torch_inputs)
+        
+    if return_ground_truth:
+        with rasterio.open(tiff_targets, "r") as rst:
+            targets = rst.read(1, window=window)
+        
+        torch_targets = torch.tensor(targets).unsqueeze(0)
+    else:
+        torch_targets = torch.zeros_like(torch_inputs)
+    
+    return torch_inputs, torch_targets, torch_permanent_water, transform
+
+COLORS_WORLDFLOODS = np.array([[0, 0, 0], # invalid
+                               [139, 64, 0], # land
+                               [0, 0, 139], # water
+                               [220, 220, 220]], # cloud
+                              dtype=np.float32) / 255
+
+INTERPRETATION_WORLDFLOODS = ["invalid", "land", "water", "cloud"]
+
+COLORS_WORLDFLOODS_PERMANENT = np.array([[0, 0, 0], # 0: invalid
+                                         [139, 64, 0], # 1: land
+                                         [237, 0, 0], # 2: flood_water
+                                         [220, 220, 220], # 3: cloud
+                                         [0, 0, 139], # 4: permanent_water
+                                         [60, 85, 92]], # 5: seasonal_water
+                                        dtype=np.float32) / 255
+
+INTERPRETATION_WORLDFLOODS_PERMANENT = ["invalid", "land", "flood water", "cloud", "permanent water", "seasonal water"]
+
+def gt_with_permanent_water(gt: np.ndarray, permanent_water: np.ndarray)->np.ndarray:
+    """ Permanent water taken from: https://developers.google.com/earth-engine/datasets/catalog/JRC_GSW1_2_YearlyHistory"""
+    gt[(gt == 2) & (permanent_water == 3)] = 4 # set as permanent_water
+    gt[(gt == 2) & (permanent_water == 2)] = 5 # set as seasonal water
+        
+    return gt
+            
+
+def get_cmap_norm_colors(color_array, interpretation_array):
+    cmap_categorical = colors.ListedColormap(color_array)
+    norm_categorical = colors.Normalize(vmin=-.5,
+                                        vmax=color_array.shape[0]-.5)
+    patches = []
+    for c, interp in zip(color_array, interpretation_array):
+        patches.append(mpatches.Patch(color=c, label=interp))
+    
+    return cmap_categorical, norm_categorical, patches
+
+
+def plot_inference_set(inputs: torch.Tensor, targets: torch.Tensor, 
+                       predictions: torch.Tensor, permanent_water: torch.Tensor, transform: rasterio.Affine)->None:
+    """
+    Plots inputs, targets and prediction into lat/long visualisation
+    
+    Args:
+        inputs: input Tensor
+        targets: gt target Tensor
+        prediction: predictions output by model (softmax, argmax already applied)
+        permanent_water: permanent water raster
+        transform: transform used to plot with lat/long
+    """
+    fig, ax = plt.subplots(2,2,figsize=(16,16))
+    
+    inputs_show = inputs.cpu().numpy().squeeze()
+    targets_show = targets.cpu().numpy().squeeze()
+    permanent_water_show = permanent_water.numpy().squeeze()
+    
+    targets_show = gt_with_permanent_water(targets_show, permanent_water_show)
+    
+    
+    # Color categories {-1: invalid, 0: land, 1: water, 2: clouds}
+    
+    cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(COLORS_WORLDFLOODS[1:3], INTERPRETATION_WORLDFLOODS[1:3])
+    cmap_gt, norm_gt, patches_gt = get_cmap_norm_colors(COLORS_WORLDFLOODS_PERMANENT, INTERPRETATION_WORLDFLOODS_PERMANENT)
+    
+    
+    prediction_show = (predictions).cpu().numpy().astype(float)
+
+    rgb = np.clip(inputs_show[[3,2,1], :, :]/3000.,0,1)
+    
+    bands_false_composite = [BANDS_S2.index(b) for b in ["B11", "B8", "B4"]] # swir_1, nir, red composite
+    false_rgb = np.clip(inputs_show[bands_false_composite, :, :]/3000.,0,1)
+    
+
+    rasterioplt.show(rgb,transform=transform,ax=ax[0,0])
+    ax[0,0].set_title("RGB Composite")
+    rasterioplt.show(false_rgb,transform=transform,ax=ax[0,1])
+    ax[0,1].set_title("SWIR1,NIR,R Composite")
+    rasterioplt.show(targets_show,transform=transform,ax=ax[1,0], cmap=cmap_gt, norm=norm_gt,
+                     interpolation='nearest')
+    rasterioplt.show(prediction_show[0,1]>.5, transform=transform, ax=ax[1,1],cmap=cmap_preds, norm=norm_preds,
+                     interpolation='nearest')
+    
+    ax[1,0].set_title("Ground Truth")
+    ax[1,0].legend(handles=patches_gt,
+                 loc='upper right')
+    
+    ax[1,1].set_title("Prediction water")
+    ax[1,1].legend(handles=patches_preds,
+                   loc='upper right')
+        
+------------------
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mImportError[0m                               Traceback (most recent call last)
+Input [0;32mIn [6][0m, in [0;36m<module>[0;34m[0m
+[1;32m     10[0m [38;5;28;01mimport[39;00m [38;5;21;01mtorch[39;00m
+[1;32m     11[0m [38;5;28;01mfrom[39;00m [38;5;21;01mml4floods[39;00m[38;5;21;01m.[39;00m[38;5;21;01mdata[39;00m[38;5;21;01m.[39;00m[38;5;21;01mworldfloods[39;00m[38;5;21;01m.[39;00m[38;5;21;01mconfigs[39;00m [38;5;28;01mimport[39;00m BANDS_S2
+[0;32m---> 12[0m [38;5;28;01mfrom[39;00m [38;5;21;01mml4floods[39;00m[38;5;21;01m.[39;00m[38;5;21;01mvisualization[39;00m[38;5;21;01m.[39;00m[38;5;21;01mplot_utils[39;00m [38;5;28;01mimport[39;00m download_tiff
+[1;32m     15[0m [38;5;129m@torch[39m[38;5;241m.[39mno_grad()
+[1;32m     16[0m [38;5;28;01mdef[39;00m [38;5;21mread_inference_pair[39m(tiff_inputs:[38;5;28mstr[39m, folder_ground_truth:[38;5;28mstr[39m, 
+[1;32m     17[0m                         window:Optional[Union[rasterio[38;5;241m.[39mwindows[38;5;241m.[39mWindow, Tuple[[38;5;28mslice[39m,[38;5;28mslice[39m]]], 
+[1;32m     18[0m                         return_ground_truth: [38;5;28mbool[39m[38;5;241m=[39m[38;5;28;01mFalse[39;00m, channels:[38;5;28mbool[39m[38;5;241m=[39m[38;5;28;01mNone[39;00m, 
+[1;32m     19[0m                         folder_permanent_water[38;5;241m=[39mOptional[[38;5;28mstr[39m],
+[1;32m     20[0m                        cache_folder[38;5;241m=[39m[38;5;28;01mNone[39;00m) [38;5;241m-[39m[38;5;241m>[39m Tuple[torch[38;5;241m.[39mTensor, torch[38;5;241m.[39mTensor, torch[38;5;241m.[39mTensor, rasterio[38;5;241m.[39mAffine]:
+[1;32m     21[0m     [38;5;124;03m"""[39;00m
+[1;32m     22[0m [38;5;124;03m    Read a pair of layers from the worldfloods bucket and return them as Tensors to pass to a model, return the transform for plotting with lat/long[39;00m
+[1;32m     23[0m [38;5;124;03m    [39;00m
+[0;32m   (...)[0m
+[1;32m     33[0m [38;5;124;03m        (torch_inputs, torch_targets, transform): inputs Tensor, gt Tensor, transform for plotting with lat/long[39;00m
+[1;32m     34[0m [38;5;124;03m    """[39;00m
+
+[0;31mImportError[0m: cannot import name 'download_tiff' from 'ml4floods.visualization.plot_utils' (/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/ml4floods/visualization/plot_utils.py)
+ImportError: cannot import name 'download_tiff' from 'ml4floods.visualization.plot_utils' (/home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages/ml4floods/visualization/plot_utils.py)
+

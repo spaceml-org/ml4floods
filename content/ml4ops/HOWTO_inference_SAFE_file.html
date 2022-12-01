@@ -1,0 +1,1033 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inference on Sentinel-2 SAFE files &#8212; ML4Floods</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Pre-processing Demonstration" href="../prep/demo_pytorch_transforms.html" />
+    <link rel="prev" title="Run inference on time series of Sentinel-2 images" href="HOWTO_inference_on_image_time_series.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">ML4Floods</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../intro/introduction.html">
+   Introduction
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Install
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config.html">
+   Install
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Data prep
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/full_data_ingest.html">
+   Ingest Flood Extent Maps
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/gt_masks_generation.html">
+   Ground Truth
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../worldfloods_dataset.html">
+   The
+   <em>
+    WorldFloods
+   </em>
+   database
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  MLOps
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml_overview.html">
+   MLOps overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Train_models.html">
+   Train models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_performance_metrics_workflow.html">
+   Model Metrics
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">
+   Run inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  End-to-end Pipeline
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_inference_on_image_time_series.html">
+   Run inference on time series of Sentinel-2 images
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Inference on Sentinel-2
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     SAFE
+    </span>
+   </code>
+   files
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Experimental
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/demo_pytorch_transforms.html">
+   Pre-processing Demonstration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Calculate_uncertainty_maps.html">
+   Probabilistic neural networks
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">
+   Cloud removal inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../about.html">
+   About
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../../_sources/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.ipynb</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
+        
+        
+        
+        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
+                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
+                    src="../../_static/images/logo_colab.png"
+                    alt="Interact on Colab">Colab</button></a>
+        
+        
+    </div>
+</div>
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
+   Step 0: Install
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     sentinelsat
+    </span>
+   </code>
+   to download images from Copernicus Open Hub
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">
+   Step 1: Define Area of Interest and dates to search products
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">
+   Step 2: Query Sentinel-2 products
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">
+   Step 3: download and unzip the Sentinel-2 image
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">
+   Step 4: read the image over the AoI polygon
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">
+   Step 5: Run inference on the image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-5a-load-the-inference-function">
+     Step 5a: load the
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       inference_function
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">
+     Step 5b: Run inference and plot the results
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Inference on Sentinel-2 SAFE files</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
+   Step 0: Install
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     sentinelsat
+    </span>
+   </code>
+   to download images from Copernicus Open Hub
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">
+   Step 1: Define Area of Interest and dates to search products
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">
+   Step 2: Query Sentinel-2 products
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">
+   Step 3: download and unzip the Sentinel-2 image
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">
+   Step 4: read the image over the AoI polygon
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">
+   Step 5: Run inference on the image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-5a-load-the-inference-function">
+     Step 5a: load the
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       inference_function
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">
+     Step 5b: Run inference and plot the results
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="tex2jax_ignore mathjax_ignore section" id="inference-on-sentinel-2-safe-files">
+<h1>Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files<a class="headerlink" href="#inference-on-sentinel-2-safe-files" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><strong>Last Modified</strong>: 23-04-2021</p></li>
+<li><p><strong>Authors</strong>: Gonzalo Mateo-García</p></li>
+</ul>
+<hr class="docutils" />
+<p>This notebook shows how to download Sentinel-2 images from Copernicus Open Hub over an area of interest (AoI). We will read the images and run inference on them. We will use the <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> package to download the images and the <code class="docutils literal notranslate"><span class="pre">ml4floods.data.S2_SAFE_reader</span></code> to read the <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># install ml4floods</span>
+<span class="o">!</span>pip install git+https://github.com/spaceml-org/ml4floods#egg<span class="o">=</span>ml4floods
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
+<h2>Step 0: Install <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> to download images from Copernicus Open Hub<a class="headerlink" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip install sentinelsat
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-1-define-area-of-interest-and-dates-to-search-products">
+<h2>Step 1: Define Area of Interest and dates to search products<a class="headerlink" href="#step-1-define-area-of-interest-and-dates-to-search-products" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">shape</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">rasterio.warp</span>
+
+<span class="n">date_event</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="s2">&quot;2021-02-12&quot;</span><span class="p">,</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">date_start_search</span> <span class="o">=</span> <span class="n">date_event</span>
+<span class="n">date_end_search</span> <span class="o">=</span> <span class="n">date_start_search</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">area_of_interest_geojson</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Polygon&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;coordinates&#39;</span><span class="p">:</span> <span class="p">(((</span><span class="mf">19.483318354000062</span><span class="p">,</span> <span class="mf">41.84407200000004</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.351701478000052</span><span class="p">,</span> <span class="mf">41.84053242300007</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.298659824000026</span><span class="p">,</span> <span class="mf">41.871157520000054</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.236388306000038</span><span class="p">,</span> <span class="mf">41.89588351100008</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.22956438700004</span><span class="p">,</span> <span class="mf">42.086957306000045</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.327827977000027</span><span class="p">,</span> <span class="mf">42.09102668200006</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.778082109000025</span><span class="p">,</span> <span class="mf">42.10312055000003</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.777652446000047</span><span class="p">,</span> <span class="mf">41.97309238100007</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.777572772000042</span><span class="p">,</span> <span class="mf">41.94912981900006</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.582705341000064</span><span class="p">,</span> <span class="mf">41.94398333100003</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.581417139000052</span><span class="p">,</span> <span class="mf">41.94394820700006</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.54282145700006</span><span class="p">,</span> <span class="mf">41.90168177700008</span><span class="p">),</span>
+   <span class="p">(</span><span class="mf">19.483318354000062</span><span class="p">,</span> <span class="mf">41.84407200000004</span><span class="p">)),)}</span>
+
+<span class="n">area_of_interest</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">area_of_interest_geojson</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-2-query-sentinel-2-products">
+<h2>Step 2: Query Sentinel-2 products<a class="headerlink" href="#step-2-query-sentinel-2-products" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sentinelsat.sentinel</span> <span class="kn">import</span> <span class="n">SentinelAPI</span>
+<span class="n">api</span> <span class="o">=</span> <span class="n">SentinelAPI</span><span class="p">(</span><span class="s1">&#39;USERNAME&#39;</span><span class="p">,</span> <span class="s1">&#39;PASSWORD&#39;</span><span class="p">,</span> <span class="s1">&#39;https://scihub.copernicus.eu/apihub&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">products</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">area</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">area_of_interest</span><span class="p">),</span>
+                     <span class="n">date</span><span class="o">=</span><span class="p">(</span><span class="n">date_start_search</span><span class="p">,</span> <span class="n">date_end_search</span><span class="p">),</span>
+                     <span class="n">platformname</span><span class="o">=</span><span class="s1">&#39;Sentinel-2&#39;</span><span class="p">,</span>
+                     <span class="n">producttype</span><span class="o">=</span><span class="s1">&#39;S2MSI1C&#39;</span><span class="p">,</span>
+                     <span class="n">cloudcoverpercentage</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">products_gpd</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">to_geodataframe</span><span class="p">(</span><span class="n">products</span><span class="p">)</span>
+<span class="n">products_gpd</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/gonzalo/miniconda3/envs/ml4fl_py38/lib/python3.8/site-packages/pyproj/crs/crs.py:53: FutureWarning: &#39;+init=&lt;authority&gt;:&lt;code&gt;&#39; syntax is deprecated. &#39;&lt;authority&gt;:&lt;code&gt;&#39; is the preferred initialization method. When making the change, be mindful of axis order changes: https://pyproj4.github.io/pyproj/stable/gotchas.html#axis-order-changes-in-proj-6
+  return _prepare_from_string(&quot; &quot;.join(pjargs))
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>title</th>
+      <th>link</th>
+      <th>link_alternative</th>
+      <th>link_icon</th>
+      <th>summary</th>
+      <th>ondemand</th>
+      <th>datatakesensingstart</th>
+      <th>beginposition</th>
+      <th>endposition</th>
+      <th>ingestiondate</th>
+      <th>...</th>
+      <th>producttype</th>
+      <th>platformidentifier</th>
+      <th>orbitdirection</th>
+      <th>platformserialidentifier</th>
+      <th>processinglevel</th>
+      <th>identifier</th>
+      <th>datastripidentifier</th>
+      <th>granuleidentifier</th>
+      <th>uuid</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>7855c95e-6e00-4a7d-ba8c-7f8ad5f7beca</th>
+      <td>S2B_MSIL1C_20210218T094029_N0209_R036_T34TCM_2...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>Date: 2021-02-18T09:40:29.024Z, Instrument: MS...</td>
+      <td>false</td>
+      <td>2021-02-18 09:40:29.024</td>
+      <td>2021-02-18 09:40:29.024</td>
+      <td>2021-02-18 09:40:29.024</td>
+      <td>2021-02-18 16:09:49.943</td>
+      <td>...</td>
+      <td>S2MSI1C</td>
+      <td>2017-013A</td>
+      <td>DESCENDING</td>
+      <td>Sentinel-2B</td>
+      <td>Level-1C</td>
+      <td>S2B_MSIL1C_20210218T094029_N0209_R036_T34TCM_2...</td>
+      <td>S2B_OPER_MSI_L1C_DS_VGS2_20210218T115327_S2021...</td>
+      <td>S2B_OPER_MSI_L1C_TL_VGS2_20210218T115327_A0206...</td>
+      <td>7855c95e-6e00-4a7d-ba8c-7f8ad5f7beca</td>
+      <td>MULTIPOLYGON (((18.60606 41.43884, 19.65397 41...</td>
+    </tr>
+    <tr>
+      <th>6c813d56-a984-40bd-8752-bee7cbc81146</th>
+      <td>S2B_MSIL1C_20210215T093029_N0209_R136_T34TCM_2...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>https://scihub.copernicus.eu/apihub/odata/v1/P...</td>
+      <td>Date: 2021-02-15T09:30:29.024Z, Instrument: MS...</td>
+      <td>false</td>
+      <td>2021-02-15 09:30:29.024</td>
+      <td>2021-02-15 09:30:29.024</td>
+      <td>2021-02-15 09:30:29.024</td>
+      <td>2021-02-15 15:44:55.930</td>
+      <td>...</td>
+      <td>S2MSI1C</td>
+      <td>2017-013A</td>
+      <td>DESCENDING</td>
+      <td>Sentinel-2B</td>
+      <td>Level-1C</td>
+      <td>S2B_MSIL1C_20210215T093029_N0209_R136_T34TCM_2...</td>
+      <td>S2B_OPER_MSI_L1C_DS_EPAE_20210215T105122_S2021...</td>
+      <td>S2B_OPER_MSI_L1C_TL_EPAE_20210215T105122_A0206...</td>
+      <td>6c813d56-a984-40bd-8752-bee7cbc81146</td>
+      <td>MULTIPOLYGON (((18.60606 41.43884, 19.91997 41...</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 36 columns</p>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">products_gpd</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_inference_SAFE_file_10_1.png" src="../../_images/HOWTO_inference_SAFE_file_10_1.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">product_to_download</span> <span class="o">=</span> <span class="n">products_gpd</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># get 2 row of the table</span>
+<span class="n">product_to_download</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>title                       S2B_MSIL1C_20210215T093029_N0209_R136_T34TCM_2...
+link                        https://scihub.copernicus.eu/apihub/odata/v1/P...
+link_alternative            https://scihub.copernicus.eu/apihub/odata/v1/P...
+link_icon                   https://scihub.copernicus.eu/apihub/odata/v1/P...
+summary                     Date: 2021-02-15T09:30:29.024Z, Instrument: MS...
+ondemand                                                                false
+datatakesensingstart                               2021-02-15 09:30:29.024000
+beginposition                                      2021-02-15 09:30:29.024000
+endposition                                        2021-02-15 09:30:29.024000
+ingestiondate                                      2021-02-15 15:44:55.930000
+generationdate                                            2021-02-15 10:51:22
+orbitnumber                                                             20611
+relativeorbitnumber                                                       136
+cloudcoverpercentage                                                   4.9774
+sensoroperationalmode                                                INS-NOBS
+level1cpdiidentifier        S2B_OPER_MSI_L1C_TL_EPAE_20210215T105122_A0206...
+tileid                                                                  34TCM
+hv_order_tileid                                                         TM34C
+format                                                                   SAFE
+processingbaseline                                                      02.09
+platformname                                                       Sentinel-2
+filename                    S2B_MSIL1C_20210215T093029_N0209_R136_T34TCM_2...
+instrumentname                                      Multi-Spectral Instrument
+instrumentshortname                                                       MSI
+size                                                                715.15 MB
+s2datatakeid                               GS2B_20210215T093029_020611_N02.09
+producttype                                                           S2MSI1C
+platformidentifier                                                  2017-013A
+orbitdirection                                                     DESCENDING
+platformserialidentifier                                          Sentinel-2B
+processinglevel                                                      Level-1C
+identifier                  S2B_MSIL1C_20210215T093029_N0209_R136_T34TCM_2...
+datastripidentifier         S2B_OPER_MSI_L1C_DS_EPAE_20210215T105122_S2021...
+granuleidentifier           S2B_OPER_MSI_L1C_TL_EPAE_20210215T105122_A0206...
+uuid                                     6c813d56-a984-40bd-8752-bee7cbc81146
+geometry                    (POLYGON ((18.60606083644028 41.43883628550716...
+Name: 6c813d56-a984-40bd-8752-bee7cbc81146, dtype: object
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-3-download-and-unzip-the-sentinel-2-image">
+<h2>Step 3: download and unzip the Sentinel-2 image<a class="headerlink" href="#step-3-download-and-unzip-the-sentinel-2-image" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">folder_download</span> <span class="o">=</span> <span class="s2">&quot;S2SAFE_PRODUCTS&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder_download</span><span class="p">,</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">uuid</span> <span class="o">=</span> <span class="n">product_to_download</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> 
+<span class="n">product</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">folder_download</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">product</span><span class="p">[</span><span class="s2">&quot;Online&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;File is not available try with newest dates&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Downloading: 100%|██████████| 750M/750M [05:41&lt;00:00, 2.20MB/s] 
+MD5 checksumming: 100%|██████████| 750M/750M [00:12&lt;00:00, 58.5MB/s] 
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># unzip the file</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+
+<span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_download</span><span class="p">,</span> <span class="n">product_to_download</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_name</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Product expected name </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+
+<span class="c1"># Exctract the file</span>
+<span class="n">zip_ref</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+<span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">folder_download</span><span class="p">)</span>
+<span class="n">zip_ref</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># </span>
+<span class="n">s2_safe_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">folder_download</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;.SAFE&quot;</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">s2_safe_folder</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Folder </span><span class="si">{</span><span class="n">s2_safe_folder</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-4-read-the-image-over-the-aoi-polygon">
+<h2>Step 4: read the image over the AoI polygon<a class="headerlink" href="#step-4-read-the-image-over-the-aoi-polygon" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.data</span> <span class="kn">import</span> <span class="n">S2_SAFE_reader</span>
+<span class="n">s2obj</span> <span class="o">=</span> <span class="n">S2_SAFE_reader</span><span class="o">.</span><span class="n">s2loader</span><span class="p">(</span><span class="n">s2_safe_folder</span><span class="p">,</span> <span class="n">out_res</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> 
+<span class="n">s2obj</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span> <span class="n">s2obj</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">s2obj</span><span class="p">,</span> <span class="n">s2obj</span><span class="o">.</span><span class="n">polygon</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(CRS.from_epsg(32634),
+ Affine(10.0, 0.0, 300000.0,
+        0.0, -10.0, 4700040.0),
+ &lt;ml4floods.data.S2_SAFE_reader.S2ImageL1C at 0x7f92654a1be0&gt;,
+ &lt;shapely.geometry.polygon.Polygon at 0x7f9267edf220&gt;)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get bounds of the polygon in CRS of S2 image</span>
+<span class="n">bounds_pol_read</span> <span class="o">=</span> <span class="n">area_of_interest</span><span class="o">.</span><span class="n">bounds</span>
+<span class="n">bounds_pol_read_s2crs</span> <span class="o">=</span><span class="n">rasterio</span><span class="o">.</span><span class="n">warp</span><span class="o">.</span><span class="n">transform_bounds</span><span class="p">({</span><span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="s1">&#39;epsg:4326&#39;</span><span class="p">},</span>
+                                                      <span class="n">s2obj</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span>
+                                                      <span class="o">*</span><span class="n">bounds_pol_read</span><span class="p">)</span>
+
+<span class="c1"># Read the data (all bands will be reprojected to out_res)</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">transform</span> <span class="o">=</span> <span class="n">s2obj</span><span class="o">.</span><span class="n">load_bands_bbox</span><span class="p">(</span><span class="n">bounds_pol_read_s2crs</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">transform</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>((13, 2995, 4596),
+ Affine(10.0, 0.0, 353008.60473929264,
+        0.0, -10.0, 4662742.335279502))
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">ml4floods.visualization</span> <span class="kn">import</span> <span class="n">plot_utils</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_swirnirred_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/HOWTO_inference_SAFE_file_18_0.png" src="../../_images/HOWTO_inference_SAFE_file_18_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="step-5-run-inference-on-the-image">
+<h2>Step 5: Run inference on the image<a class="headerlink" href="#step-5-run-inference-on-the-image" title="Permalink to this headline">¶</a></h2>
+<p>Now we’re going to run inference on the Sentinel-2 image. See the <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html"><span class="doc std std-doc">Run inference notebook</span></a> for a detailed tutorial on this.</p>
+<p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>:</p>
+<p><img alt="add_shortcut_drive.png" src="../../_images/add_shortcut_drive.png" /></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;WFV1_unet&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">google.colab</span> <span class="kn">import</span> <span class="n">drive</span>
+    <span class="n">drive</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">&#39;/content/drive&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;/content/drive/My Drive/Public WorldFloods Dataset&#39;</span><span class="p">),</span> <span class="s2">&quot;Add a shortcut to the publice Google Drive folder: https://drive.google.com/drive/u/0/folders/1dqFYWetX614r49kuVE3CbZwVO6qHvRVH&quot;</span>
+    <span class="n">google_colab</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">path_to_dataset_folder</span> <span class="o">=</span> <span class="s1">&#39;/content/drive/My Drive/Public WorldFloods Dataset&#39;</span>
+    <span class="n">dataset_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="s2">&quot;worldfloods_v1_0_sample&quot;</span><span class="p">)</span>
+    <span class="n">folder_name_model_weights</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="n">experiment_name</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">path_to_dataset_folder</span> <span class="o">=</span> <span class="s1">&#39;worldfloods_v1_0_sample&#39;</span>
+    <span class="n">folder_name_model_weights</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="n">experiment_name</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">folder_name_model_weights</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">gdown</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder_name_model_weights</span><span class="p">,</span> <span class="n">exists_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">gdown</span><span class="o">.</span><span class="n">download_folder</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;1Oup-qVD1U-re3lIQkw7TOKJsdu90blsk&quot;</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_cookies</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">output</span><span class="o">=</span><span class="n">folder_name_model_weights</span><span class="p">)</span> 
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="step-5a-load-the-inference-function">
+<h3>Step 5a: load the <code class="docutils literal notranslate"><span class="pre">inference_function</span></code><a class="headerlink" href="#step-5a-load-the-inference-function" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.config_setup</span> <span class="kn">import</span> <span class="n">get_default_config</span>
+<span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_model</span>
+<span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_model_inference_function</span>
+
+<span class="n">config_fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_name_model_weights</span><span class="p">,</span><span class="s2">&quot;config.json&quot;</span><span class="p">)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">get_default_config</span><span class="p">(</span><span class="n">config_fp</span><span class="p">)</span>
+
+
+<span class="n">config</span><span class="p">[</span><span class="s2">&quot;model_params&quot;</span><span class="p">][</span><span class="s2">&quot;max_tile_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">128</span>
+
+<span class="n">config</span><span class="p">[</span><span class="s2">&quot;model_params&quot;</span><span class="p">][</span><span class="s1">&#39;model_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path_to_dataset_folder</span>
+<span class="n">config</span><span class="p">[</span><span class="s2">&quot;model_params&quot;</span><span class="p">][</span><span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="p">,</span> <span class="n">experiment_name</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+
+<span class="n">inference_function</span> <span class="o">=</span> <span class="n">get_model_inference_function</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span><span class="n">apply_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Loaded Config for experiment:  WFV1_unet
+{   &#39;data_params&#39;: {   &#39;batch_size&#39;: 32,
+                       &#39;bucket_id&#39;: &#39;ml4floods&#39;,
+                       &#39;channel_configuration&#39;: &#39;all&#39;,
+                       &#39;filter_windows&#39;: False,
+                       &#39;input_folder&#39;: &#39;S2&#39;,
+                       &#39;loader_type&#39;: &#39;local&#39;,
+                       &#39;num_workers&#39;: 8,
+                       &#39;path_to_splits&#39;: &#39;/worldfloods/public&#39;,
+                       &#39;target_folder&#39;: &#39;gt&#39;,
+                       &#39;test_transformation&#39;: {   &#39;normalize&#39;: True,
+                                                  &#39;num_classes&#39;: 3,
+                                                  &#39;totensor&#39;: True},
+                       &#39;train_test_split_file&#39;: &#39;worldfloods/public/train_test_split.json&#39;,
+                       &#39;train_transformation&#39;: {   &#39;normalize&#39;: True,
+                                                   &#39;num_classes&#39;: 3,
+                                                   &#39;totensor&#39;: True},
+                       &#39;window_size&#39;: [256, 256]},
+    &#39;deploy&#39;: False,
+    &#39;experiment_name&#39;: &#39;WFV1_unet&#39;,
+    &#39;gpus&#39;: &#39;0&#39;,
+    &#39;model_params&#39;: {   &#39;hyperparameters&#39;: {   &#39;channel_configuration&#39;: &#39;all&#39;,
+                                               &#39;label_names&#39;: [   &#39;land&#39;,
+                                                                  &#39;water&#39;,
+                                                                  &#39;cloud&#39;],
+                                               &#39;lr&#39;: 0.0001,
+                                               &#39;lr_decay&#39;: 0.5,
+                                               &#39;lr_patience&#39;: 2,
+                                               &#39;max_epochs&#39;: 25,
+                                               &#39;max_tile_size&#39;: 256,
+                                               &#39;model_type&#39;: &#39;unet&#39;,
+                                               &#39;num_channels&#39;: 13,
+                                               &#39;num_classes&#39;: 3,
+                                               &#39;val_every&#39;: 1,
+                                               &#39;weight_per_class&#39;: [   1.93445299,
+                                                                       36.60054169,
+                                                                       2.19400729]},
+                        &#39;model_folder&#39;: &#39;gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart&#39;,
+                        &#39;path_to_weights&#39;: &#39;checkpoints/&#39;,
+                        &#39;test&#39;: False,
+                        &#39;train&#39;: True,
+                        &#39;use_pretrained_weights&#39;: False},
+    &#39;resume_from_checkpoint&#39;: False,
+    &#39;seed&#39;: 12,
+    &#39;test&#39;: False,
+    &#39;train&#39;: False,
+    &#39;wandb_entity&#39;: &#39;ml4floods&#39;,
+    &#39;wandb_project&#39;: &#39;worldfloods&#39;}
+Loaded model weights: gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_unet/model.pt
+Getting model inference function
+Max tile size: 128
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-5b-run-inference-and-plot-the-results">
+<h3>Step 5b: Run inference and plot the results<a class="headerlink" href="#step-5b-run-inference-and-plot-the-results" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">ml4floods.models</span> <span class="kn">import</span> <span class="n">postprocess</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Run inference on read data</span>
+<span class="n">torch_inputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">inference_function</span><span class="p">(</span><span class="n">torch_inputs</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># (batch_size, num_classes, h, w)</span>
+<span class="n">prob_water_mask</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">binary_water_mask</span> <span class="o">=</span> <span class="n">prob_water_mask</span><span class="o">&gt;</span><span class="mf">.5</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span> <span class="c1"># (batch_size, h, w)</span>
+<span class="n">mask_invalid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">torch_inputs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">prediction</span><span class="o">+=</span><span class="mi">1</span>
+<span class="n">prediction</span><span class="p">[</span><span class="n">mask_invalid</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Vectorize the output</span>
+<span class="n">geoms_polygons</span> <span class="o">=</span> <span class="n">postprocess</span><span class="o">.</span><span class="n">get_water_polygons</span><span class="p">(</span><span class="n">binary_water_mask</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+<span class="n">vectorized_dataframe</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">({</span><span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">geoms_polygons</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">geoms_polygons</span><span class="p">))})</span>
+
+<span class="c1"># Plot results</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">((</span><span class="mi">16</span><span class="p">,</span><span class="mf">4.5</span><span class="p">)))</span>
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_swirnirred_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_gt_v1</span><span class="p">(</span><span class="n">prediction</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">s2_safe_folder</span><span class="p">),</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/HOWTO_inference_SAFE_file_24_0.png" src="../../_images/HOWTO_inference_SAFE_file_24_0.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<span class="n">vectorized_dataframe</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span><span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">categorical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span><span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;None&quot;</span><span class="p">,</span><span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_rgb_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.6</span><span class="p">,</span>
+                             <span class="n">channel_configuration</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/HOWTO_inference_SAFE_file_25_0.png" src="../../_images/HOWTO_inference_SAFE_file_25_0.png" />
+</div>
+</div>
+</div>
+</div>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "conda-env-ml4floods-py"
+        },
+        kernelOptions: {
+            kernelName: "conda-env-ml4floods-py",
+            path: "./content/ml4ops"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'conda-env-ml4floods-py'</script>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="HOWTO_inference_on_image_time_series.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Run inference on time series of Sentinel-2 images</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../prep/demo_pytorch_transforms.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Pre-processing Demonstration</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
+    
+        &copy; Copyright 2021.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

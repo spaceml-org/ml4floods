@@ -1,0 +1,1449 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ground Truth &#8212; ML4Floods</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="The WorldFloods database" href="../worldfloods_dataset.html" />
+    <link rel="prev" title="Ingest Flood Extent Maps" href="full_data_ingest.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">ML4Floods</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../intro/introduction.html">
+   Introduction
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Install
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config.html">
+   Install
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Data prep
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="full_data_ingest.html">
+   Ingest Flood Extent Maps
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Ground Truth
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../worldfloods_dataset.html">
+   The
+   <em>
+    WorldFloods
+   </em>
+   database
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  MLOps
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml_overview.html">
+   MLOps overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">
+   Train models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">
+   Model Metrics
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">
+   Run inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  End-to-end Pipeline
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">
+   Run inference on time series of Sentinel-2 images
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_inference_SAFE_file.html">
+   Inference on Sentinel-2
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     SAFE
+    </span>
+   </code>
+   files
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Experimental
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="demo_pytorch_transforms.html">
+   Pre-processing Demonstration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">
+   Probabilistic neural networks
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">
+   Cloud removal inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../about.html">
+   About
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../../_sources/content/prep/gt_masks_generation.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.ipynb</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
+        
+        
+        
+        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/gt_masks_generation.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
+                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
+                    src="../../_static/images/logo_colab.png"
+                    alt="Interact on Colab">Colab</button></a>
+        
+        
+    </div>
+</div>
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#brief-description">
+   Brief Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">
+   Step 0: Access the data for this tutorial
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
+   Step 0a: mount the Public folder if you are in Google Colab
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#original-image">
+   Original Image
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#demo-plot">
+   Demo Plot
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#cloud-masks">
+   Cloud Masks
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#last-channel-cloud-probabilities">
+     Last Channel Cloud Probabilities
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#model-based">
+     Model-Based
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#figure">
+       Figure
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#water-masks">
+   Water Masks
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#permanent-water">
+     Permanent Water
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#flood-events">
+     Flood Events
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">
+       Plot - FloodMaps On Permanent Water
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">
+       Figure - FloodMaps On S2 Image
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Ground Truth
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#class-problem">
+     3-Class Problem
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#show-3-class-ground-truth">
+     Show 3-class ground truth
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   2-Class Problem
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Ground Truth</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#brief-description">
+   Brief Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">
+   Step 0: Access the data for this tutorial
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
+   Step 0a: mount the Public folder if you are in Google Colab
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#original-image">
+   Original Image
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#demo-plot">
+   Demo Plot
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#cloud-masks">
+   Cloud Masks
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#last-channel-cloud-probabilities">
+     Last Channel Cloud Probabilities
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#model-based">
+     Model-Based
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#figure">
+       Figure
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#water-masks">
+   Water Masks
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#permanent-water">
+     Permanent Water
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#flood-events">
+     Flood Events
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">
+       Plot - FloodMaps On Permanent Water
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">
+       Figure - FloodMaps On S2 Image
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Ground Truth
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#class-problem">
+     3-Class Problem
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#show-3-class-ground-truth">
+     Show 3-class ground truth
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   2-Class Problem
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="tex2jax_ignore mathjax_ignore section" id="ground-truth">
+<h1>Ground Truth<a class="headerlink" href="#ground-truth" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><strong>Last Modified</strong>: 17-03-2022</p></li>
+<li><p><strong>Authors</strong>: Satyarth Praveen, J. Emmanuel Johnson, Nadia Ahmed, Gonzalo Mateo-García</p></li>
+</ul>
+<hr class="docutils" />
+<div class="section" id="brief-description">
+<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this headline">¶</a></h2>
+<p>In this notebook, we will explore how to visualize the different products that we use in the <em>WorldFloods</em> dataset. In addition we will show how to create the ground truth that we used for training the models (the 3-class ground truth used in <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Mateo-García et al. 2021</a> and the new binary ground truth for multi-output binary classification).</p>
+<p>This tutorial follows the previous one about <span class="xref myst">ingesting floodmaps</span> which shows how to pre-process and download floodmaps and how to download Sentinel-2 images using the Google Earth Engine. In this notebook we use these products (floodmaps, S2 images and JRC Permanent Water Layer also downlinked from the GEE).</p>
+<p>To create the ground truth necessary in the <em>WorldFloods</em> data, we need access to water layers, clouds. So let’s show how we do this!</p>
+<hr class="docutils" />
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip install git+https://github.com/spaceml-org/ml4floods#egg<span class="o">=</span>ml4floods
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Collecting ml4floods
+  Cloning https://github.com/spaceml-org/ml4floods to /tmp/pip-install-1ocx6bq9/ml4floods_047e23a821dc4d3f90c1cd136315a242
+  Running command git clone --filter=blob:none --quiet https://github.com/spaceml-org/ml4floods /tmp/pip-install-1ocx6bq9/ml4floods_047e23a821dc4d3f90c1cd136315a242
+  Resolved https://github.com/spaceml-org/ml4floods to commit a2f4f6df8b79cc641572ba6fa5287b9a68c67505
+  Preparing metadata (setup.py) ... ?25ldone
+?25hRequirement already satisfied: torch in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.10.2)
+Requirement already satisfied: torchvision in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.11.3)
+Requirement already satisfied: pytorch-lightning in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.5.9)
+Requirement already satisfied: numpy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.22.1)
+Requirement already satisfied: matplotlib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (3.5.1)
+Requirement already satisfied: seaborn in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.11.2)
+Requirement already satisfied: scipy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.7.3)
+Requirement already satisfied: pandas in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.4.0)
+Requirement already satisfied: rasterio in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.2.10)
+Requirement already satisfied: geopandas in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.10.2)
+Requirement already satisfied: fastprogress in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.0.0)
+Requirement already satisfied: tqdm in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (4.62.3)
+Requirement already satisfied: black in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (22.1.0)
+Requirement already satisfied: isort in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (5.10.1)
+Requirement already satisfied: mypy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.931)
+Requirement already satisfied: opencv-python in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (4.5.5.62)
+Requirement already satisfied: albumentations in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.1.0)
+Requirement already satisfied: google-cloud-storage in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2.1.0)
+Requirement already satisfied: pyprojroot in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.2.0)
+Requirement already satisfied: fsspec in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2022.1.0)
+Requirement already satisfied: gcsfs in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2022.1.0)
+Requirement already satisfied: requests_html in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.10.0)
+Requirement already satisfied: earthengine-api in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.1.296)
+Requirement already satisfied: mercantile in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.2.1)
+Requirement already satisfied: qudida&gt;=0.0.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (0.0.4)
+Requirement already satisfied: opencv-python-headless&gt;=4.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (4.5.5.62)
+Requirement already satisfied: scikit-image&gt;=0.16.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (0.19.1)
+Requirement already satisfied: PyYAML in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (6.0)
+Requirement already satisfied: tomli&gt;=1.1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (2.0.0)
+Requirement already satisfied: click&gt;=8.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (8.0.3)
+Requirement already satisfied: mypy-extensions&gt;=0.4.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (0.4.3)
+Requirement already satisfied: typing-extensions&gt;=3.10.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (4.0.1)
+Requirement already satisfied: platformdirs&gt;=2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (2.4.1)
+Requirement already satisfied: pathspec&gt;=0.9.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (0.9.0)
+Requirement already satisfied: future in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.18.2)
+Requirement already satisfied: httplib2&lt;1dev,&gt;=0.9.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.20.2)
+Requirement already satisfied: google-auth-httplib2&gt;=0.0.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.1.0)
+Requirement already satisfied: google-auth&gt;=1.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (2.5.0)
+Requirement already satisfied: google-api-python-client&lt;2,&gt;=1.12.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (1.12.10)
+Requirement already satisfied: six in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (1.16.0)
+Requirement already satisfied: httplib2shim in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.0.3)
+Requirement already satisfied: google-auth-oauthlib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (0.4.6)
+Requirement already satisfied: aiohttp&lt;4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (3.8.1)
+Requirement already satisfied: requests in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (2.27.1)
+Requirement already satisfied: decorator&gt;4.1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (5.1.1)
+Requirement already satisfied: pyproj&gt;=2.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (3.3.0)
+Requirement already satisfied: shapely&gt;=1.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (1.8.0)
+Requirement already satisfied: fiona&gt;=1.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (1.8.20)
+Requirement already satisfied: python-dateutil&gt;=2.8.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pandas-&gt;ml4floods) (2.8.2)
+Requirement already satisfied: pytz&gt;=2020.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pandas-&gt;ml4floods) (2021.3)
+Requirement already satisfied: google-cloud-core&lt;3.0dev,&gt;=1.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.2.2)
+Requirement already satisfied: google-api-core&lt;3.0dev,&gt;=1.29.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.4.0)
+Requirement already satisfied: google-resumable-media&gt;=1.3.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.1.0)
+Requirement already satisfied: protobuf in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (3.19.4)
+Requirement already satisfied: cycler&gt;=0.10 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (0.11.0)
+Requirement already satisfied: kiwisolver&gt;=1.0.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (1.3.2)
+Requirement already satisfied: fonttools&gt;=4.22.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (4.29.0)
+Requirement already satisfied: pyparsing&gt;=2.2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (3.0.7)
+Requirement already satisfied: pillow&gt;=6.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (8.4.0)
+Requirement already satisfied: packaging&gt;=20.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (21.3)
+Requirement already satisfied: setuptools==59.5.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (59.5.0)
+Requirement already satisfied: pyDeprecate==0.3.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (0.3.1)
+Requirement already satisfied: tensorboard&gt;=2.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (2.8.0)
+Requirement already satisfied: torchmetrics&gt;=0.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (0.7.0)
+Requirement already satisfied: snuggs&gt;=1.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (1.4.7)
+Requirement already satisfied: certifi in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (2021.10.8)
+Requirement already satisfied: attrs in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (21.4.0)
+Requirement already satisfied: affine in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (2.3.0)
+Requirement already satisfied: click-plugins in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (1.1.1)
+Requirement already satisfied: cligj&gt;=0.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (0.7.2)
+Requirement already satisfied: parse in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.19.0)
+Requirement already satisfied: w3lib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.22.0)
+Requirement already satisfied: pyquery in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.4.3)
+Requirement already satisfied: pyppeteer&gt;=0.0.14 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.0.2)
+Requirement already satisfied: fake-useragent in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (0.1.11)
+Requirement already satisfied: bs4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (0.0.1)
+Requirement already satisfied: multidict&lt;7.0,&gt;=4.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (6.0.2)
+Requirement already satisfied: aiosignal&gt;=1.1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.2.0)
+Requirement already satisfied: yarl&lt;2.0,&gt;=1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.7.2)
+Requirement already satisfied: frozenlist&gt;=1.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.3.0)
+Requirement already satisfied: async-timeout&lt;5.0,&gt;=4.0.0a3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (4.0.2)
+Requirement already satisfied: charset-normalizer&lt;3.0,&gt;=2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (2.0.10)
+Requirement already satisfied: munch in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from fiona&gt;=1.8-&gt;geopandas-&gt;ml4floods) (2.5.0)
+Requirement already satisfied: googleapis-common-protos&lt;2.0dev,&gt;=1.52.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-api-core&lt;3.0dev,&gt;=1.29.0-&gt;google-cloud-storage-&gt;ml4floods) (1.54.0)
+Requirement already satisfied: uritemplate&lt;4dev,&gt;=3.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-api-python-client&lt;2,&gt;=1.12.1-&gt;earthengine-api-&gt;ml4floods) (3.0.1)
+Requirement already satisfied: cachetools&lt;6.0,&gt;=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (5.0.0)
+Requirement already satisfied: pyasn1-modules&gt;=0.2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (0.2.8)
+Requirement already satisfied: rsa&lt;5,&gt;=3.1.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (4.8)
+Requirement already satisfied: google-crc32c&lt;2.0dev,&gt;=1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-resumable-media&gt;=1.3.0-&gt;google-cloud-storage-&gt;ml4floods) (1.3.0)
+Requirement already satisfied: importlib-metadata&gt;=1.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (4.10.1)
+Requirement already satisfied: pyee&lt;9.0.0,&gt;=8.1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (8.2.2)
+Requirement already satisfied: urllib3&lt;2.0.0,&gt;=1.25.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (1.26.8)
+Requirement already satisfied: appdirs&lt;2.0.0,&gt;=1.4.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (1.4.4)
+Requirement already satisfied: websockets&lt;11.0,&gt;=10.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (10.1)
+Requirement already satisfied: scikit-learn&gt;=0.19.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (1.0.2)
+Requirement already satisfied: idna&lt;4,&gt;=2.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests-&gt;gcsfs-&gt;ml4floods) (3.3)
+Requirement already satisfied: imageio&gt;=2.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2.14.1)
+Requirement already satisfied: tifffile&gt;=2019.7.26 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2021.11.2)
+Requirement already satisfied: PyWavelets&gt;=1.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (1.2.0)
+Requirement already satisfied: networkx&gt;=2.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2.6.3)
+Requirement already satisfied: wheel&gt;=0.26 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (0.37.1)
+Requirement already satisfied: grpcio&gt;=1.24.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.43.0)
+Requirement already satisfied: markdown&gt;=2.6.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (3.3.6)
+Requirement already satisfied: tensorboard-data-server&lt;0.7.0,&gt;=0.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (0.6.1)
+Requirement already satisfied: werkzeug&gt;=0.11.15 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (2.0.2)
+Requirement already satisfied: tensorboard-plugin-wit&gt;=1.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.8.1)
+Requirement already satisfied: absl-py&gt;=0.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.0.0)
+Requirement already satisfied: requests-oauthlib&gt;=0.7.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth-oauthlib-&gt;gcsfs-&gt;ml4floods) (1.3.1)
+Requirement already satisfied: beautifulsoup4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from bs4-&gt;requests_html-&gt;ml4floods) (4.10.0)
+Requirement already satisfied: lxml&gt;=2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyquery-&gt;requests_html-&gt;ml4floods) (4.7.1)
+Requirement already satisfied: cssselect&gt;0.7.9 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyquery-&gt;requests_html-&gt;ml4floods) (1.1.0)
+Requirement already satisfied: zipp&gt;=0.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from importlib-metadata&gt;=1.4-&gt;pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (3.7.0)
+Requirement already satisfied: pyasn1&lt;0.5.0,&gt;=0.4.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyasn1-modules&gt;=0.2.1-&gt;google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (0.4.8)
+Requirement already satisfied: oauthlib&gt;=3.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests-oauthlib&gt;=0.7.0-&gt;google-auth-oauthlib-&gt;gcsfs-&gt;ml4floods) (3.2.0)
+Requirement already satisfied: joblib&gt;=0.11 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-learn&gt;=0.19.1-&gt;qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (1.1.0)
+Requirement already satisfied: threadpoolctl&gt;=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-learn&gt;=0.19.1-&gt;qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (3.0.0)
+Requirement already satisfied: soupsieve&gt;1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from beautifulsoup4-&gt;bs4-&gt;requests_html-&gt;ml4floods) (2.3.1)
+Building wheels for collected packages: ml4floods
+  Building wheel for ml4floods (setup.py) ... ?25ldone
+?25h  Created wheel for ml4floods: filename=ml4floods-0.0.1-py3-none-any.whl size=140086 sha256=1be823c64a228fb0acf7e481c084b4a16d994c1aecfa9e94750c0d11eb3f8700
+  Stored in directory: /tmp/pip-ephem-wheel-cache-rvlnv79q/wheels/73/e4/d0/32f1ac519c0c417c56095146587858a3e35491dbbef7d45186
+Successfully built ml4floods
+Installing collected packages: ml4floods
+  Attempting uninstall: ml4floods
+    Found existing installation: ml4floods 0.0.1
+    Uninstalling ml4floods-0.0.1:
+      Successfully uninstalled ml4floods-0.0.1
+Successfully installed ml4floods-0.0.1
+Requirement already satisfied: gdown in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (4.4.0)
+Requirement already satisfied: six in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (1.16.0)
+Requirement already satisfied: beautifulsoup4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (4.10.0)
+Requirement already satisfied: filelock in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (3.6.0)
+Requirement already satisfied: tqdm in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (4.62.3)
+Requirement already satisfied: requests[socks] in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (2.27.1)
+Requirement already satisfied: soupsieve&gt;1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from beautifulsoup4-&gt;gdown) (2.3.1)
+Requirement already satisfied: certifi&gt;=2017.4.17 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (2021.10.8)
+Requirement already satisfied: charset-normalizer~=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (2.0.10)
+Requirement already satisfied: idna&lt;4,&gt;=2.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (3.3)
+Requirement already satisfied: urllib3&lt;1.27,&gt;=1.21.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (1.26.8)
+Requirement already satisfied: PySocks!=1.5.7,&gt;=1.5.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (1.7.1)
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-0-access-the-data-for-this-tutorial">
+<h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this headline">¶</a></h2>
+<p>In order to run this tutorial we will use some products from the forthcoming <em>WorldFloods Extra Dataset</em>. We have copied some of those in our <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>. To access the <em>WorldFloods</em> database see <span class="xref myst">the download <em>WorldFloods</em> documentation</span>.</p>
+</div>
+<div class="section" id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
+<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">¶</a></h2>
+<p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a> and mount that directory with the following code:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">google.colab</span> <span class="kn">import</span> <span class="n">drive</span>
+    <span class="n">drive</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">&#39;/content/drive&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;/content/drive/My Drive/Public WorldFloods Dataset&#39;</span><span class="p">),</span> <span class="s2">&quot;Add a shortcut to the publice Google Drive folder: https://drive.google.com/drive/u/0/folders/1dqFYWetX614r49kuVE3CbZwVO6qHvRVH&quot;</span>
+    <span class="n">google_colab</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">path_to_dataset_folder</span> <span class="o">=</span> <span class="s1">&#39;/content/drive/My Drive/Public WorldFloods Dataset&#39;</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting google colab to false, it will need to install the gdown package!&quot;</span><span class="p">)</span>
+    <span class="n">path_to_dataset_folder</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span>
+    <span class="n">google_colab</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>No module named &#39;google.colab&#39;
+Setting google colab to false, it will need to install the gdown package!
+</pre></div>
+</div>
+</div>
+</div>
+<p>If you’re not in Google Colab you need to install the <code class="docutils literal notranslate"><span class="pre">gdown</span></code> package to access the products. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdown</span></code>.</p>
+</div>
+<div class="section" id="original-image">
+<h2>Original Image<a class="headerlink" href="#original-image" title="Permalink to this headline">¶</a></h2>
+<p>Let’s load a demo Sentinel-2 (S2) image which will be the basis for all of our demonstrations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gdown</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># S2_IMG_PATH = &quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/EMSR501/AOI01/S2/2021-02-15.tif&quot;</span>
+
+<span class="n">S2_IMG_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="s2">&quot;products_sample_tutorial&quot;</span><span class="p">,</span><span class="s2">&quot;S2&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-02-15.tif&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">S2_IMG_PATH</span><span class="p">):</span> 
+    <span class="kn">import</span> <span class="nn">gdown</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">S2_IMG_PATH</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;1wPxBASA5KaEiKPyU78ryzSHjEuZaLYEL&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">S2_IMG_PATH</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Downloading...
+From: https://drive.google.com/uc?id=1wPxBASA5KaEiKPyU78ryzSHjEuZaLYEL
+To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutorial/S2/2021-02-15.tif
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 560M/560M [00:08&lt;00:00, 67.8MB/s]
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="demo-plot">
+<h2>Demo Plot<a class="headerlink" href="#demo-plot" title="Permalink to this headline">¶</a></h2>
+<p>We have an easy plot function to visualize the S2 image.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.visualization</span> <span class="kn">import</span> <span class="n">plot_utils</span>
+<span class="kn">from</span> <span class="nn">rasterio</span> <span class="kn">import</span> <span class="n">plot</span> <span class="k">as</span> <span class="n">rasterioplt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># initialize figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_rgb_image</span><span class="p">(</span><span class="n">S2_IMG_PATH</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">size_read</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Demo Sentinel-2 Image&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[Text(0.5, 1.0, &#39;Demo Sentinel-2 Image&#39;)]
+</pre></div>
+</div>
+<img alt="../../_images/gt_masks_generation_8_1.png" src="../../_images/gt_masks_generation_8_1.png" />
+</div>
+</div>
+<p>This is mainly for demonstration purposes. For more advanced plotting utilities, please consult a specialized library.</p>
+<p>So now we have our image, let’s see what tools we have available to do masks.</p>
+</div>
+<div class="section" id="cloud-masks">
+<h2>Cloud Masks<a class="headerlink" href="#cloud-masks" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="last-channel-cloud-probabilities">
+<h3>Last Channel Cloud Probabilities<a class="headerlink" href="#last-channel-cloud-probabilities" title="Permalink to this headline">¶</a></h3>
+<p>Fortunately for some of the newer S2 images obtained from GEE, we can simply use the final channel.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">image</span><span class="p">,</span> <span class="n">transform</span> <span class="o">=</span> <span class="n">plot_utils</span><span class="o">.</span><span class="n">get_image_transform</span><span class="p">(</span><span class="n">S2_IMG_PATH</span><span class="p">,</span> <span class="n">bands</span><span class="o">=</span><span class="p">[</span><span class="mi">14</span><span class="p">],</span> 
+                                                  <span class="n">size_read</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+
+
+
+<span class="c1"># initialize figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="c1"># plot image</span>
+<span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Cloud Probabilities&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_12_0.png" src="../../_images/gt_masks_generation_12_0.png" />
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[Text(0.5, 1.0, &#39;Cloud Probabilities&#39;)]
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="model-based">
+<h3>Model-Based<a class="headerlink" href="#model-based" title="Permalink to this headline">¶</a></h3>
+<p>In other cases where this is not available, we can also use models on the original image. One method that we use within this library is called <code class="docutils literal notranslate"><span class="pre">s2cloudless</span></code>, found <a class="reference external" href="https://github.com/sentinel-hub/sentinel2-cloud-detector">here</a>. This is a model from the sentinel-hub which has a very convenient API for our uses. See <a class="reference external" href="https://medium.com/sentinel-hub/improving-cloud-detection-with-machine-learning-c09dc5d7cf13">this blog</a> for more details.</p>
+<p>Below, we showcase how we can return cloudmasks in a single function within this library.</p>
+<p><strong>Warnings</strong>: This will take a while to run. Please skip over the section to resume the tutorial.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># %%time</span>
+<span class="c1"># from src.data.cloud_masks import compute_s2cloudless_probs</span>
+
+<span class="c1"># # calculate cloud probabilities using cloudless</span>
+<span class="c1"># s2_cloud_probs = compute_s2cloudless_probs(S2_IMG_PATH)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="figure">
+<h4>Figure<a class="headerlink" href="#figure" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fig, ax = plt.subplots(figsize=(16,16))</span>
+
+<span class="c1"># with rasterio.open(S2_IMG_PATH, &quot;r&quot;) as s2_rst:</span>
+<span class="c1">#     transform = s2_rst.transform</span>
+
+<span class="c1"># rasterioplt.show(s2_cloud_probs, ax=ax, transform=transform, cmap=&quot;Reds&quot;)</span>
+
+<span class="c1"># ax.set(</span>
+<span class="c1">#     title=&quot;S2CloudLess Cloud Probabilities&quot;,</span>
+<span class="c1"># )</span>
+<span class="c1"># plt.show()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p><strong>Note</strong>: This is actually the same library that is used within the GEE platform! See <a class="reference external" href="https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless">this tutorial</a> for more information.</p>
+</div>
+</div>
+</div>
+<div class="section" id="water-masks">
+<h2>Water Masks<a class="headerlink" href="#water-masks" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="permanent-water">
+<h3>Permanent Water<a class="headerlink" href="#permanent-water" title="Permalink to this headline">¶</a></h3>
+<p>So firstly, we have the permanent water. These are streams, rivers and lakes that already exist. This serves as a basis for where the flood events <em>could</em> occur.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># permanent water</span>
+<span class="c1"># JRC_IMG_PATH = &quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/EMSR501/AOI01/PERMANENTWATERJRC/2021.tif&quot;</span>
+
+<span class="n">JRC_IMG_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="s2">&quot;products_sample_tutorial&quot;</span><span class="p">,</span><span class="s2">&quot;PERMANENTWATERJRC&quot;</span><span class="p">,</span> <span class="s2">&quot;2021.tif&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">JRC_IMG_PATH</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">JRC_IMG_PATH</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;1N_NF9xdO4Qse2Bp76t0sZHrOO24fd-xt&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">JRC_IMG_PATH</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Downloading...
+From: https://drive.google.com/uc?id=1N_NF9xdO4Qse2Bp76t0sZHrOO24fd-xt
+To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutorial/PERMANENTWATERJRC/2021.tif
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 314k/314k [00:00&lt;00:00, 4.19MB/s]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">permanent_water_image</span><span class="p">,</span> <span class="n">transform</span> <span class="o">=</span> <span class="n">plot_utils</span><span class="o">.</span><span class="n">get_image_transform</span><span class="p">(</span><span class="n">JRC_IMG_PATH</span><span class="p">,</span> <span class="n">bands</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+                                                                  <span class="n">size_read</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+
+<span class="c1"># initialize figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">permanent_water_image</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Permanent Water&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_21_0.png" src="../../_images/gt_masks_generation_21_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="flood-events">
+<h3>Flood Events<a class="headerlink" href="#flood-events" title="Permalink to this headline">¶</a></h3>
+<p>We need the flood events. These come from the Copernicus EMS data source where we have already preprocessed them to extract the necessary information for floods. These come in the form of <code class="docutils literal notranslate"><span class="pre">geojson</span></code> files which keep all of the polygons indicating the specific coordinates where there was a drought. We can easily read it with the <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> package.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># FLOODMAP_PATH = &quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/EMSR501/AOI01/floodmap/2021-02-15.geojson&quot;</span>
+<span class="n">FLOODMAP_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_dataset_folder</span><span class="p">,</span> <span class="s2">&quot;products_sample_tutorial&quot;</span><span class="p">,</span> <span class="s2">&quot;floodmap&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-02-15.geojson&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">FLOODMAP_PATH</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">FLOODMAP_PATH</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;1GS1_9fXwrYdgu7o-0RU4I8ixch4pVpQC&quot;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">FLOODMAP_PATH</span><span class="p">)</span>
+    
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Downloading...
+From: https://drive.google.com/uc?id=1GS1_9fXwrYdgu7o-0RU4I8ixch4pVpQC
+To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutorial/floodmap/2021-02-15.geojson
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11.9M/11.9M [00:00&lt;00:00, 35.4MB/s]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+
+<span class="n">floodmap_df</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">FLOODMAP_PATH</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">floodmap_df</span><span class="p">[</span><span class="n">floodmap_df</span><span class="p">[</span><span class="s2">&quot;w_class&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Flooded area&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>w_class</th>
+      <th>source</th>
+      <th>geometry</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>MULTIPOLYGON (((19.48718 42.09541, 19.48706 42...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.48966 42.09551, 19.48966 42.09540...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.48887 42.09549, 19.48887 42.09547...</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.48967 42.09486, 19.48967 42.09481...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.48731 42.09523, 19.48731 42.09518...</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>2046</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.43283 41.90527, 19.43283 41.90518...</td>
+    </tr>
+    <tr>
+      <th>2047</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.43063 41.90832, 19.43064 41.90823...</td>
+    </tr>
+    <tr>
+      <th>2048</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.43015 41.90893, 19.43015 41.90884...</td>
+    </tr>
+    <tr>
+      <th>2049</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.43065 41.90295, 19.43064 41.90304...</td>
+    </tr>
+    <tr>
+      <th>2050</th>
+      <td>Flooded area</td>
+      <td>flood</td>
+      <td>POLYGON ((19.42929 41.91042, 19.42929 41.91033...</td>
+    </tr>
+  </tbody>
+</table>
+<p>2051 rows × 3 columns</p>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">floodmap_df</span><span class="p">[</span><span class="s2">&quot;w_class&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>array([&#39;Flooded area&#39;, &#39;BH080-Lake&#39;, &#39;BH130-Reservoir&#39;, &#39;BH140-River&#39;,
+       &#39;BH141-River Bank&#39;, &#39;BA040-Open Water&#39;, &#39;BH141-Stream&#39;,
+       &#39;BA010-Coastline&#39;, &#39;area_of_interest&#39;], dtype=object)
+</pre></div>
+</div>
+</div>
+</div>
+<p>That’s it! We can also plot this just to get an overview of the polygons available. Remember the last polygon is the area of interest, so plot all except that one.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">floodmap_df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;w_class&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Flood Maps&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                 <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Floodmaps&quot;</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_28_0.png" src="../../_images/gt_masks_generation_28_0.png" />
+</div>
+</div>
+<div class="section" id="plot-floodmaps-on-permanent-water">
+<h4>Plot - FloodMaps On Permanent Water<a class="headerlink" href="#plot-floodmaps-on-permanent-water" title="Permalink to this headline">¶</a></h4>
+<p>We can also plot the floodmaps on the permanent water to get an overview of how much these flood maps overlap with the already placed permanent water areas.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize figure</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="c1"># plot the permanent water</span>
+<span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">permanent_water_image</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="c1"># plot the floodmap (convert to same CRS the floodmap!)</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">JRC_IMG_PATH</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+    <span class="n">floodmap_df_utm</span> <span class="o">=</span> <span class="n">floodmap_df</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">src</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+
+<span class="n">floodmap_df_utm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Flood Maps&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> 
+                     <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
+</pre></div>
+</div>
+<img alt="../../_images/gt_masks_generation_30_1.png" src="../../_images/gt_masks_generation_30_1.png" />
+</div>
+</div>
+<p>So we can see that it’s very clear that there is some overlap between the permanent water and the flood maps, but there are also many areas that extend beyond the standard region.</p>
+</div>
+<div class="section" id="figure-floodmaps-on-s2-image">
+<h4>Figure - FloodMaps On S2 Image<a class="headerlink" href="#figure-floodmaps-on-s2-image" title="Permalink to this headline">¶</a></h4>
+<p>We can actually overlay the floodmaps onto the S2 Image. Because all of the geocoordinates are consistent, this allows us to visualize all of the pieces together.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># initialize figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="c1"># plot S2 Image</span>
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_rgb_image</span><span class="p">(</span><span class="n">S2_IMG_PATH</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">size_read</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;S2 Image&quot;</span><span class="p">)</span>
+
+<span class="c1"># plot the floodmap</span>
+<span class="n">floodmap_df_utm</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Flood Maps&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> 
+                     <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_33_0.png" src="../../_images/gt_masks_generation_33_0.png" />
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Ground Truth<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>So now we’ve seen all of the bits and pieces needed to get the data required to create the ground truth: 1) S2 Image, 2) Cloud Masks, 3) FloodMaps, 4) Permanent Water. We can now create some ground truth images which can be used for our machine learning problem.</p>
+<div class="section" id="class-problem">
+<h3>3-Class Problem<a class="headerlink" href="#class-problem" title="Permalink to this headline">¶</a></h3>
+<p>This first ground truth type is a 3-class problem: Land, Water, Cloud. We basically fuse these four resources together to create the ground truth. So a simple logistic regression model would be able to use this. However, it would probably do poorly due to the complexity of the data.</p>
+<p>It’s very simple to generate ground truth with the functions we created.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.data</span> <span class="kn">import</span> <span class="n">create_gt</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+
+<span class="c1"># Might need to run again if the code breaks.</span>
+
+<span class="n">metadata_floodmap</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">gt</span><span class="p">,</span> <span class="n">gt_meta</span> <span class="o">=</span> <span class="n">create_gt</span><span class="o">.</span><span class="n">generate_land_water_cloud_gt</span><span class="p">(</span>                      
+    <span class="n">S2_IMG_PATH</span><span class="p">,</span>
+    <span class="n">floodmap_df</span><span class="p">,</span>
+    <span class="n">metadata_floodmap</span><span class="p">,</span>
+    <span class="n">keep_streams</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">permanent_water_image_path</span><span class="o">=</span><span class="n">JRC_IMG_PATH</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 13.4 s, sys: 8.25 s, total: 21.7 s
+Wall time: 24.3 s
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gt_meta</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;gtversion&#39;: &#39;v1&#39;,
+ &#39;encoding_values&#39;: {0: &#39;invalid&#39;, 1: &#39;land&#39;, 2: &#39;water&#39;, 3: &#39;cloud&#39;},
+ &#39;shape&#39;: [2996, 4597],
+ &#39;s2_image_path&#39;: &#39;2021-02-15.tif&#39;,
+ &#39;permanent_water_image_path&#39;: &#39;2021.tif&#39;,
+ &#39;cloudprob_image_path&#39;: &#39;None&#39;,
+ &#39;method clouds&#39;: &#39;s2cloudless&#39;,
+ &#39;pixels invalid S2&#39;: 6472757,
+ &#39;pixels clouds S2&#39;: 250244,
+ &#39;pixels water S2&#39;: 1559933,
+ &#39;pixels land S2&#39;: 5489678,
+ &#39;pixels flood water S2&#39;: 561790,
+ &#39;pixels hydro water S2&#39;: 212124,
+ &#39;pixels permanent water S2&#39;: 786019,
+ &#39;bounds&#39;: BoundingBox(left=353000.0, bottom=4632790.0, right=398970.0, top=4662750.0),
+ &#39;crs&#39;: CRS.from_epsg(32634),
+ &#39;transform&#39;: Affine(10.0, 0.0, 353000.0,
+        0.0, -10.0, 4662750.0)}
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="show-3-class-ground-truth">
+<h3>Show 3-class ground truth<a class="headerlink" href="#show-3-class-ground-truth" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_gt_v1</span><span class="p">(</span><span class="n">gt</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">transform</span><span class="o">=</span><span class="n">gt_meta</span><span class="p">[</span><span class="s2">&quot;transform&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_40_0.png" src="../../_images/gt_masks_generation_40_0.png" />
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>In this ground truth, we generate 2-band ground truth which consists of a binary classification problem for</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.data</span> <span class="kn">import</span> <span class="n">create_gt</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+
+<span class="c1"># Might need to run again if the code breaks.</span>
+
+<span class="n">metadata_floodmap</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">gt_binary</span><span class="p">,</span> <span class="n">gt_meta_binary</span> <span class="o">=</span> <span class="n">create_gt</span><span class="o">.</span><span class="n">generate_water_cloud_binary_gt</span><span class="p">(</span>                        
+    <span class="n">S2_IMG_PATH</span><span class="p">,</span>
+    <span class="n">floodmap_df</span><span class="p">,</span>
+    <span class="n">metadata_floodmap</span><span class="o">=</span><span class="n">metadata_floodmap</span><span class="p">,</span>
+    <span class="n">keep_streams</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">permanent_water_image_path</span><span class="o">=</span><span class="n">JRC_IMG_PATH</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 13.7 s, sys: 2.64 s, total: 16.3 s
+Wall time: 16.3 s
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gt_meta_binary</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;gtversion&#39;: &#39;v2&#39;,
+ &#39;encoding_values&#39;: [{0: &#39;invalid&#39;, 1: &#39;clear&#39;, 2: &#39;cloud&#39;},
+  {0: &#39;invalid&#39;, 1: &#39;land&#39;, 2: &#39;water&#39;}],
+ &#39;shape&#39;: [2996, 4597],
+ &#39;s2_image_path&#39;: &#39;2021-02-15.tif&#39;,
+ &#39;permanent_water_image_path&#39;: &#39;2021.tif&#39;,
+ &#39;cloudprob_image_path&#39;: &#39;None&#39;,
+ &#39;method clouds&#39;: &#39;s2cloudless&#39;,
+ &#39;pixels invalid S2&#39;: 6472855,
+ &#39;pixels clouds S2&#39;: 250244,
+ &#39;pixels water S2&#39;: 1564991,
+ &#39;pixels land S2&#39;: 5725159,
+ &#39;pixels flood water S2&#39;: 562505,
+ &#39;pixels hydro water S2&#39;: 219225,
+ &#39;pixels permanent water S2&#39;: 787354,
+ &#39;bounds&#39;: BoundingBox(left=353000.0, bottom=4632790.0, right=398970.0, top=4662750.0),
+ &#39;crs&#39;: CRS.from_epsg(32634),
+ &#39;transform&#39;: Affine(10.0, 0.0, 353000.0,
+        0.0, -10.0, 4662750.0)}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">COLORS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># invalid</span>
+    <span class="p">[</span><span class="mi">173</span><span class="p">,</span> <span class="mi">216</span><span class="p">,</span> <span class="mi">230</span><span class="p">],</span> <span class="c1"># no cloud</span>
+    <span class="p">[</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">]],</span> <span class="c1"># cloud</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Invalid&quot;</span><span class="p">,</span> <span class="s2">&quot;No Cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;Cloud&quot;</span><span class="p">,]</span>
+<span class="n">cmap_cat</span><span class="p">,</span> <span class="n">norm_cat</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plot_utils</span><span class="o">.</span><span class="n">get_cmap_norm_colors</span><span class="p">(</span><span class="n">COLORS</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">im_plt</span> <span class="o">=</span> <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">gt_binary</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">transform</span><span class="o">=</span><span class="n">gt_meta_binary</span><span class="p">[</span><span class="s2">&quot;transform&quot;</span><span class="p">],</span> 
+                          <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                          <span class="n">cmap</span><span class="o">=</span><span class="n">cmap_cat</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm_cat</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
+    <span class="n">handles</span><span class="o">=</span><span class="n">patches</span><span class="p">,</span>
+    <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span>
+<span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/gt_masks_generation_46_0.png" src="../../_images/gt_masks_generation_46_0.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">COLORS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># invalid</span>
+    <span class="p">[</span><span class="mi">139</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># land</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">139</span><span class="p">]],</span> <span class="c1"># water</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Invalid&quot;</span><span class="p">,</span> <span class="s2">&quot;Land&quot;</span><span class="p">,</span> <span class="s2">&quot;Flood water&quot;</span><span class="p">]</span>
+<span class="n">cmap_cat</span><span class="p">,</span> <span class="n">norm_cat</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plot_utils</span><span class="o">.</span><span class="n">get_cmap_norm_colors</span><span class="p">(</span><span class="n">COLORS</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+
+<span class="n">im_plt</span> <span class="o">=</span> <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">gt_binary</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">transform</span><span class="o">=</span><span class="n">gt_meta_binary</span><span class="p">[</span><span class="s2">&quot;transform&quot;</span><span class="p">],</span> 
+                          <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                          <span class="n">cmap</span><span class="o">=</span><span class="n">cmap_cat</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm_cat</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
+    <span class="n">handles</span><span class="o">=</span><span class="n">patches</span><span class="p">,</span>
+    <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7faf1f253e20&gt;
+</pre></div>
+</div>
+<img alt="../../_images/gt_masks_generation_48_1.png" src="../../_images/gt_masks_generation_48_1.png" />
+</div>
+</div>
+</div>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "conda-env-ml4floods-py"
+        },
+        kernelOptions: {
+            kernelName: "conda-env-ml4floods-py",
+            path: "./content/prep"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'conda-env-ml4floods-py'</script>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="full_data_ingest.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Ingest Flood Extent Maps</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../worldfloods_dataset.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">The <em>WorldFloods</em> database</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
+    
+        &copy; Copyright 2021.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

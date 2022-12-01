@@ -1,0 +1,920 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Probabilistic neural networks &#8212; ML4Floods</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Cloud removal inference" href="HOWTO_Run_Inference_multioutput_binary.html" />
+    <link rel="prev" title="Pre-processing Demonstration" href="../prep/demo_pytorch_transforms.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">ML4Floods</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../intro/introduction.html">
+   Introduction
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Install
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config.html">
+   Install
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Data prep
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/full_data_ingest.html">
+   Ingest Flood Extent Maps
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/gt_masks_generation.html">
+   Ground Truth
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../worldfloods_dataset.html">
+   The
+   <em>
+    WorldFloods
+   </em>
+   database
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  MLOps
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml_overview.html">
+   MLOps overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Train_models.html">
+   Train models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_performance_metrics_workflow.html">
+   Model Metrics
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">
+   Run inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  End-to-end Pipeline
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_inference_on_image_time_series.html">
+   Run inference on time series of Sentinel-2 images
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_inference_SAFE_file.html">
+   Inference on Sentinel-2
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     SAFE
+    </span>
+   </code>
+   files
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Experimental
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../prep/demo_pytorch_transforms.html">
+   Pre-processing Demonstration
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Probabilistic neural networks
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">
+   Cloud removal inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../about.html">
+   About
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../../_sources/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.ipynb</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
+        
+        
+        
+        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
+                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
+                    src="../../_static/images/logo_colab.png"
+                    alt="Interact on Colab">Colab</button></a>
+        
+        
+    </div>
+</div>
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-notebook-setup">
+   Step 0: Notebook setup
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-1-setup-configuration-file">
+   Step 1: Setup Configuration file
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-2-setup-dataloader">
+   Step 2: Setup Dataloader
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-3-load-a-pre-trained-model-or-checkpoint">
+   Step 3: Load a pre-trained model or checkpoint
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-4-get-inference-function-for-model">
+   Step 4: Get Inference Function for model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-5-run-probabilistic-inference-over-dataset-to-show-visual-uncertainty-of-segmentations">
+   Step 5: Run probabilistic inference over dataset to show visual uncertainty of segmentations
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-6-try-it-out-on-some-new-data">
+   Step 6: Try it out on some new data!
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Probabilistic neural networks</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-0-notebook-setup">
+   Step 0: Notebook setup
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-1-setup-configuration-file">
+   Step 1: Setup Configuration file
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-2-setup-dataloader">
+   Step 2: Setup Dataloader
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-3-load-a-pre-trained-model-or-checkpoint">
+   Step 3: Load a pre-trained model or checkpoint
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-4-get-inference-function-for-model">
+   Step 4: Get Inference Function for model
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-5-run-probabilistic-inference-over-dataset-to-show-visual-uncertainty-of-segmentations">
+   Step 5: Run probabilistic inference over dataset to show visual uncertainty of segmentations
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#step-6-try-it-out-on-some-new-data">
+   Step 6: Try it out on some new data!
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="tex2jax_ignore mathjax_ignore section" id="probabilistic-neural-networks">
+<h1>Probabilistic neural networks<a class="headerlink" href="#probabilistic-neural-networks" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><strong>Last Modified</strong>: 07-04-2021</p></li>
+<li><p><strong>Authors</strong>: Sam Budd</p></li>
+</ul>
+<hr class="docutils" />
+<blockquote>
+<div><p>Tutorial: Use probabilistic Flood extent segmentation models to measure Flood event uncertainty</p>
+</div></blockquote>
+<div class="section" id="step-0-notebook-setup">
+<h2>Step 0: Notebook setup<a class="headerlink" href="#step-0-notebook-setup" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Configure notebook basics
+- Configure GCP Credentials
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-1-setup-configuration-file">
+<h2>Step 1: Setup Configuration file<a class="headerlink" href="#step-1-setup-configuration-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Load configuration file from local device or gcs
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.config_setup</span> <span class="kn">import</span> <span class="n">get_default_config</span>
+<span class="kn">import</span> <span class="nn">pkg_resources</span>
+
+<span class="c1"># Set filepath to configuration files</span>
+<span class="c1"># config_fp = &#39;path/to/worldfloods_template.json&#39;</span>
+<span class="n">config_fp</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="s2">&quot;ml4floods&quot;</span><span class="p">,</span><span class="s2">&quot;models/configurations/worldfloods_uncertainty.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># config_fp = os.path.join(root, &#39;src&#39;, &#39;models&#39;, &#39;configurations&#39;, &#39;worldfloods_template.json&#39;)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">get_default_config</span><span class="p">(</span><span class="n">config_fp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Loaded Config for experiment:  worldfloods_uncertainty_demo
+{   &#39;data_params&#39;: {   &#39;batch_size&#39;: 32,
+                       &#39;bucket_id&#39;: &#39;ml4floods&#39;,
+                       &#39;channel_configuration&#39;: &#39;all&#39;,
+                       &#39;filter_windows&#39;: {   &#39;apply&#39;: False,
+                                             &#39;threshold_clouds&#39;: 0.8,
+                                             &#39;version&#39;: &#39;v1&#39;},
+                       &#39;input_folder&#39;: &#39;S2&#39;,
+                       &#39;loader_type&#39;: &#39;local&#39;,
+                       &#39;num_workers&#39;: 8,
+                       &#39;path_to_splits&#39;: &#39;/worldfloods/public&#39;,
+                       &#39;target_folder&#39;: &#39;gt&#39;,
+                       &#39;test_transformation&#39;: {&#39;normalize&#39;: True},
+                       &#39;train_test_split_file&#39;: &#39;worldfloods/public/train_test_split.json&#39;,
+                       &#39;train_transformation&#39;: {&#39;normalize&#39;: True},
+                       &#39;window_size&#39;: [256, 256]},
+    &#39;deploy&#39;: False,
+    &#39;experiment_name&#39;: &#39;worldfloods_uncertainty_demo&#39;,
+    &#39;gpus&#39;: &#39;0&#39;,
+    &#39;model_params&#39;: {   &#39;hyperparameters&#39;: {   &#39;channel_configuration&#39;: &#39;all&#39;,
+                                               &#39;label_names&#39;: [   &#39;land&#39;,
+                                                                  &#39;water&#39;,
+                                                                  &#39;cloud&#39;],
+                                               &#39;lr&#39;: 0.0001,
+                                               &#39;lr_decay&#39;: 0.5,
+                                               &#39;lr_patience&#39;: 2,
+                                               &#39;max_epochs&#39;: 40,
+                                               &#39;max_tile_size&#39;: 256,
+                                               &#39;model_type&#39;: &#39;unet_dropout&#39;,
+                                               &#39;num_channels&#39;: 13,
+                                               &#39;num_classes&#39;: 3,
+                                               &#39;val_every&#39;: 1,
+                                               &#39;weight_per_class&#39;: [   1.93445299,
+                                                                       36.60054169,
+                                                                       2.19400729]},
+                        &#39;model_folder&#39;: &#39;gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart&#39;,
+                        &#39;path_to_weights&#39;: &#39;checkpoints/&#39;,
+                        &#39;test&#39;: True,
+                        &#39;train&#39;: True,
+                        &#39;use_pretrained_weights&#39;: False},
+    &#39;resume_from_checkpoint&#39;: False,
+    &#39;seed&#39;: 12,
+    &#39;test&#39;: False,
+    &#39;train&#39;: False}
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-2-setup-dataloader">
+<h2>Step 2: Setup Dataloader<a class="headerlink" href="#step-2-setup-dataloader" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- &#39;loader_type&#39; can be one of &#39;local&#39; which assumes the images are already saved locally, or &#39;bucket&#39; which will load images directly from the bucket specified in &#39;bucket_id&#39;
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models</span> <span class="kn">import</span> <span class="n">dataset_setup</span>
+
+<span class="n">config</span><span class="o">.</span><span class="n">data_params</span><span class="o">.</span><span class="n">loader_type</span> <span class="o">=</span> <span class="s1">&#39;local&#39;</span>
+<span class="n">config</span><span class="o">.</span><span class="n">data_params</span><span class="o">.</span><span class="n">path_to_splits</span> <span class="o">=</span> <span class="s2">&quot;/worldfloods/public&quot;</span> <span class="c1"># local folder to download the data</span>
+<span class="n">config</span><span class="o">.</span><span class="n">data_params</span><span class="p">[</span><span class="s2">&quot;download&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="c1"># download only test data</span>
+
+<span class="n">data_module</span> <span class="o">=</span> <span class="n">dataset_setup</span><span class="o">.</span><span class="n">get_dataset</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">data_params</span><span class="p">)</span>
+
+<span class="c1"># Get just the test dataloader</span>
+<span class="n">dl</span> <span class="o">=</span> <span class="n">data_module</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Using local dataset for this run
+train 89741  tiles
+val 1284  tiles
+test 11  tiles
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-3-load-a-pre-trained-model-or-checkpoint">
+<h2>Step 3: Load a pre-trained model or checkpoint<a class="headerlink" href="#step-3-load-a-pre-trained-model-or-checkpoint" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- Currently models that support probabilistic segmentation include:
+    1. &#39;unet_dropout&#39; which achieves probabilistic segmentation via dropout during inference
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pytorch_lightning.utilities.cloud_io</span> <span class="kn">import</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_model</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Model type: &#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">model_type</span><span class="p">)</span>
+
+<span class="n">path_to_models</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">model_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">experiment_name</span><span class="si">}</span><span class="s2">/model.pt&quot;</span>
+
+<span class="c1"># Load probabilistic version of model for sampling varying predictions</span>
+<span class="n">prob_model</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="p">)</span>
+<span class="n">prob_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">path_to_models</span><span class="p">))</span>
+<span class="n">prob_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">))</span>
+
+<span class="c1"># Load deterministic version of model for sampling consistent predictions</span>
+<span class="n">det_model</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="p">)</span>
+<span class="n">det_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="n">path_to_models</span><span class="p">))</span>
+<span class="n">det_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Model type:  unet_dropout
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WorldFloodsModel(
+  (network): UNet_dropout(
+    (dconv_down1): Sequential(
+      (0): Conv2d(13, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dconv_down2): Sequential(
+      (0): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dconv_down3): Sequential(
+      (0): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dconv_down4): Sequential(
+      (0): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (maxpool): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (dconv_up3): Sequential(
+      (0): Conv2d(768, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dconv_up2): Sequential(
+      (0): Conv2d(384, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dconv_up1): Sequential(
+      (0): Conv2d(192, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (1): ReLU(inplace=True)
+      (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (3): ReLU(inplace=True)
+    )
+    (dropout): Dropout2d(p=0.5, inplace=False)
+    (conv_last): Conv2d(64, 3, kernel_size=(1, 1), stride=(1, 1))
+  )
+)
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-4-get-inference-function-for-model">
+<h2>Step 4: Get Inference Function for model<a class="headerlink" href="#step-4-get-inference-function-for-model" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-- This handles tiling and padded prediction over large images and enables us to query multiple samples from the network to obtain uncertainty estimates 
+-- eval_mode=False enables dropout during inference to give us probabilistic samples from the network
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_model_inference_function</span>
+
+<span class="c1"># Get probabilistic and deterministic inference functions</span>
+<span class="n">prob_inference_function</span> <span class="o">=</span> <span class="n">get_model_inference_function</span><span class="p">(</span><span class="n">prob_model</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">apply_normalization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eval_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">det_inference_function</span> <span class="o">=</span> <span class="n">get_model_inference_function</span><span class="p">(</span><span class="n">det_model</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">apply_normalization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eval_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-5-run-probabilistic-inference-over-dataset-to-show-visual-uncertainty-of-segmentations">
+<h2>Step 5: Run probabilistic inference over dataset to show visual uncertainty of segmentations<a class="headerlink" href="#step-5-run-probabilistic-inference-over-dataset-to-show-visual-uncertainty-of-segmentations" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- compute_unecertainties function samples num_samples predictions from the model and builds several uncertainty maps for visualisation
+</pre></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.utils</span> <span class="kn">import</span> <span class="n">uncertainty</span>
+
+<span class="n">uncertainty</span><span class="o">.</span><span class="n">compute_uncertainties</span><span class="p">(</span>
+    <span class="n">dataloader</span><span class="o">=</span><span class="n">dl</span><span class="p">,</span> 
+    <span class="n">p_pred_fun</span><span class="o">=</span><span class="n">prob_inference_function</span><span class="p">,</span>
+    <span class="n">d_pred_fun</span><span class="o">=</span><span class="n">det_inference_function</span><span class="p">,</span>
+    <span class="n">num_class</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/11 [00:00&lt;?, ?it/s]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Getting model inference function
+Max tile size: 1024
+Getting model inference function
+Max tile size: 1024
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_2.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_2.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  9%|▉         | 1/11 [00:14&lt;02:27, 14.78s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_4.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_4.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 18%|█▊        | 2/11 [00:16&lt;01:04,  7.17s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_6.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_6.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 27%|██▋       | 3/11 [00:20&lt;00:44,  5.60s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_8.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_8.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 36%|███▋      | 4/11 [00:27&lt;00:44,  6.35s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_10.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_10.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 45%|████▌     | 5/11 [00:29&lt;00:27,  4.51s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_12.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_12.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 55%|█████▍    | 6/11 [02:02&lt;02:53, 34.65s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_14.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_14.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 64%|██████▎   | 7/11 [03:56&lt;04:02, 60.59s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_16.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_16.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 73%|███████▎  | 8/11 [05:44&lt;03:47, 75.81s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_18.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_18.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 82%|████████▏ | 9/11 [06:27&lt;02:11, 65.55s/it]
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_12_20.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_12_20.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 91%|█████████ | 10/11 [06:30&lt;00:46, 46.32s/it]
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-6-try-it-out-on-some-new-data">
+<h2>Step 6: Try it out on some new data!<a class="headerlink" href="#step-6-try-it-out-on-some-new-data" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">rasterio</span> <span class="kn">import</span> <span class="n">plot</span> <span class="k">as</span> <span class="n">rasterioplt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">colors</span>
+<span class="kn">import</span> <span class="nn">matplotlib.patches</span> <span class="k">as</span> <span class="nn">mpatches</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">ml4floods.data.worldfloods.configs</span> <span class="kn">import</span> <span class="n">BANDS_S2</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">read_inference_pair</span><span class="p">(</span><span class="n">tiff_inputs</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">folder_ground_truth</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> 
+                        <span class="n">window</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">rasterio</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">Window</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span><span class="nb">slice</span><span class="p">]]],</span> 
+                        <span class="n">return_ground_truth</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">channels</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                        <span class="n">folder_permanent_water</span><span class="o">=</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">Affine</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a pair of layers from the worldfloods bucket and return them as Tensors to pass to a model, return the transform for plotting with lat/long</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        tiff_inputs: filename for layer in worldfloods bucket</span>
+<span class="sd">        folder_ground_truth: folder name to be replaced by S2 in the input</span>
+<span class="sd">        window: window of layer to use</span>
+<span class="sd">        return_ground_truth: flag to indicate if paired gt layer should be returned</span>
+<span class="sd">        channels: list of channels to read from the image</span>
+<span class="sd">        return_permanent_water: Read permanent water layer raster</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        (torch_inputs, torch_targets, transform): inputs Tensor, gt Tensor, transform for plotting with lat/long</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">tiff_targets</span> <span class="o">=</span> <span class="n">tiff_inputs</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/S2/&quot;</span><span class="p">,</span> <span class="n">folder_ground_truth</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tiff_inputs</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rst</span><span class="p">:</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">rst</span><span class="o">.</span><span class="n">read</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>
+        <span class="c1"># Shifted transform based on the given window (used for plotting)</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">rst</span><span class="o">.</span><span class="n">transform</span> <span class="k">if</span> <span class="n">window</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">rst</span><span class="o">.</span><span class="n">transform</span><span class="p">)</span>
+        <span class="n">torch_inputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">folder_permanent_water</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tiff_permanent_water</span> <span class="o">=</span> <span class="n">tiff_inputs</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/S2/&quot;</span><span class="p">,</span> <span class="n">folder_permanent_water</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tiff_permanent_water</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rst</span><span class="p">:</span>
+            <span class="n">permanent_water</span> <span class="o">=</span> <span class="n">rst</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>  
+            <span class="n">torch_permanent_water</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">permanent_water</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">torch_permanent_water</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">torch_inputs</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">return_ground_truth</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tiff_targets</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">rst</span><span class="p">:</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">rst</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">)</span>
+        
+        <span class="n">torch_targets</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">torch_targets</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">torch_inputs</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">torch_inputs</span><span class="p">,</span> <span class="n">torch_targets</span><span class="p">,</span> <span class="n">torch_permanent_water</span><span class="p">,</span> <span class="n">transform</span>
+
+<span class="n">COLORS_WORLDFLOODS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># invalid</span>
+                               <span class="p">[</span><span class="mi">139</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># land</span>
+                               <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">139</span><span class="p">],</span> <span class="c1"># water</span>
+                               <span class="p">[</span><span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">]],</span> <span class="c1"># cloud</span>
+                              <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
+<span class="n">INTERPRETATION_WORLDFLOODS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="s2">&quot;land&quot;</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">,</span> <span class="s2">&quot;cloud&quot;</span><span class="p">]</span>
+
+<span class="n">COLORS_WORLDFLOODS_PERMANENT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 0: invalid</span>
+                                         <span class="p">[</span><span class="mi">139</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 1: land</span>
+                                         <span class="p">[</span><span class="mi">237</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 2: flood_water</span>
+                                         <span class="p">[</span><span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">],</span> <span class="c1"># 3: cloud</span>
+                                         <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">139</span><span class="p">],</span> <span class="c1"># 4: permanent_water</span>
+                                         <span class="p">[</span><span class="mi">60</span><span class="p">,</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">92</span><span class="p">]],</span> <span class="c1"># 5: seasonal_water</span>
+                                        <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+
+<span class="n">INTERPRETATION_WORLDFLOODS_PERMANENT</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="s2">&quot;land&quot;</span><span class="p">,</span> <span class="s2">&quot;flood water&quot;</span><span class="p">,</span> <span class="s2">&quot;cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;permanent water&quot;</span><span class="p">,</span> <span class="s2">&quot;seasonal water&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_channel_configuration_bands</span>
+<span class="n">window</span> <span class="o">=</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">Window</span><span class="p">(</span><span class="n">col_off</span><span class="o">=</span><span class="mi">1543</span><span class="p">,</span> <span class="n">row_off</span><span class="o">=</span><span class="mi">247</span><span class="p">,</span>
+                                 <span class="n">width</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+
+
+<span class="n">tiff_s2</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="s2">&quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/S2/EMSR501/AOI01/EMSR501_AOI01_DEL_MONIT01_r1_v1.tif&quot;</span><span class="p">,</span> <span class="n">get_channel_configuration_bands</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">channel_configuration</span><span class="p">)</span>
+
+<span class="n">torch_inputs</span><span class="p">,</span> <span class="n">torch_targets</span><span class="p">,</span> <span class="n">torch_permanent_water</span><span class="p">,</span> <span class="n">transform</span> <span class="o">=</span> <span class="n">read_inference_pair</span><span class="p">(</span><span class="n">tiff_s2</span><span class="p">,</span> <span class="n">folder_ground_truth</span><span class="o">=</span><span class="s2">&quot;/GT/V_1_1/&quot;</span><span class="p">,</span> 
+                                                                                    <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span> 
+                                                                                    <span class="n">return_ground_truth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span>
+                                                                                    <span class="n">folder_permanent_water</span><span class="o">=</span><span class="s2">&quot;/JRC/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get probabilistic and deterministic inference functions</span>
+<span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">max_tile_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">prob_inference_function</span> <span class="o">=</span> <span class="n">get_model_inference_function</span><span class="p">(</span><span class="n">prob_model</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">apply_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">eval_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">det_inference_function</span> <span class="o">=</span> <span class="n">get_model_inference_function</span><span class="p">(</span><span class="n">det_model</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">apply_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">eval_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">uncertainty</span><span class="o">.</span><span class="n">compute_uncertainties_for_image_pair</span><span class="p">(</span>
+    <span class="n">torch_inputs</span><span class="p">,</span> 
+    <span class="n">torch_targets</span><span class="p">,</span> 
+    <span class="n">prob_inference_function</span><span class="p">,</span> 
+    <span class="n">det_inference_function</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">num_class</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model_params</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+    <span class="n">denorm</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Getting model inference function
+Max tile size: 1024
+Getting model inference function
+Max tile size: 1024
+</pre></div>
+</div>
+<img alt="../../_images/HOWTO_Calculate_uncertainty_maps_16_1.png" src="../../_images/HOWTO_Calculate_uncertainty_maps_16_1.png" />
+</div>
+</div>
+</div>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "conda-env-ml4floods-py"
+        },
+        kernelOptions: {
+            kernelName: "conda-env-ml4floods-py",
+            path: "./content/ml4ops"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'conda-env-ml4floods-py'</script>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="../prep/demo_pytorch_transforms.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Pre-processing Demonstration</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="HOWTO_Run_Inference_multioutput_binary.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Cloud removal inference</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
+    
+        &copy; Copyright 2021.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,404 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MLOps overview &#8212; ML4Floods</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../_static/sphinx-thebe.js"></script>
+    <link rel="shortcut icon" href="../_static/ml4cc_logo.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Train models" href="ml4ops/HOWTO_Train_models.html" />
+    <link rel="prev" title="The WorldFloods database" href="worldfloods_dataset.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../_static/ml4cc_logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">ML4Floods</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="intro/introduction.html">
+   Introduction
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Install
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="config.html">
+   Install
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Data prep
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="prep/full_data_ingest.html">
+   Ingest Flood Extent Maps
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="prep/gt_masks_generation.html">
+   Ground Truth
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="worldfloods_dataset.html">
+   The
+   <em>
+    WorldFloods
+   </em>
+   database
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  MLOps
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   MLOps overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_Train_models.html">
+   Train models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html">
+   Model Metrics
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html">
+   Run inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  End-to-end Pipeline
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">
+   Run inference on time series of Sentinel-2 images
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_inference_SAFE_file.html">
+   Inference on Sentinel-2
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     SAFE
+    </span>
+   </code>
+   files
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Experimental
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="prep/demo_pytorch_transforms.html">
+   Pre-processing Demonstration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html">
+   Probabilistic neural networks
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">
+   Cloud removal inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="about.html">
+   About
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../_sources/content/ml_overview.md"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.md</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>MLOps overview</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="tex2jax_ignore mathjax_ignore section" id="mlops-overview">
+<h1>MLOps overview<a class="headerlink" href="#mlops-overview" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><strong>Authors</strong>: Sam Budd, Gonzalo Mateo-García</p></li>
+</ul>
+<hr class="docutils" />
+<p>The MLOps section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2.
+Models are trained in the <em>WorldFloods</em>[1] dataset which is freely accessible at <code class="docutils literal notranslate"><span class="pre">gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/</span></code>.
+Each of the tutorials is self-contained and can be run on Google Colab.</p>
+<a class="reference internal image-reference" href="../_images/diagram_mlops.png"><img alt="MLOps diagram" class="align-center" src="../_images/diagram_mlops.png" style="width: 90%;" /></a>
+<hr class="docutils" />
+<p>Content:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Train_models.html"><span class="doc std std-doc">Train models</span></a>: trains the WorldFloods model on the WorldFloods dataset from scratch <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html"><span class="doc std std-doc">Model metrics</span></a>: loads a worldfloods trained model and run inference on all images of the <em>WorldFloods</em> test dataset. It computes displays some standard metrics and the PR and ROC curves for water detection. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html"><span class="doc std std-doc">Inference on Sentinel-2 images</span></a>: loads a worldfloods pretrained model and runs inference on a Sentinel-2 image from the WorldFloods dataset. It shows the predictions vs the ground truth on that image. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html"><span class="doc std std-doc">Probabilistic Neural Networks</span></a>: Run inference of the U-Nets trained with dropout. We apply Bayesian dropout at inference time to obtain an ensemble of predictions. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html"><span class="doc std std-doc">Cloud removal inference</span></a>: Run inference of the multioutput binary classification model. This model is able to predict land/water under the clouds. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html"><span class="doc std std-doc">Inference on time series of Sentinel-2 images</span></a>: Download a time series of Sentinel-2 images over an area of interest and run inference on them. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_inference_SAFE_file.html"><span class="doc std std-doc">Inference on Sentinel-2 SAFE files</span></a>: Download Sentinel-2 images from Copernicus Open Hub over an area of interest and run inference on them. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+<p>[1] Mateo-Garcia, G. et al. <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Towards global flood mapping onboard low cost satellites with machine learning</a>. <em>Scientific Reports 11, 7249</em> (2021).</p>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./content"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="worldfloods_dataset.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">The <em>WorldFloods</em> database</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="ml4ops/HOWTO_Train_models.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Train models</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
+    
+        &copy; Copyright 2021.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

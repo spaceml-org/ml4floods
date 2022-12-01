@@ -1,0 +1,1680 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pre-processing Demonstration &#8212; ML4Floods</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Probabilistic neural networks" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html" />
+    <link rel="prev" title="Inference on Sentinel-2 SAFE files" href="../ml4ops/HOWTO_inference_SAFE_file.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">ML4Floods</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../intro/introduction.html">
+   Introduction
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Install
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config.html">
+   Install
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Data prep
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="full_data_ingest.html">
+   Ingest Flood Extent Maps
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="gt_masks_generation.html">
+   Ground Truth
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../worldfloods_dataset.html">
+   The
+   <em>
+    WorldFloods
+   </em>
+   database
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  MLOps
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml_overview.html">
+   MLOps overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">
+   Train models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">
+   Model Metrics
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">
+   Run inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  End-to-end Pipeline
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">
+   Run inference on time series of Sentinel-2 images
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_inference_SAFE_file.html">
+   Inference on Sentinel-2
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     SAFE
+    </span>
+   </code>
+   files
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Experimental
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Pre-processing Demonstration
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">
+   Probabilistic neural networks
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">
+   Cloud removal inference
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  About
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../about.html">
+   About
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../../_sources/content/prep/demo_pytorch_transforms.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.ipynb</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        
+        
+    </div>
+</div>
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
+        
+        
+        
+        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/demo_pytorch_transforms.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
+                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
+                    src="../../_static/images/logo_colab.png"
+                    alt="Interact on Colab">Colab</button></a>
+        
+        
+    </div>
+</div>
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#brief-description">
+   Brief Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tldr">
+   TLDR
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#more-information">
+   More Information
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#package-preamble">
+   Package Preamble
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#downloading-demo-image">
+   Downloading Demo Image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#checking-to-ensure-that-the-images-were-downloaded-correctly-in-the-respective-folder">
+     Checking to ensure that the images were downloaded correctly in the respective folder.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#worldfloodsdatasettiled">
+   WorldFloodsDatasetTiled
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#so-now-we-can-initalize-our-predefined-worldfloodsdatasettiled-class">
+     So now, we can initalize our predefined
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       WorldFloodsDatasetTiled
+      </span>
+     </code>
+     class.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#visualizing-tiles">
+   Visualizing Tiles
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#visualizing-the-original-image-tile-and-mask">
+   Visualizing the original Image Tile and Mask
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#nice-attributes">
+     Nice Attributes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#note-image-shapes">
+     Note:
+     <strong>
+      Image Shapes
+     </strong>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#covariance-plot-between-different-channels-of-the-input-image">
+   Covariance plot between different channels of the input image.
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#transformations">
+   Transformations
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#utility">
+     Utility
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#permute-channels">
+       Permute Channels
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#to-tensor">
+       To Tensor
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#specialized">
+     Specialized
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#normalize">
+       #1.
+       <strong>
+        Normalize
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#shiftscalerotate-per-band">
+       #2.
+       <strong>
+        ShiftScaleRotate (Per Band)
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#flip">
+       #3.
+       <strong>
+        Flip
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#randomrotate90">
+       #4.
+       <strong>
+        RandomRotate90
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#motion-blur">
+       #5.
+       <strong>
+        Motion Blur
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#resize">
+       #6.
+       <strong>
+        ReSize
+       </strong>
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#stacking-all-transforms-together">
+   Stacking All Transforms Together!
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Covariance plot between different channels of the input image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#comparing-the-plot-for-the-original-and-the-transformed-data-a-difference-in-correlation-can-be-seen-in-the-plot-of-the-transformed-data">
+     Comparing the plot for the original and the transformed data. A difference in correlation can be seen in the plot of the transformed data.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#config-files">
+   Config Files
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Pre-processing Demonstration</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#brief-description">
+   Brief Description
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#tldr">
+   TLDR
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#more-information">
+   More Information
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#package-preamble">
+   Package Preamble
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#downloading-demo-image">
+   Downloading Demo Image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#checking-to-ensure-that-the-images-were-downloaded-correctly-in-the-respective-folder">
+     Checking to ensure that the images were downloaded correctly in the respective folder.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#worldfloodsdatasettiled">
+   WorldFloodsDatasetTiled
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#so-now-we-can-initalize-our-predefined-worldfloodsdatasettiled-class">
+     So now, we can initalize our predefined
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       WorldFloodsDatasetTiled
+      </span>
+     </code>
+     class.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#visualizing-tiles">
+   Visualizing Tiles
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#visualizing-the-original-image-tile-and-mask">
+   Visualizing the original Image Tile and Mask
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#nice-attributes">
+     Nice Attributes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#note-image-shapes">
+     Note:
+     <strong>
+      Image Shapes
+     </strong>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#covariance-plot-between-different-channels-of-the-input-image">
+   Covariance plot between different channels of the input image.
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#transformations">
+   Transformations
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#utility">
+     Utility
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#permute-channels">
+       Permute Channels
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#to-tensor">
+       To Tensor
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#specialized">
+     Specialized
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#normalize">
+       #1.
+       <strong>
+        Normalize
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#shiftscalerotate-per-band">
+       #2.
+       <strong>
+        ShiftScaleRotate (Per Band)
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#flip">
+       #3.
+       <strong>
+        Flip
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#randomrotate90">
+       #4.
+       <strong>
+        RandomRotate90
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#motion-blur">
+       #5.
+       <strong>
+        Motion Blur
+       </strong>
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#resize">
+       #6.
+       <strong>
+        ReSize
+       </strong>
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#stacking-all-transforms-together">
+   Stacking All Transforms Together!
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   Covariance plot between different channels of the input image
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#comparing-the-plot-for-the-original-and-the-transformed-data-a-difference-in-correlation-can-be-seen-in-the-plot-of-the-transformed-data">
+     Comparing the plot for the original and the transformed data. A difference in correlation can be seen in the plot of the transformed data.
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#config-files">
+   Config Files
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+              <div>
+                
+  <div class="tex2jax_ignore mathjax_ignore section" id="pre-processing-demonstration">
+<h1>Pre-processing Demonstration<a class="headerlink" href="#pre-processing-demonstration" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><strong>Last Modified</strong>: 10-03-2021</p></li>
+<li><p><strong>Authors</strong>: J. Emmanuel Johnson, Satyarth Praveen, Nadia Ahmed, Nicholas Roth</p></li>
+</ul>
+<hr class="docutils" />
+<div class="section" id="brief-description">
+<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this headline">¶</a></h2>
+<p>In this notebook, we will explore some ways that we can do <em>augmentations</em> that are necessary for machine learning purposes. The image data that we receive is not often ready for ML models. We often need to do further transformations before we input them into our machine learning model. Augmentation serves a few purposes:</p>
+<ol class="simple">
+<li><p>It makes our models more robust to augmentations that we may find in the real world.</p></li>
+<li><p>It can potentially expand our training dataset more by including “augmented” data.</p></li>
+</ol>
+<p>Often times this functionality is hidden within the code but in this notebook, we expose the user step-by-step for how they can reproduce some of the augmentations used within the WorldFloods dataset. We hope this will not only provide understanding and explainability, but also spark some future research purposes.</p>
+</div>
+<hr class="docutils" />
+<div class="section" id="tldr">
+<h2>TLDR<a class="headerlink" href="#tldr" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Augmentations are important are a crucial component of an ML pipeline. This notebook will demonstrate how we can do this for the WorldFloods Dataset in particular.</p>
+</div></blockquote>
+<blockquote>
+<div><p>It uses the WorldFloodsDatasetTiled class that internally tiles the input image and masks. Objects of this class can also be initialized with the transformations to apply transformation to the tiled samples.</p>
+</div></blockquote>
+<blockquote>
+<div><p>This is useful because it complies with the pytorch datasets that can directly be used for training models.</p>
+</div></blockquote>
+<hr class="docutils" />
+</div>
+<hr class="docutils" />
+<div class="section" id="more-information">
+<h2>More Information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pytorch.org/tutorials/beginner/data_loading_tutorial.html">PyTorch TorchVision Demo</a></p></li>
+</ul>
+</div>
+<div class="section" id="package-preamble">
+<h2>Package Preamble<a class="headerlink" href="#package-preamble" title="Permalink to this headline">¶</a></h2>
+<p>For starters, we want to import the necessary packages. We will outline which ones they are below and why we’re using them.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ====================================================</span>
+<span class="c1"># Helpful trick for loading the directories correction</span>
+<span class="c1"># ====================================================</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">pyprojroot</span> <span class="kn">import</span> <span class="n">here</span>
+<span class="c1"># spyder up to find the root</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">here</span><span class="p">(</span><span class="n">project_files</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;.here&quot;</span><span class="p">])</span>
+<span class="c1"># append to path</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">here</span><span class="p">()))</span>
+
+<span class="c1"># ====================================================</span>
+<span class="c1"># CUSTOM import for pytorch compatible Dataset class</span>
+<span class="c1"># ====================================================</span>
+<span class="kn">from</span> <span class="nn">src.data.worldfloods.dataset</span> <span class="kn">import</span> <span class="n">WorldFloodsDatasetTiled</span>
+<span class="kn">from</span> <span class="nn">src.data</span> <span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">dutils</span>
+
+<span class="c1"># ====================================================</span>
+<span class="c1"># Imports for the transformations</span>
+<span class="c1"># ====================================================</span>
+<span class="kn">import</span> <span class="nn">albumentations</span>
+<span class="kn">import</span> <span class="nn">src.preprocess.transformations</span> <span class="k">as</span> <span class="nn">transformations</span>
+<span class="kn">from</span> <span class="nn">src.preprocess.worldfloods</span> <span class="kn">import</span> <span class="n">normalize</span> <span class="k">as</span> <span class="n">wf_normalization</span>
+<span class="kn">from</span> <span class="nn">src.preprocess</span> <span class="kn">import</span> <span class="n">tiling</span><span class="p">,</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">putils</span>
+
+<span class="c1"># ====================================================</span>
+<span class="c1"># Standard Packages</span>
+<span class="c1"># ====================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># MATPLOTLIB Settings</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="o">%</span><span class="k">config</span> InlineBackend.figure_format = &#39;retina&#39;
+
+<span class="c1"># RASTERIO imports</span>
+<span class="kn">from</span> <span class="nn">rasterio</span> <span class="kn">import</span> <span class="n">plot</span> <span class="k">as</span> <span class="n">rasterioplt</span>
+
+<span class="c1"># SEABORN SETTINGS</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_context</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="s1">&#39;talk&#39;</span><span class="p">,</span><span class="n">font_scale</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+
+<span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="downloading-demo-image">
+<h2>Downloading Demo Image<a class="headerlink" href="#downloading-demo-image" title="Permalink to this headline">¶</a></h2>
+<p>First and foremost, we need a demo image to demonstrate the transformations and visualizations. It is tiled while reading from the WorldFloodsDatasetTiled object.</p>
+<p>The path of the image is exactly the same for both the input image and the groundtruth with the only difference being the <code class="docutils literal notranslate"><span class="pre">S2</span></code> vs <code class="docutils literal notranslate"><span class="pre">GT/{version}</span></code> in the respective image path. This is demonstrated in the code. This makes the directory structure fairly simple to access data for the later modules of the pipeline.</p>
+<p>The image is downloaded from the bucket for demonstration. Let’s take a peek.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s2_prefix</span> <span class="o">=</span> <span class="s2">&quot;S2&quot;</span>
+<span class="n">gt_prefix</span> <span class="o">=</span> <span class="s2">&quot;GT/V_1_1&quot;</span>
+
+<span class="n">s2_demo_image</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/</span><span class="si">{</span><span class="n">s2_prefix</span><span class="si">}</span><span class="s2">/EMSR501/AOI01/EMSR501_AOI01_DEL_MONIT01_r1_v1.tif&quot;</span>
+<span class="n">gt_demo_image</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/</span><span class="si">{</span><span class="n">gt_prefix</span><span class="si">}</span><span class="s2">/EMSR501/AOI01/EMSR501_AOI01_DEL_MONIT01_r1_v1.tif&quot;</span>
+
+<span class="c1"># Local destination directory</span>
+<span class="n">s2_destination_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;datasets/demo_images/</span><span class="si">{</span><span class="n">s2_prefix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">gt_destination_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;datasets/demo_images/</span><span class="si">{</span><span class="n">gt_prefix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Download demo image to local directory</span>
+<span class="n">s2_demo_gcp_path</span> <span class="o">=</span> <span class="n">dutils</span><span class="o">.</span><span class="n">GCPPath</span><span class="p">(</span><span class="n">s2_demo_image</span><span class="p">)</span>
+<span class="n">s2_demo_gcp_path</span><span class="o">.</span><span class="n">download_file_from_bucket</span><span class="p">(</span><span class="n">s2_destination_dir</span><span class="p">)</span>
+
+<span class="n">gt_demo_gcp_path</span> <span class="o">=</span> <span class="n">dutils</span><span class="o">.</span><span class="n">GCPPath</span><span class="p">(</span><span class="n">gt_demo_image</span><span class="p">)</span>
+<span class="n">gt_demo_gcp_path</span><span class="o">.</span><span class="n">download_file_from_bucket</span><span class="p">(</span><span class="n">gt_destination_dir</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Folder &#39;/home/satyarth934/projects/ml4floods/datasets/demo_images/S2&#39; Is Already There.
+Folder &#39;/home/satyarth934/projects/ml4floods/datasets/demo_images/GT/V_1_1&#39; Is Already There.
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>PosixPath(&#39;/home/satyarth934/projects/ml4floods/datasets/demo_images/GT/V_1_1/EMSR501_AOI01_DEL_MONIT01_r1_v1.tif&#39;)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="checking-to-ensure-that-the-images-were-downloaded-correctly-in-the-respective-folder">
+<h3>Checking to ensure that the images were downloaded correctly in the respective folder.<a class="headerlink" href="#checking-to-ensure-that-the-images-were-downloaded-correctly-in-the-respective-folder" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>ls -lht <span class="nv">$s2_destination_dir</span>/
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+<span class="o">!</span>ls -lht <span class="nv">$gt_destination_dir</span>/
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>total 687M
+-rw-rw-r-- 1 satyarth934 satyarth934 687M Mar  8 22:46 EMSR501_AOI01_DEL_MONIT01_r1_v1.tif
+---
+total 25M
+-rw-rw-r-- 1 satyarth934 satyarth934 25M Mar 10 14:11 EMSR501_AOI01_DEL_MONIT01_r1_v1.tif
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="worldfloodsdatasettiled">
+<h2>WorldFloodsDatasetTiled<a class="headerlink" href="#worldfloodsdatasettiled" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="so-now-we-can-initalize-our-predefined-worldfloodsdatasettiled-class">
+<h3>So now, we can initalize our predefined <code class="docutils literal notranslate"><span class="pre">WorldFloodsDatasetTiled</span></code> class.<a class="headerlink" href="#so-now-we-can-initalize-our-predefined-worldfloodsdatasettiled-class" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define constants</span>
+<span class="n">image_files</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;/home/satyarth934/projects/ml4floods/datasets/demo_images/S2/EMSR501_AOI01_DEL_MONIT01_r1_v1.tif&quot;</span>
+<span class="p">]</span>
+<span class="n">image_prefix</span> <span class="o">=</span> <span class="s2">&quot;S2&quot;</span>
+<span class="n">gt_prefix</span> <span class="o">=</span> <span class="s2">&quot;GT/V_1_1&quot;</span>
+<span class="n">tile_height</span> <span class="o">=</span> <span class="n">tile_width</span> <span class="o">=</span> <span class="mi">256</span>
+
+<span class="c1"># Demo tile index</span>
+<span class="n">dt_idx</span> <span class="o">=</span> <span class="mi">200</span>
+
+<span class="c1"># Intialize worldfloods PyTorch Dataset</span>
+<span class="n">pt_ds_orig</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">pt_ds_orig</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="visualizing-tiles">
+<h2>Visualizing Tiles<a class="headerlink" href="#visualizing-tiles" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">ri</span><span class="p">:</span>
+    <span class="n">untiled_image_shape</span> <span class="o">=</span> <span class="n">ri</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">wspace</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">num_tiles_per_row</span> <span class="o">=</span> <span class="p">(</span><span class="n">untiled_image_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">//</span><span class="n">pt_ds</span><span class="o">.</span><span class="n">list_of_windows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">width</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        
+        <span class="n">tile_num</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">num_tiles_per_row</span><span class="p">)</span> <span class="o">+</span> <span class="n">c</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">pt_ds</span><span class="p">[</span><span class="n">tile_num</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">]</span>
+        
+        <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">image</span><span class="p">[(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="mf">3000.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="p">(</span><span class="n">rgb</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">rgb</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;uint8&quot;</span><span class="p">)</span>
+        <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">c</span><span class="p">])</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../../_images/demo_pytorch_transforms_11_0.png" src="../../_images/demo_pytorch_transforms_11_0.png" />
+</div>
+</div>
+</div>
+<div class="section" id="visualizing-the-original-image-tile-and-mask">
+<h2>Visualizing the original Image Tile and Mask<a class="headerlink" href="#visualizing-the-original-image-tile-and-mask" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Defining the plot function</span>
+<span class="k">def</span> <span class="nf">plot_images</span><span class="p">(</span><span class="n">demo_image_dict</span><span class="p">):</span>
+    <span class="c1"># get the image and mask from the input dictionary</span>
+    <span class="n">image</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">demo_image_dict</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span> <span class="n">demo_image_dict</span><span class="p">[</span><span class="s2">&quot;mask&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image Size: </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="se">\n</span><span class="s2">Mask Size: </span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># demo plot</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+    
+    <span class="c1"># plot the image</span>
+    <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">image</span><span class="p">[(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="o">...</span><span class="p">]</span><span class="o">/</span><span class="mf">3000.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="p">(</span><span class="n">rgb</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">rgb</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;uint8&quot;</span><span class="p">)</span> 
+    <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Image Tile&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    
+    <span class="c1"># plot the mask</span>
+    <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Mask&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    
+
+<span class="c1"># Calling the plot function to visualize the original image and the corresponding mask.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of Images: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pt_ds_orig</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds_orig</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of Images: 288
+Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_13_1.png" src="../../_images/demo_pytorch_transforms_13_1.png" />
+</div>
+</div>
+<div class="section" id="nice-attributes">
+<h3>Nice Attributes<a class="headerlink" href="#nice-attributes" title="Permalink to this headline">¶</a></h3>
+<p>There are some nifty attributes available now that we have our Dataset. Firstly, we can get the length (number of image tiles) as well as explicitly extract the images via the index.</p>
+</div>
+<div class="section" id="note-image-shapes">
+<h3>Note: <strong>Image Shapes</strong><a class="headerlink" href="#note-image-shapes" title="Permalink to this headline">¶</a></h3>
+<p>So notice how the image shapes are <code class="docutils literal notranslate"><span class="pre">(Channel,</span> <span class="pre">Height,</span> <span class="pre">Width)</span></code>. This is the default pattern that Rasterio and PyTorch outputs. Since we are heavily dependent upon <code class="docutils literal notranslate"><span class="pre">rasterio</span></code> and <code class="docutils literal notranslate"><span class="pre">pytorch</span></code> so we stick with this as the default.</p>
+<p>For other libraries like <code class="docutils literal notranslate"><span class="pre">scikit-image</span></code>, <code class="docutils literal notranslate"><span class="pre">pillow</span></code> and <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>, we use the <code class="docutils literal notranslate"><span class="pre">(Height,</span> <span class="pre">Width,</span> <span class="pre">Channel)</span></code>. So for example, if we want to plot this, then we need to change the shape to accommadate the shape size.</p>
+</div>
+</div>
+<div class="section" id="covariance-plot-between-different-channels-of-the-input-image">
+<h2>Covariance plot between different channels of the input image.<a class="headerlink" href="#covariance-plot-between-different-channels-of-the-input-image" title="Permalink to this headline">¶</a></h2>
+<p>This is a visual metric to show how the data and the correlation between the data changes as different transformations are applied to the images. For the sake of the demonstration, the covariance matrix is computed using the RGB channels.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">corner</span>
+
+<span class="c1"># t = pt_ds[dt_idx][&quot;image&quot;][5:8]</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">pt_ds_orig</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s2">&quot;image&quot;</span><span class="p">][(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">rasterioplt</span><span class="o">.</span><span class="n">reshape_as_image</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">figure</span> <span class="o">=</span> <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(3, 256, 256)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_17_2.png" src="../../_images/demo_pytorch_transforms_17_2.png" />
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="transformations">
+<h2>Transformations<a class="headerlink" href="#transformations" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="utility">
+<h3>Utility<a class="headerlink" href="#utility" title="Permalink to this headline">¶</a></h3>
+<hr class="docutils" />
+<div class="section" id="permute-channels">
+<h4>Permute Channels<a class="headerlink" href="#permute-channels" title="Permalink to this headline">¶</a></h4>
+<p>This is a simple permutation of the channels. In the case that the dataset was in a different order or we need to change the order, this transform would do the following:</p>
+<div class="math notranslate nohighlight">
+\[
+\text{Height}\times\text{Width}\times\text{Channels} \rightarrow \text{Channels}\times\text{Height}\times\text{Width} 
+\]</div>
+<p>On the contrary, the inverse permute channels transform does the following:</p>
+<div class="math notranslate nohighlight">
+\[
+\text{Channels}\times\text{Height}\times\text{Width} \rightarrow \text{Height}\times\text{Width}\times\text{Channels}
+\]</div>
+<p>Again, this is <strong>mainly</strong> for the other libraries.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original Image (shape):</span><span class="se">\n</span><span class="si">{</span><span class="n">pt_ds_orig</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Original Image (shape):
+(13, 256, 256)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_invpermutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">InversePermuteChannels</span><span class="p">()</span>
+<span class="n">transform_permutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">PermuteChannels</span><span class="p">()</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">transform_invpermutechannels</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tensor Flavour Image (shape):</span><span class="se">\n</span><span class="si">{</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># create composite transform from package</span>
+<span class="c1"># Application of inverse permute channels followed by </span>
+<span class="c1"># permute channels will lead to the input being unchanged.</span>
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span> 
+    <span class="n">transform_permutechannels</span>
+    <span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original Image (shape):</span><span class="se">\n</span><span class="si">{</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Tensor Flavour Image (shape):
+(256, 256, 13)
+Original Image (shape):
+(13, 256, 256)
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="to-tensor">
+<h4>To Tensor<a class="headerlink" href="#to-tensor" title="Permalink to this headline">¶</a></h4>
+<p>This transforms the type of the matrices to a tensor. Typically this is the <strong>last</strong> transform that we do.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_totensor</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()</span>
+
+<span class="c1"># pt_ds = WorldFloodsDatasetTiled(image_files, image_prefix, gt_prefix, transforms=transform_totensor)</span>
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">transform_totensor</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image (type): </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s1">&#39;image&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image (type): &lt;class &#39;torch.Tensor&#39;&gt;
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="specialized">
+<h3>Specialized<a class="headerlink" href="#specialized" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="normalize">
+<h4>#1. <strong>Normalize</strong><a class="headerlink" href="#normalize" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">use_channels</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+<span class="n">channel_mean</span><span class="p">,</span> <span class="n">channel_std</span> <span class="o">=</span> <span class="n">wf_normalization</span><span class="o">.</span><span class="n">get_normalisation</span><span class="p">(</span><span class="n">use_channels</span><span class="p">)</span>
+<span class="n">transform_normalize</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span>
+    <span class="n">mean</span><span class="o">=</span><span class="n">channel_mean</span><span class="p">,</span> 
+    <span class="n">std</span><span class="o">=</span><span class="n">channel_std</span><span class="p">,</span> 
+    <span class="n">max_pixel_value</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
+<span class="n">transform_invpermutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">InversePermuteChannels</span><span class="p">()</span>
+<span class="n">transform_permutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">PermuteChannels</span><span class="p">()</span>
+
+<span class="c1"># Composing multiple transformations together</span>
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span>
+    <span class="n">transform_normalize</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+    <span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Plotting the normalized image</span>
+<span class="k">def</span> <span class="nf">plot_images_plt</span><span class="p">(</span><span class="n">demo_image_dict</span><span class="p">):</span>
+
+    <span class="c1"># get the image and mask from the input dictionary</span>
+    <span class="n">image</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">demo_image_dict</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span> <span class="n">demo_image_dict</span><span class="p">[</span><span class="s2">&quot;mask&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image Size: </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="se">\n</span><span class="s2">Mask Size: </span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># demo plot</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+    
+    <span class="c1"># plot the image</span>
+    <span class="n">check_img</span> <span class="o">=</span> <span class="n">image</span><span class="p">[(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">check_img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">check_img</span><span class="p">,</span> <span class="p">(</span><span class="n">check_img</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">check_img</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;uint8&quot;</span><span class="p">)</span>
+
+    <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">check_img</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Image Tile&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    
+    <span class="c1"># plot the mask</span>
+    <span class="n">rasterioplt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Mask&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    
+<span class="n">plot_images_plt</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_27_1.png" src="../../_images/demo_pytorch_transforms_27_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="shiftscalerotate-per-band">
+<h4>#2. <strong>ShiftScaleRotate (Per Band)</strong><a class="headerlink" href="#shiftscalerotate-per-band" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_scaling</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">ShiftScaleRotate</span><span class="p">(</span>
+    <span class="n">shift_limit</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> 
+    <span class="n">scale_limit</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> 
+    <span class="n">rotate_limit</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">transform_channeljitter</span><span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">PerChannel</span><span class="p">(</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="p">[</span><span class="n">transform_scaling</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span>
+    <span class="n">transform_channeljitter</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+    <span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(256, 256, 13)
+Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_29_1.png" src="../../_images/demo_pytorch_transforms_29_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="flip">
+<h4>#3. <strong>Flip</strong><a class="headerlink" href="#flip" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_flip</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">Flip</span><span class="p">(</span><span class="n">always_apply</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span>
+    <span class="n">transform_flip</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+<span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_31_1.png" src="../../_images/demo_pytorch_transforms_31_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="randomrotate90">
+<h4>#4. <strong>RandomRotate90</strong><a class="headerlink" href="#randomrotate90" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_rr90</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">RandomRotate90</span><span class="p">(</span><span class="n">always_apply</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span>
+    <span class="n">transform_rr90</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+<span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_33_1.png" src="../../_images/demo_pytorch_transforms_33_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="motion-blur">
+<h4>#5. <strong>Motion Blur</strong><a class="headerlink" href="#motion-blur" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_motionblur</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">MotionBlur</span><span class="p">(</span><span class="n">blur_limit</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">always_apply</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span>
+    <span class="n">transform_motionblur</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+<span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 256, 256)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_35_1.png" src="../../_images/demo_pytorch_transforms_35_1.png" />
+</div>
+</div>
+</div>
+<div class="section" id="resize">
+<h4>#6. <strong>ReSize</strong><a class="headerlink" href="#resize" title="Permalink to this headline">¶</a></h4>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">transform_invpermutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">InversePermuteChannels</span><span class="p">()</span>
+<span class="n">transform_resize</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">ResizeFactor</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">transform_permutechannels</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">PermuteChannels</span><span class="p">()</span>
+
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">albumentations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span> 
+    <span class="n">transform_resize</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span>
+<span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 64, 64)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_37_1.png" src="../../_images/demo_pytorch_transforms_37_1.png" />
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="stacking-all-transforms-together">
+<h2>Stacking All Transforms Together!<a class="headerlink" href="#stacking-all-transforms-together" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stacked Transforms</span>
+<span class="n">mega_transform</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transform_invpermutechannels</span><span class="p">,</span> 
+    <span class="n">transform_resize</span><span class="p">,</span>
+    <span class="n">transform_motionblur</span><span class="p">,</span>
+    <span class="n">transform_rr90</span><span class="p">,</span>
+    <span class="n">transform_flip</span><span class="p">,</span>
+    <span class="n">transform_permutechannels</span><span class="p">,</span>
+<span class="p">])</span>
+
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+
+<span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 64, 64)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_40_1.png" src="../../_images/demo_pytorch_transforms_40_1.png" />
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="id1">
+<h2>Covariance plot between different channels of the input image<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="comparing-the-plot-for-the-original-and-the-transformed-data-a-difference-in-correlation-can-be-seen-in-the-plot-of-the-transformed-data">
+<h3>Comparing the plot for the original and the transformed data. A difference in correlation can be seen in the plot of the transformed data.<a class="headerlink" href="#comparing-the-plot-for-the-original-and-the-transformed-data-a-difference-in-correlation-can-be-seen-in-the-plot-of-the-transformed-data" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Original images</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Original image plot&quot;</span><span class="p">)</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">pt_ds_orig</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s2">&quot;image&quot;</span><span class="p">][(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">rasterioplt</span><span class="o">.</span><span class="n">reshape_as_image</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">figure</span> <span class="o">=</span> <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Original image plot
+(3, 256, 256)
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_42_2.png" src="../../_images/demo_pytorch_transforms_42_2.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Transformed images</span>
+<span class="kn">import</span> <span class="nn">corner</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">][</span><span class="s2">&quot;image&quot;</span><span class="p">][(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">...</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">rasterioplt</span><span class="o">.</span><span class="n">reshape_as_image</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">figure</span> <span class="o">=</span> <span class="n">corner</span><span class="o">.</span><span class="n">corner</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(3, 64, 64)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_43_1.png" src="../../_images/demo_pytorch_transforms_43_1.png" />
+</div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="config-files">
+<h2>Config Files<a class="headerlink" href="#config-files" title="Permalink to this headline">¶</a></h2>
+<p>The above process of performing transformations is simplified using a config file.
+The programmer does not need to edit the transformation functions within the code each time he/she decides to modify the transformations on the input data. The parameters can be defined within a json config file and can directly be used to automatically generate the transformations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">src.models.utils.configuration</span> <span class="kn">import</span> <span class="n">AttrDict</span>
+<span class="kn">from</span> <span class="nn">src.data.worldfloods.configs</span> <span class="kn">import</span> <span class="n">CHANNELS_CONFIGURATIONS</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;data_params&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;bucket_id&quot;</span><span class="p">:</span> <span class="s2">&quot;ml4floods&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;path_to_splits&quot;</span><span class="p">:</span> <span class="s2">&quot;worldfloods/public&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;input_folder&quot;</span><span class="p">:</span> <span class="s2">&quot;S2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target_folder&quot;</span><span class="p">:</span> <span class="s2">&quot;gt&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="s2">&quot;window_size&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">],</span>
+        <span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;train_transformation&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;num_classes&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;resizefactor&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;downsampling_factor&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;normalize&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;shiftscalerotate&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;shift_limit&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+                <span class="s2">&quot;scale_limit&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s2">&quot;rotate_limit&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mf">0.5</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;gaussnoise&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;var_limit_lower&quot;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+                <span class="s2">&quot;var_limit_upper&quot;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+                <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mf">0.2</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;motionblur&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;blur_limit&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+                <span class="s2">&quot;always_apply&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;randomrotate90&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                <span class="s2">&quot;always_apply&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;flip&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                <span class="s2">&quot;always_apply&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;totensor&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;use_channels&quot;</span><span class="p">:</span> <span class="s2">&quot;all&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;test_transformation&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;num_classes&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;resizefactor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;shiftscalerotate&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;gaussnoise&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;motionblur&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;totensor&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;use_channels&quot;</span><span class="p">:</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;normalize&quot;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">AttrDict</span><span class="o">.</span><span class="n">from_nested_dicts</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;data_params&#39;: {&#39;bucket_id&#39;: &#39;ml4floods&#39;,
+  &#39;path_to_splits&#39;: &#39;worldfloods/public&#39;,
+  &#39;input_folder&#39;: &#39;S2&#39;,
+  &#39;target_folder&#39;: &#39;gt&#39;,
+  &#39;batch_size&#39;: 8,
+  &#39;window_size&#39;: [256, 256],
+  &#39;bands&#39;: &#39;all&#39;,
+  &#39;train_transformation&#39;: {&#39;num_classes&#39;: 3,
+   &#39;resizefactor&#39;: {&#39;downsampling_factor&#39;: 3, &#39;p&#39;: 1.0},
+   &#39;normalize&#39;: True,
+   &#39;shiftscalerotate&#39;: {&#39;shift_limit&#39;: 0.001,
+    &#39;scale_limit&#39;: 0.01,
+    &#39;rotate_limit&#39;: 0.01,
+    &#39;p&#39;: 0.5},
+   &#39;gaussnoise&#39;: {&#39;var_limit_lower&#39;: 1e-06,
+    &#39;var_limit_upper&#39;: 0.001,
+    &#39;p&#39;: 0.2},
+   &#39;motionblur&#39;: {&#39;blur_limit&#39;: 7, &#39;always_apply&#39;: False},
+   &#39;randomrotate90&#39;: {&#39;p&#39;: 0.5, &#39;always_apply&#39;: False},
+   &#39;flip&#39;: {&#39;p&#39;: 0.5, &#39;always_apply&#39;: False},
+   &#39;totensor&#39;: True,
+   &#39;use_channels&#39;: &#39;all&#39;},
+  &#39;test_transformation&#39;: {&#39;num_classes&#39;: 3,
+   &#39;resizefactor&#39;: None,
+   &#39;shiftscalerotate&#39;: None,
+   &#39;gaussnoise&#39;: None,
+   &#39;motionblur&#39;: None,
+   &#39;totensor&#39;: True,
+   &#39;use_channels&#39;: &#39;all&#39;,
+   &#39;normalize&#39;: True}}}
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># extract train transformation params</span>
+<span class="n">transform_params</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">data_params</span><span class="o">.</span><span class="n">train_transformation</span>
+
+<span class="n">channel_mean</span><span class="p">,</span> <span class="n">channel_std</span> <span class="o">=</span> <span class="n">wf_normalization</span><span class="o">.</span><span class="n">get_normalisation</span><span class="p">(</span><span class="n">transform_params</span><span class="o">.</span><span class="n">use_channels</span><span class="p">)</span>
+
+<span class="c1"># define composite transformation</span>
+<span class="n">train_transform</span> <span class="o">=</span> <span class="n">transformations</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transformations</span><span class="o">.</span><span class="n">InversePermuteChannels</span><span class="p">(),</span> 
+    <span class="n">transformations</span><span class="o">.</span><span class="n">RandomRotate90</span><span class="p">(</span><span class="o">**</span><span class="n">transform_params</span><span class="o">.</span><span class="n">randomrotate90</span><span class="p">),</span>
+    <span class="n">transformations</span><span class="o">.</span><span class="n">Flip</span><span class="p">(</span><span class="o">**</span><span class="n">transform_params</span><span class="o">.</span><span class="n">flip</span><span class="p">),</span>
+    <span class="n">transformations</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span>
+        <span class="n">mean</span><span class="o">=</span><span class="n">channel_mean</span><span class="p">,</span> 
+        <span class="n">std</span><span class="o">=</span><span class="n">channel_std</span><span class="p">,</span> 
+        <span class="n">max_pixel_value</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="n">transformations</span><span class="o">.</span><span class="n">PermuteChannels</span><span class="p">(),</span> 
+<span class="p">])</span>
+
+
+<span class="c1"># initialize dataset</span>
+<span class="n">pt_ds</span> <span class="o">=</span> <span class="n">WorldFloodsDatasetTiled</span><span class="p">(</span>
+    <span class="n">list_of_windows</span><span class="o">=</span><span class="n">putils</span><span class="o">.</span><span class="n">get_list_of_window_slices</span><span class="p">(</span>
+        <span class="n">file_names</span><span class="o">=</span><span class="n">image_files</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">tiling</span><span class="o">.</span><span class="n">WindowSize</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">tile_height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">tile_width</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">image_prefix</span><span class="o">=</span><span class="n">image_prefix</span><span class="p">,</span>
+    <span class="n">gt_prefix</span><span class="o">=</span><span class="n">gt_prefix</span><span class="p">,</span>
+    <span class="n">transforms</span><span class="o">=</span><span class="n">mega_transform</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_images</span><span class="p">(</span><span class="n">pt_ds</span><span class="p">[</span><span class="n">dt_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Image Size: (13, 64, 64)
+Mask Size: (1, 256, 256)
+</pre></div>
+</div>
+<img alt="../../_images/demo_pytorch_transforms_48_1.png" src="../../_images/demo_pytorch_transforms_48_1.png" />
+</div>
+</div>
+</div>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "conda-env-ml4fl_py38-py"
+        },
+        kernelOptions: {
+            kernelName: "conda-env-ml4fl_py38-py",
+            path: "./content/prep"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'conda-env-ml4fl_py38-py'</script>
+
+              </div>
+              
+            
+                <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="../ml4ops/HOWTO_inference_SAFE_file.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Probabilistic neural networks</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            
+        </div>
+    </div>
+    <footer class="footer">
+  <p>
+    
+      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
+    
+        &copy; Copyright 2021.<br/>
+  </p>
+</footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>
