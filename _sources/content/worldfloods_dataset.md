@@ -6,7 +6,6 @@ It requires approximately 300GB of hard-disk storage. The *WorldFloods* database
 
 ```{image} ./prep/images/worldfloods_v1.png
 :alt: Floods devestate the world every year.
-:width: 500px
 :align: center
 ```
 
@@ -20,7 +19,6 @@ If you want to use this data from the Google Colab you can *'add a shortcut to y
 
 ```{image} ./prep/images/add_shortcut_drive.png
 :alt: Floods devestate the world every year.
-:width: 500px
 :align: center
 ```
 	
