@@ -30,7 +30,7 @@ The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z)
 It requires approximately 300GB of hard-disk storage. 
 The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
-To download the *WorldFloods* database or the pretrained flood segmentation models for Sentinel-2 see [the instructions to download the database](https://github.com/spaceml-org/ml4floods/tree/main/jupyterbook/content/worldfloods_dataset.md).
+To download the *WorldFloods* database or the pretrained flood segmentation models for Sentinel-2 see [the instructions to download the database](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html).
 
 ## Cite
 
