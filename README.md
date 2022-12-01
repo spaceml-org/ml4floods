@@ -12,7 +12,7 @@ ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data pr
 Install the package:
 
 ```bash
-pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
+pip install ml4floods
 ```
 
 These tutorials may help you explore the datasets and models:
