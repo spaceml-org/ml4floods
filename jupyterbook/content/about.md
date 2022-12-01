@@ -21,7 +21,7 @@ and super-charge intelligent applications, automation and robotics needed to exp
  
  ## Contributors
  
- [*Gonzalo Mateo-García*](https://www.uv.es/gonmagar/), Enrique Portalés-Julià, *J. Emmanuel Jonhson*, *Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes and James Parr.*   
+ [*Gonzalo Mateo-García*](https://www.uv.es/gonmagar/), *Enrique Portalés-Julià*, *Tarun Narayanan*, *J. Emmanuel Jonhson*, *Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes and James Parr.*   
  
  ## Citation
  
