@@ -11,7 +11,7 @@ ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data pr
 
 ## Install
 
-Install from Pip:
+Install from [pip](https://pypi.org/project/ml4floods/):
 ```bash
 pip install ml4floods
 ```
