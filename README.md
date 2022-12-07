@@ -9,11 +9,21 @@ ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data pr
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
 </p>
 
-Install the package:
+## Install
 
+Install from Pip:
 ```bash
 pip install ml4floods
 ```
+
+Install the latest version from GitHub:
+
+```bash
+git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
+```
+
+## Docs
+[spaceml-org.github.io/ml4floods](https://spaceml-org.github.io/ml4floods)
 
 These tutorials may help you explore the datasets and models:
 * [Project rationale](https://spaceml-org.github.io/ml4floods/content/intro/introduction.html).
