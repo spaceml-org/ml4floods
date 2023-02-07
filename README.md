@@ -19,7 +19,7 @@ pip install ml4floods
 Install the latest version from GitHub:
 
 ```bash
-git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
+pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 ```
 
 ## Docs
