@@ -21,13 +21,23 @@ STATIC_FOLDER = "web"
 app = Flask(__name__, static_url_path='/web')
 app.config['STATIC_FOLDER'] = STATIC_FOLDER
 
+DRIVER_FLOODMAPS = {
+    "geojson": "GeoJSON",
+    "shp" : "ESRI Shapefile"
+}
 SATURATION = 3_000
 
 @app.route("/<subset>/<eventid>/save_floodmap", methods = ['POST'])
 def save_floodmap(subset:str, eventid:str):
     meta_path = os.path.join(app.config["ROOT_LOCATION"], subset, "meta", f"{eventid}.json")
     meta = utils.read_json_from_gcp(meta_path)
-    aoi = shape(meta["area_of_interest_polygon"])
+
+    if "area_of_interest_polygon" in meta:
+        aoi = shape(meta["area_of_interest_polygon"])
+    else:
+        # Assumes old version of worldfloods
+        aoi = box(*meta["bounds"])
+
 
     geojson = request.json
     floodmap = gpd.GeoDataFrame.from_features(geojson, crs="epsg:4326")
@@ -48,14 +58,15 @@ def save_floodmap(subset:str, eventid:str):
     floodmap.to_crs(crs, inplace=True)
 
     # Save floodmap locally
-    floodmap_path = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
+    floodmap_path = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
     os.makedirs(os.path.dirname(floodmap_path), exist_ok=True)
-    floodmap.to_file(floodmap_path, driver="GeoJSON")
+    floodmap.to_file(floodmap_path, driver=DRIVER_FLOODMAPS[app.config['FORMAT_FLOODMAPS']])
 
-    # Recompute gt
+    # Recompute gt (version 2)
     jrc_permanent_water_path = os.path.join(app.config["ROOT_LOCATION"], subset, "PERMANENTWATERJRC", f"{eventid}.tif")
+    gt_version = app.config["GT_VERSION"]
     water_mask = create_gt.compute_water(s2path,floodmap=floodmap,permanent_water_path=jrc_permanent_water_path,
-                                         keep_streams=True)
+                                         keep_streams=gt_version == "v2")
     current_gt_path = os.path.join(app.config["ROOT_LOCATION"], subset, "gt", f"{eventid}.tif")
     with utils.rasterio_open_read(current_gt_path) as rst:
         current_gt = rst.read()
@@ -63,10 +74,19 @@ def save_floodmap(subset:str, eventid:str):
         crs = rst.crs
         tags = rst.tags()
 
-    watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1
-    watergt[water_mask >= 1] = 2  # only water is 2
-    watergt[current_gt[1] == 0] = 0 # invalids to 0
-    current_gt[1,...] = watergt
+    if gt_version == "v2":
+        watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1
+        watergt[water_mask >= 1] = 2  # only water is 2
+        watergt[current_gt[1] == 0] = 0 # invalids to 0
+        current_gt[1,...] = watergt
+    else:
+        clouds = (current_gt == 3).copy()
+        invalids = (current_gt == 0).copy()
+        water_mask = water_mask[None]
+        current_gt[water_mask == 0] = 1
+        current_gt[water_mask >= 1] = 2
+        current_gt[clouds] = 3
+        current_gt[invalids] = 0
 
     # TODO update tags and meta with the number of valid pixels etc??
 
@@ -77,9 +97,10 @@ def save_floodmap(subset:str, eventid:str):
 
 
     # save floodmap in stagging
-    stagging_path = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/{meta['ems_code']}/{meta['aoi_code']}/floodmap_edited/{meta['satellite date'][:10]}.geojson"
-    utils.write_geojson_to_gcp(stagging_path, floodmap)
-    logging.info(f"Saving file in {stagging_path}")
+    if app.config["SAVE_FLOODMAP_BUCKET"]:
+        stagging_path = f"gs://ml4cc_data_lake/0_DEV/1_Staging/WorldFloods/{meta['ems_code']}/{meta['aoi_code']}/floodmap_edited/{meta['satellite date'][:10]}.geojson"
+        utils.write_geojson_to_gcp(stagging_path, floodmap)
+        logging.info(f"Saving file in {stagging_path}")
 
     return '', 204
 
@@ -87,11 +108,12 @@ def save_floodmap(subset:str, eventid:str):
 @app.route("/<subset>/<eventid>/<predname>.geojson")
 def read_floodmap_pred(subset:str, eventid:str, predname:str):
     # WF2_unet_full_norm_vec
-    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname, f"{eventid}.geojson")
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname, f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
     data = geopandas.read_file(floodmap_address)
 
     # All parts of a simplified geometry will be no more than tolerance distance from the original
-    data["geometry"] = data["geometry"].simplify(tolerance=10)
+    if data.crs != "epsg:4326":
+        data["geometry"] = data["geometry"].simplify(tolerance=10)
 
     data.to_crs("epsg:4326", inplace=True)
     # data["id"] = np.arange(data.shape[0])
@@ -108,16 +130,20 @@ def read_floodmap_pred(subset:str, eventid:str, predname:str):
 
 @app.route("/<subset>/<eventid>/floodmap.geojson")
 def read_floodmap(subset:str, eventid:str):
-    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.geojson")
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, "floodmaps", f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
     data = geopandas.read_file(floodmap_address)
 
+
     data = data[data["source"] != "area_of_interest"]
+    data = data[(~data.geometry.isna()) & (~data.geometry.is_empty)]
 
     # flatten MultiPolygons remove empty pols
     data = data.explode(ignore_index=True)
 
+
     # All parts of a simplified geometry will be no more than tolerance distance from the original
-    data["geometry"] = data["geometry"].simplify(tolerance=10)
+    if data.crs != "epsg:4326":
+        data["geometry"] = data["geometry"].simplify(tolerance=10)
 
     data.to_crs("epsg:4326", inplace=True)
     data["id"] = np.arange(data.shape[0])
@@ -141,7 +167,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         eventid: name of the event (e.g EMSR342_07SOUTHNORMANTON_DEL_MONIT03_v2)
         productname: {"S2RGB", "S2SWIRNIRRED", "gt", "PERMANENTWATERJRC", "WF2_unet_full_norm",
                       "MNDWI", "BRIGHTNESS", "gtcloud"}
-        z: zoom level
+        z: zoom level (max zoom for Sentinel-2 is 14)
         x: x location mercantile
         y: y location mercantile
 
@@ -161,7 +187,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         productnamefolder = "S2"
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
-        bands = [2]
+        if app.config["GT_VERSION"] == "v2":
+            bands = [2]
+        else:
+            bands = [1]
         resampling = warp.Resampling.nearest
     elif productname == "gtcloud":
         productnamefolder = "gt"
@@ -206,18 +235,9 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
-    elif productname == "gt":
-        land_water = rst_arr[0]
-
-        # clear_clouds = rst_arr[0]
-        # v1gt = land_water.copy()  # {0: invalid, 1: land, 2: water}
-        # v1gt[clear_clouds == 2] = 3
-        # img_rgb = mask_to_rgb(v1gt, [0, 1, 2, 3], colors=COLORS)
-        img_rgb = mask_to_rgb(land_water, [0, 1, 2], colors=COLORS[:-1])
-        mode = "RGB"
-    elif productname == "gtcloud":
-        clear_cloud = rst_arr[0]
-        img_rgb = mask_to_rgb(clear_cloud, [0, 1, 2], colors=COLORS[(0,1, 3), ...])
+    elif productname in ["gt", "gtcloud", "WF2_unet_full_norm"]:
+        pred = rst_arr[0]
+        img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -228,10 +248,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         dwi_threshold = (dwi > 0).astype(np.uint8) + 1
         dwi_threshold[invalid] = 0
         img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
-        mode = "RGB"
-    elif productname == "WF2_unet_full_norm":
-        pred = rst_arr[0]
-        img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         mode = "RGB"
     elif productname == "BRIGHTNESS":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -305,8 +321,10 @@ def root():
     return app.send_static_file('index.html')
 
 
+from shapely.geometry import box, mapping
+
 # KEYS_COPY_V2 = ["satellite", "event id", "satellite date", "ems_code", "aoi_code", "date_ems_code", "s2_date"]
-KEYS_COPY = ["satellite", "satellite date", "s2_date"]
+KEYS_COPY = ["satellite", "satellite date"]
 def worldfloods_files(rl:str):
 
     json_files = sorted(glob(os.path.join(rl, "*/meta/*.json")))
@@ -317,10 +335,20 @@ def worldfloods_files(rl:str):
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
-        meta_copy = {k:meta[k] for k in KEYS_COPY}
+        meta_copy = {k: meta[k] for k in KEYS_COPY}
+        if "s2_date" in meta:
+            meta_copy["s2_date"] = meta["s2_date"]
+        else:
+            # Assumes old version of worldfloods
+            meta_copy["s2_date"] = meta["s2metadata"][0]["date_string"]
+
         meta_copy["date_ems_code"] = meta.get("date_ems_code", "UNKNOWN")
         meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
-        meta_copy["geometry"] = meta["area_of_interest_polygon"]
+        if "area_of_interest_polygon" in meta:
+            meta_copy["geometry"] = meta["area_of_interest_polygon"]
+        else:
+            # Assumes old version of worldfloods
+            meta_copy["geometry"] = mapping(box(*meta["bounds"]))
 
         worldfloods.append({"id": os.path.splitext(os.path.basename(json_file))[0], "meta": meta_copy})
 
@@ -332,18 +360,20 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int,
                         default=3142,
                         help='port to run')
-    # parser.add_argument('--debug', help="Debug",
-    #                     action="store_true")
     parser.add_argument('--host',  type=str, required=False, help="Use \"0.0.0.0\" to have "
                                                                   "the server available externally as well")
     parser.add_argument('--root_location', help='Root folder', type=str,
                         default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
-    parser.add_argument('--no_check_env_var', help='Do not check if GOOGLE_APPLICATION_CREDENTIALS is set (if not set it cannot save edited floodmaps)', action='store_true')
+    parser.add_argument("--gt_version", default="v2", choices=["v1", "v2"],
+                        help="Version of ground truth. v1 1 band 3 classes, v2 2 bands 2 classes each")
+    parser.add_argument('--no_save_floodmap_bucket', help="Debug", action="store_true")
 
     args = parser.parse_args()
     
-    if not args.no_check_env_var:
-        assert os.environ["GOOGLE_APPLICATION_CREDENTIALS"], "GOOGLE_APPLICATION_CREDENTIALS env varible not set. This is needed to save floodmaps!"
+    if not args.no_save_floodmap_bucket:
+        assert os.environ["GOOGLE_APPLICATION_CREDENTIALS"], "GOOGLE_APPLICATION_CREDENTIALS env varible not set. " \
+                                                             "This is needed to save floodmaps! in gs://ml4cc_data_lake\n" \
+                                                             "If you don't want to save them use --no_save_floodmap_bucket option"
 
     root_location = args.root_location[:-1] if args.root_location.endswith("/") else args.root_location
     database_name = os.path.basename(root_location)
@@ -358,9 +388,18 @@ if __name__ == "__main__":
     with open(pdb, "w") as fh:
         json.dump(database, fh)
 
+    geojson_files = glob(os.path.join(root_location, "*/floodmaps/*.geojson"))
+    if len(geojson_files) > 0:
+        format_floodmaps = "geojson"
+    else:
+        format_floodmaps = "shp"
+
     app.static_folder = app.config["STATIC_FOLDER"]
     app.config["ROOT_LOCATION"] = os.path.abspath(args.root_location)
     app.config["DATABASE_NAME"] = os.path.abspath(pdb)
+    app.config["GT_VERSION"] = args.gt_version
+    app.config["FORMAT_FLOODMAPS"] = format_floodmaps
+    app.config["SAVE_FLOODMAP_BUCKET"] = not args.no_save_floodmap_bucket
 
     # gunicorn core.asgi:application -w ${NUMBER_OF_WORKERS:-1} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 
