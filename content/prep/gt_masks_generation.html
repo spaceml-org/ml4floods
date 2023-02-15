@@ -136,6 +136,11 @@ const thebe_selector_output = ".output, .cell_output"
    database
   </a>
  </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../labeling.html">
+   Viewer and label editor
+  </a>
+ </li>
 </ul>
 <p aria-level="2" class="caption" role="heading">
  <span class="caption-text">
@@ -561,164 +566,8 @@ const thebe_selector_output = ".output, .cell_output"
 <p>In this notebook, we will explore how to visualize the different products that we use in the <em>WorldFloods</em> dataset. In addition we will show how to create the ground truth that we used for training the models (the 3-class ground truth used in <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Mateo-García et al. 2021</a> and the new binary ground truth for multi-output binary classification).</p>
 <p>This tutorial follows the previous one about <span class="xref myst">ingesting floodmaps</span> which shows how to pre-process and download floodmaps and how to download Sentinel-2 images using the Google Earth Engine. In this notebook we use these products (floodmaps, S2 images and JRC Permanent Water Layer also downlinked from the GEE).</p>
 <p>To create the ground truth necessary in the <em>WorldFloods</em> data, we need access to water layers, clouds. So let’s show how we do this!</p>
+</div>
 <hr class="docutils" />
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip install git+https://github.com/spaceml-org/ml4floods#egg<span class="o">=</span>ml4floods
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Collecting ml4floods
-  Cloning https://github.com/spaceml-org/ml4floods to /tmp/pip-install-1ocx6bq9/ml4floods_047e23a821dc4d3f90c1cd136315a242
-  Running command git clone --filter=blob:none --quiet https://github.com/spaceml-org/ml4floods /tmp/pip-install-1ocx6bq9/ml4floods_047e23a821dc4d3f90c1cd136315a242
-  Resolved https://github.com/spaceml-org/ml4floods to commit a2f4f6df8b79cc641572ba6fa5287b9a68c67505
-  Preparing metadata (setup.py) ... ?25ldone
-?25hRequirement already satisfied: torch in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.10.2)
-Requirement already satisfied: torchvision in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.11.3)
-Requirement already satisfied: pytorch-lightning in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.5.9)
-Requirement already satisfied: numpy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.22.1)
-Requirement already satisfied: matplotlib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (3.5.1)
-Requirement already satisfied: seaborn in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.11.2)
-Requirement already satisfied: scipy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.7.3)
-Requirement already satisfied: pandas in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.4.0)
-Requirement already satisfied: rasterio in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.2.10)
-Requirement already satisfied: geopandas in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.10.2)
-Requirement already satisfied: fastprogress in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.0.0)
-Requirement already satisfied: tqdm in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (4.62.3)
-Requirement already satisfied: black in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (22.1.0)
-Requirement already satisfied: isort in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (5.10.1)
-Requirement already satisfied: mypy in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.931)
-Requirement already satisfied: opencv-python in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (4.5.5.62)
-Requirement already satisfied: albumentations in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.1.0)
-Requirement already satisfied: google-cloud-storage in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2.1.0)
-Requirement already satisfied: pyprojroot in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.2.0)
-Requirement already satisfied: fsspec in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2022.1.0)
-Requirement already satisfied: gcsfs in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (2022.1.0)
-Requirement already satisfied: requests_html in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.10.0)
-Requirement already satisfied: earthengine-api in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (0.1.296)
-Requirement already satisfied: mercantile in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from ml4floods) (1.2.1)
-Requirement already satisfied: qudida&gt;=0.0.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (0.0.4)
-Requirement already satisfied: opencv-python-headless&gt;=4.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (4.5.5.62)
-Requirement already satisfied: scikit-image&gt;=0.16.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (0.19.1)
-Requirement already satisfied: PyYAML in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from albumentations-&gt;ml4floods) (6.0)
-Requirement already satisfied: tomli&gt;=1.1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (2.0.0)
-Requirement already satisfied: click&gt;=8.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (8.0.3)
-Requirement already satisfied: mypy-extensions&gt;=0.4.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (0.4.3)
-Requirement already satisfied: typing-extensions&gt;=3.10.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (4.0.1)
-Requirement already satisfied: platformdirs&gt;=2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (2.4.1)
-Requirement already satisfied: pathspec&gt;=0.9.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from black-&gt;ml4floods) (0.9.0)
-Requirement already satisfied: future in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.18.2)
-Requirement already satisfied: httplib2&lt;1dev,&gt;=0.9.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.20.2)
-Requirement already satisfied: google-auth-httplib2&gt;=0.0.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.1.0)
-Requirement already satisfied: google-auth&gt;=1.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (2.5.0)
-Requirement already satisfied: google-api-python-client&lt;2,&gt;=1.12.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (1.12.10)
-Requirement already satisfied: six in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (1.16.0)
-Requirement already satisfied: httplib2shim in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from earthengine-api-&gt;ml4floods) (0.0.3)
-Requirement already satisfied: google-auth-oauthlib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (0.4.6)
-Requirement already satisfied: aiohttp&lt;4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (3.8.1)
-Requirement already satisfied: requests in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (2.27.1)
-Requirement already satisfied: decorator&gt;4.1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gcsfs-&gt;ml4floods) (5.1.1)
-Requirement already satisfied: pyproj&gt;=2.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (3.3.0)
-Requirement already satisfied: shapely&gt;=1.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (1.8.0)
-Requirement already satisfied: fiona&gt;=1.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from geopandas-&gt;ml4floods) (1.8.20)
-Requirement already satisfied: python-dateutil&gt;=2.8.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pandas-&gt;ml4floods) (2.8.2)
-Requirement already satisfied: pytz&gt;=2020.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pandas-&gt;ml4floods) (2021.3)
-Requirement already satisfied: google-cloud-core&lt;3.0dev,&gt;=1.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.2.2)
-Requirement already satisfied: google-api-core&lt;3.0dev,&gt;=1.29.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.4.0)
-Requirement already satisfied: google-resumable-media&gt;=1.3.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (2.1.0)
-Requirement already satisfied: protobuf in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-cloud-storage-&gt;ml4floods) (3.19.4)
-Requirement already satisfied: cycler&gt;=0.10 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (0.11.0)
-Requirement already satisfied: kiwisolver&gt;=1.0.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (1.3.2)
-Requirement already satisfied: fonttools&gt;=4.22.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (4.29.0)
-Requirement already satisfied: pyparsing&gt;=2.2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (3.0.7)
-Requirement already satisfied: pillow&gt;=6.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (8.4.0)
-Requirement already satisfied: packaging&gt;=20.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from matplotlib-&gt;ml4floods) (21.3)
-Requirement already satisfied: setuptools==59.5.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (59.5.0)
-Requirement already satisfied: pyDeprecate==0.3.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (0.3.1)
-Requirement already satisfied: tensorboard&gt;=2.2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (2.8.0)
-Requirement already satisfied: torchmetrics&gt;=0.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pytorch-lightning-&gt;ml4floods) (0.7.0)
-Requirement already satisfied: snuggs&gt;=1.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (1.4.7)
-Requirement already satisfied: certifi in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (2021.10.8)
-Requirement already satisfied: attrs in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (21.4.0)
-Requirement already satisfied: affine in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (2.3.0)
-Requirement already satisfied: click-plugins in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (1.1.1)
-Requirement already satisfied: cligj&gt;=0.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from rasterio-&gt;ml4floods) (0.7.2)
-Requirement already satisfied: parse in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.19.0)
-Requirement already satisfied: w3lib in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.22.0)
-Requirement already satisfied: pyquery in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.4.3)
-Requirement already satisfied: pyppeteer&gt;=0.0.14 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (1.0.2)
-Requirement already satisfied: fake-useragent in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (0.1.11)
-Requirement already satisfied: bs4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests_html-&gt;ml4floods) (0.0.1)
-Requirement already satisfied: multidict&lt;7.0,&gt;=4.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (6.0.2)
-Requirement already satisfied: aiosignal&gt;=1.1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.2.0)
-Requirement already satisfied: yarl&lt;2.0,&gt;=1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.7.2)
-Requirement already satisfied: frozenlist&gt;=1.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (1.3.0)
-Requirement already satisfied: async-timeout&lt;5.0,&gt;=4.0.0a3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (4.0.2)
-Requirement already satisfied: charset-normalizer&lt;3.0,&gt;=2.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from aiohttp&lt;4-&gt;gcsfs-&gt;ml4floods) (2.0.10)
-Requirement already satisfied: munch in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from fiona&gt;=1.8-&gt;geopandas-&gt;ml4floods) (2.5.0)
-Requirement already satisfied: googleapis-common-protos&lt;2.0dev,&gt;=1.52.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-api-core&lt;3.0dev,&gt;=1.29.0-&gt;google-cloud-storage-&gt;ml4floods) (1.54.0)
-Requirement already satisfied: uritemplate&lt;4dev,&gt;=3.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-api-python-client&lt;2,&gt;=1.12.1-&gt;earthengine-api-&gt;ml4floods) (3.0.1)
-Requirement already satisfied: cachetools&lt;6.0,&gt;=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (5.0.0)
-Requirement already satisfied: pyasn1-modules&gt;=0.2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (0.2.8)
-Requirement already satisfied: rsa&lt;5,&gt;=3.1.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (4.8)
-Requirement already satisfied: google-crc32c&lt;2.0dev,&gt;=1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-resumable-media&gt;=1.3.0-&gt;google-cloud-storage-&gt;ml4floods) (1.3.0)
-Requirement already satisfied: importlib-metadata&gt;=1.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (4.10.1)
-Requirement already satisfied: pyee&lt;9.0.0,&gt;=8.1.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (8.2.2)
-Requirement already satisfied: urllib3&lt;2.0.0,&gt;=1.25.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (1.26.8)
-Requirement already satisfied: appdirs&lt;2.0.0,&gt;=1.4.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (1.4.4)
-Requirement already satisfied: websockets&lt;11.0,&gt;=10.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (10.1)
-Requirement already satisfied: scikit-learn&gt;=0.19.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (1.0.2)
-Requirement already satisfied: idna&lt;4,&gt;=2.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests-&gt;gcsfs-&gt;ml4floods) (3.3)
-Requirement already satisfied: imageio&gt;=2.4.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2.14.1)
-Requirement already satisfied: tifffile&gt;=2019.7.26 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2021.11.2)
-Requirement already satisfied: PyWavelets&gt;=1.1.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (1.2.0)
-Requirement already satisfied: networkx&gt;=2.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-image&gt;=0.16.1-&gt;albumentations-&gt;ml4floods) (2.6.3)
-Requirement already satisfied: wheel&gt;=0.26 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (0.37.1)
-Requirement already satisfied: grpcio&gt;=1.24.3 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.43.0)
-Requirement already satisfied: markdown&gt;=2.6.8 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (3.3.6)
-Requirement already satisfied: tensorboard-data-server&lt;0.7.0,&gt;=0.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (0.6.1)
-Requirement already satisfied: werkzeug&gt;=0.11.15 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (2.0.2)
-Requirement already satisfied: tensorboard-plugin-wit&gt;=1.6.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.8.1)
-Requirement already satisfied: absl-py&gt;=0.4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from tensorboard&gt;=2.2.0-&gt;pytorch-lightning-&gt;ml4floods) (1.0.0)
-Requirement already satisfied: requests-oauthlib&gt;=0.7.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from google-auth-oauthlib-&gt;gcsfs-&gt;ml4floods) (1.3.1)
-Requirement already satisfied: beautifulsoup4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from bs4-&gt;requests_html-&gt;ml4floods) (4.10.0)
-Requirement already satisfied: lxml&gt;=2.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyquery-&gt;requests_html-&gt;ml4floods) (4.7.1)
-Requirement already satisfied: cssselect&gt;0.7.9 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyquery-&gt;requests_html-&gt;ml4floods) (1.1.0)
-Requirement already satisfied: zipp&gt;=0.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from importlib-metadata&gt;=1.4-&gt;pyppeteer&gt;=0.0.14-&gt;requests_html-&gt;ml4floods) (3.7.0)
-Requirement already satisfied: pyasn1&lt;0.5.0,&gt;=0.4.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from pyasn1-modules&gt;=0.2.1-&gt;google-auth&gt;=1.4.1-&gt;earthengine-api-&gt;ml4floods) (0.4.8)
-Requirement already satisfied: oauthlib&gt;=3.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests-oauthlib&gt;=0.7.0-&gt;google-auth-oauthlib-&gt;gcsfs-&gt;ml4floods) (3.2.0)
-Requirement already satisfied: joblib&gt;=0.11 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-learn&gt;=0.19.1-&gt;qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (1.1.0)
-Requirement already satisfied: threadpoolctl&gt;=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from scikit-learn&gt;=0.19.1-&gt;qudida&gt;=0.0.4-&gt;albumentations-&gt;ml4floods) (3.0.0)
-Requirement already satisfied: soupsieve&gt;1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from beautifulsoup4-&gt;bs4-&gt;requests_html-&gt;ml4floods) (2.3.1)
-Building wheels for collected packages: ml4floods
-  Building wheel for ml4floods (setup.py) ... ?25ldone
-?25h  Created wheel for ml4floods: filename=ml4floods-0.0.1-py3-none-any.whl size=140086 sha256=1be823c64a228fb0acf7e481c084b4a16d994c1aecfa9e94750c0d11eb3f8700
-  Stored in directory: /tmp/pip-ephem-wheel-cache-rvlnv79q/wheels/73/e4/d0/32f1ac519c0c417c56095146587858a3e35491dbbef7d45186
-Successfully built ml4floods
-Installing collected packages: ml4floods
-  Attempting uninstall: ml4floods
-    Found existing installation: ml4floods 0.0.1
-    Uninstalling ml4floods-0.0.1:
-      Successfully uninstalled ml4floods-0.0.1
-Successfully installed ml4floods-0.0.1
-Requirement already satisfied: gdown in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (4.4.0)
-Requirement already satisfied: six in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (1.16.0)
-Requirement already satisfied: beautifulsoup4 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (4.10.0)
-Requirement already satisfied: filelock in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (3.6.0)
-Requirement already satisfied: tqdm in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (4.62.3)
-Requirement already satisfied: requests[socks] in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from gdown) (2.27.1)
-Requirement already satisfied: soupsieve&gt;1.2 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from beautifulsoup4-&gt;gdown) (2.3.1)
-Requirement already satisfied: certifi&gt;=2017.4.17 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (2021.10.8)
-Requirement already satisfied: charset-normalizer~=2.0.0 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (2.0.10)
-Requirement already satisfied: idna&lt;4,&gt;=2.5 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (3.3)
-Requirement already satisfied: urllib3&lt;1.27,&gt;=1.21.1 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (1.26.8)
-Requirement already satisfied: PySocks!=1.5.7,&gt;=1.5.6 in /home/gonzalo/miniconda3/envs/ml4floods/lib/python3.9/site-packages (from requests[socks]-&gt;gdown) (1.7.1)
-</pre></div>
-</div>
-</div>
-</div>
-</div>
 <div class="section" id="step-0-access-the-data-for-this-tutorial">
 <h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this headline">¶</a></h2>
 <p>In order to run this tutorial we will use some products from the forthcoming <em>WorldFloods Extra Dataset</em>. We have copied some of those in our <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>. To access the <em>WorldFloods</em> database see <span class="xref myst">the download <em>WorldFloods</em> documentation</span>.</p>
@@ -1247,7 +1096,7 @@ Wall time: 24.3 s
 </div>
 <div class="section" id="id2">
 <h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
-<p>In this ground truth, we generate 2-band ground truth which consists of a binary classification problem for</p>
+<p>In this ground truth, we generate 2-band ground truth. This ground truth can be used to train a multioutput binary segmentation model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.data</span> <span class="kn">import</span> <span class="n">create_gt</span>
