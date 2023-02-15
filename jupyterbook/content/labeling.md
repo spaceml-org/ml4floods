@@ -1,4 +1,4 @@
-# *WorldFloods* viewer and label editor
+# Viewer and label editor
 
 * Author: Gonzalo Mateo-García
 ---
