@@ -13,6 +13,7 @@ from typing import Dict, List, Callable, Tuple, Optional
 from ml4floods.preprocess.worldfloods import prepare_patches
 from ml4floods.models.config_setup import load_json, get_filesystem
 import warnings
+import numpy as np
 
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
@@ -207,6 +208,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         train_transformations=train_transform,
         test_transformations=test_transform,
         bands=CHANNELS_CONFIGURATIONS[data_config.channel_configuration],
+        add_mndwi_input = data_config.add_mndwi_input,
         num_workers=data_config.num_workers,
         window_size=data_config.window_size,
         batch_size=data_config.batch_size,
@@ -284,6 +286,10 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     channel_mean = None
     if data_config.train_transformation.normalize:
         channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+        if data_config.add_mndwi_input is not None:
+            channel_mean = np.concatenate([channel_mean,np.zeros((1,1,1))],axis = -1)
+            channel_std = np.concatenate([channel_std,np.ones((1,1,1))],axis = -1)
+            
         train_transform.append(transformations.Normalize(
             mean=channel_mean,
             std=channel_std,
