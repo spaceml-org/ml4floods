@@ -1,6 +1,7 @@
 from typing import Tuple, Optional, List, Callable, Dict
 from torch.utils.data import DataLoader
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
+from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 import pytorch_lightning as pl
 from ml4floods.preprocess.tiling import WindowSize
 from ml4floods.preprocess.utils import get_list_of_window_slices
@@ -57,6 +58,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         target_folder: str = "gt",
         train_transformations: Optional[Callable] = None,
         test_transformations: Optional[Callable] = None,
+        add_mndwi_input: bool = False,
         window_size: Tuple[int, int] = (64, 64),
         batch_size: int = 32,
         bands: List[int] = [1, 2, 3],
@@ -78,6 +80,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # Setting default dims here because we know them.
         # Could optionally be assigned dynamically in dm.setup()
         self.bands = bands
+        self.add_mndwi_input = add_mndwi_input,
         self.batch_size = batch_size
         # Prefixes
         self.image_prefix = input_folder
@@ -103,17 +106,23 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         """Does Nothing for now. Here for compatibility."""
         # TODO: here we can check for correspondence between the files
         pass
-
+    
+    def get_mndwi_indices(self, bands):
+        band_names_current_image = [BANDS_S2[iband] for iband in bands]
+        mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B11"]]
+        return mndwi_indexes_current_image
+    
     def setup(self, stage=None):
         """This creates the PyTorch dataset given the preconfigured
         file paths.
         """
-
+        
         self.train_dataset = WorldFloodsDatasetTiled(
             list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
+            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.train_transform,
             lock_read=self.lock_read
         )
@@ -127,6 +136,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
+            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.test_transform,
             lock_read=self.lock_read
         )
@@ -136,6 +146,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
+            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.test_transform,
             lock_read=self.lock_read
         )
