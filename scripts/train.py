@@ -39,8 +39,6 @@ def train(config):
     print("======================================================")
     print("SETTING UP DATASET")
     print("======================================================")
-    add_mndwi = True
-    config.data_params['add_mndwi_input'] = True
     data_module = get_dataset(config.data_params)
 
     # MODEL SETUP 
