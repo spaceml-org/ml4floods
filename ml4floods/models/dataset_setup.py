@@ -286,7 +286,7 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     channel_mean = None
     if data_config.train_transformation.normalize:
         channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
-        if data_config.add_mndwi_input is not None:
+        if data_config.add_mndwi_input:
             channel_mean = np.concatenate([channel_mean,np.zeros((1,1,1))],axis = -1)
             channel_std = np.concatenate([channel_std,np.ones((1,1,1))],axis = -1)
             
