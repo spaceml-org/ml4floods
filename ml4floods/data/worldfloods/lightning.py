@@ -80,7 +80,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # Setting default dims here because we know them.
         # Could optionally be assigned dynamically in dm.setup()
         self.bands = bands
-        self.add_mndwi_input = add_mndwi_input,
+        self.add_mndwi_input = add_mndwi_input
         self.batch_size = batch_size
         # Prefixes
         self.image_prefix = input_folder
