@@ -25,7 +25,7 @@ DRIVER_FLOODMAPS = {
     "geojson": "GeoJSON",
     "shp" : "ESRI Shapefile"
 }
-SATURATION = 3_000
+SATURATION = 3_500
 
 @app.route("/<subset>/<eventid>/save_floodmap", methods = ['POST'])
 def save_floodmap(subset:str, eventid:str):
@@ -108,7 +108,7 @@ def save_floodmap(subset:str, eventid:str):
 @app.route("/<subset>/<eventid>/<predname>.geojson")
 def read_floodmap_pred(subset:str, eventid:str, predname:str):
     # WF2_unet_full_norm_vec
-    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname, f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
+    floodmap_address = os.path.join(app.config["ROOT_LOCATION"], subset, predname,"S2", f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
     data = geopandas.read_file(floodmap_address)
 
     # All parts of a simplified geometry will be no more than tolerance distance from the original
@@ -208,6 +208,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         bands = [1]
         resampling = warp.Resampling.nearest
     elif productname == "WF2_unet_full_norm":
+        productnamefolder = "WF2_unet_full_norm/S2"
         bands = [1]
         resampling = warp.Resampling.nearest
     else:
