@@ -1,5 +1,7 @@
+import numbers
+
 from ml4floods.preprocess.tiling import WindowSlices
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import rasterio
@@ -246,7 +248,7 @@ def rasterio_read(
     return im_tif
 
 
-def load_input(tiff_input:str, channels:List[int],
+def load_input(tiff_input:str, channels:Union[List[int],List[str]],
                window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
     """
     Reads from a tiff the specified channel and window.
@@ -254,14 +256,22 @@ def load_input(tiff_input:str, channels:List[int],
     Args:
         tiff_input: path to geotiff file
         window: rasterio.Window object to read (None to read all)
-        channels: 0-based channels to read
+        channels: 0-based channels to read or names of the bands (we will use `.descriptions` to find the band
+            names of the `tiff_input`).
 
     Returns:
         3-D tensor (len(channels), H, W), Affine transform to geo-reference the array read.
 
     """
     with utils.rasterio_open_read(tiff_input) as rst:
-        inputs = rst.read((np.array(channels) + 1).tolist(), window=window)
+        if isinstance(channels[0], numbers.Number):
+            indexes = (np.array(channels) + 1).tolist()
+        else:
+            channels_tiff = list(rst.descriptions)
+            indexes = [channels_tiff.index(c) + 1 for c in channels]
+
+        inputs = rst.read(indexes, window = window)
+
         # Shifted transform based on the given window (used for plotting)
         transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
         torch_inputs = torch.tensor(np.nan_to_num(inputs).astype(np.float32))

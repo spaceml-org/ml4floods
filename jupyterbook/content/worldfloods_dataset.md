@@ -4,7 +4,10 @@ The [*WorldFloods* database](https://www.nature.com/articles/s41598-021-86650-z)
 It requires approximately 300GB of hard-disk storage. The *WorldFloods* database is released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
-<img align="center" width="95%" src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/images/worldfloods_v1.png" alt="WorldFloods dataset">
+```{image} ./prep/images/worldfloods_v1.png
+:alt: Floods devestate the world every year.
+:align: center
+```
 
 
 ## Download the data from the Google Drive
@@ -13,9 +16,11 @@ A subset of the data and the pretrained models are available in this [public Goo
 
 If you want to use this data from the Google Colab you can *'add a shortcut to your Google Drive'* from the [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH) and mount that directory:
 
-<p align="center">
-<img width=60% src="https://github.com/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/images/add_shortcut_drive.png" alt="Add shortcut">
-</p>
+
+```{image} ./prep/images/add_shortcut_drive.png
+:alt: Floods devestate the world every year.
+:align: center
+```
 	
 ```python
 from google.colab import drive

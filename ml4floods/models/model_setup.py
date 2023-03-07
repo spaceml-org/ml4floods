@@ -2,7 +2,7 @@ import torch
 import itertools
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
 from ml4floods.models.utils.configuration import AttrDict
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8
 import numpy as np
 import os
 
@@ -56,14 +56,21 @@ def get_model(model_params:AttrDict,
 
         
         
-def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2") -> List[int]:
+def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2",
+                                    as_string:bool=False) -> Union[List[int], List[str]]:
     """
     Returns 0-based list of channels of a given configuration name
     """
     if collection_name == "S2":
-        return CHANNELS_CONFIGURATIONS[channel_configuration]
+        channel_indexes = CHANNELS_CONFIGURATIONS[channel_configuration]
+        if as_string:
+            return [BANDS_S2[idx] for idx in channel_indexes]
+        return channel_indexes
     elif collection_name =="Landsat":
-        return CHANNELS_CONFIGURATIONS_LANDSAT[channel_configuration]
+        channel_indexes = CHANNELS_CONFIGURATIONS_LANDSAT[channel_configuration]
+        if as_string:
+            return [BANDS_S2[idx] for idx in channel_indexes]
+        return channel_indexes
     else:
         raise NotImplementedError(f"Collection {collection_name} not implemented")
 

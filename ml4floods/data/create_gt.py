@@ -424,6 +424,7 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
     Args:
         s2_image: (C, H, W) array
         channels_input: 0-based list of indexes of s2_image channels (expected that len(channels_input) == s2_image.shape[0])
+        collection_name: S2 or Landsat
     Returns:
         (H, W) array
     """

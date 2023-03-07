@@ -140,6 +140,9 @@ def main(model_output_folder:str, flooding_date_pre:str,
             # Compute prepost for each floodmap after the flood
             for geojson_post in geojsons_post:
                 filename_out = geojson_post.replace("_vec/", "_vec_prepost/")
+                basename_file, ext = os.path.splitext(os.path.basename(filename_out))
+                basename_file = f"{basename_file}_pre_{flooding_date_pre}{ext}"
+                filename_out = os.path.join(os.path.dirname(filename_out), basename_file)
                 if (not overwrite) and fs.exists(filename_out):
                     continue
                 if not filename_out.startswith("gs://"):

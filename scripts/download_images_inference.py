@@ -159,28 +159,34 @@ if __name__ == '__main__':
     parser.add_argument('--cems_code', required=True,
                         help="CEMS Code to download images from. If empty string (default) download the images"
                              "from all the codes")
-    parser.add_argument('--flood_date', required=True, help="Date to download the images (YYYY-mm-dd)")
+    parser.add_argument('--flood_date', required=True, help="Reference date to download images (YYYY-mm-dd)")
     parser.add_argument('--aoi_code', default="",
                         help="CEMS AoI to download images from. If not provided download the images"
                              "from all the AoIs in path_aois")
     parser.add_argument("--bucket_path", default="gs://ml4cc_data_lake/0_DEV/1_Staging/operational/",
-                        help="Path to inference activations in bucket. Default %(default)s")
+                        help="Path to store inference activations in bucket. Default %(default)s")
     parser.add_argument("--collection_name", choices=["Landsat", "S2", "both"], default="both",
                         help="Default: %(default)s")
     parser.add_argument('--threshold_clouds_before', default=.1, type=float,
-                        help="Threshold clouds before the event. Default: %(default)s")
+                        help="Threshold of clouds before the flood_date. Default: %(default)s. "
+                             "It will discard images with a cloud fraction larger than this value")
     parser.add_argument('--threshold_invalids_before', default=.1, type=float,
-                        help="Threshold invalids before the event. Default: %(default)s")
+                        help="Threshold of invalids before the flood_date. Default: %(default)s. "
+                             "It will discard images with an invalid fraction larger than this value")
     parser.add_argument('--threshold_clouds_after', default=.95, type=float,
-                        help="Threshold clouds after the event. Default: %(default)s")
+                        help="Threshold of clouds after the flood_date. Default: %(default)s. "
+                             "It will discard images with a cloud fraction larger than this value")
     parser.add_argument('--threshold_invalids_after', default=.70, type=float,
-                        help="Threshold invalids after the event. Default: %(default)s")
+                        help="Threshold invalids after the flood_date. Default: %(default)s. "
+                             "It will discard images with an invalid fraction larger than this value")
     parser.add_argument('--days_before', default=20, type=int,
-                        help="Days to search after the event. Default: %(default)s")
+                        help="Days to search for images after the flood_date. Default: %(default)s")
     parser.add_argument('--days_after', default=20, type=int,
-                        help="Days to search before the event. Default: %(default)s")
+                        help="Days to search for images before the flood_date (pre-flood). Default: %(default)s")
     parser.add_argument('--margin_pre_search', default=0, type=int,
-                        help="Days to include as margin to search for pre-flood images. Default: %(default)s")
+                        help="Days to include as margin to search for pre-flood images. Default: %(default)s. "
+                             "For example, If --days_before 10 and --margin_pre_search 4 it will look for pre-flood images "
+                             "between 10 and 4 days before the flood_date")
     parser.add_argument('--only_one_previous', action='store_true',
                         help="Download only one image in the pre-flood period")
     parser.add_argument('--noforce_s2cloudless', action='store_true',

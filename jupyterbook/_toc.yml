@@ -11,6 +11,7 @@ parts:
   - file: content/prep/full_data_ingest.ipynb
   - file: content/prep/gt_masks_generation.ipynb
   - file: content/worldfloods_dataset.md
+  - file: content/labeling.md
 
 - caption: MLOps
   chapters:

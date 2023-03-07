@@ -1,6 +1,6 @@
 from rasterio import features
 import rasterio
-from shapely.geometry import shape, mapping, Polygon, MultiPolygon
+from shapely.geometry import shape, mapping, Polygon, MultiPolygon, GeometryCollection
 from skimage import measure
 from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
@@ -12,6 +12,7 @@ from ml4floods.data import utils
 import torch
 import geopandas as gpd
 from shapely.ops import unary_union
+from shapely import validation
 import pandas as pd
 import warnings
 from tqdm import tqdm
@@ -485,6 +486,20 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     result = result[~result.geometry.isna() & ~result.geometry.is_empty]
     return result
 
+
+def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolygon, Polygon]:
+    if x.type == "GeometryCollection":
+        x = unary_union(
+            [gc for gc in x.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+    return x
+
+
+def make_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    df["geometry"] = df.geometry.apply(lambda x: geometrycollection_to_multipolygon(validation.make_valid(x)))
+    df = df[(~df.geometry.is_empty) & ((df.geometry.type == "Polygon") | (df.geometry.type == "MultiPolygon"))].copy()
+    return df.explode(ignore_index=True)
+
+
 def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> gpd.GeoDataFrame:
     """
     Mosaics all the pre-post floodmaps into a single map reprojecting the polygons to the specified CRS
@@ -498,46 +513,32 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
 
     """
     data_all = None
-    data_all_invalid = None
 
     for f in tqdm(floodmaps_paths):
         data = utils.read_geojson_from_gcp(f)
-        # Convert to CRS with rasterio!
         data = data[~data.geometry.isna() & ~data.geometry.is_empty & (data.geometry.area > 10 ** 2)].copy()
-        geometry = rasterio.warp.transform_geom(
-            src_crs=data.crs,
-            dst_crs=dst_crs,
-            geom=data.geometry.values,
-        )
-        data = data.set_geometry(
-            [shape(geom) for geom in geometry],
-            crs=dst_crs,
-        )
+        data = data.to_crs(dst_crs)
+
         is_valid_geoms = data.is_valid
         if not is_valid_geoms.all():
-            print(f"\tThere are still {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}")
-            data_invalid = data[~is_valid_geoms]
-            if data_all_invalid is None:
-                data_all_invalid = data_invalid
-            else:
-                data_all_invalid = pd.concat([data_all_invalid, data_invalid], ignore_index=True)
-
-            data = data[is_valid_geoms]
-
+            reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
+            print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
+            data = make_valid(data)
 
         if data_all is None:
             data_all = data
         else:
             data_all = pd.concat([data_all, data], ignore_index=True)
+            # data_all = data_all.dissolve(by="class").reset_index()
+            # data_all = data_all.explode(ignore_index=True)
+            # data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
+
     print(f"\t{len(floodmaps_paths)} Products joined {data_all.shape}")
     # Save as geojson
     data_all = data_all.dissolve(by="class").reset_index()
     print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly dissolved. New shape: {data_all.shape}")
     data_all = data_all.explode(ignore_index=True)
     print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Correctly exploded. New shape: {data_all.shape}")
-
-    data_all = pd.concat([data_all, data_all_invalid], ignore_index=True)
-    print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Added invalid Polygons. New shape: {data_all.shape}")
 
     data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
     print(f"\t{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Removed NA or empty polygons. New shape: {data_all.shape}")

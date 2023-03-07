@@ -85,6 +85,9 @@
     });
     mymap.addControl(drawControl);
 
+    // Add scale
+    L.control.scale({imperial: false}).addTo(mymap);
+
     // This is the tickbox in the upper right corner of the map
     let control_layer = L.control.layers({}, {"basemap": basemap}, {"collapsed":false}).addTo(mymap);
 
@@ -114,8 +117,9 @@
           for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "gtcloud", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI", "BRIGHTNESS"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
 
-            // TODO set maxZoom and minZoom? -> https://leafletjs.com/reference.html#tilelayer
-            let tilelayer = L.tileLayer(path);
+            // https://learn.microsoft.com/en-us/azure/azure-maps/zoom-levels-and-tile-grid?tabs=csharp
+            let tilelayer = L.tileLayer(path,
+                                        {maxNativeZoom: 14, bounds:  worldfloods[name]["polygon"].getBounds()});
             worldfloods[name]["tilelayers"].push(tilelayer);
 
             // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
@@ -335,7 +339,6 @@
          for (let i = 0; i < worldfloods_list.length; i++) {
             let image = worldfloods_list[i]["id"];
             let meta = worldfloods_list[i]["meta"];
-            worldfloods[image] = meta;
 
             // Add stuff for selector
             let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset"]+") "+image};
@@ -379,11 +382,9 @@
                                         fillOpacity: 0.4
                                     });
                                 });
-
+             worldfloods[image] = meta;
              worldfloods[image]["polygon"] = pl;
 
-             // save meta just in case
-             worldfloods[image]["meta"] = meta;
              
              polygons_all.push(pl);
         }

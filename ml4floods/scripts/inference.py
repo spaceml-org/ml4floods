@@ -143,9 +143,6 @@ def main(model_path: str, s2folder_file: str, device_name: str,
                                                          collection_name=collection_name,
                                                          distinguish_flood_traces=distinguish_flood_traces)
 
-    channels = get_channel_configuration_bands(config.data_params.channel_configuration,
-                                               collection_name=collection_name)
-
     # Get S2 files to run predictions
     fs = get_filesystem(s2folder_file)
     if s2folder_file.endswith(".tif"):
@@ -197,7 +194,8 @@ def main(model_path: str, s2folder_file: str, device_name: str,
         if not output_folder:
             print(f"Predictions will be saved in folder: {output_folder_iter}")
         try:
-
+            channels = get_channel_configuration_bands(config.data_params.channel_configuration,
+                                                       collection_name=collection_name,as_string=True)
             torch_inputs, transform = dataset.load_input(filename,
                                                          window=None, channels=channels)
 
