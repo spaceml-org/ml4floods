@@ -6,6 +6,7 @@ from rasterio import plot as rasterioplt
 import rasterio.windows
 from matplotlib import colors
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Optional, List, Tuple
 from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
@@ -509,3 +510,59 @@ def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray 
     cmap = colors.ListedColormap(cmap_colors)
     
     return rasterioplt.show(np.moveaxis(image,-1,0), cmap = cmap, transform = transform, title = title, **kwargs)
+
+
+def plot_segmentation_mask(mask, color_array,
+                           transform:Optional[rasterio.Affine]=None,
+                           interpretation_array:Optional[List[str]]=None,
+                           legend:bool=True, ax:Optional[matplotlib.axes.Axes]=None) -> matplotlib.axes.Axes:
+    """
+    Args:
+        mask: (H, W) np.array
+        color_array: colors for values 0,...,len(color_array)-1 of mask
+        transform:
+        interpretation_array: interpretation for classes 0, ..., len(color_array)-1
+        legend: plot the legend
+        ax:
+
+    """
+    cmap_categorical = colors.ListedColormap(color_array)
+
+    norm_categorical = colors.Normalize(vmin=-.5,
+                                        vmax=color_array.shape[0] - .5)
+
+    color_array = np.array(color_array)
+    if interpretation_array is not None:
+        assert len(interpretation_array) == color_array.shape[
+            0], f"Different numbers of colors and interpretation {len(interpretation_array)} {color_array.shape[0]}"
+
+
+    ax = rasterioplt.show(mask,transform=transform, ax=ax,
+                          cmap=cmap_categorical, norm=norm_categorical, interpolation='nearest')
+
+    if legend:
+        patches = []
+        for c, interp in zip(color_array, interpretation_array):
+            patches.append(mpatches.Patch(color=c, label=interp))
+
+        ax.legend(handles=patches,
+                  loc='upper right')
+    return ax
+
+
+INTERPRETATION_CLOUDSEN12 = ["clear", "Thick cloud", "Thin cloud", "Cloud shadow"]
+
+COLORS_CLOUDSEN12 = np.array([[139, 64, 0], # clear
+                              [220, 220, 220], # Thick cloud
+                              [180, 180, 180], # Thin cloud
+                              [60, 60, 60]], # cloud shadow
+                             dtype=np.float32) / 255
+
+def plot_cloudSEN12mask(mask, legend: bool = True, ax=None):
+    """
+    Args:
+        mask: (H, W) np.array
+    """
+
+    return plot_segmentation_mask(mask=mask, color_array=COLORS_CLOUDSEN12,
+                                  interpretation_array=INTERPRETATION_CLOUDSEN12, legend=legend, ax=ax)
