@@ -266,7 +266,7 @@ def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Aff
     start = 0
     class_name = {0: "area_imaged", 2: "water", 3: "cloud", 4: "flood_trace"}
     # Dilate invalid mask
-    invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(np.bool)
+    invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(bool)
 
     # Set borders to zero to avoid border effects when vectorizing
     prediction[:border,:] = 0
