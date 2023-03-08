@@ -64,7 +64,7 @@ def load_inference_function(model_path:str,
 
 
 
-def main(experiment_path:str, path_to_splits=None, overwrite=False, device:Optional[torch.device]=None,
+def main(experiment_path:str, path_to_splits=None, train_test_split_file = None, overwrite=False, device:Optional[torch.device]=None,
          max_tile_size:int=1_024):
     """
     Compute metrics of a given experiment and saves it on the experiment_path folder
@@ -84,17 +84,21 @@ def main(experiment_path:str, path_to_splits=None, overwrite=False, device:Optio
 
     if path_to_splits is not None:
         config.data_params.path_to_splits = path_to_splits  # local folder where data is located
+    if train_test_split_file is not None:
+        config.data_params.train_test_split_file = train_test_split_file
+        metrics_name = train_test_split_file.split
+    else:
+        config.data_params.train_test_split_file = ""
+        metrics_name = ""
 
-    config.data_params.train_test_split_file = ""
     if "filter_windows" in config["data_params"]:
         del config["data_params"]["filter_windows"]
     
     ### METRICS COMPUTATION #### 
     data_module = dataset_setup.get_dataset(config["data_params"])
 
-    for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:
-    # for dl, dl_name in [ (data_module.val_dataloader(), "val")]:        
-        metrics_file = os.path.join(experiment_path, f"{dl_name}.json").replace("\\","/")
+    for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:     
+        metrics_file = os.path.join(experiment_path, f"{dl_name}{metrics_name}.json").replace("\\","/")
         fs = get_filesystem(metrics_file)
         if not overwrite and fs.exists(metrics_file):
             print(f"File {metrics_file} exists. Continue")
