@@ -108,12 +108,12 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
 
         mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
         if config.data_params.add_mndwi_input:
-            mean_batch = np.concatenate([mean_batch,np.array([0])],axis = 0)
+            mean_batch = np.concatenate([mean_batch,np.array([0],dtype = np.float32)],axis = 0)
         mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
         if config.data_params.add_mndwi_input:
-            std_batch = np.concatenate([std_batch,np.array([1])],axis = 0)
+            std_batch = np.concatenate([std_batch,np.array([1], dtype = np.float32)],axis = 0)
         std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         def normalize(batch_image):
