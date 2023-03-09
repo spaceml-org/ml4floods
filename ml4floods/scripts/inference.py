@@ -75,7 +75,7 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
                 pred = inference_function(s2l89tensor.unsqueeze(0))[0]  # (2, H, W)
                 land_water_cloud =  get_pred_mask_v2(s2l89tensor, pred, channels_input=channels,
                                                      th_water=th_water, th_brightness=th_brightness,
-                                                     collection_name=collection_name)
+                                                     collection_name=collection_name, mndwi_model = config.data_params.add_mndwi_input)
 
                 # Set invalids in continuous pred to -1
                 invalids = land_water_cloud == 0
