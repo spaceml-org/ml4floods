@@ -86,7 +86,8 @@ def main(experiment_path:str, path_to_splits=None, train_test_split_file = None,
         config.data_params.path_to_splits = path_to_splits  # local folder where data is located
     if train_test_split_file is not None:
         config.data_params.train_test_split_file = train_test_split_file
-        metrics_name = train_test_split_file.split
+        metrics_name = os.path.basename(train_test_split_file).split('.json')[0]
+        print(metrics_name)
     else:
         config.data_params.train_test_split_file = ""
         metrics_name = ""
@@ -137,6 +138,7 @@ if __name__ == '__main__':
                         """)
     parser.add_argument("--max_tile_size", help="Size to tile the GeoTIFFs", type=int, default=1_024)
     parser.add_argument("--path_to_splits", required=True, help="path to test and val folders")
+    parser.add_argument("--train_test_split_file", default="", help="split file with test and validation tiffs")
     parser.add_argument("--device", default="cuda:0")
 
     args = parser.parse_args()
@@ -157,7 +159,7 @@ if __name__ == '__main__':
 
     for ep in tqdm(experiment_paths):
         try:
-            main(experiment_path=ep, path_to_splits=args.path_to_splits, device=device)
+            main(experiment_path=ep, path_to_splits=args.path_to_splits, train_test_split_file = args.train_test_split_file, device=device)
         except Exception:
             print(f"Error in experiment {ep}")
             traceback.print_exc(file=sys.stdout)
