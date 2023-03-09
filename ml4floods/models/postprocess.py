@@ -137,7 +137,7 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
                      channels_input:Optional[List[int]]=None,
                      th_water:float = 0.5, th_cloud:float = 0.5, mask_clouds:bool = True,
                      th_brightness:float=BRIGHTNESS_THRESHOLD,
-                     collection_name:str="S2") -> Union[np.ndarray, torch.Tensor]:
+                     collection_name:str="S2", mndwi_model:bool=False) -> Union[np.ndarray, torch.Tensor]:
     """
     Receives an output of a WFV2 model (multioutput binary) and returns the corresponding 3-class segmentation mask
 
@@ -154,6 +154,9 @@ def get_pred_mask_v2(inputs: Union[np.ndarray, torch.Tensor], prediction: Union[
     Returns:
         Water mask (H, W) with interpretation {0: invalids, 1: land, 2: water, 3: cloud}
     """
+    if mndwi_model:
+        inputs = inputs[:-1,:,:] # drop mndwi channel from invalids and brightness calculations
+    
     if isinstance(inputs, torch.Tensor):
         mask_invalids = torch.all(inputs == 0, dim=0).cpu()
         output = torch.ones(prediction.shape[-2:], dtype=torch.uint8, device=torch.device("cpu"))
