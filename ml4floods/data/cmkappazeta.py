@@ -15,7 +15,7 @@ import numpy as np
 from typing import Callable, Tuple, Optional
 import itertools
 from ml4floods.visualization.plot_utils import get_cmap_norm_colors
-from ml4floods.models import postprocess
+from ml4floods.data import vectorize
 import geopandas as gpd
 import pandas as pd
 import rasterio.transform
@@ -85,8 +85,8 @@ def vectorize_output(prediction:np.ndarray, crs:str, transform:rasterio.transfor
         else:
             binary_mask = prediction == c
             class_name = CLASSES_KAPPAZETA[c]
-        geoms_polygons = postprocess.get_water_polygons(binary_mask,
-                                                        transform=transform)
+        geoms_polygons = vectorize.get_polygons(binary_mask,
+                                                transform=transform)
         if len(geoms_polygons) > 0:
             data_out.append(gpd.GeoDataFrame({"geometry": geoms_polygons,
                                               "id": np.arange(start, start + len(geoms_polygons)),
