@@ -87,7 +87,6 @@ def main(experiment_path:str, path_to_splits=None, train_test_split_file = None,
     if train_test_split_file is not None:
         config.data_params.train_test_split_file = train_test_split_file
         metrics_name = os.path.basename(train_test_split_file).split('.json')[0]
-        print(metrics_name)
     else:
         config.data_params.train_test_split_file = ""
         metrics_name = ""
@@ -99,7 +98,7 @@ def main(experiment_path:str, path_to_splits=None, train_test_split_file = None,
     data_module = dataset_setup.get_dataset(config["data_params"])
 
     for dl, dl_name in [(data_module.test_dataloader(), "test"), (data_module.val_dataloader(), "val")]:     
-        metrics_file = os.path.join(experiment_path, f"{dl_name}{metrics_name}.json").replace("\\","/")
+        metrics_file = os.path.join(experiment_path, f"{dl_name}_{metrics_name}.json").replace("\\","/")
         fs = get_filesystem(metrics_file)
         if not overwrite and fs.exists(metrics_file):
             print(f"File {metrics_file} exists. Continue")
