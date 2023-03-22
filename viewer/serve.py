@@ -34,13 +34,13 @@ def generate_gt_v2(clouds: np.ndarray,
                    water_mask: np.ndarray,
                    invalids: np.ndarray) -> np.ndarray:
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1 -> clear
-    cloudgt[clouds >= 1] = 2  # only water is 2
+    cloudgt[clouds >= 1] = 2  # only cloud is 2
     cloudgt[invalids] = 0
 
     watergt = np.ones(water_mask.shape, dtype=np.uint8)  # whole image is 1 -> land
     watergt[water_mask >= 1] = 2  # only water is 2
     watergt[invalids] = 0
-    watergt[clouds] = 0
+    watergt[cloudgt == 2] = 0
 
     stacked_cloud_water_mask = np.stack([cloudgt, watergt], axis=0)
 
@@ -102,7 +102,7 @@ def save_floodmap(subset:str, eventid:str):
     cloudmap_path = os.path.join(app.config["ROOT_LOCATION"], subset, CLOUDFOLDER,
                                  f"{eventid}.geojson")
     os.makedirs(os.path.dirname(cloudmap_path), exist_ok=True)
-    utils.write_geojson_to_gcp(floodmap_path, cloudmap)
+    utils.write_geojson_to_gcp(cloudmap_path, cloudmap)
 
     # Recompute gt
     jrc_permanent_water_path = os.path.join(app.config["ROOT_LOCATION"], subset, "PERMANENTWATERJRC", f"{eventid}.tif")
@@ -197,10 +197,10 @@ def read_floodmap(subset:str, eventid:str):
                                  f"{eventid}.{app.config['FORMAT_FLOODMAPS']}")
     data = geopandas.read_file(floodmap_path)
 
-    cloudprob_path = os.path.join(app.config["ROOT_LOCATION"],
+    cloudmap_path = os.path.join(app.config["ROOT_LOCATION"],
                                   subset, CLOUDFOLDER, f"{eventid}.geojson")
 
-    if not os.path.exists(cloudprob_path):
+    if not os.path.exists(cloudmap_path):
         # load GT
         current_gt_path = os.path.join(app.config["ROOT_LOCATION"], subset, "gt", f"{eventid}.tif")
         with utils.rasterio_open_read(current_gt_path) as rst:
@@ -227,10 +227,11 @@ def read_floodmap(subset:str, eventid:str):
             cloudmap = gpd.GeoDataFrame(data={"class": []},
                                           geometry=[], crs=crs)
         # save vectorized cloudprob
-        utils.write_geojson_to_gcp(cloudprob_path, cloudmap)
+        os.makedirs(os.path.dirname(cloudmap_path), exist_ok=True)
+        utils.write_geojson_to_gcp(cloudmap_path, cloudmap)
 
     else:
-        cloudmap = geopandas.read_file(cloudprob_path)
+        cloudmap = geopandas.read_file(cloudmap_path)
 
     # Concat cloudmap to floodmap
     if cloudmap.shape[0] > 0:
@@ -343,9 +344,17 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
-    elif productname in ["gt", "gtcloud", "WF2_unet_full_norm"]:
+    elif productname in ["gt","WF2_unet_full_norm"]:
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
+        mode = "RGB"
+    elif productname == "gtcloud":
+        pred = rst_arr[0]
+        if app.config["GT_VERSION"] == "v1":
+            img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
+        else:
+            img_rgb = mask_to_rgb(pred, [0, 1, 2], colors=COLORS[[0,1,3]])
+
         mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -474,7 +483,7 @@ if __name__ == "__main__":
                         default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
     parser.add_argument("--gt_version", default="v2", choices=["v1", "v2"],
                         help="Version of ground truth. v1 1 band 3 classes, v2 2 bands 2 classes each")
-    parser.add_argument('--no_save_floodmap_bucket', help="Debug", action="store_true")
+    parser.add_argument('--no_save_floodmap_bucket', help="Do not save the floodmaps to the bucket", action="store_true")
 
     args = parser.parse_args()
     

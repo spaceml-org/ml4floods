@@ -2,7 +2,7 @@
 <head><title>WorldFloods</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="Description" content="Landsat 8 cloud cover assessment dataset."/>
+<meta name="Description" content="WorldFloods viewer"/>
 <link rel="icon" type="image/png" href="/web/ml4cc_logo.png">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
@@ -120,7 +120,7 @@
 
             // https://learn.microsoft.com/en-us/azure/azure-maps/zoom-levels-and-tile-grid?tabs=csharp
             let tilelayer = L.tileLayer(path,
-                                        {maxNativeZoom: 14, bounds:  worldfloods[name]["polygon"].getBounds()});
+                                        {maxNativeZoom: 15, bounds:  worldfloods[name]["polygon"].getBounds()});
             worldfloods[name]["tilelayers"].push(tilelayer);
 
             // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
@@ -152,6 +152,8 @@
           return {color: "#0000ff", fillOpacity: 0.2};
         case 'hydro':
           return {color: "#0000ff", fillOpacity: 0.2};
+        case 'cloud_vec':
+          return {color: "#bbbbbb", fillOpacity: 0.2};
         case 'flood':
            switch (feature.properties.w_class) {
              case 'flood-trace':
