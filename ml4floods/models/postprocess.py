@@ -521,8 +521,8 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
 
         is_valid_geoms = data.is_valid
         if not is_valid_geoms.all():
-            reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
-            print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
+            # reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
+            # print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
             data = make_valid(data)
 
         if data_all is None:
