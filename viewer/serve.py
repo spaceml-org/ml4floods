@@ -75,6 +75,12 @@ def save_floodmap(subset:str, eventid:str):
     # remove column id
     floodmap = floodmap[["geometry", "w_class", "source"]]
 
+    # Intersect all geometries with aoi
+    floodmap["geometry"] = floodmap.geometry.apply(lambda x: x.intersection(aoi))
+
+    # Drop NA/empty geometries
+    floodmap = floodmap[(~floodmap.geometry.isna()) & (~floodmap.geometry.is_empty)]
+
     # add AoI
     floodmap = floodmap.append({"geometry": aoi, "w_class": "area_of_interest", "source": "area_of_interest"},
                                ignore_index=True)
@@ -158,7 +164,6 @@ def save_floodmap(subset:str, eventid:str):
         utils.write_geojson_to_gcp(stagging_clouds_path, cloudmap)
         logging.info(f"Saving file in {stagging_clouds_path}")
 
-
     return '', 204
 
 
@@ -178,6 +183,8 @@ def read_floodmap_pred(subset:str, eventid:str, predname:str):
     data = data.rename({"class": "w_class"},
                        axis=1)
     data["source"] = predname
+    data = data[data["w_class"] != "area_imaged"].copy()
+
     data.to_crs("epsg:4326", inplace=True)
     # data["id"] = np.arange(data.shape[0])
 

@@ -154,22 +154,28 @@
           return {color: "#0000ff", fillOpacity: 0.2};
         case 'cloud_vec':
           return {color: "#bbbbbb", fillOpacity: 0.2};
-        case 'flood':
-           switch (feature.properties.w_class) {
+        default:
+          return style_fun_pred(feature);
+    }
+
+    function style_fun_pred(feature){
+      switch (feature.properties.w_class) {
              case 'flood-trace':
                return {color: "#f66f00", fillOpacity: 0.2};
              case 'flood_trace':
                return {color: "#f66f00", fillOpacity: 0.2};
              case 'Flood trace':
                return {color: "#f66f00", fillOpacity: 0.2};
+             case 'water':
+               return {color: "#0000ff", fillOpacity: 0.2};
+             case 'area_imaged':
+               return {color: "#ff0000", fillOpacity: 0};
              default:
-               return {color: "#00ffff", fillOpacity: 0.2};
+               console.log("Unknown source: "+feature.properties.w_class);
+               return {color: "#ffff00", fillOpacity: 0.2};
            }
-      }
-
-      console.log("Unknown source: "+feature.properties.source);
-      return {color: "#ffff00", fillOpacity: 0.2};
     }
+
 
     // Add style and callbacks to flood gt polygons
     function addStyleFloodPolygon(feature, layer){
