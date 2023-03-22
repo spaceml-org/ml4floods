@@ -144,8 +144,8 @@
     }
 
     // style floodmaps based on property source
-    function style_fun(feature){
-	  switch (feature.properties.source) {
+    function style_fun(feature) {
+      switch (feature.properties.source) {
         case 'area_of_interest':
           return {color: "#ff0000", fillOpacity: 0};
         case 'hydro_l':
@@ -156,6 +156,7 @@
           return {color: "#bbbbbb", fillOpacity: 0.2};
         default:
           return style_fun_pred(feature);
+      }
     }
 
     function style_fun_pred(feature){
