@@ -47,6 +47,7 @@ CODES_FLOODMAP = {
     "maximum flood water extent (cumulative)": 1,
     # Preds
     "flood-trace": 1,
+    "water": 1,
     "flood_trace": 1
 }
 
