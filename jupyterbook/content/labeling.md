@@ -18,6 +18,6 @@ python serve.py --root_location /path/to/worldfloods_v1_0/ --gt_version v1 --no_
 
 The following video shows the viewer in action:
 
-<iframe width="100%" height="40%"
+<iframe width="600" height="400"
 src="https://www.youtube.com/embed/Rh7-ght-mY8?autoplay=0">
 </iframe>
