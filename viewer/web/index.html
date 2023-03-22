@@ -169,6 +169,8 @@
                return {color: "#f66f00", fillOpacity: 0.2};
              case 'water':
                return {color: "#0000ff", fillOpacity: 0.2};
+             case 'cloud':
+               return {color: "#bbbbbb", fillOpacity: 0.2}; 
              case 'area_imaged':
                return {color: "#ff0000", fillOpacity: 0};
              default:
@@ -246,7 +248,7 @@
         return;
       }
 
-      let floodmap_pred = worldfloods[name]["floodmap_pred"];
+      let floodmap_pred = worldfloods[name]["floodmap_pred"].toGeoJSON();
 
       // Remove the floodmap from the map if it has been added
       if (mymap.hasLayer(worldfloods[name]["floodmap"])){
@@ -254,10 +256,16 @@
         mymap.removeLayer(worldfloods[name]["floodmap"]);
       }
 
-      // Add floodmap to pred
+      // Add floodmap to map
       worldfloods[name]["floodmap"] = L.geoJSON(floodmap_pred, {"onEachFeature": addStyleFloodPolygon});
       worldfloods[name]["floodmap"].addTo(mymap);
       control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
+      
+      // Remove floodmap pred from map
+      if (mymap.hasLayer(worldfloods[name]["floodmap_pred"])){
+        control_layer.removeLayer(worldfloods[name]["floodmap_pred"]);
+        mymap.removeLayer(worldfloods[name]["floodmap_pred"]);
+      }
 
       // hide polygons layer
       if (mymap.hasLayer(layer_polygons)){
@@ -338,8 +346,8 @@
        let props = feature.properties = feature.properties || {};
 
        // TODO let edit w_class, source and id
-       props["w_class"] = "Not Applicable";
-       props["source"] = "flood";
+       props["w_class"] = "water";
+       props["source"] = "manual_label"; 
        props["id"] = -1;
 
        // bindPopup and style
