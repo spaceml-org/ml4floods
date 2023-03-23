@@ -52,6 +52,9 @@ SENTINEL2_NORMALIZATION = np.array(
     dtype=np.float32,
 )
 
+MNDWI_MEAN = 0.00475477112050826
+MNDWI_STD = 0.3342260694586652
+
 COLORS_WORLDFLOODS = np.array([[0, 0, 0],
                                [139, 64, 0],
                                [0, 0, 139],
