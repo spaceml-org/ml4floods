@@ -2,7 +2,7 @@ from ml4floods.preprocess.worldfloods import normalize as wf_normalization
 import ml4floods.preprocess.transformations as transformations
 from ml4floods.preprocess.tiling import WindowSlices, load_windows, save_windows
 from glob import glob
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, MNDWI_MEAN, MNDWI_STD
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled
 from ml4floods.data.worldfloods.lightning import WorldFloodsDataModule
 from ml4floods.models.utils.configuration import AttrDict
@@ -287,8 +287,8 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     if data_config.train_transformation.normalize:
         channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
         if data_config.add_mndwi_input:
-            channel_mean = np.concatenate([channel_mean,np.zeros((1,1,1))],axis = -1)
-            channel_std = np.concatenate([channel_std,np.ones((1,1,1))],axis = -1)
+            channel_mean = np.concatenate([channel_mean,MNDWI_MEAN * np.ones((1,1,1))],axis = -1)
+            channel_std = np.concatenate([channel_std,MNDWI_STD* np.ones((1,1,1))],axis = -1)
             
         train_transform.append(transformations.Normalize(
             mean=channel_mean,
