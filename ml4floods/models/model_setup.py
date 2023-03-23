@@ -2,7 +2,7 @@ import torch
 import itertools
 from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
 from ml4floods.models.utils.configuration import AttrDict
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8, MNDWI_MEAN, MNDWI_STD
 import numpy as np
 import os
 
@@ -108,12 +108,12 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
 
         mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
         if config.data_params.get('add_mndwi_input',False):
-            mean_batch = np.concatenate([mean_batch,np.array([0],dtype = np.float32)],axis = 0)
+            mean_batch = np.concatenate([mean_batch,np.array([MNDWI_MEAN],dtype = np.float32)],axis = 0)
         mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
         if config.data_params.get('add_mndwi_input',False):
-            std_batch = np.concatenate([std_batch,np.array([1], dtype = np.float32)],axis = 0)
+            std_batch = np.concatenate([std_batch,np.array([MNDWI_STD], dtype = np.float32)],axis = 0)
         std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         def normalize(batch_image):
