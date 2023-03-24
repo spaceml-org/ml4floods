@@ -89,12 +89,15 @@ class CustomJSONEncoder(json.JSONEncoder):
         # routines and let it work normally.
         return super().default(obj_to_encode)
 
+REQUESTER_PAYS_DEFAULT = True
 
-def get_filesystem(path: Union[str, Path]):
+def get_filesystem(path: Union[str, Path], requester_pays:Optional[bool]=None):
+    if requester_pays is None:
+        requester_pays = REQUESTER_PAYS_DEFAULT
     path = str(path)
     if "://" in path:
         # use the fileystem from the protocol specified
-        return fsspec.filesystem(path.split(":", 1)[0],requester_pays = True)
+        return fsspec.filesystem(path.split(":", 1)[0], requester_pays=requester_pays)
     else:
         # use local filesystem
         return fsspec.filesystem("file")
@@ -111,7 +114,7 @@ def write_geojson_to_gcp(gs_path: str, geojson_val: gpd.GeoDataFrame) -> None:
             geojson_val.to_file(fh, driver="GeoJSON")
 
 
-def check_requester_pays_gcp_available() -> bool:
+def check_gdal_requester_pays_gcp_available() -> bool:
     """
     Requester pays for GCP is available from GDAL 3.4
 
@@ -134,11 +137,14 @@ def check_requester_pays_gcp_available() -> bool:
     return False
 
 
-REQUESTER_PAYS_AVAILABLE = check_requester_pays_gcp_available()
+REQUESTER_PAYS_AVAILABLE = check_gdal_requester_pays_gcp_available()
 
 
 @contextmanager
-def rasterio_open_read(tifffile:str, requester_pays:bool=True) -> rasterio.DatasetReader:
+def rasterio_open_read(tifffile:str, requester_pays:Optional[bool]=None) -> rasterio.DatasetReader:
+    if requester_pays is None:
+        requester_pays = REQUESTER_PAYS_DEFAULT
+
     if requester_pays and tifffile.startswith("gs"):
         if REQUESTER_PAYS_AVAILABLE:
             assert "GS_USER_PROJECT" in os.environ, \
