@@ -44,7 +44,11 @@ CODES_FLOODMAP = {
     "aquaculture (wet rice)": 1,
     "tsunami-affected land": 1,
     "ran of kutch water": 1,
-    "maximum flood water extent (cumulative)": 1
+    "maximum flood water extent (cumulative)": 1,
+    # Preds
+    "flood-trace": 1,
+    "water": 1,
+    "flood_trace": 1
 }
 
 CLASS_LAND_COPERNICUSEMSHYDRO = ["BH090-Land Subject to Inundation", "BA030-Island", 'BA010-Coastline']

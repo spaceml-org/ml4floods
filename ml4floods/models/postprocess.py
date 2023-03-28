@@ -8,7 +8,7 @@ from scipy import ndimage as ndi
 import numpy as np
 from typing import List, Optional, Union
 from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
-from ml4floods.data import utils
+from ml4floods.data import utils, vectorize
 import torch
 import geopandas as gpd
 from shapely.ops import unary_union
@@ -62,48 +62,7 @@ def get_water_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
         list of rasterised polygons
 
     """
-    assert binary_water_mask.ndim == 2, f"Expected mask with 2 dim found {binary_water_mask.shape}"
-
-    geoms_polygons = []
-    polygon_generator = features.shapes(binary_water_mask.astype(np.int16),
-                                        binary_water_mask)
-
-    for polygon, value in polygon_generator:
-        p = shape(polygon)
-        if polygon_buffer > 0:
-            p = p.buffer(polygon_buffer)
-        if p.area >= min_area:
-            p = p.simplify(tolerance=tolerance)
-            if transform is not None:
-                p = transform_polygon(p, transform) # Convert polygon to raster coordinates
-            geoms_polygons.append(p)
-
-    return geoms_polygons
-
-def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
-    """
-    Transforms a polygon from pixel coordinates to the coordinates specified by the affine transform
-
-    Args:
-        polygon: polygon to transform
-        transform: Affine transformation
-
-    Returns:
-        polygon with coordinates transformed by the affine transformation
-
-    """
-    geojson_dict = mapping(polygon)
-    out_coords = []
-    for pol in geojson_dict["coordinates"]:
-        pol_out = []
-        for coords in pol:
-            pol_out.append(transform * coords)
-
-        out_coords.append(pol_out)
-
-    geojson_dict["coordinates"] = out_coords
-
-    return shape(geojson_dict)
+    return vectorize.get_polygons(binary_water_mask, min_area, polygon_buffer, tolerance, transform)
 
 
 def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
@@ -524,8 +483,8 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
 
         is_valid_geoms = data.is_valid
         if not is_valid_geoms.all():
-            reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
-            print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
+            # reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
+            # print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
             data = make_valid(data)
 
         if data_all is None:

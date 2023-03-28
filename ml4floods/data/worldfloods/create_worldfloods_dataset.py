@@ -5,9 +5,10 @@ import traceback
 import tqdm
 import pandas as pd
 from datetime import datetime
-from ml4floods.data import utils
+from ml4floods.data import utils, vectorize
 from ml4floods.data.ee_download import process_metadata
 import os
+import numpy as np
 
 from pathlib import Path
 from typing import Optional, Callable, Tuple, Dict, Any
@@ -268,7 +269,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
         if not fsdest.exists(gt_path_dest) or not fsdest.exists(meta_json_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Generating Ground Truth {file_name}...")
+                pbar.write(f"Generating Ground Truth {file_name}...")
 
             # Copy s2_image_path to local before reading?
             # If so we will need also to copy cloudprob_path and permanent_water_path
@@ -286,7 +287,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 gt = gt[None]
 
             if pbar is not None:
-                pbar.set_description(f"Saving GT {file_name}...")
+                pbar.write(f"Saving GT {file_name}...")
 
             if gt.shape[0] == 2:
                 desc = ["invalid/clear/cloud", "invalid/land/water"]
@@ -301,7 +302,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
             # upload meta json to bucket
             if pbar is not None:
-                pbar.set_description(f"Saving meta {file_name}...")
+                pbar.write(f"Saving meta {file_name}...")
 
             # save meta in local json file
             gt_meta["crs"] = str(gt_meta["crs"])
@@ -310,31 +311,52 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
             utils.write_json_to_gcp(meta_json_path_dest, gt_meta)
 
+        # Copy cloudprob
+        if cloudprob_path_dest and (not fsdest.exists(cloudprob_path_dest) or overwrite):
+            if pbar is not None:
+                pbar.write(f"Saving cloud probs {file_name}...")
+
+            with utils.rasterio_open_read(gt_path_dest) as rst:
+                gt = rst.read()
+                transform = rst.transform
+                crs = rst.crs
+
+            if gt.shape[0] == 2:
+                clouds = gt[0] == 2
+            else:
+                clouds = gt[0] == 3
+
+            # vectorize clouds
+            geoms_polygons = vectorize.get_polygons(clouds,
+                                                    transform=transform)
+            if len(geoms_polygons) > 0:
+                clouds_vec = gpd.GeoDataFrame({"geometry": geoms_polygons,
+                                               "class": "cloud"},
+                                              crs=crs)
+            else:
+                clouds_vec = gpd.GeoDataFrame(data={"class": []},
+                                              geometry=[], crs=crs)
+
+            utils.write_geojson_to_gcp(cloudprob_path_dest, clouds_vec)
+
         # Copy floodmap shapefiles
         if not fsdest.exists(floodmap_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving floodmap {file_name}...")
+                pbar.write(f"Saving floodmap {file_name}...")
 
             utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)                
         
         # Copy S2 image
         if not fsdest.exists(s2_image_path_dest) or overwrite:
             if pbar is not None:
-                pbar.set_description(f"Saving S2 image {file_name}...")
+                pbar.write(f"Saving S2 image {file_name}...")
             
             _copy(s2_image_path, s2_image_path_dest, fs)
-        
-        # Copy cloudprob
-        if cloudprob_path is not None and cloudprob_path_dest and (not fsdest.exists(cloudprob_path_dest) or overwrite):
-            if pbar is not None:
-                pbar.set_description(f"Saving cloud probs {file_name}...")
-            
-            _copy(cloudprob_path, cloudprob_path_dest, fs)
-        
+
         # Copy permanent water
         if (permanent_water_image_path_dest is not None) and (not fsdest.exists(permanent_water_image_path_dest) or overwrite):
             if pbar is not None:
-                pbar.set_description(f"Saving permanent water image {file_name}...")
+                pbar.write(f"Saving permanent water image {file_name}...")
 
             _copy(permanent_water_path, permanent_water_image_path_dest, fs)
 
@@ -420,7 +442,7 @@ def worldfloods_output_files(output_path:str, file_name:str,
     meta_parent_path = os.path.join(output_path,"meta",file_name+".json").replace("\\", "/")
 
     if clouds_available:
-        cloudprob_path_dest = os.path.join(output_path, "cloudprob",file_name+".tif").replace("\\", "/")
+        cloudprob_path_dest = os.path.join(output_path, "cloud_vec",file_name+".geojson").replace("\\", "/")
     else:
         cloudprob_path_dest = None
 

@@ -3,15 +3,11 @@ torchvision
 pytorch-lightning
 numpy
 matplotlib
-seaborn
-scipy
 pandas
 rasterio
 geopandas
 tqdm
-opencv-python
 albumentations
-seaborn
 google-cloud-storage
 fsspec
 gcsfs

@@ -2,7 +2,7 @@
 <head><title>WorldFloods</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="Description" content="Landsat 8 cloud cover assessment dataset."/>
+<meta name="Description" content="WorldFloods viewer"/>
 <link rel="icon" type="image/png" href="/web/ml4cc_logo.png">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
@@ -19,6 +19,7 @@
   <button type="button" onclick="loadTile()">Load Image</button>
   <button type="button" onclick="loadFloodMap()">Load FloodMap</button>
   <button type="button" onclick="loadFloodMapPred()">Load FloodMap Pred</button>
+    <button type="button" onclick="copyPredToFloodMap()">Copy Pred to FloodMap</button>
   <!-- Rounded switch -->
   Edit Polygon:
   <label class="switch"><input id="editpol" type="checkbox" /><div></div></label>
@@ -56,7 +57,7 @@
                        "val": "#DDDD00",
                        "banned": "#770000",
                        "unused": "#222222",
-		       "test_UNOSAT": "#C724A6",
+                       "test_UNOSAT": "#C724A6",
                        "test": "#DD0000"};
 
     // Initialize js map
@@ -119,7 +120,7 @@
 
             // https://learn.microsoft.com/en-us/azure/azure-maps/zoom-levels-and-tile-grid?tabs=csharp
             let tilelayer = L.tileLayer(path,
-                                        {maxNativeZoom: 14, bounds:  worldfloods[name]["polygon"].getBounds()});
+                                        {maxNativeZoom: 15, bounds:  worldfloods[name]["polygon"].getBounds()});
             worldfloods[name]["tilelayers"].push(tilelayer);
 
             // TODO Control opacity -> https://leafletjs.com/reference.html#tilelayer
@@ -143,16 +144,43 @@
     }
 
     // style floodmaps based on property source
-    function style_fun(feature){
-	  switch (feature.properties.source) {
-        case 'area_of_interest': return {color: "#ff0000", fillOpacity: 0};
-        case 'hydro_l':   return {color: "#0000ff", fillOpacity: 0.2};
-        case 'hydro':   return {color: "#0000ff", fillOpacity: 0.2};
-        case 'flood':   return {color: "#00ffff", fillOpacity: 0.2};
+    function style_fun(feature) {
+      switch (feature.properties.source) {
+        case 'area_of_interest':
+          return {color: "#ff0000", fillOpacity: 0};
+        case 'hydro_l':
+          return {color: "#0000ff", fillOpacity: 0.2};
+        case 'hydro':
+          return {color: "#0000ff", fillOpacity: 0.2};
+        case 'cloud_vec':
+          return {color: "#bbbbbb", fillOpacity: 0.2};
+        case 'flood':
+          return {color: "#0000ff", fillOpacity: 0.2};
+        default:
+          return style_fun_pred(feature);
       }
-      console.log("Unknown source: "+feature.properties.source);
-      return {color: "#ffff00", fillOpacity: 0.2};
     }
+
+    function style_fun_pred(feature){
+      switch (feature.properties.w_class) {
+             case 'flood-trace':
+               return {color: "#f66f00", fillOpacity: 0.2};
+             case 'flood_trace':
+               return {color: "#f66f00", fillOpacity: 0.2};
+             case 'Flood trace':
+               return {color: "#f66f00", fillOpacity: 0.2};
+             case 'water':
+               return {color: "#0000ff", fillOpacity: 0.2};
+             case 'cloud':
+               return {color: "#bbbbbb", fillOpacity: 0.2}; 
+             case 'area_imaged':
+               return {color: "#ff0000", fillOpacity: 0};
+             default:
+               console.log("Unknown source: "+feature.properties.w_class);
+               return {color: "#ffff00", fillOpacity: 0.2};
+           }
+    }
+
 
     // Add style and callbacks to flood gt polygons
     function addStyleFloodPolygon(feature, layer){
@@ -195,12 +223,9 @@
                 + worldfloods[name]["subset"] + "/" + name + "/floodmap.geojson";
 
         // Add popup to each polygon in the floodmap
-        function onEachFeature(feature, layer) {
-          addStyleFloodPolygon(feature, layer);
-        }
 
         $.getJSON(path_dest_base, function (floodmap) {
-          worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": onEachFeature});
+          worldfloods[name]["floodmap"] = L.geoJSON(floodmap, {"onEachFeature": addStyleFloodPolygon});
           worldfloods[name]["floodmap"].addTo(mymap);
           control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
           // hide polygons layer
@@ -213,14 +238,41 @@
       }
     }
 
-    // style floodmaps based on property source
-    function style_fun_pred(feature){
-	  switch (feature.properties.class) {
-        case 'water':   return {color: "#0000ff", fillOpacity: 0.2};
-        case 'cloud':   return {fillColor: "#dddddd", color:"#000000", fillOpacity: 0.7};
+    function copyPredToFloodMap(){
+      let name = $('#image :selected').val();
+
+	  // Uncheck editing
+	  $( "#editpol" ).prop( "checked", false );
+
+      if (!("floodmap_pred" in worldfloods[name])) {
+        // We need the prediction loaded!
+        alert("Load floodmap pred before copying it!")
+        return;
       }
-      console.log("Unknown source: "+feature.properties.class);
-      return {color: "#ffff00", fillOpacity: 0.2};
+
+      let floodmap_pred = worldfloods[name]["floodmap_pred"].toGeoJSON();
+
+      // Remove the floodmap from the map if it has been added
+      if (mymap.hasLayer(worldfloods[name]["floodmap"])){
+        control_layer.removeLayer(worldfloods[name]["floodmap"]);
+        mymap.removeLayer(worldfloods[name]["floodmap"]);
+      }
+
+      // Add floodmap to map
+      worldfloods[name]["floodmap"] = L.geoJSON(floodmap_pred, {"onEachFeature": addStyleFloodPolygon});
+      worldfloods[name]["floodmap"].addTo(mymap);
+      control_layer.addOverlay(worldfloods[name]["floodmap"], "floodmap: " + name);
+      
+      // Remove floodmap pred from map
+      if (mymap.hasLayer(worldfloods[name]["floodmap_pred"])){
+        control_layer.removeLayer(worldfloods[name]["floodmap_pred"]);
+        mymap.removeLayer(worldfloods[name]["floodmap_pred"]);
+      }
+
+      // hide polygons layer
+      if (mymap.hasLayer(layer_polygons)){
+        mymap.removeLayer(layer_polygons);
+      }
     }
 
     function loadFloodMapPred() {
@@ -236,7 +288,7 @@
                 + worldfloods[name]["subset"] + "/" + name + "/" + predname +".geojson";
 
         $.getJSON(path_dest_base, function (floodmap) {
-          worldfloods[name]["floodmap_pred"] = L.geoJSON(floodmap, {"style": style_fun_pred});
+          worldfloods[name]["floodmap_pred"] = L.geoJSON(floodmap, {"style": style_fun});
           worldfloods[name]["floodmap_pred"].addTo(mymap);
           control_layer.addOverlay(worldfloods[name]["floodmap_pred"], "floodmap Pred: " + name);
           // hide polygons layer
@@ -296,8 +348,8 @@
        let props = feature.properties = feature.properties || {};
 
        // TODO let edit w_class, source and id
-       props["w_class"] = "Not Applicable";
-       props["source"] = "flood";
+       props["w_class"] = "water";
+       props["source"] = "manual_label"; 
        props["id"] = -1;
 
        // bindPopup and style

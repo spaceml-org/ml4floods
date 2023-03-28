@@ -19,8 +19,6 @@ def setup_config(args) -> AttrDict:
         config: config object
 
     """
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
     
     # 1. Load config json from argparse input
     config = load_json(args.config)
@@ -42,8 +40,7 @@ def setup_config(args) -> AttrDict:
     
     config = AttrDict.from_nested_dicts(config)
 
-    print('Loaded Config for experiment: ', config.experiment_name)
-    pp.pprint(config)
+    # print(f'Loaded Config for experiment: {config.experiment_name}')
     
     # 3. return config to training
     return config

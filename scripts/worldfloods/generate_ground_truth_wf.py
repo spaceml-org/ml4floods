@@ -105,7 +105,8 @@ def main_worldlfoods_extra(destination_path:str,
                     break
 
             # Do not process if subset is different
-            if skip_unused and (subset_iter == subset):
+            if skip_unused and (subset_iter != subset):
+                pbar.write(f"Skipping {metadata_file}. Because it is of {subset_iter} and we are only processing {subset}")
                 continue
 
             # Create destination folder if it doesn't exists
