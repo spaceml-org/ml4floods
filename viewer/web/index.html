@@ -438,7 +438,7 @@
              dats_select2.push(dict_push);
 
             // Create polygon for map
-            let color = COLOR_CODES[meta["subset"]];
+            let color = COLOR_CODES[meta["subset_name"]];
 
             let geojson_feature = {"geometry": meta["geometry"], "type": "Feature",
                                    "properties": {}};
