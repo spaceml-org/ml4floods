@@ -454,6 +454,7 @@ def worldfloods_files(rl:str, status:Optional[pd.DataFrame]=None):
     json_files = sorted(glob(os.path.join(rl, "*/meta/*.json")))
     worldfloods = []
     if status is not None:
+        status = status[~status["layer name"].duplicated()].copy()
         status = status.set_index('layer name')
 
     for json_file in json_files:
