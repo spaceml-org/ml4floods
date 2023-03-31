@@ -4,7 +4,7 @@ import os
 import argparse
 import json
 import io
-from typing import List
+from typing import List, Optional
 from PIL import Image
 import numpy as np
 import geopandas
@@ -449,13 +449,17 @@ from shapely.geometry import box, mapping
 
 # KEYS_COPY_V2 = ["satellite", "event id", "satellite date", "ems_code", "aoi_code", "date_ems_code", "s2_date"]
 KEYS_COPY = ["satellite", "satellite date"]
-def worldfloods_files(rl:str):
+def worldfloods_files(rl:str, status:Optional[pd.DataFrame]=None):
 
     json_files = sorted(glob(os.path.join(rl, "*/meta/*.json")))
     worldfloods = []
+    if status is not None:
+        status = status.set_index('layer name')
 
     for json_file in json_files:
         json_file = json_file.replace("\\", "/")
+        layer_name = os.path.splitext(os.path.basename(json_file))[0]
+
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
@@ -467,14 +471,29 @@ def worldfloods_files(rl:str):
             meta_copy["s2_date"] = meta["s2metadata"][0]["date_string"]
 
         meta_copy["date_ems_code"] = meta.get("date_ems_code", "UNKNOWN")
-        meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
+        if status is not None:
+            if layer_name in status.index:
+                meta_copy["subset"] = status.loc[layer_name, "subset"]
+                status = status.loc[layer_name, "status"]
+                if (meta_copy["subset"] == "unused") and status == 1:
+                    meta_copy["subset"] = "train"
+                elif (meta_copy["subset"] == "unused") and status == 2:
+                    meta_copy["subset"] = "to-fix"
+                elif (meta_copy["subset"] == "unused") and status == 0:
+                    meta_copy["subset"] = "discarded"
+            else:
+                print(f"Layer {layer_name} not found in status, we will set it to unused")
+                meta_copy["subset"] = "unused"
+
+        else:
+            meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
         if "area_of_interest_polygon" in meta:
             meta_copy["geometry"] = meta["area_of_interest_polygon"]
         else:
             # Assumes old version of worldfloods
             meta_copy["geometry"] = mapping(box(*meta["bounds"]))
 
-        worldfloods.append({"id": os.path.splitext(os.path.basename(json_file))[0], "meta": meta_copy})
+        worldfloods.append({"id": layer_name, "meta": meta_copy})
 
     return worldfloods
 
@@ -487,10 +506,14 @@ if __name__ == "__main__":
     parser.add_argument('--host',  type=str, required=False, help="Use \"0.0.0.0\" to have "
                                                                   "the server available externally as well")
     parser.add_argument('--root_location', help='Root folder', type=str,
-                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
+                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0_DEF/')
     parser.add_argument("--gt_version", default="v2", choices=["v1", "v2"],
                         help="Version of ground truth. v1 1 band 3 classes, v2 2 bands 2 classes each")
     parser.add_argument('--no_save_floodmap_bucket', help="Do not save the floodmaps to the bucket", action="store_true")
+    # add argument for status.csv file
+    parser.add_argument('--status_csv', help='status csv file', type=str,
+                        default='/media/disk/databases/WORLDFLOODS/Database_DEF.csv')
+    
 
     args = parser.parse_args()
     
@@ -502,11 +525,16 @@ if __name__ == "__main__":
     root_location = args.root_location[:-1] if args.root_location.endswith("/") else args.root_location
     database_name = os.path.basename(root_location)
 
-    pdb = os.path.join("web", database_name+".json")
+    pdb = os.path.join("web", f"{database_name}.json")
 
-    # if not os.path.exists(pdb):
+    # read status csv
+    if os.path.exists(args.status_csv):
+        status = pd.read_csv(args.status_csv, index_col=0)
+    else:
+        status = None
+
     print(f"Generate database from location {args.root_location}")
-    database = worldfloods_files(root_location)
+    database = worldfloods_files(root_location, status)
 
     database[1]["selected"] = True
     with open(pdb, "w") as fh:
