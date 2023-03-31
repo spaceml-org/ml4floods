@@ -425,7 +425,7 @@
             let meta = worldfloods_list[i]["meta"];
 
             // Add stuff for selector
-            let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset"]+") "+image};
+            let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset_name"]+") "+image};
 
             if (searchParams.has('id')){
                  if (image == searchParams.get('id')){
