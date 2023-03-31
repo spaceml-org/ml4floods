@@ -474,12 +474,12 @@ def worldfloods_files(rl:str, status:Optional[pd.DataFrame]=None):
         if status is not None:
             if layer_name in status.index:
                 meta_copy["subset"] = status.loc[layer_name, "subset"]
-                status = status.loc[layer_name, "status"]
-                if (meta_copy["subset"] == "unused") and status == 1:
+                status_iter = status.loc[layer_name, "status"]
+                if (meta_copy["subset"] == "unused") and status_iter == 1:
                     meta_copy["subset"] = "train"
-                elif (meta_copy["subset"] == "unused") and status == 2:
+                elif (meta_copy["subset"] == "unused") and status_iter == 2:
                     meta_copy["subset"] = "to-fix"
-                elif (meta_copy["subset"] == "unused") and status == 0:
+                elif (meta_copy["subset"] == "unused") and status_iter == 0:
                     meta_copy["subset"] = "discarded"
             else:
                 print(f"Layer {layer_name} not found in status, we will set it to unused")
