@@ -10,7 +10,7 @@ from shapely.geometry import mapping, Polygon
 import numpy as np
 import geopandas as gpd
 import pandas as pd
-import fsspec
+from ml4floods.data.utils import get_filesystem
 from datetime import datetime, timezone
 import math
 
@@ -294,7 +294,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
              bucket_name="worldfloods"):
 
     if bucket_name is not None:
-        fs = fsspec.filesystem("gs", requester_pays=True)
+        fs = get_filesystem("gs://")
     
         files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
         if len(files_in_bucket) > 0:
@@ -425,7 +425,7 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
-    fs = fsspec.filesystem("gs", requester_pays = requester_pays)
+    fs = get_filesystem("gs://")
     filename_full_path = os.path.join(path_bucket, f"{date_search.year}.tif")
     if fs.exists(filename_full_path):
         print(f"File {filename_full_path} exists. It will not be downloaded again")
@@ -493,7 +493,7 @@ def download_merit_layer(area_of_interest: Polygon,
     """
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
-    fs = fsspec.filesystem("gs",requester_pays = True)
+    fs = get_filesystem("gs://")
     
     filename_full_path = os.path.join(path_bucket, "merit").replace("\\",'/')
     if fs.exists(filename_full_path):
@@ -578,7 +578,7 @@ def process_metadata(path_csv:str, fs=None) -> pd.DataFrame:
         dataframe with processed date fields and column indicating if the s2 file is available
     """
     if fs is None:
-        fs = fsspec.filesystem("gs", requester_pays=True)
+        fs = get_filesystem("gs://")
     
     if path_csv.startswith("gs"):
         with fs.open(path_csv, "r") as fh:
@@ -688,7 +688,7 @@ def download_s2l89(area_of_interest: Polygon,
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    fs = fsspec.filesystem("gs", requester_pays = True)
+    fs = get_filesystem("gs://")
 
     if collection_name == "Landsat":
         path_csv = os.path.join(path_bucket, "landsatinfo.csv")
