@@ -474,6 +474,15 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         verbose=2,
     )
 
+
+def permanent_water_image(year:int, pol:ee.Geometry) -> ee.Image:
+    if year >= 2021:
+        year = 2021
+    
+    img_export = ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
+    return img_export.clip(pol)
+
+
 def download_merit_layer(area_of_interest: Polygon,
                          path_bucket: str, crs:str='EPSG:4326',
                          name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
