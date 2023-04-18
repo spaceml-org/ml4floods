@@ -301,6 +301,9 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         productname = "S2"
         productnamefolder = "S2"
         resampling = warp.Resampling.cubic_spline
+    elif productname == 'S1':
+        bands = [1]
+        resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         if app.config["GT_VERSION"] == "v2":
             bands = [2]
@@ -351,6 +354,9 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
+    if productname == "S1":
+        img_rgb = return_scaled_s1(rst_arr)
+        mode = "RGB"
     elif productname in ["gt","WF2_unet_full_norm"]:
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
@@ -415,6 +421,22 @@ COLORS = np.array([[0, 0, 0], # invalid
 @app.route('/worldfloods.json')
 def worldfloods_database():
     return send_file(app.config["DATABASE_NAME"])
+
+def return_scaled_s1(s1, return_scaling = False):
+    
+    ratio = s1[0] / s1[1] + 1e-4
+    rgb_s1 = np.concatenate([s1[0][np.newaxis], s1[1][np.newaxis],ratio[np.newaxis]], axis = 0)
+
+    mins = np.array([np.nanmin(rgb_s1[0]), np.nanmin(rgb_s1[0]), np.nanmin(ratio)])
+    maxs = np.array([np.nanmax(rgb_s1[0]), np.nanmax(rgb_s1[0]), np.nanmax(ratio)])
+    
+    rgb_s1 = ( rgb_s1 - mins[0][None,None]) / (maxs[0][None,None] - mins[0][None,None])
+    rgb_s1 = np.clip(rgb_s1,0,1)
+    
+    if return_scaling:
+        return np.moveaxis(rgb_s1, 0,-1), mins, maxs
+    else:
+        return np.moveaxis(rgb_s1, 0,-1)
 
 
 def mask_to_rgb(mask: np.ndarray, values: List[int], colors: np.ndarray) -> np.ndarray:
