@@ -57,8 +57,51 @@
                        "val": "#DDDD00",
                        "banned": "#770000",
                        "unused": "#222222",
+                       "to-fix": "#FF6600",
+                       "discarded": "#000000",
                        "test_UNOSAT": "#C724A6",
                        "test": "#DD0000"};
+
+    let CODES_FLOODMAP = {
+        // CopernicusEMS (flood)
+        'Flooded area': "#17ecff",
+        'Previous flooded area': "#f66f00",
+        'Not Applicable': "#17ecff",
+        'Not Application': "#17ecff",
+        'Flood trace': "#f66f00",
+        'Dike breach': "#17ecff",
+        'Standing water': "#17ecff",
+        'Erosion': "#f66f00",
+        'River': 2,
+        'Riverine flood': "#17ecff",
+        // CopernicusEMS (hydro)
+        'BH140-River': "#0000ff",
+        'BH090-Land Subject to Inundation': "#0000ff",
+        'BH080-Lake': "#0000ff",
+        'BA040-Open Water': "#0000ff",
+        'BH141-River Bank': "#0000ff",
+        'BH170-Natural Spring': "#0000ff",
+        'BH130-Reservoir': "#0000ff",
+        'BH141-Stream': "#0000ff",
+        'BH180-Waterfall': "#0000ff",
+        // UNOSAT
+        "preflood water": "#0000ff",
+        // "Flooded area": 1,  # 'flood water' DUPLICATED
+        "flood-affected land / possible flood water": "#17ecff",
+        // "Flood trace": 1,  # 'probable flash flood-affected land' DUPLICATED
+        "satellite detected water": "#17ecff",
+        // "Not Applicable": 1,  # unknown see document DUPLICATED
+        "possible saturated, wet soil/ possible flood water": "#17ecff",
+        "aquaculture (wet rice)": "#17ecff",
+        "tsunami-affected land": "#f66f00",
+        "ran of kutch water": "#17ecff",
+        "maximum flood water extent (cumulative)": "#17ecff",
+        // Preds
+        "flood-trace": "#f66f00",
+        "water": "#17ecff",
+        "flood_trace": "#f66f00"
+    }
+
 
     // Initialize js map
     let mymap = L.map('mapid').setView([20, 0], 3);
@@ -115,7 +158,7 @@
 
           // Adds the tilelayers of all the products
           worldfloods[name]["tilelayers"] = [];
-          for (const product of ["S2SWIRNIRRED", "S2RGB", "gt", "gtcloud", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI", "BRIGHTNESS"]){
+          for (const product of ["S2SWIRNIRRED", "S2RGB", "S1","S1VH", "gt", "gtcloud", "PERMANENTWATERJRC", "WF2_unet_full_norm", "MNDWI", "OtsuS1", "BRIGHTNESS"]){
             let path = `${path_dest_base}/${product}/{z}/{x}/{y}.png`;
 
             // https://learn.microsoft.com/en-us/azure/azure-maps/zoom-levels-and-tile-grid?tabs=csharp
@@ -154,8 +197,6 @@
           return {color: "#0000ff", fillOpacity: 0.2};
         case 'cloud_vec':
           return {color: "#bbbbbb", fillOpacity: 0.2};
-        case 'flood':
-          return {color: "#0000ff", fillOpacity: 0.2};
         default:
           return style_fun_pred(feature);
       }
@@ -163,21 +204,12 @@
 
     function style_fun_pred(feature){
       switch (feature.properties.w_class) {
-             case 'flood-trace':
-               return {color: "#f66f00", fillOpacity: 0.2};
-             case 'flood_trace':
-               return {color: "#f66f00", fillOpacity: 0.2};
-             case 'Flood trace':
-               return {color: "#f66f00", fillOpacity: 0.2};
-             case 'water':
-               return {color: "#0000ff", fillOpacity: 0.2};
              case 'cloud':
                return {color: "#bbbbbb", fillOpacity: 0.2}; 
              case 'area_imaged':
                return {color: "#ff0000", fillOpacity: 0};
              default:
-               console.log("Unknown source: "+feature.properties.w_class);
-               return {color: "#ffff00", fillOpacity: 0.2};
+               return {color: CODES_FLOODMAP[feature.properties.w_class], fillOpacity: 0.2};
            }
     }
 
@@ -393,7 +425,7 @@
             let meta = worldfloods_list[i]["meta"];
 
             // Add stuff for selector
-            let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset"]+") "+image};
+            let dict_push = {"id": image, "text": "("+i.toString()+ " "+meta["subset_name"]+") "+image};
 
             if (searchParams.has('id')){
                  if (image == searchParams.get('id')){
@@ -406,7 +438,7 @@
              dats_select2.push(dict_push);
 
             // Create polygon for map
-            let color = COLOR_CODES[meta["subset"]];
+            let color = COLOR_CODES[meta["subset_name"]];
 
             let geojson_feature = {"geometry": meta["geometry"], "type": "Feature",
                                    "properties": {}};

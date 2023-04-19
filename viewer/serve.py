@@ -4,7 +4,7 @@ import os
 import argparse
 import json
 import io
-from typing import List
+from typing import List, Optional
 from PIL import Image
 import numpy as np
 import geopandas
@@ -15,6 +15,7 @@ from ml4floods.data import utils, create_gt, save_cog, vectorize
 from shapely.geometry import shape
 import geopandas as gpd
 import logging
+from scipy.ndimage import gaussian_filter, sobel
 
 from glob import glob
 
@@ -27,6 +28,7 @@ DRIVER_FLOODMAPS = {
     "shp" : "ESRI Shapefile"
 }
 SATURATION = 3_500
+VH_SATURATION = -20
 
 CLOUDFOLDER = "cloud_vec"
 
@@ -301,6 +303,13 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         productname = "S2"
         productnamefolder = "S2"
         resampling = warp.Resampling.cubic_spline
+    elif productname == 'S1':
+        bands = [1,2]
+        resampling = warp.Resampling.cubic_spline
+    elif productname == 'S1VH':
+        bands = [2]
+        productnamefolder = 'S1'
+        resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         if app.config["GT_VERSION"] == "v2":
             bands = [2]
@@ -315,6 +324,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
         resampling = warp.Resampling.cubic_spline
         productnamefolder = "S2"
+    elif productname == "OtsuS1":
+        bands = [2]
+        resampling = warp.Resampling.cubic_spline
+        productnamefolder = "S1"
     elif productname == "BRIGHTNESS":
         bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         resampling = warp.Resampling.cubic_spline
@@ -351,6 +364,16 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
+    elif productname == "S1":
+        alpha = (np.ones((rst_arr.shape[1],rst_arr.shape[2])) * 255).astype(np.uint8)
+        img_rgb = return_scaled_s1(rst_arr)
+        img_rgb = (img_rgb * 255 ).astype(np.uint8)
+        img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
+        mode = "RGBA"
+    elif productname == "S1VH":
+        img_rgb = np.clip(rst_arr[0] / VH_SATURATION, 0,1)
+        img_rgb = (img_rgb * 255).astype(np.uint8)
+        mode = "L"
     elif productname in ["gt","WF2_unet_full_norm"]:
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
@@ -361,7 +384,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
             img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         else:
             img_rgb = mask_to_rgb(pred, [0, 1, 2], colors=COLORS[[0,1,3]])
-
         mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -372,6 +394,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         dwi_threshold = (dwi > 0).astype(np.uint8) + 1
         dwi_threshold[invalid] = 0
         img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
+        mode = "RGB"
+    elif productname == 'OtsuS1':
+        binary  = otsu_threshold(rst_arr[0])
+        img_rgb = mask_to_rgb(binary, [0,1,2], colors=COLORS[:-1])
         mode = "RGB"
     elif productname == "BRIGHTNESS":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -416,6 +442,51 @@ COLORS = np.array([[0, 0, 0], # invalid
 def worldfloods_database():
     return send_file(app.config["DATABASE_NAME"])
 
+def otsu_threshold(image, sigma=1, canny_thresholds=(0.1, 0.2), buffer_size=10):
+    # Normalize the image to the range [0, 1]
+    image = (image - np.nanmin(image)) / (np.nanmax(image) - np.nanmin(image))
+    
+    # Step 1: Compute edges using Canny edge detector
+    edges = sobel(gaussian_filter(image, sigma=sigma)) > np.mean(canny_thresholds)
+
+    # Step 2: Create a buffer around the edges using dilation
+    buffer = np.zeros_like(edges)
+    for i in range(buffer_size):
+        buffer = np.logical_or(buffer, np.roll(edges, i+1, axis=0))
+        buffer = np.logical_or(buffer, np.roll(edges, -(i+1), axis=0))
+        buffer = np.logical_or(buffer, np.roll(edges, i+1, axis=1))
+        buffer = np.logical_or(buffer, np.roll(edges, -(i+1), axis=1))
+
+    # Step 3: Compute threshold value using Otsu method, using only the pixels in the buffer
+    hist, bins = np.histogram(image[buffer], bins=256, range=(0, 1))
+    prob = hist / np.sum(hist)
+    cum_prob = np.cumsum(prob)
+    cum_int = np.cumsum(prob * np.arange(256))
+    total_mean = cum_int[-1]
+    between_class_var = (total_mean * cum_prob - cum_int)**2 / (cum_prob * (1 - cum_prob))
+    threshold = np.argmax(between_class_var)
+
+    # Step 4: Threshold index values
+    binary = (image < threshold/255).astype(np.uint8) + 1
+
+    return binary 
+
+def return_scaled_s1(s1, return_scaling = False):
+    
+    ratio = s1[0] / s1[1] + 1e-4
+    rgb_s1 = np.concatenate([s1[0][np.newaxis], s1[1][np.newaxis],ratio[np.newaxis]], axis = 0)
+
+    mins = np.array([np.nanmin(rgb_s1[0]), np.nanmin(rgb_s1[0]), np.nanmin(ratio)])
+    maxs = np.array([np.nanmax(rgb_s1[0]), np.nanmax(rgb_s1[0]), np.nanmax(ratio)])
+    
+    rgb_s1 = ( rgb_s1 - mins[0][None,None]) / (maxs[0][None,None] - mins[0][None,None])
+    rgb_s1 = np.clip(rgb_s1,0,1)
+    
+    if return_scaling:
+        return np.moveaxis(rgb_s1, 0,-1), mins, maxs
+    else:
+        return np.moveaxis(rgb_s1, 0,-1)
+
 
 def mask_to_rgb(mask: np.ndarray, values: List[int], colors: np.ndarray) -> np.ndarray:
     """
@@ -449,13 +520,17 @@ from shapely.geometry import box, mapping
 
 # KEYS_COPY_V2 = ["satellite", "event id", "satellite date", "ems_code", "aoi_code", "date_ems_code", "s2_date"]
 KEYS_COPY = ["satellite", "satellite date"]
-def worldfloods_files(rl:str):
+def worldfloods_files(rl:str, status:Optional[pd.DataFrame]=None):
 
     json_files = sorted(glob(os.path.join(rl, "*/meta/*.json")))
     worldfloods = []
+    if status is not None:
+        status = status.set_index('layer name')
 
     for json_file in json_files:
         json_file = json_file.replace("\\", "/")
+        layer_name = os.path.splitext(os.path.basename(json_file))[0]
+
         with open(json_file, "r") as fh:
             meta =  json.load(fh)
 
@@ -468,13 +543,29 @@ def worldfloods_files(rl:str):
 
         meta_copy["date_ems_code"] = meta.get("date_ems_code", "UNKNOWN")
         meta_copy["subset"] = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
+        if status is not None:
+            if layer_name in status.index:
+                meta_copy["subset_name"] = status.loc[layer_name, "subset"]
+                status_iter = status.loc[layer_name, "status"]
+                if (meta_copy["subset_name"] in ["unused", "train"]) and status_iter == 1:
+                    meta_copy["subset_name"] = "train"
+                elif (meta_copy["subset_name"] in ["unused", "train"]) and status_iter == 2:
+                    meta_copy["subset_name"] = "to-fix"
+                elif (meta_copy["subset_name"] in ["unused", "train"]) and status_iter == 0:
+                    meta_copy["subset_name"] = "discarded"
+            else:
+                print(f"Layer {layer_name} not found in status, we will set it to unused")
+                meta_copy["subset_name"] = "unused"
+        else:
+            meta_copy["subset_name"] = meta_copy["subset"]
+
         if "area_of_interest_polygon" in meta:
             meta_copy["geometry"] = meta["area_of_interest_polygon"]
         else:
             # Assumes old version of worldfloods
             meta_copy["geometry"] = mapping(box(*meta["bounds"]))
 
-        worldfloods.append({"id": os.path.splitext(os.path.basename(json_file))[0], "meta": meta_copy})
+        worldfloods.append({"id": layer_name, "meta": meta_copy})
 
     return worldfloods
 
@@ -487,10 +578,14 @@ if __name__ == "__main__":
     parser.add_argument('--host',  type=str, required=False, help="Use \"0.0.0.0\" to have "
                                                                   "the server available externally as well")
     parser.add_argument('--root_location', help='Root folder', type=str,
-                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0/')
+                        default='/media/disk/databases/WORLDFLOODS/2_Mart/worldfloods_extra_v2_0_DEF/')
     parser.add_argument("--gt_version", default="v2", choices=["v1", "v2"],
                         help="Version of ground truth. v1 1 band 3 classes, v2 2 bands 2 classes each")
     parser.add_argument('--no_save_floodmap_bucket', help="Do not save the floodmaps to the bucket", action="store_true")
+    # add argument for status.csv file
+    parser.add_argument('--status_csv', help='status csv file', type=str,
+                        default='/media/disk/databases/WORLDFLOODS/Database_DEF.csv')
+    
 
     args = parser.parse_args()
     
@@ -502,11 +597,16 @@ if __name__ == "__main__":
     root_location = args.root_location[:-1] if args.root_location.endswith("/") else args.root_location
     database_name = os.path.basename(root_location)
 
-    pdb = os.path.join("web", database_name+".json")
+    pdb = os.path.join("web", f"{database_name}.json")
 
-    # if not os.path.exists(pdb):
+    # read status csv
+    if os.path.exists(args.status_csv):
+        status = pd.read_csv(args.status_csv, index_col=0)
+    else:
+        status = None
+
     print(f"Generate database from location {args.root_location}")
-    database = worldfloods_files(root_location)
+    database = worldfloods_files(root_location, status)
 
     database[1]["selected"] = True
     with open(pdb, "w") as fh:
