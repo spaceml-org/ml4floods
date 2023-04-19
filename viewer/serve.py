@@ -15,6 +15,7 @@ from ml4floods.data import utils, create_gt, save_cog, vectorize
 from shapely.geometry import shape
 import geopandas as gpd
 import logging
+from scipy.ndimage import gaussian_filter, sobel
 
 from glob import glob
 
@@ -27,6 +28,7 @@ DRIVER_FLOODMAPS = {
     "shp" : "ESRI Shapefile"
 }
 SATURATION = 3_500
+VH_SATURATION = -20
 
 CLOUDFOLDER = "cloud_vec"
 
@@ -302,7 +304,11 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         productnamefolder = "S2"
         resampling = warp.Resampling.cubic_spline
     elif productname == 'S1':
-        bands = [1]
+        bands = [1,2]
+        resampling = warp.Resampling.cubic_spline
+    elif productname == 'S1VH':
+        bands = [2]
+        productnamefolder = 'S1'
         resampling = warp.Resampling.cubic_spline
     elif productname == "gt":
         if app.config["GT_VERSION"] == "v2":
@@ -354,9 +360,17 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
-    if productname == "S1":
+    elif productname == "S1":
+        alpha = (np.ones((rst_arr.shape[1],rst_arr.shape[2])) * 255).astype(np.uint8)
         img_rgb = return_scaled_s1(rst_arr)
-        mode = "RGB"
+        img_rgb = (img_rgb * 255 ).astype(np.uint8)
+        img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
+        mode = "RGBA"
+    elif productname == "S1VH":
+        bands = [1]
+        img_rgb = np.clip(rst_arr[0] / VH_SATURATION, 0,1)
+        img_rgb = (img_rgb * 255).astype(np.uint8)
+        mode = "L"
     elif productname in ["gt","WF2_unet_full_norm"]:
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
@@ -421,6 +435,35 @@ COLORS = np.array([[0, 0, 0], # invalid
 @app.route('/worldfloods.json')
 def worldfloods_database():
     return send_file(app.config["DATABASE_NAME"])
+
+def otsu_threshold(image, sigma=1, canny_thresholds=(0.1, 0.2), buffer_size=10):
+    # Normalize the image to the range [0, 1]
+    image = (image - np.nanmin(image)) / (np.nanmax(image) - np.nanmin(image))
+    
+    # Step 1: Compute edges using Canny edge detector
+    edges = sobel(gaussian_filter(image, sigma=sigma)) > np.mean(canny_thresholds)
+
+    # Step 2: Create a buffer around the edges using dilation
+    buffer = np.zeros_like(edges)
+    for i in range(buffer_size):
+        buffer = np.logical_or(buffer, np.roll(edges, i+1, axis=0))
+        buffer = np.logical_or(buffer, np.roll(edges, -(i+1), axis=0))
+        buffer = np.logical_or(buffer, np.roll(edges, i+1, axis=1))
+        buffer = np.logical_or(buffer, np.roll(edges, -(i+1), axis=1))
+
+    # Step 3: Compute threshold value using Otsu method, using only the pixels in the buffer
+    hist, bins = np.histogram(image[buffer], bins=256, range=(0, 1))
+    prob = hist / np.sum(hist)
+    cum_prob = np.cumsum(prob)
+    cum_int = np.cumsum(prob * np.arange(256))
+    total_mean = cum_int[-1]
+    between_class_var = (total_mean * cum_prob - cum_int)**2 / (cum_prob * (1 - cum_prob))
+    threshold = np.argmax(between_class_var)
+
+    # Step 4: Threshold index values
+    binary = image < threshold/255
+
+    return binary, threshold/255
 
 def return_scaled_s1(s1, return_scaling = False):
     
