@@ -324,6 +324,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         bands = [BANDS_S2.index(b) + 1 for b in ["B11", "B3"]]
         resampling = warp.Resampling.cubic_spline
         productnamefolder = "S2"
+    elif productname == "OtsuS1":
+        bands = [2]
+        resampling = warp.Resampling.cubic_spline
+        productnamefolder = "S1"
     elif productname == "BRIGHTNESS":
         bands = [BANDS_S2.index(b) + 1 for b in ["B4", "B3", "B2"]]
         resampling = warp.Resampling.cubic_spline
@@ -367,7 +371,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
     elif productname == "S1VH":
-        bands = [1]
         img_rgb = np.clip(rst_arr[0] / VH_SATURATION, 0,1)
         img_rgb = (img_rgb * 255).astype(np.uint8)
         mode = "L"
@@ -381,7 +384,6 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
             img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         else:
             img_rgb = mask_to_rgb(pred, [0, 1, 2], colors=COLORS[[0,1,3]])
-
         mode = "RGB"
     elif productname == "MNDWI":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -392,6 +394,10 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         dwi_threshold = (dwi > 0).astype(np.uint8) + 1
         dwi_threshold[invalid] = 0
         img_rgb = mask_to_rgb(dwi_threshold, [0, 1, 2], colors=COLORS[:-1])
+        mode = "RGB"
+    elif productname == 'OtsuS1':
+        binary  = otsu_threshold(rst_arr[0])
+        img_rgb = mask_to_rgb(binary, [0,1,2], colors=COLORS[:-1])
         mode = "RGB"
     elif productname == "BRIGHTNESS":
         invalid = np.all(rst_arr == 0, axis=0)
@@ -461,9 +467,9 @@ def otsu_threshold(image, sigma=1, canny_thresholds=(0.1, 0.2), buffer_size=10):
     threshold = np.argmax(between_class_var)
 
     # Step 4: Threshold index values
-    binary = image < threshold/255
+    binary = (image < threshold/255).astype(np.uint8) + 1
 
-    return binary, threshold/255
+    return binary 
 
 def return_scaled_s1(s1, return_scaling = False):
     
