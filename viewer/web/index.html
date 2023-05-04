@@ -110,6 +110,7 @@
         {"control": true, "overlay":true}
       ).addTo(mymap);
 
+
     // Add drawControl layer to be able to draw new polygons
     let drawnItems = new L.FeatureGroup();
     // mymap.addLayer(drawnItems);
@@ -134,6 +135,11 @@
 
     // This is the tickbox in the upper right corner of the map
     let control_layer = L.control.layers({}, {"basemap": basemap}, {"collapsed":false}).addTo(mymap);
+    
+    let satellitegoogle = L.tileLayer(
+      "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+    ).addTo(mymap);
+    control_layer.addOverlay(satellitegoogle, 'Google satellite');
 
     // Zooms to the location of the `name` floodmap and opens the popup with the info of the floodmap
 	function changeImage(name){
