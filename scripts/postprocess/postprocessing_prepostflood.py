@@ -4,6 +4,8 @@ import rasterio
 
 from ml4floods.data import utils
 from ml4floods.models import postprocess
+from ml4floods.data.ee_download import process_metadata
+
 import os
 from datetime import datetime, timedelta
 import traceback
@@ -21,7 +23,27 @@ def _key_sort(x):
         append = "B"
     else:
         append = "A"
-    return date+append
+    return append+date
+
+# Do not process images with less than th_cloudprob cloud probability 
+
+def filter_function_clouds(aoi_folder, geojsons_iter, th_cloudprob = 0.20):
+
+    metadata_s2 = process_metadata(os.path.join(aoi_folder,'S2/s2info.csv')).set_index('names2file').sort_values(by='datetime')
+    metadata_landsat = process_metadata(os.path.join(aoi_folder,'Landsat/landsatinfo.csv')).set_index('names2file').sort_values(by='datetime')
+    
+    geojsons_process = []
+    for g in geojsons_iter:
+        satellite = g.split('/')[-2]
+        date = os.path.basename(g).split('.geojson')[0]
+        try:
+            cloudprob = metadata_s2.loc[date,'cloud_probability'] if satellite == 'S2' else metadata_landsat.loc[date,'cloud_probability']
+        except:
+            cloudprob = 1
+        if cloudprob < th_cloudprob:
+            geojsons_process.append(g)
+
+    return geojsons_process
 
 
 def main(model_output_folder:str, flooding_date_pre:str,
@@ -64,6 +86,7 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
         # Output products of the processing
         geojsons_iter.sort(key=_key_sort)
+        geojsons_iter = filter_function_clouds(aoi_folder, geojsons_iter,th_cloudprob = 0.20)
 
         # Create the names of the output products
         pre_flood_path = os.path.join(aoi_folder, "pre_post_products",
@@ -107,7 +130,9 @@ def main(model_output_folder:str, flooding_date_pre:str,
             if (not overwrite) and fs.exists(post_flood_path):
                 best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
             else:
-                best_post_flood_data = postprocess.get_floodmap_post(geojsons_post)
+                print(f'Processing {len(geojsons_post)} for {aoi} post products')
+                best_post_flood_data = postprocess.get_floodmap_post(geojsons_post,mode = 'max')
+              
                 # Add permanent water polygons
                 if permanent_water_floodmap is not None:
                     best_post_flood_data = postprocess.add_permanent_water_to_floodmap(permanent_water_floodmap,
