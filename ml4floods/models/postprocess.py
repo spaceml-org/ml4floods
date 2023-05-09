@@ -206,7 +206,8 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
     # land = unary_union(floodmap[(floodmap["class"] == "land")].geometry)
     # area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
     # area_missing_or_cloud = clouds.union(area_missing)
-    land = area_imaged.difference(unary_union(floodmap[(floodmap["class"].isin(['clouds','water','flood-trace']))].geometry))
+    
+    land = area_imaged.difference(validation.make_valid(unary_union(floodmap[(floodmap["class"].isin(['clouds','water','flood-trace']))].geometry)))
     area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
     
     # Remove Lines or Points from missing area
