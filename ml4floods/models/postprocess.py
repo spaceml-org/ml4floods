@@ -203,9 +203,12 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
 
     area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
-    land = unary_union(floodmap[(floodmap["class"] == "land")].geometry)
-    area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
-
+    # land = unary_union(floodmap[(floodmap["class"] == "land")].geometry)
+    # area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
+    # area_missing_or_cloud = clouds.union(area_missing)
+    land = area_imaged.difference(unary_union(floodmap[(floodmap["class"].isin(['clouds','water','flood-trace']))].geometry))
+    area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
+    
     # Remove Lines or Points from missing area
     if area_missing_or_cloud_or_land.type == "GeometryCollection":
         area_missing_or_cloud_or_land = unary_union(
@@ -444,8 +447,10 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
         best_pre_flood_data = best_pre_flood_data.to_crs(floodmap_post_data.crs)
 
     area_imaged_post = unary_union(floodmap_post_data[floodmap_post_data["class"] == "area_imaged"].geometry)
+    area_imaged_pre = unary_union(best_pre_flood_data[best_pre_flood_data["class"] == "area_imaged"].geometry)
+    area_missing_pre = area_imaged_post.difference(area_imaged_pre)
 
-    area_missing_pre = get_area_missing_or_cloud(best_pre_flood_data, area_imaged_post)
+    # area_missing_pre = get_area_missing_or_cloud(best_pre_flood_data, area_imaged_post)
     pre_flood_water_or_missing_pre = unary_union(best_pre_flood_data[best_pre_flood_data["class"] == "water"].geometry).union(area_missing_pre)
 
     # pre_flood_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "cloud")].geometry)
@@ -480,9 +485,10 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     data_post_flood["geometry"] = data_post_flood["geometry"].simplify(tolerance=10)
 
     # Copy stuff from pre-flood data
-    best_pre_flood_data_propagate = best_pre_flood_data[best_pre_flood_data["class"] != "flood_trace"].copy()
+    # best_pre_flood_data_propagate = best_pre_flood_data[best_pre_flood_data["class"] != "flood_trace"].copy()
+    best_pre_flood_data_propagate = best_pre_flood_data[~best_pre_flood_data["class"].isin(["flood_trace","cloud"])].copy()
     best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "water", "class"] = "water-pre-flood"
-    best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "cloud", "class"] = "cloud-pre-flood"
+    # best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "cloud", "class"] = "cloud-pre-flood"
     best_pre_flood_data_propagate.loc[best_pre_flood_data_propagate["class"] == "area_imaged", "class"] = "area_imaged-pre-flood"
 
     post_flood_propagate = floodmap_post_data[(floodmap_post_data["class"] == "area_imaged") | (floodmap_post_data["class"] == "cloud")]
@@ -653,6 +659,7 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
     jrc_vectorized_map_copy["class"] = water_class
 
     floodmap = pd.concat([floodmap, jrc_vectorized_map_copy], ignore_index=True)
+    floodmap = make_valid(floodmap)
     floodmap = floodmap.dissolve(by="class").reset_index()
     floodmap = floodmap.explode(ignore_index=True)
 
