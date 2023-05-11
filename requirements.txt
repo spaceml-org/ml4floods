@@ -14,3 +14,5 @@ gcsfs
 requests_html
 earthengine-api
 mercantile
+seaborn
+matplotlib-scalebar
