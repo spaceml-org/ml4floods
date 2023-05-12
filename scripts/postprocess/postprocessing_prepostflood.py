@@ -27,7 +27,7 @@ def _key_sort(x):
 
 # Do not process images with less than th_cloudprob cloud probability 
 
-def filter_function_clouds(aoi_folder, geojsons_iter, th_cloudprob = 0.20):
+def filter_function_clouds(aoi_folder, geojsons_iter, th_cloudprob = 0.50):
 
     metadata_s2 = process_metadata(os.path.join(aoi_folder,'S2/s2info.csv')).set_index('names2file').sort_values(by='datetime')
     metadata_landsat = process_metadata(os.path.join(aoi_folder,'Landsat/landsatinfo.csv')).set_index('names2file').sort_values(by='datetime')
@@ -86,7 +86,7 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
         # Output products of the processing
         geojsons_iter.sort(key=_key_sort)
-        geojsons_iter = filter_function_clouds(aoi_folder, geojsons_iter,th_cloudprob = 0.20)
+        geojsons_iter = filter_function_clouds(aoi_folder, geojsons_iter,th_cloudprob = 0.50)
 
         # Create the names of the output products
         pre_flood_path = os.path.join(aoi_folder, "pre_post_products",

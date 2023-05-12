@@ -181,7 +181,7 @@ def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
     area_missing_or_cloud =  clouds.union(area_missing)
 
     # Remove Lines or Points from missing area
-    if area_missing_or_cloud.type == "GeometryCollection":
+    if area_missing_or_cloud.geom_type == "GeometryCollection":
         area_missing_or_cloud = unary_union(
             [gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
 
@@ -203,17 +203,13 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
 
     area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
-    # land = unary_union(floodmap[(floodmap["class"] == "land")].geometry)
-    # area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
-    # area_missing_or_cloud = clouds.union(area_missing)
-    
-    land = area_imaged.difference(validation.make_valid(unary_union(floodmap[(floodmap["class"].isin(['clouds','water','flood-trace']))].geometry)))
+    land = unary_union(make_valid(floodmap[~(floodmap["class"].isin(['clouds','water','flood-trace']))]).geometry)
     area_missing_or_cloud_or_land = clouds.union(area_missing).union(land)
     
     # Remove Lines or Points from missing area
-    if area_missing_or_cloud_or_land.type == "GeometryCollection":
+    if area_missing_or_cloud_or_land.geom_type == "GeometryCollection":
         area_missing_or_cloud_or_land = unary_union(
-            [gc for gc in area_missing_or_cloud_or_land.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+            [gc for gc in area_missing_or_cloud_or_land.geoms if (gc.geom_type == "Polygon") or (gc.geom_type == "MultiPolygon")])
     
     return area_missing_or_cloud_or_land
 
@@ -356,7 +352,7 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
     best_floodmap = best_floodmap[condition].copy()
     for idx, data in enumerate(datas[1:]):
-        if area_not_mapped.is_empty or not (area_not_mapped.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+        if area_not_mapped.is_empty or not (area_not_mapped.geom_type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
             if verbose:
                 print(f"All area is covered in idx {idx+1}. Area missing empty: {area_not_mapped.is_empty} Geom type: {area_not_mapped.type}")
             break
