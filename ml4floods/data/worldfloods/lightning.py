@@ -55,6 +55,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         filenames_train_test: Dict,
         input_folder: str = "S2",
         target_folder: str = "gt",
+        gt_version: str = "v2",
         train_transformations: Optional[Callable] = None,
         test_transformations: Optional[Callable] = None,
         window_size: Tuple[int, int] = (64, 64),
@@ -82,6 +83,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         # Prefixes
         self.image_prefix = input_folder
         self.gt_prefix = target_folder
+        self.gt_version = gt_version
         self.filter_windows = filter_windows
         self.window_size = WindowSize(height=window_size[0], width=window_size[1])
         self.filenames_train_test = filenames_train_test
@@ -113,6 +115,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
+            gt_version = self.gt_version, 
             bands=self.bands,
             transforms=self.train_transform,
             lock_read=self.lock_read
@@ -126,6 +129,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
+            gt_version = self.gt_version, 
             bands=self.bands,
             transforms=self.test_transform,
             lock_read=self.lock_read
@@ -135,6 +139,7 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_files=self.test_files,
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
+            gt_version = self.gt_version, 
             bands=self.bands,
             transforms=self.test_transform,
             lock_read=self.lock_read

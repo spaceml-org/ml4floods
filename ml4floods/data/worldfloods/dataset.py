@@ -16,6 +16,11 @@ from ml4floods.data.worldfloods.configs import BANDS_S2
 
 import threading
 
+def convert_targets_v1(mask) -> np.ndarray:
+    mask_v1 = mask[1].copy()
+    mask_v1[mask[0]==2] = 3
+    return mask                             
+
 
 class WorldFloodsDataset(Dataset):
     """A prepackaged WorldFloods PyTorch Dataset
@@ -46,6 +51,7 @@ class WorldFloodsDataset(Dataset):
         image_files: List[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
+        gt_version: str = "v2",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
         lock_read: bool = False,
@@ -54,6 +60,7 @@ class WorldFloodsDataset(Dataset):
         self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
+        self.gt_version = gt_version
         self.transforms = transforms
         self.bands_read = bands
         if lock_read:
@@ -93,6 +100,9 @@ class WorldFloodsDataset(Dataset):
 
         # The 0-index comes from reading all the bands with f.read()
         mask = np.nan_to_num(mask_tif)
+        
+        if self.gt_version == "v1" and mask.shape[1] == 2:
+            mask = convert_targets_v1(mask)
 
         # Apply transformation
         if self.transforms is not None:
@@ -136,6 +146,7 @@ class WorldFloodsDatasetTiled(Dataset):
         list_of_windows: List[WindowSlices],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
+        gt_version: str = "v2",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
         lock_read: bool = False,
@@ -143,6 +154,7 @@ class WorldFloodsDatasetTiled(Dataset):
 
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
+        self.gt_version = gt_version
         self.transforms = transforms
         self.channels_read = bands
 
@@ -225,7 +237,10 @@ class WorldFloodsDatasetTiled(Dataset):
         image = np.nan_to_num(image_tif).astype(np.float32)
 
         mask = np.nan_to_num(mask_tif).astype(int)
-
+        
+        if self.gt_version == "v1" and mask.shape[1] == 2:
+            mask = convert_targets_v1(mask)
+            
         # Apply transformation
         if self.transforms is not None:
             data = self.transforms(image=image, mask=mask)
