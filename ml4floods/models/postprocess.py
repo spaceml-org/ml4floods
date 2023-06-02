@@ -8,7 +8,7 @@ from scipy import ndimage as ndi
 import numpy as np
 from typing import List, Optional, Union
 from ml4floods.data.create_gt import get_brightness, BRIGHTNESS_THRESHOLD
-from ml4floods.data import utils
+from ml4floods.data import utils, vectorize
 import torch
 import geopandas as gpd
 from shapely.ops import unary_union
@@ -62,48 +62,7 @@ def get_water_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
         list of rasterised polygons
 
     """
-    assert binary_water_mask.ndim == 2, f"Expected mask with 2 dim found {binary_water_mask.shape}"
-
-    geoms_polygons = []
-    polygon_generator = features.shapes(binary_water_mask.astype(np.int16),
-                                        binary_water_mask)
-
-    for polygon, value in polygon_generator:
-        p = shape(polygon)
-        if polygon_buffer > 0:
-            p = p.buffer(polygon_buffer)
-        if p.area >= min_area:
-            p = p.simplify(tolerance=tolerance)
-            if transform is not None:
-                p = transform_polygon(p, transform) # Convert polygon to raster coordinates
-            geoms_polygons.append(p)
-
-    return geoms_polygons
-
-def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
-    """
-    Transforms a polygon from pixel coordinates to the coordinates specified by the affine transform
-
-    Args:
-        polygon: polygon to transform
-        transform: Affine transformation
-
-    Returns:
-        polygon with coordinates transformed by the affine transformation
-
-    """
-    geojson_dict = mapping(polygon)
-    out_coords = []
-    for pol in geojson_dict["coordinates"]:
-        pol_out = []
-        for coords in pol:
-            pol_out.append(transform * coords)
-
-        out_coords.append(pol_out)
-
-    geojson_dict["coordinates"] = out_coords
-
-    return shape(geojson_dict)
+    return vectorize.get_polygons(binary_water_mask, min_area, polygon_buffer, tolerance, transform)
 
 
 def get_mask_watertypes(mndwi: Union[np.ndarray, torch.Tensor],
@@ -225,6 +184,32 @@ def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
 
     return area_missing_or_cloud
 
+def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
+                                      area_imaged:Union[Polygon,MultiPolygon]) -> Union[Polygon, MultiPolygon]:
+    """
+    Returns a Polygon with the area of the floodmap that hasn't been imaged (i.e. is out of `floodmap[floodmap['class'] == "area_imaged"]`)
+    and that is not covered by clouds or land.
+
+    Args:
+        floodmap: GeoDataFrame with column 'class' with values 'area_imaged' and 'cloud'
+        area_imaged: Polygon that indicates the area imaged.
+
+    Returns:
+        Polygon with the area of the floodmap that hasn't been imaged and that is not covered by clouds or land
+    """
+
+    area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
+    clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
+    land = unary_union(make_valid(floodmap[~(floodmap["class"].isin(['clouds','water','flood-trace']))]).geometry)
+    area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
+
+    # Remove Lines or Points from missing area
+    if area_missing_or_cloud_or_land.type == "GeometryCollection":
+        area_missing_or_cloud_or_land = unary_union(
+            [gc for gc in area_missing_or_cloud_or_land.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+    
+    return area_missing_or_cloud_or_land
+
 
 def get_area_valid(floodmap:gpd.GeoDataFrame) -> Union[Polygon, MultiPolygon]:
     """
@@ -285,13 +270,16 @@ def get_floodmap_pre(geojsons:List[str], verbose:bool=False) -> gpd.GeoDataFrame
     return mosaic_floodmaps(datas_sorted, area_imaged, verbose=verbose)
 
 
-def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame:
+def get_floodmap_post(geojsons:List[str],verbose:bool=False,
+                      mode:str="first") -> gpd.GeoDataFrame:
     """
     From a list of sorted GeoJSONs returns the GeoDataFrame with all flood water smartly joined
 
     Args:
         geojsons: List[GeoDataFrame] with column 'class' with values {"water", "cloud", "area_imaged", "flood_trace"}
         verbose:
+        mode: "first" or "max". If "first" it will prioritize the water and land of the first floodmap.
+            If "max" it will take the maximum of water of all floodmaps.
 
     Returns:
         floodmap with lowest cloud coverage. Classes: {"water", "cloud", "area_imaged"}
@@ -315,13 +303,16 @@ def get_floodmap_post(geojsons:List[str],verbose:bool=False) -> gpd.GeoDataFrame
         area_imaged = unary_union(data[data["class"] == "area_imaged"].geometry).union(area_imaged)
         datas.append(data)
 
-    return mosaic_floodmaps(datas, area_imaged, classes_water=["water", "flood_trace"], verbose=verbose)
+    return mosaic_floodmaps(datas, area_imaged, 
+                            classes_water=["water", "flood_trace"], 
+                            verbose=verbose, mode=mode)
 
 
 def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
                      area_imaged:Union[Polygon, MultiPolygon],
                      classes_water:List[str]=["water"],
-                     verbose:bool=False) -> gpd.GeoDataFrame:
+                     verbose:bool=False,
+                     mode:str="first") -> gpd.GeoDataFrame:
     """
     Mosaics the floodmaps iteratively taking into account the valid area of each of them.
 
@@ -331,6 +322,8 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
         classes_water: which water classes from ["water", "flood_trace"] to include in the output floodmap. For pre-flood
         maps we don't include the flood_trace class.
         verbose:
+        mode: "first" or "max". If "first" it will take the water from the first floomap. If "max" it will return
+        the maximum water area from all floodmaps.
 
     Returns:
         a GeoDataFrame with the mosaic of the input dataframes
@@ -341,6 +334,10 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
     best_floodmap = datas[0]
     crs = best_floodmap.crs
     area_missing_or_cloud = get_area_missing_or_cloud(best_floodmap, area_imaged=area_imaged)
+    if mode == "max":
+        area_not_mapped = get_area_missing_or_cloud_or_land(best_floodmap, area_imaged=area_imaged)
+    else:
+        area_not_mapped = area_missing_or_cloud
 
     # This dataframe will be filled with water polygons
     condition = None
@@ -352,9 +349,9 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
     best_floodmap = best_floodmap[condition].copy()
     for idx, data in enumerate(datas[1:]):
-        if area_missing_or_cloud.is_empty or not (area_missing_or_cloud.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+        if area_not_mapped.is_empty or not (area_not_mapped.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
             if verbose:
-                print(f"All area is covered in idx {idx+1}. Area missing empty: {area_missing_or_cloud.is_empty} Geom type: {area_missing_or_cloud.type}")
+                print(f"All area is covered in idx {idx+1}. Area missing empty: {area_not_mapped.is_empty} Geom type: {area_not_mapped.type}")
             break
 
         if data.crs != best_floodmap.crs:
@@ -362,7 +359,7 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
         # Add water polygons that intersect the missing data
         for c in classes_water:
-            water_geoms = data[data["class"] == c].geometry.apply(lambda g: g.intersection(area_missing_or_cloud))
+            water_geoms = data[data["class"] == c].geometry.apply(lambda g: g.intersection(area_not_mapped))
 
             water_geoms = water_geoms[~water_geoms.isna() & ~water_geoms.is_empty]
             water_geoms = water_geoms.explode(ignore_index=True)
@@ -379,6 +376,12 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
         # Remove points or LineStrings
         if area_missing_or_cloud.type == "GeometryCollection":
             area_missing_or_cloud = unary_union([gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+        
+        # update area_missing
+        if mode == "max":
+            area_not_mapped = get_area_missing_or_cloud_or_land(best_floodmap, area_imaged=area_imaged).intersection(area_not_mapped)
+        else:
+            area_not_mapped = area_missing_or_cloud
 
 
     # Join adjacent polygons
@@ -521,8 +524,8 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
 
         is_valid_geoms = data.is_valid
         if not is_valid_geoms.all():
-            reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
-            print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
+            # reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
+            # print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
             data = make_valid(data)
 
         if data_all is None:

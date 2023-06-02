@@ -1,7 +1,6 @@
 import argparse
 import fsspec
-from ml4floods.data import utils
-from ml4floods.models import postprocess
+from ml4floods.data import utils, vectorize
 from datetime import datetime
 from typing import Optional
 import rasterio.windows
@@ -26,8 +25,8 @@ def vectorize_output(binary_mask:np.ndarray, crs:str, transform:rasterio.transfo
         gpd.GeoDataFrame with vectorized cloud, shadows and thick and thin clouds classes
     """
 
-    geoms_polygons = postprocess.get_water_polygons(binary_mask,
-                                                    transform=transform)
+    geoms_polygons = vectorize.get_polygons(binary_mask,
+                                            transform=transform)
     if len(geoms_polygons) > 0:
         return gpd.GeoDataFrame({"geometry": geoms_polygons,
                                  "id": np.arange(0, len(geoms_polygons)),

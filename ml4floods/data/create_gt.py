@@ -163,7 +163,7 @@ def read_s2img_cloudmask(
                 if str(clouds_vec.crs).lower() != crs:
                     clouds_vec.to_crs(crs=crs, inplace=True)
 
-                clouds_vec = clouds_vec[clouds_vec["class"] == "CLOUD"]
+                clouds_vec = clouds_vec[clouds_vec["class"].isin(["CLOUD", "cloud"])]
                 shapes_rasterise = (
                     (g, 1)
                     for g,w in clouds_vec[["geometry", "class"]].itertuples(
@@ -456,7 +456,6 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
 
 CLOUDS_THRESHOLD = .5
 BRIGHTNESS_THRESHOLD = 3_500
-
 
 
 def _generate_gt_fromarray(
