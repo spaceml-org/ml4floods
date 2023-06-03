@@ -157,11 +157,12 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
                     folder_local = os.path.join(path_to_splits, isplit, input_target_folder)
                     os.makedirs(folder_local, exist_ok=True)
                     basename = os.path.basename(filename)
+                    file_src = filenames_train_test[isplit][input_target_folder][idx]
                     file_dest = os.path.join(folder_local, basename)
                     if not os.path.isfile(file_dest):
-                        fs.get_file(filename, file_dest)
-                        print(f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_folder])}) {filename}")
-                    filenames_train_test[isplit][input_folder][idx] = file_dest
+                        fs.get_file(file_src, file_dest)
+                        print(f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_target_folder])}) {file_src}")
+                    filenames_train_test[isplit][input_target_folder][idx] = file_dest
 
     return filenames_train_test
 
