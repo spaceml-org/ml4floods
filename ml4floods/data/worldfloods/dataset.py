@@ -101,7 +101,7 @@ class WorldFloodsDataset(Dataset):
         # The 0-index comes from reading all the bands with f.read()
         mask = np.nan_to_num(mask_tif)
         
-        if self.gt_version == "v1" and mask.shape[1] == 2:
+        if self.gt_version == "v1" and mask.shape[0] == 2:
             mask = convert_targets_v1(mask)
 
         # Apply transformation
@@ -238,7 +238,7 @@ class WorldFloodsDatasetTiled(Dataset):
 
         mask = np.nan_to_num(mask_tif).astype(int)
         
-        if self.gt_version == "v1" and mask.shape[1] == 2:
+        if self.gt_version == "v1" and mask.shape[0] == 2:
             mask = convert_targets_v1(mask)
             
         # Apply transformation
