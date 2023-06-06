@@ -19,7 +19,7 @@ import threading
 def convert_targets_v1(mask) -> np.ndarray:
     mask_v1 = mask[1].copy()
     mask_v1[mask[0]==2] = 3
-    return mask                             
+    return mask[np.newaxis]                            
 
 
 class WorldFloodsDataset(Dataset):
