@@ -198,7 +198,9 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
         Polygon with the area of the floodmap that hasn't been imaged and that is not covered by clouds or land
     """
     
+    area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     area_imaged_current = unary_union(floodmap[floodmap["class"] == "area_imaged"].geometry)
+    clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
     polygons_in_floodmap = unary_union(make_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry)
     land = area_imaged_current.difference(polygons_in_floodmap)
     area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
@@ -532,9 +534,6 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
             data_all = data
         else:
             data_all = pd.concat([data_all, data], ignore_index=True)
-            # data_all = data_all.dissolve(by="class").reset_index()
-            # data_all = data_all.explode(ignore_index=True)
-            # data_all = data_all[~data_all.geometry.isna() & ~data_all.geometry.is_empty]
 
     print(f"\t{len(floodmaps_paths)} Products joined {data_all.shape}")
     # Save as geojson
