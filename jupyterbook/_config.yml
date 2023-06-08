@@ -10,7 +10,7 @@ author                      : <a href="http://spaceml.org/" target="_blank">spac
 copyright                   : "2021"  # Copyright year to be placed in the footer
 logo                        : ml4cc_logo.png  # A path to the book logo
 execute:
-  execute_notebooks: cache
+  execute_notebooks: 'off'
 
 repository:
   url                       : https://github.com/spaceml-org/ml4floods  # Online location of your book
