@@ -26,5 +26,7 @@ python -m twine upload --repository testpypi dist/*
 # Upload to real pypi
 python -m twine upload dist/*
 ```
+The package in PyPi will be shown at [pypi.org/project/ml4floods/](https://pypi.org/project/ml4floods/). The test version can be checked at [test.pypi.org/project/ml4floods/](https://test.pypi.org/project/ml4floods/) 
+
 
 Follow [this tutorial](https://towardsdatascience.com/how-to-publish-a-python-package-to-pypi-7be9dd5d6dcd) to understand how pip works
