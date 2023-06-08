@@ -13,7 +13,7 @@ The commit should appear in branch `gh-pages` and the page will be live at [spac
 
 # Publish package in pip
 
-See [this tutorial](https://towardsdatascience.com/how-to-publish-a-python-package-to-pypi-7be9dd5d6dcd)
+Install `twine`.
 
 First update the version number in `ml4floods/__init__.py`
 
@@ -26,3 +26,5 @@ python -m twine upload --repository testpypi dist/*
 # Upload to real pypi
 python -m twine upload dist/*
 ```
+
+Follow [this tutorial](https://towardsdatascience.com/how-to-publish-a-python-package-to-pypi-7be9dd5d6dcd) to understand how pip works
