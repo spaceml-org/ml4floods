@@ -347,7 +347,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
+def export_task_image(bucket:Optional[str]="worldfloods", crs:str='EPSG:4326',
                       scale:float=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
     """
     function to export images in the WorldFloods format.
