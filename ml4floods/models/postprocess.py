@@ -197,9 +197,8 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
     Returns:
         Polygon with the area of the floodmap that hasn't been imaged and that is not covered by clouds or land
     """
-    
-    area_missing = area_imaged.difference(unary_union(floodmap[(floodmap["class"] == "area_imaged")].geometry))
     area_imaged_current = unary_union(floodmap[floodmap["class"] == "area_imaged"].geometry)
+    area_missing = area_imaged.difference(area_imaged_current)
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
     polygons_in_floodmap = unary_union(make_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry)
     land = area_imaged_current.difference(polygons_in_floodmap)
@@ -500,7 +499,7 @@ def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolyg
 
 
 def make_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    df["geometry"] = df.geometry.apply(lambda x: geometrycollection_to_multipolygon(validation.make_valid(x)))
+    df["geometry"] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
     df = df[(~df.geometry.is_empty) & ((df.geometry.type == "Polygon") | (df.geometry.type == "MultiPolygon"))].copy()
     return df.explode(ignore_index=True)
 
