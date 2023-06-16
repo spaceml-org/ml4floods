@@ -27,6 +27,7 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
                             th_water: float = .5,
                             th_brightness: float = create_gt.BRIGHTNESS_THRESHOLD,
                             collection_name:str="S2",
+                            disable_pbar:bool=True,
                             distinguish_flood_traces:bool=False) -> Tuple[
     Callable[[torch.Tensor], Tuple[torch.Tensor,torch.Tensor]], AttrDict]:
     if model_path.endswith("/"):
@@ -34,7 +35,7 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
         model_folder = os.path.dirname(model_path[:-1])
     else:
         experiment_name = os.path.basename(model_path)
-        model_folder = os.path.dirname(model_path[:-1])
+        model_folder = os.path.dirname(model_path)
 
     config_fp = os.path.join(model_path, "config.json").replace("\\", "/")
     config = get_default_config(config_fp)
@@ -47,7 +48,7 @@ def load_inference_function(model_path: str, device_name: str, max_tile_size: in
     model = get_model(config.model_params, experiment_name)
     model.to(device_name)
     inference_function = get_model_inference_function(model, config, apply_normalization=True,
-                                                      activation=None)
+                                                      activation=None,disable_pbar=disable_pbar)
 
     if config.model_params.get("model_version", "v1") == "v2":
 
@@ -266,7 +267,7 @@ def vectorize_outputv1(prediction: np.ndarray, crs: Any, transform: rasterio.Aff
     start = 0
     class_name = {0: "area_imaged", 2: "water", 3: "cloud", 4: "flood_trace"}
     # Dilate invalid mask
-    invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(np.bool)
+    invalid_mask = binary_dilation(prediction == 0, disk(3)).astype(bool)
 
     # Set borders to zero to avoid border effects when vectorizing
     prediction[:border,:] = 0

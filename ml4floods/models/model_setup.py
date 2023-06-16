@@ -5,6 +5,7 @@ from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8
 import numpy as np
 import os
+from tqdm import tqdm
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Tuple, Union)
@@ -79,6 +80,7 @@ def get_channel_configuration_bands(channel_configuration:str, collection_name:s
 def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
                                  apply_normalization:bool=True, eval_mode:bool=True,
                                  activation:Optional[str]=None,
+                                 disable_pbar:bool = True,
                                  device:Optional[torch.device]=None) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
@@ -142,12 +144,14 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
                              module_shape=module_shape,
                              max_tile_size=config.model_params.max_tile_size,
                              activation_fun=activation_fun,
+                             disable_pbar=disable_pbar,
                              normalization=normalize, eval_mode=eval_mode)
 
 
 def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=128,
                       normalization: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
                       activation_fun: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+                      disable_pbar:bool = False,
                       eval_mode:bool=True) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Given a model it returns a callable function to make inferences that:
@@ -194,7 +198,8 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
             if any((s > max_tile_size for s in ti.shape[2:])):
                 return predbytiles(pred_fun,
                                    input_batch=ti_norm,
-                                   tile_size=max_tile_size)
+                                   tile_size=max_tile_size,
+                                   disable_pbar=disable_pbar)
             
             return pred_fun(ti_norm)
 
@@ -245,7 +250,8 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
 
 
 def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_batch: torch.Tensor,
-                tile_size=1280, pad_size=32, device=torch.device("cpu")) -> torch.Tensor:
+                tile_size=1280, pad_size=32, device=torch.device("cpu"),
+                disable_pbar:bool=False) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
     The purpose is to run `pred_function(input_batch)` avoiding memory errors.
@@ -265,9 +271,12 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"
 
-    for b, i, j in itertools.product(range(0, input_batch.shape[0]),
+    indexes_list = list(itertools.product(range(0, input_batch.shape[0]),
                                      range(0, input_batch.shape[2], tile_size),
-                                     range(0, input_batch.shape[3], tile_size)):
+                                     range(0, input_batch.shape[3], tile_size)))
+    
+    for b, i, j in tqdm(indexes_list, desc="Predicting by tiles",
+                        disable=disable_pbar or (len(indexes_list) == 1)):
 
         slice_current = (slice(i, min(i + tile_size, input_batch.shape[2])),
                          slice(j, min(j + tile_size, input_batch.shape[3])))
