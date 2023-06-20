@@ -107,7 +107,7 @@ def main(model_output_folder:str, flooding_date_pre:str,
             if (not overwrite) and fs.exists(post_flood_path):
                 best_post_flood_data = utils.read_geojson_from_gcp(post_flood_path)
             else:
-                best_post_flood_data = postprocess.get_floodmap_post(geojsons_post)
+                best_post_flood_data = postprocess.get_floodmap_post(geojsons_post, mode='max')
                 # Add permanent water polygons
                 if permanent_water_floodmap is not None:
                     best_post_flood_data = postprocess.add_permanent_water_to_floodmap(permanent_water_floodmap,
