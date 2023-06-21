@@ -35,7 +35,6 @@ def setup_config(args) -> AttrDict:
     
     config['model_params']['hyperparameters']['num_channels'] = len(CHANNELS_CONFIGURATIONS[config['model_params']['hyperparameters']['channel_configuration']])
     config['data_params']['add_mndwi_input'] = config['data_params'].get('add_mndwi_input', False)
-    print('what')
     if config['data_params']['add_mndwi_input']:
         config['model_params']['hyperparameters']['num_channels'] += 1
 
