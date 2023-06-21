@@ -5,6 +5,7 @@ from ml4floods.models.utils.configuration import AttrDict
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8
 import numpy as np
 import os
+import pandas as pd
 from tqdm import tqdm
 
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
@@ -156,7 +157,8 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
                       normalization: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
                       activation_fun: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
                       disable_pbar:bool = False,
-                      eval_mode:bool=True) -> Callable[[torch.Tensor], torch.Tensor]:
+                      eval_mode:bool=True,
+                      batch_size:int=4) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Given a model it returns a callable function to make inferences that:
     1) Normalize the input tensor if provided a callable normalization fun
@@ -167,6 +169,7 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
 
     Args:
         model:
+        batch_size:
         device:
         module_shape:
         max_tile_size:
@@ -201,6 +204,8 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
             ti_norm = normalization(ti)
             if any((s > max_tile_size for s in ti.shape[2:])):
                 return predbytiles(pred_fun,
+                                   device=device,
+                                   batch_size=batch_size,
                                    input_batch=ti_norm,
                                    tile_size=max_tile_size,
                                    disable_pbar=disable_pbar)
@@ -255,7 +260,7 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
 
 def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_batch: torch.Tensor,
                 tile_size=1280, pad_size=32, device=torch.device("cpu"),
-                disable_pbar:bool=False) -> torch.Tensor:
+                disable_pbar:bool=False, batch_size=16) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
     The purpose is to run `pred_function(input_batch)` avoiding memory errors.
@@ -264,6 +269,7 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
     Args:
         pred_function: pred_function to call
         input_batch: torch.Tensor in BCHW format
+        batch_size: The number of sub-tiles to pass through inference at once
         tile_size: Size of the tiles.
         pad_size: each tile is padded before calling the pred_function.
         device: Device to save the predictions
@@ -279,6 +285,7 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
                                      range(0, input_batch.shape[2], tile_size),
                                      range(0, input_batch.shape[3], tile_size)))
     
+    batched_tiles_df = pd.DataFrame()
     for b, i, j in tqdm(indexes_list, desc="Predicting by tiles",
                         disable=disable_pbar or (len(indexes_list) == 1)):
 
@@ -302,15 +309,33 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
         slice_save = slice_prepend + slice_save
 
         vals_to_predict = input_batch[slice_pad]
-        cnn_out = pred_function(vals_to_predict).to(device)
+        batched_tiles_df = pd.concat([batched_tiles_df, pd.DataFrame([{'slice_current':slice_current,
+                                               'slice_pad':slice_pad,
+                                               'slice_save':slice_save,
+                                                'input_shape': vals_to_predict.shape, 
+                                                'vals_to_predict': vals_to_predict[0]}])])
+                      
 
-        assert cnn_out.dim() == 4, "Expected 4-band prediction (after softmax)"
 
+
+    for _, g in batched_tiles_df.groupby('input_shape'): 
+        chunked_tiles = [g]
+        if g.shape[0] > batch_size:
+            chunked_tiles = np.array_split(g,g.shape[0]//batch_size)
+        for batch in chunked_tiles:
+            batched_vals_to_predict = torch.stack([vals_to_predict for vals_to_predict in batch['vals_to_predict'].values])
+            batched_cnn_out = pred_function(batched_vals_to_predict).to(device)
+            assert batched_cnn_out.dim() == 4 # maybe only do once? 
         if pred_continuous_tf is None:
-            pred_continuous_tf = torch.zeros((input_batch.shape[0], cnn_out.shape[1],
-                                              input_batch.shape[2], input_batch.shape[3]),
-                                             device=device)
+            pred_continuous_tf = torch.zeros((input_batch.shape[0], batched_cnn_out.shape[1],
+                                        input_batch.shape[2], input_batch.shape[3]),
+                                        device=device)
+        
 
-        pred_continuous_tf[slice_current] = cnn_out[slice_save]
+            for i in range(batch.shape[0]):
+                slice_current = batch['slice_current'].values[i]
+                slice_save = batch['slice_save'].values[i]
+                cnn_out = batched_cnn_out[i].unsqueeze(0)
+                pred_continuous_tf[slice_current] = cnn_out[slice_save]  
 
     return pred_continuous_tf
