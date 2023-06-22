@@ -263,11 +263,11 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
 
 def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_batch: torch.Tensor,
                 tile_size=1280, pad_size=32, device=torch.device("cpu"),
-                disable_pbar:bool=False, batch_size=16) -> torch.Tensor:
+                disable_pbar:bool=False, batch_size:int=16) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
     The purpose is to run `pred_function(input_batch)` avoiding memory errors.
-    It tiles and stiches the pateches with padding using the strategy of: https://arxiv.org/abs/1805.12219
+    It tiles and stitches the patches with padding using the strategy of: https://arxiv.org/abs/1805.12219
 
     Args:
         pred_function: pred_function to call
@@ -319,8 +319,6 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
                                                 'vals_to_predict': vals_to_predict[0]}])])
                       
 
-
-
     for _, g in batched_tiles_df.groupby('input_shape'): 
         chunked_tiles = [g]
         if g.shape[0] > batch_size:
@@ -328,12 +326,11 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
         for batch in chunked_tiles:
             batched_vals_to_predict = torch.stack([vals_to_predict for vals_to_predict in batch['vals_to_predict'].values])
             batched_cnn_out = pred_function(batched_vals_to_predict).to(device)
-            assert batched_cnn_out.dim() == 4 # maybe only do once? 
-        if pred_continuous_tf is None:
-            pred_continuous_tf = torch.zeros((input_batch.shape[0], batched_cnn_out.shape[1],
-                                        input_batch.shape[2], input_batch.shape[3]),
-                                        device=device)
-        
+            assert batched_cnn_out.dim() == 4
+            if pred_continuous_tf is None:
+                pred_continuous_tf = torch.zeros((input_batch.shape[0], batched_cnn_out.shape[1],
+                                            input_batch.shape[2], input_batch.shape[3]),
+                                            device=device)
 
             for i in range(batch.shape[0]):
                 slice_current = batch['slice_current'].values[i]
@@ -341,4 +338,5 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
                 cnn_out = batched_cnn_out[i].unsqueeze(0)
                 pred_continuous_tf[slice_current] = cnn_out[slice_save]  
 
+          
     return pred_continuous_tf
