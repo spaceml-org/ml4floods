@@ -82,6 +82,7 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
                                  apply_normalization:bool=True, eval_mode:bool=True,
                                  activation:Optional[str]=None,
                                  disable_pbar:bool = True,
+                                 batch_size:int = 8,
                                  device:Optional[torch.device]=None) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
@@ -98,6 +99,7 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
         eval_mode: set for predicting model.eval()
         activation: activation function to apply on inference time (softmax|sigmoid). If None it will gess it from
             the model_version
+        batch_size: number of samples to pass at once
         device: if None uses model.device
 
     Returns: callable function
@@ -147,6 +149,7 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
 
     return get_pred_function(model, device,
                              module_shape=module_shape,
+                             batch_size=batch_size,
                              max_tile_size=config.model_params.max_tile_size,
                              activation_fun=activation_fun,
                              disable_pbar=disable_pbar,
