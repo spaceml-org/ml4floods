@@ -60,7 +60,7 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
 
     """
     ems_web_page = "https://emergency.copernicus.eu/mapping/list-of-activations-rapid"
-    tables = pd.read_html(ems_web_page)[0]
+    tables = pd.read_html(ems_web_page)[1]
     tables_floods = tables[(tables.Type == "Flood") | (tables.Type == "Storm")]
     tables_floods = tables_floods[tables_floods["Event Date"] >= event_start_date]
     tables_floods = tables_floods.reset_index()[
