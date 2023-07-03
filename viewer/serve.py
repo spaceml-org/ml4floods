@@ -322,7 +322,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
-    elif productname == "Unet Pred":
+    elif productname == "Unet pred":
         productnamefolder = "WF2_unetv2_bgriswirs/S2"
         bands = [1]
         resampling = warp.Resampling.nearest
