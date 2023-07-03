@@ -322,8 +322,8 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
     elif productname == "PERMANENTWATERJRC":
         bands = [1]
         resampling = warp.Resampling.nearest
-    elif productname == "WF2_unet_full_norm":
-        productnamefolder = "WF2_unet_full_norm/S2"
+    elif productname == "Unet Pred":
+        productnamefolder = "WF2_unetv2_bgriswirs/S2"
         bands = [1]
         resampling = warp.Resampling.nearest
     else:
@@ -351,7 +351,7 @@ def servexyz(subset:str, eventid:str, productname:str, z, x, y):
         img_rgb = (np.clip(rst_arr / SATURATION, 0, 1).transpose((1, 2, 0)) * 255).astype(np.uint8)
         img_rgb = np.concatenate([img_rgb, alpha[..., None]], axis=-1)
         mode = "RGBA"
-    elif productname in ["gt","WF2_unet_full_norm"]:
+    elif productname in ["gt","Unet pred"]:
         pred = rst_arr[0]
         img_rgb = mask_to_rgb(pred, [0, 1, 2, 3], colors=COLORS)
         mode = "RGB"
