@@ -450,14 +450,16 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     # pre_flood_water_minus_cloud = pre_flood_water.difference(pre_flood_cloud)
 
     geoms_flood = floodmap_post_data[floodmap_post_data["class"] == "water"].geometry.apply(
-        lambda g: g.difference(pre_flood_water_or_missing_pre))
+        lambda g: g.difference(make_valid(pre_flood_water_or_missing_pre)))
+    geoms_flood = make_valid(geoms_flood)
     geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
     geoms_flood = geoms_flood.explode(ignore_index=True)
     geoms_flood = geoms_flood[geoms_flood.geometry.type == "Polygon"]
 
     geoms_trace = floodmap_post_data[(floodmap_post_data["class"] =="flood_trace")].geometry.apply(
-        lambda g: g.difference(pre_flood_water_or_missing_pre))
+        lambda g: g.difference(make_valid(pre_flood_water_or_missing_pre)))
 
+    geoms_flood = make_valid(geoms_trace)
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
     geoms_trace = geoms_trace.explode(ignore_index=True)
     geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
