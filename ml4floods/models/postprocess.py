@@ -502,9 +502,12 @@ def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolyg
     return x
 
 
-def geodataframe_polygonsonly_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    # df["geometry"] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
-    df = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+def geodataframe_polygonsonly_valid(df:Union[gpd.GeoDataFrame, gpd.GeoSeries]) -> gpd.GeoDataFrame:
+    if isinstance(df,gpd.GeoSeries):
+        df = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+    elif isinstance(df,gpd.GeoDataFrame):
+        df['geometry'] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+    
     df = df[(~df.geometry.is_empty) & df.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     return df.explode(ignore_index=True)
 
