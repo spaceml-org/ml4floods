@@ -178,9 +178,9 @@ def get_area_missing_or_cloud(floodmap:gpd.GeoDataFrame,
     area_missing_or_cloud =  clouds.union(area_missing)
 
     # Remove Lines or Points from missing area
-    if area_missing_or_cloud.type == "GeometryCollection":
+    if area_missing_or_cloud.geom_type == "GeometryCollection":
         area_missing_or_cloud = unary_union(
-            [gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+            [gc for gc in area_missing_or_cloud.geoms if (gc.geom_type == "Polygon") or (gc.geom_type == "MultiPolygon")])
 
     return area_missing_or_cloud
 
@@ -205,9 +205,9 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
     area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
 
     # Remove Lines or Points from missing area
-    if area_missing_or_cloud_or_land.type == "GeometryCollection":
+    if area_missing_or_cloud_or_land.geom_type == "GeometryCollection":
         area_missing_or_cloud_or_land = unary_union(
-            [gc for gc in area_missing_or_cloud_or_land.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+            [gc for gc in area_missing_or_cloud_or_land.geoms if (gc.geom_type == "Polygon") or (gc.geom_type == "MultiPolygon")])
     
     return area_missing_or_cloud_or_land
 
@@ -350,9 +350,9 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
     best_floodmap = best_floodmap[condition].copy()
     for idx, data in enumerate(datas[1:]):
-        if area_not_mapped.is_empty or not (area_not_mapped.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+        if area_not_mapped.is_empty or not (area_not_mapped.geom_type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
             if verbose:
-                print(f"All area is covered in idx {idx+1}. Area missing empty: {area_not_mapped.is_empty} Geom type: {area_not_mapped.type}")
+                print(f"All area is covered in idx {idx+1}. Area missing empty: {area_not_mapped.is_empty} Geom type: {area_not_mapped.geom_type}")
             break
 
         if data.crs != best_floodmap.crs:
@@ -364,7 +364,7 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
             water_geoms = water_geoms[~water_geoms.isna() & ~water_geoms.is_empty]
             water_geoms = water_geoms.explode(ignore_index=True)
-            water_geoms = water_geoms[water_geoms.geometry.type == "Polygon"]
+            water_geoms = water_geoms[water_geoms.geometry.geom_type == "Polygon"]
 
             if water_geoms.shape[0] > 0:
                 water_data = gpd.GeoDataFrame(geometry=water_geoms, crs=crs)
@@ -375,8 +375,8 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
         area_missing_or_cloud = get_area_missing_or_cloud(data, area_imaged).intersection(area_missing_or_cloud)
 
         # Remove points or LineStrings
-        if area_missing_or_cloud.type == "GeometryCollection":
-            area_missing_or_cloud = unary_union([gc for gc in area_missing_or_cloud.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+        if area_missing_or_cloud.geom_type == "GeometryCollection":
+            area_missing_or_cloud = unary_union([gc for gc in area_missing_or_cloud.geoms if (gc.geom_type == "Polygon") or (gc.geom_type == "MultiPolygon")])
         
         # update area_missing
         if mode == "max":
@@ -392,7 +392,7 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
     stuff_concat = [best_floodmap]
 
     # Add clouds
-    if not area_missing_or_cloud.is_empty and (area_missing_or_cloud.type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
+    if not area_missing_or_cloud.is_empty and (area_missing_or_cloud.geom_type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
         # If there is something missing must be cloud (because area_imaged is the union of all the area missing in all the pre-floodmaps)
         cloud_data = gpd.GeoDataFrame(geometry=[area_missing_or_cloud], crs=crs)
         cloud_data = cloud_data.explode(ignore_index=True)
@@ -407,10 +407,10 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
     # Filter stuff that are not polygons
     result =  pd.concat(stuff_concat, ignore_index=True)
-    assert (result.geometry.type != "MultiPolygon").all(), "Everything should be flattened! found some MultiPolygon"
-    assert (result.geometry.type != "GeometryCollection").all(), "Everything should be flattened! found some GeometryCollection"
+    assert (result.geometry.geom_type != "MultiPolygon").all(), "Everything should be flattened! found some MultiPolygon"
+    assert (result.geometry.geom_type != "GeometryCollection").all(), "Everything should be flattened! found some GeometryCollection"
     # Remove geometries that are not polyongs and exclude polygons with area >= 400m^2
-    result = result[(result.geometry.type == "Polygon") & (result.geometry.area >= 20*20)].copy()
+    result = result[(result.geometry.geom_type == "Polygon") & (result.geometry.area >= 20*20)].copy()
     result["geometry"] = result["geometry"].simplify(tolerance=10)
     result = result[~result.geometry.isna() & ~result.geometry.is_empty]
 
@@ -437,6 +437,7 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
 
     """
     warnings.filterwarnings('ignore', 'GeoSeries.isna', UserWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
     if floodmap_post_data.crs != best_pre_flood_data.crs:
         best_pre_flood_data = best_pre_flood_data.to_crs(floodmap_post_data.crs)
@@ -455,7 +456,7 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     geoms_flood = geodataframe_polygonsonly_valid(geoms_flood)
     geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
     geoms_flood = geoms_flood.explode(ignore_index=True)
-    geoms_flood = geoms_flood[geoms_flood.geometry.type == "Polygon"]
+    geoms_flood = geoms_flood[geoms_flood.geometry.geom_type == "Polygon"]
 
     geoms_trace = floodmap_post_data[(floodmap_post_data["class"] =="flood_trace")].geometry.apply(
         lambda g: validation.make_valid(g.difference(pre_flood_water_or_missing_pre)))
@@ -463,7 +464,7 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     geoms_trace = geodataframe_polygonsonly_valid(geoms_trace)
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
     geoms_trace = geoms_trace.explode(ignore_index=True)
-    geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
+    geoms_trace = geoms_trace[geoms_trace.geometry.geom_type == "Polygon"]
 
     data_post_flood = gpd.GeoDataFrame(geometry=geoms_flood, crs=floodmap_post_data.crs)
     data_post_flood["class"] = "water-post-flood"
@@ -475,7 +476,7 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
     data_post_flood = data_post_flood.explode(ignore_index=True)
 
     # Remove geometries that are not polyongs and exclude polygons with area >= 400m^2
-    data_post_flood = data_post_flood[(data_post_flood.geometry.type == "Polygon") & (data_post_flood.geometry.area >= 20 * 20)].copy()
+    data_post_flood = data_post_flood[(data_post_flood.geometry.geom_type == "Polygon") & (data_post_flood.geometry.area >= 20 * 20)].copy()
 
     # simplify polygons
     data_post_flood["geometry"] = data_post_flood["geometry"].simplify(tolerance=10)
@@ -495,15 +496,16 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
 
 
 def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolygon, Polygon]:
-    if x.type == "GeometryCollection":
+    if x.geom_type == "GeometryCollection":
         x = unary_union(
-            [gc for gc in x.geoms if (gc.type == "Polygon") or (gc.type == "MultiPolygon")])
+            [gc for gc in x.geoms if (gc.geom_type == "Polygon") or (gc.geom_type == "MultiPolygon")])
     return x
 
 
 def geodataframe_polygonsonly_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    df["geometry"] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
-    df = df[(~df.geometry.is_empty) & df.geometry.type.isin(["Polygon", "MultiPolygon"])].copy()
+    # df["geometry"] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+    df = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+    df = df[(~df.geometry.is_empty) & df.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     return df.explode(ignore_index=True)
 
 
@@ -670,7 +672,7 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
 
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
     geoms_trace = geoms_trace.explode(ignore_index=True)
-    geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
+    geoms_trace = geoms_trace[geoms_trace.geometry.geom_type == "Polygon"]
 
     # Add back to floodmap
     floodmap = floodmap[floodmap["class"] != class_flood_trace].reset_index()
