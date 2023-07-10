@@ -386,11 +386,12 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
 
     # Join adjacent polygons
+    best_floodmap = geodataframe_polygonsonly_valid(best_floodmap)
     best_floodmap = best_floodmap.dissolve(by="class").reset_index()
     # Explode multipoligons to polygons
     best_floodmap = best_floodmap.explode(ignore_index=True)
     stuff_concat = [best_floodmap]
-
+    
     # Add clouds
     if not area_missing_or_cloud.is_empty and (area_missing_or_cloud.geom_type in ["Polygon", "MultiPolygon", "GeometryCollection"]):
         # If there is something missing must be cloud (because area_imaged is the union of all the area missing in all the pre-floodmaps)
@@ -505,9 +506,11 @@ def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolyg
 def geodataframe_polygonsonly_valid(df:Union[gpd.GeoDataFrame, gpd.GeoSeries]) -> gpd.GeoDataFrame:
     if isinstance(df,gpd.GeoSeries):
         df = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
+        df = df.geometry.buffer(1e-9)
     elif isinstance(df,gpd.GeoDataFrame):
         df['geometry'] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
-    
+        df['geometry'] = df.geometry.buffer(1e-9)
+        
     df = df[(~df.geometry.is_empty) & df.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     return df.explode(ignore_index=True)
 
