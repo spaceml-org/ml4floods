@@ -200,7 +200,7 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
     area_imaged_current = unary_union(floodmap[floodmap["class"] == "area_imaged"].geometry)
     area_missing = area_imaged.difference(area_imaged_current)
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
-    polygons_in_floodmap = unary_union(make_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry)
+    polygons_in_floodmap = unary_union(geodataframe_polygonsonly_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry)
     land = area_imaged_current.difference(polygons_in_floodmap)
     area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
 
@@ -445,21 +445,22 @@ def compute_pre_post_flood_water(floodmap_post_data:gpd.GeoDataFrame, best_pre_f
 
     area_missing_pre = get_area_missing_or_cloud(best_pre_flood_data, area_imaged_post)
     pre_flood_water_or_missing_pre = unary_union(best_pre_flood_data[best_pre_flood_data["class"] == "water"].geometry).union(area_missing_pre)
+    pre_flood_water_or_missing_pre = validation.make_valid(pre_flood_water_or_missing_pre)
 
     # pre_flood_cloud = unary_union(best_pre_flood_data[(best_pre_flood_data["class"] == "cloud")].geometry)
     # pre_flood_water_minus_cloud = pre_flood_water.difference(pre_flood_cloud)
 
     geoms_flood = floodmap_post_data[floodmap_post_data["class"] == "water"].geometry.apply(
-        lambda g: g.difference(make_valid(pre_flood_water_or_missing_pre)))
-    geoms_flood = make_valid(geoms_flood)
+        lambda g: validation.make_valid(g.difference(pre_flood_water_or_missing_pre)))
+    geoms_flood = geodataframe_polygonsonly_valid(geoms_flood)
     geoms_flood = geoms_flood[~geoms_flood.isna() & ~geoms_flood.is_empty]
     geoms_flood = geoms_flood.explode(ignore_index=True)
     geoms_flood = geoms_flood[geoms_flood.geometry.type == "Polygon"]
 
     geoms_trace = floodmap_post_data[(floodmap_post_data["class"] =="flood_trace")].geometry.apply(
-        lambda g: g.difference(make_valid(pre_flood_water_or_missing_pre)))
+        lambda g: validation.make_valid(g.difference(pre_flood_water_or_missing_pre)))
 
-    geoms_flood = make_valid(geoms_trace)
+    geoms_trace = geodataframe_polygonsonly_valid(geoms_trace)
     geoms_trace = geoms_trace[~geoms_trace.isna() & ~geoms_trace.is_empty]
     geoms_trace = geoms_trace.explode(ignore_index=True)
     geoms_trace = geoms_trace[geoms_trace.geometry.type == "Polygon"]
@@ -500,9 +501,9 @@ def geometrycollection_to_multipolygon(x:GeometryCollection) -> Union[MultiPolyg
     return x
 
 
-def make_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def geodataframe_polygonsonly_valid(df:gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     df["geometry"] = df.geometry.apply(lambda x: validation.make_valid(geometrycollection_to_multipolygon(x)))
-    df = df[(~df.geometry.is_empty) & ((df.geometry.type == "Polygon") | (df.geometry.type == "MultiPolygon"))].copy()
+    df = df[(~df.geometry.is_empty) & df.geometry.type.isin(["Polygon", "MultiPolygon"])].copy()
     return df.explode(ignore_index=True)
 
 
@@ -529,7 +530,7 @@ def spatial_aggregation(floodmaps_paths:List[str], dst_crs:str= "EPSG:4326") -> 
         if not is_valid_geoms.all():
             # reasons_invalidity = [f"{validation.explain_validity(g)}\n" for g in data.geometry[~is_valid_geoms]]
             # print(f"\tProduct {f} There are {(~is_valid_geoms).sum()} geoms invalid of {is_valid_geoms.shape[0]}\n {reasons_invalidity}")
-            data = make_valid(data)
+            data = geodataframe_polygonsonly_valid(data)
 
         if data_all is None:
             data_all = data
