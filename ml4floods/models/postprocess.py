@@ -18,7 +18,8 @@ import warnings
 from tqdm import tqdm
 from datetime import datetime
 import os
-
+import shapely
+from shapely.set_operations import union_all
 
 def _watershed_processing(prob_water_mask, thres_h=0.6, thres_l=0.4, distance= 5, conn=2, watershed_line=True):
     """
@@ -200,7 +201,10 @@ def get_area_missing_or_cloud_or_land(floodmap:gpd.GeoDataFrame,
     area_imaged_current = unary_union(floodmap[floodmap["class"] == "area_imaged"].geometry)
     area_missing = area_imaged.difference(area_imaged_current)
     clouds = unary_union(floodmap[(floodmap["class"] == "cloud")].geometry)
-    polygons_in_floodmap = unary_union(geodataframe_polygonsonly_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry)
+    # polygons_in_floodmap = unary_union(geodataframe_polygonsonly_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry, 
+    #                                    grid_size = 1)
+    polygons_in_floodmap = union_all(geodataframe_polygonsonly_valid(floodmap[floodmap["class"] != "area_imaged"]).geometry, grid_size=1)
+    
     land = area_imaged_current.difference(polygons_in_floodmap)
     area_missing_or_cloud_or_land =  clouds.union(area_missing).union(land)
 
@@ -387,6 +391,7 @@ def mosaic_floodmaps(datas:List[gpd.GeoDataFrame],
 
     # Join adjacent polygons
     best_floodmap = geodataframe_polygonsonly_valid(best_floodmap)
+    best_floodmap['geometry'] = best_floodmap['geometry'].apply(lambda x: shapely.set_precision(x, grid_size=1))
     best_floodmap = best_floodmap.dissolve(by="class").reset_index()
     # Explode multipoligons to polygons
     best_floodmap = best_floodmap.explode(ignore_index=True)
@@ -642,7 +647,7 @@ def add_permanent_water_to_floodmap(jrc_vectorized_map:gpd.GeoDataFrame, floodma
     Returns:
         floodmap with permanent water polygons
     """
-    classes = floodmap["class"].unique()
+    classes = 'water-pre-flood' if floodmap.is_empty.all() else floodmap["class"].unique() 
     if water_class is None:
         if "water" in classes:
             water_class = "water"

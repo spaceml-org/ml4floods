@@ -1,7 +1,6 @@
 import argparse
 import numpy as np
-import rasterio
-
+import geopandas as gpd
 from ml4floods.data import utils
 from ml4floods.models import postprocess
 import os
@@ -119,17 +118,22 @@ def main(model_output_folder:str, flooding_date_pre:str,
 
             # Get pre-flood floodmap with the lowest cloud coverage and all post-flood maps
             geojsons_pre = [g for g in geojsons_iter if os.path.splitext(os.path.basename(g))[0] < flooding_date_pre]
-            if len(geojsons_pre) == 0:
-                print(f"\tNo pre-flood image found for aoi:{aoi}")
-                continue
+            # if len(geojsons_pre) == 0:
+            #     print(f"\tNo pre-flood image found for aoi:{aoi}")
+            #     continue
 
             # Compute pre-flood data
             if (not overwrite) and fs.exists(pre_flood_path):
                 best_pre_flood_data = utils.read_geojson_from_gcp(pre_flood_path)
             else:
-                best_pre_flood_data = postprocess.get_floodmap_pre(geojsons_pre)
+                if len(geojsons_pre) != 0:
+                    best_pre_flood_data = postprocess.get_floodmap_pre(geojsons_pre)
+                else:
+                    best_pre_flood_data = gpd.GeoDataFrame({'geometry':[],'class':[]}).set_crs(best_post_flood_data.crs)
+                    print(f"\tNo pre-flood image found for aoi: {aoi}. Trying with permanent water")
                 # Add permanent water polygons
                 if permanent_water_floodmap is not None:
+                    print(f"\tAdding permanent water for pre flood data")
                     best_pre_flood_data = postprocess.add_permanent_water_to_floodmap(permanent_water_floodmap,
                                                                                       best_pre_flood_data,
                                                                                       water_class="water")
