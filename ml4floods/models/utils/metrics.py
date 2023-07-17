@@ -423,7 +423,7 @@ def compute_metrics_v2(dataloader:torch.utils.data.dataloader.DataLoader,
       
         test_outputs_categorical = test_outputs[:,1] > threshold_water
         probs_water_pr_curve = test_outputs[:, 1]
-        water_ground_truth = ground_truth[:, 1] # (batch_size, H, W)
+        water_ground_truth = ground_truth[:, 0] # (batch_size, H, W)
         invalids = (water_ground_truth == 0).to(test_outputs_categorical.device) # (batch_size, H, W)
         ground_truth_outputs = torch.clone(water_ground_truth).to(test_outputs_categorical.device)
         
