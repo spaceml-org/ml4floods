@@ -20,6 +20,7 @@ parts:
   - file: content/ml4ops/HOWTO_performance_metrics_workflow.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
+  - file: content/ml4ops/HOWTO_postprocess_inference.ipynb
 
 - caption: End-to-end Pipeline
   chapters:
