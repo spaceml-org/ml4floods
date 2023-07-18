@@ -1,37 +1,45 @@
 
+
 <!DOCTYPE html>
 
-<html>
+
+<html >
+
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Inference on Sentinel-2 SAFE files &#8212; ML4Floods</title>
-    
-  <link href="../../_static/css/theme.css" rel="stylesheet">
-  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
-    
-  <link rel="stylesheet"
-    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    
-      
-
-    
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
-    
-  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
@@ -39,429 +47,363 @@
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
     <script src="../../_static/togglebutton.js"></script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
-    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
 const thebe_selector = ".thebe,.cell"
 const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'content/ml4ops/HOWTO_inference_SAFE_file';</script>
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Pre-processing Demonstration" href="../prep/demo_pytorch_transforms.html" />
     <link rel="prev" title="Run inference on time series of Sentinel-2 images" href="HOWTO_inference_on_image_time_series.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-    
-
-    <div class="container-xl">
-      <div class="row">
-          
-<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
-    
-        <div class="navbar-brand-box">
-    <a class="navbar-brand text-wrap" href="../../index.html">
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
       
-        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+      <div class="bd-sidebar-primary bd-sidebar">
         
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../intro/introduction.html">
+  
+  
+  
+  
+    
+    
       
-      
-      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
-      
-      
-      <h1 class="site-logo" id="site-title">ML4Floods</h1>
-      
-    </a>
-</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
-  <i class="icon fas fa-search"></i>
-  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
-</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
-    <div class="bd-toc-item active">
-        <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../intro/introduction.html">
-   Introduction
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Install
- </span>
-</p>
+    
+    
+    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../intro/introduction.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../config.html">
-   Install
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">Install</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Data prep
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/full_data_ingest.html">
-   Ingest Flood Extent Maps
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/gt_masks_generation.html">
-   Ground Truth
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../worldfloods_dataset.html">
-   The
-   <em>
-    WorldFloods
-   </em>
-   database
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../labeling.html">
-   Viewer and label editor
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/full_data_ingest.html">Ingest Flood Extent Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/gt_masks_generation.html">Ground Truth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  MLOps
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml_overview.html">
-   MLOps overview
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Train_models.html">
-   Train models
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_performance_metrics_workflow.html">
-   Model Metrics
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">
-   Run inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../ml_overview.html">MLOps overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Train_models.html">Train models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  End-to-end Pipeline
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="current nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_inference_on_image_time_series.html">
-   Run inference on time series of Sentinel-2 images
-  </a>
- </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
-   Inference on Sentinel-2
-   <code class="docutils literal notranslate">
-    <span class="pre">
-     SAFE
-    </span>
-   </code>
-   files
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Experimental
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/demo_pytorch_transforms.html">
-   Pre-processing Demonstration
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Calculate_uncertainty_maps.html">
-   Probabilistic neural networks
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">
-   Cloud removal inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  About
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../about.html">
-   About
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
 </ul>
 
     </div>
-</nav> <!-- To handle the deprecated key -->
-
-<div class="navbar_extra_footer">
-  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
-</div>
-
-</div>
-
-
-          
-
-
-          
-<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
-    
-    <div class="topbar container-xl fixed-top">
-    <div class="topbar-contents row">
-        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
-        <div class="col pl-md-4 topbar-main">
-            
-            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
-                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
-                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
-                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
-                <i class="fas fa-bars"></i>
-                <i class="fas fa-arrow-left"></i>
-                <i class="fas fa-arrow-up"></i>
-            </button>
-            
-            
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
-            class="fas fa-download"></i></button>
-
-    <div class="dropdown-buttons">
-        <!-- ipynb file if we had a myst markdown file -->
-        
-        <!-- Download raw file -->
-        <a class="dropdown-buttons" href="../../_sources/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><button type="button"
-                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
-                data-placement="left">.ipynb</button></a>
-        <!-- Download PDF via print -->
-        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
-                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+</nav></div>
     </div>
-</div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
 
-            <!-- Source interaction buttons -->
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
-    <div class="dropdown-buttons sourcebuttons">
-        <a class="repository-button"
-            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
-                data-toggle="tooltip" data-placement="left" title="Source repository"><i
-                    class="fab fa-github"></i>repository</button></a>
+      </div>
+      
+      <main id="main-content" class="bd-main">
         
         
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
     </div>
-</div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
 
-            <!-- Full screen (wrap in <a> to have style consistency -->
+<div class="article-header-buttons">
 
-<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
-        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
-        title="Fullscreen mode"><i
-            class="fas fa-expand"></i></button></a>
 
-            <!-- Launch buttons -->
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
-    <div class="dropdown-buttons">
-        
-        
-        
-        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
-                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
-                    src="../../_static/images/logo_colab.png"
-                    alt="Interact on Colab">Colab</button></a>
-        
-        
-    </div>
-</div>
 
-        </div>
 
-        <!-- Table of contents -->
-        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
-            
-            <div class="tocsection onthispage pt-5 pb-3">
-                <i class="fas fa-list"></i> Contents
-            </div>
-            <nav id="bd-toc-nav" aria-label="Page">
-                <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
-   Step 0: Install
-   <code class="docutils literal notranslate">
-    <span class="pre">
-     sentinelsat
-    </span>
-   </code>
-   to download images from Copernicus Open Hub
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">
-   Step 1: Define Area of Interest and dates to search products
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">
-   Step 2: Query Sentinel-2 products
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">
-   Step 3: download and unzip the Sentinel-2 image
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">
-   Step 4: read the image over the AoI polygon
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">
-   Step 5: Run inference on the image
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#step-5a-load-the-inference-function">
-     Step 5a: load the
-     <code class="docutils literal notranslate">
-      <span class="pre">
-       inference_function
-      </span>
-     </code>
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">
-     Step 5b: Run inference and plot the results
-    </a>
-   </li>
+<div class="dropdown dropdown-launch-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Launch interactive content">
+    <i class="fas fa-rocket"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_SAFE_file.ipynb" target="_blank"
+   class="btn btn-sm dropdown-item"
+   title="Launch onColab"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  
+    <img src="../../_static/images/logo_colab.png">
+  </span>
+<span class="btn__text-container">Colab</span>
+</a>
+</li>
+      
   </ul>
- </li>
-</ul>
+</div>
 
+
+
+<a href="https://github.com/spaceml-org/ml4floods" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Repositorio de origen"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/content/ml4ops/HOWTO_inference_SAFE_file.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Descargar archivo fuente"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Imprimir en PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Modo de pantalla completa"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Inference on Sentinel-2 SAFE files</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contenido </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">Step 0: Install <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> to download images from Copernicus Open Hub</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">Step 1: Define Area of Interest and dates to search products</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">Step 2: Query Sentinel-2 products</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">Step 3: download and unzip the Sentinel-2 image</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">Step 4: read the image over the AoI polygon</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">Step 5: Run inference on the image</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5a-load-the-inference-function">Step 5a: load the <code class="docutils literal notranslate"><span class="pre">inference_function</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">Step 5b: Run inference and plot the results</a></li>
+</ul>
+</li>
+</ul>
             </nav>
         </div>
     </div>
 </div>
-    <div id="main-content" class="row">
-        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
-            <!-- Table of contents that is only displayed when printing the page -->
-            <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Inference on Sentinel-2 SAFE files</h1>
-                <!-- Table of contents -->
-                <div id="print-main-content">
-                    <div id="jb-print-toc">
-                        
-                        <div>
-                            <h2> Contents </h2>
-                        </div>
-                        <nav aria-label="Page">
-                            <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
-   Step 0: Install
-   <code class="docutils literal notranslate">
-    <span class="pre">
-     sentinelsat
-    </span>
-   </code>
-   to download images from Copernicus Open Hub
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">
-   Step 1: Define Area of Interest and dates to search products
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">
-   Step 2: Query Sentinel-2 products
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">
-   Step 3: download and unzip the Sentinel-2 image
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">
-   Step 4: read the image over the AoI polygon
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">
-   Step 5: Run inference on the image
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#step-5a-load-the-inference-function">
-     Step 5a: load the
-     <code class="docutils literal notranslate">
-      <span class="pre">
-       inference_function
-      </span>
-     </code>
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">
-     Step 5b: Run inference and plot the results
-    </a>
-   </li>
-  </ul>
- </li>
-</ul>
 
-                        </nav>
-                    </div>
-                </div>
-            </div>
-            
-              <div>
+              
                 
-  <div class="tex2jax_ignore mathjax_ignore section" id="inference-on-sentinel-2-safe-files">
-<h1>Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files<a class="headerlink" href="#inference-on-sentinel-2-safe-files" title="Permalink to this headline">¶</a></h1>
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="inference-on-sentinel-2-safe-files">
+<h1>Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files<a class="headerlink" href="#inference-on-sentinel-2-safe-files" title="Permalink to this headline">#</a></h1>
 <ul class="simple">
 <li><p><strong>Last Modified</strong>: 23-04-2021</p></li>
 <li><p><strong>Authors</strong>: Gonzalo Mateo-García</p></li>
@@ -476,8 +418,8 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-<div class="section" id="step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
-<h2>Step 0: Install <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> to download images from Copernicus Open Hub<a class="headerlink" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub" title="Permalink to this headline">¶</a></h2>
+<section id="step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">
+<h2>Step 0: Install <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> to download images from Copernicus Open Hub<a class="headerlink" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip install sentinelsat
@@ -485,9 +427,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-1-define-area-of-interest-and-dates-to-search-products">
-<h2>Step 1: Define Area of Interest and dates to search products<a class="headerlink" href="#step-1-define-area-of-interest-and-dates-to-search-products" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-1-define-area-of-interest-and-dates-to-search-products">
+<h2>Step 1: Define Area of Interest and dates to search products<a class="headerlink" href="#step-1-define-area-of-interest-and-dates-to-search-products" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">shape</span>
@@ -520,9 +462,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-2-query-sentinel-2-products">
-<h2>Step 2: Query Sentinel-2 products<a class="headerlink" href="#step-2-query-sentinel-2-products" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-2-query-sentinel-2-products">
+<h2>Step 2: Query Sentinel-2 products<a class="headerlink" href="#step-2-query-sentinel-2-products" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sentinelsat.sentinel</span> <span class="kn">import</span> <span class="n">SentinelAPI</span>
@@ -659,7 +601,7 @@ const thebe_selector_output = ".output, .cell_output"
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
 </pre></div>
 </div>
-<img alt="../../_images/HOWTO_inference_SAFE_file_10_1.png" src="../../_images/HOWTO_inference_SAFE_file_10_1.png" />
+<img alt="../../_images/6136c5ce421ba8793fa9b998317cd443e18ef94ea9785376f9bce4345d2eb0f9.png" src="../../_images/6136c5ce421ba8793fa9b998317cd443e18ef94ea9785376f9bce4345d2eb0f9.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -711,9 +653,9 @@ Name: 6c813d56-a984-40bd-8752-bee7cbc81146, dtype: object
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-3-download-and-unzip-the-sentinel-2-image">
-<h2>Step 3: download and unzip the Sentinel-2 image<a class="headerlink" href="#step-3-download-and-unzip-the-sentinel-2-image" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-3-download-and-unzip-the-sentinel-2-image">
+<h2>Step 3: download and unzip the Sentinel-2 image<a class="headerlink" href="#step-3-download-and-unzip-the-sentinel-2-image" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">folder_download</span> <span class="o">=</span> <span class="s2">&quot;S2SAFE_PRODUCTS&quot;</span>
@@ -754,9 +696,9 @@ MD5 checksumming: 100%|██████████| 750M/750M [00:12&lt;00:00
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-4-read-the-image-over-the-aoi-polygon">
-<h2>Step 4: read the image over the AoI polygon<a class="headerlink" href="#step-4-read-the-image-over-the-aoi-polygon" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-4-read-the-image-over-the-aoi-polygon">
+<h2>Step 4: read the image over the AoI polygon<a class="headerlink" href="#step-4-read-the-image-over-the-aoi-polygon" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.data</span> <span class="kn">import</span> <span class="n">S2_SAFE_reader</span>
@@ -808,12 +750,12 @@ MD5 checksumming: 100%|██████████| 750M/750M [00:12&lt;00:00
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/HOWTO_inference_SAFE_file_18_0.png" src="../../_images/HOWTO_inference_SAFE_file_18_0.png" />
+<img alt="../../_images/7a0b9f19013abcf147c169ddc5b3f68d906ff38508f4f270a8d4252da4ef71a2.png" src="../../_images/7a0b9f19013abcf147c169ddc5b3f68d906ff38508f4f270a8d4252da4ef71a2.png" />
 </div>
 </div>
-</div>
-<div class="section" id="step-5-run-inference-on-the-image">
-<h2>Step 5: Run inference on the image<a class="headerlink" href="#step-5-run-inference-on-the-image" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-5-run-inference-on-the-image">
+<h2>Step 5: Run inference on the image<a class="headerlink" href="#step-5-run-inference-on-the-image" title="Permalink to this headline">#</a></h2>
 <p>Now we’re going to run inference on the Sentinel-2 image. See the <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html"><span class="doc std std-doc">Run inference notebook</span></a> for a detailed tutorial on this.</p>
 <p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>:</p>
 <p><img alt="add_shortcut_drive.png" src="../../_images/add_shortcut_drive.png" /></p>
@@ -842,8 +784,8 @@ MD5 checksumming: 100%|██████████| 750M/750M [00:12&lt;00:00
 </div>
 </div>
 </div>
-<div class="section" id="step-5a-load-the-inference-function">
-<h3>Step 5a: load the <code class="docutils literal notranslate"><span class="pre">inference_function</span></code><a class="headerlink" href="#step-5a-load-the-inference-function" title="Permalink to this headline">¶</a></h3>
+<section id="step-5a-load-the-inference-function">
+<h3>Step 5a: load the <code class="docutils literal notranslate"><span class="pre">inference_function</span></code><a class="headerlink" href="#step-5a-load-the-inference-function" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ml4floods.models.config_setup</span> <span class="kn">import</span> <span class="n">get_default_config</span>
@@ -921,9 +863,9 @@ Max tile size: 128
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-5b-run-inference-and-plot-the-results">
-<h3>Step 5b: Run inference and plot the results<a class="headerlink" href="#step-5b-run-inference-and-plot-the-results" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-5b-run-inference-and-plot-the-results">
+<h3>Step 5b: Run inference and plot the results<a class="headerlink" href="#step-5b-run-inference-and-plot-the-results" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
@@ -955,7 +897,7 @@ Max tile size: 128
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/HOWTO_inference_SAFE_file_24_0.png" src="../../_images/HOWTO_inference_SAFE_file_24_0.png" />
+<img alt="../../_images/7e826412be75fa0210f207c4e2c9453673e5a12ca006a68e71efc6cd3a4c9d48.png" src="../../_images/7e826412be75fa0210f207c4e2c9453673e5a12ca006a68e71efc6cd3a4c9d48.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -968,12 +910,12 @@ Max tile size: 128
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/HOWTO_inference_SAFE_file_25_0.png" src="../../_images/HOWTO_inference_SAFE_file_25_0.png" />
+<img alt="../../_images/7f2c3e77d1aceaf964c3f289ef1066bc2fb2c8ab538485472940363dc1fe34cc.png" src="../../_images/7f2c3e77d1aceaf964c3f289ef1066bc2fb2c8ab538485472940363dc1fe34cc.png" />
 </div>
 </div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
     <script type="text/x-thebe-config">
     {
@@ -987,7 +929,7 @@ Max tile size: 128
             mode: "conda-env-ml4floods-py"
         },
         kernelOptions: {
-            kernelName: "conda-env-ml4floods-py",
+            name: "conda-env-ml4floods-py",
             path: "./content/ml4ops"
         },
         predefinedOutput: true
@@ -995,44 +937,114 @@ Max tile size: 128
     </script>
     <script>kernelName = 'conda-env-ml4floods-py'</script>
 
-              </div>
+                </article>
               
-            
-                <!-- Previous / next buttons -->
-<div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="HOWTO_inference_on_image_time_series.html" title="previous page">
-        <i class="fas fa-angle-left"></i>
-        <div class="prev-next-info">
-            <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Run inference on time series of Sentinel-2 images</p>
-        </div>
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="HOWTO_inference_on_image_time_series.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Run inference on time series of Sentinel-2 images</p>
+      </div>
     </a>
-    <a class='right-next' id="next-link" href="../prep/demo_pytorch_transforms.html" title="next page">
-    <div class="prev-next-info">
+    <a class="right-next"
+       href="../prep/demo_pytorch_transforms.html"
+       title="next page">
+      <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
         <p class="prev-next-title">Pre-processing Demonstration</p>
-    </div>
-    <i class="fas fa-angle-right"></i>
-    </a>
-</div>
-            
-        </div>
-    </div>
-    <footer class="footer">
-  <p>
-    
-      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
-    
-        &copy; Copyright 2021.<br/>
-  </p>
-</footer>
-</main>
-
-
       </div>
-    </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
   
-  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+</div>
 
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contenido
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-install-sentinelsat-to-download-images-from-copernicus-open-hub">Step 0: Install <code class="docutils literal notranslate"><span class="pre">sentinelsat</span></code> to download images from Copernicus Open Hub</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-define-area-of-interest-and-dates-to-search-products">Step 1: Define Area of Interest and dates to search products</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-query-sentinel-2-products">Step 2: Query Sentinel-2 products</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-download-and-unzip-the-sentinel-2-image">Step 3: download and unzip the Sentinel-2 image</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-read-the-image-over-the-aoi-polygon">Step 4: read the image over the AoI polygon</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-run-inference-on-the-image">Step 5: Run inference on the image</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5a-load-the-inference-function">Step 5a: load the <code class="docutils literal notranslate"><span class="pre">inference_function</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5b-run-inference-and-plot-the-results">Step 5b: Run inference and plot the results</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2021.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
   </body>
 </html>

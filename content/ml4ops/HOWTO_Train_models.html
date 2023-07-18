@@ -1,37 +1,45 @@
 
+
 <!DOCTYPE html>
 
-<html>
+
+<html >
+
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Train models &#8212; ML4Floods</title>
-    
-  <link href="../../_static/css/theme.css" rel="stylesheet">
-  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
-    
-  <link rel="stylesheet"
-    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    
-      
-
-    
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
-    
-  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
@@ -39,525 +47,378 @@
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
     <script src="../../_static/togglebutton.js"></script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
-    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
 const thebe_selector = ".thebe,.cell"
 const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'content/ml4ops/HOWTO_Train_models';</script>
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Model Metrics" href="HOWTO_performance_metrics_workflow.html" />
     <link rel="prev" title="MLOps overview" href="../ml_overview.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-    
-
-    <div class="container-xl">
-      <div class="row">
-          
-<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
-    
-        <div class="navbar-brand-box">
-    <a class="navbar-brand text-wrap" href="../../index.html">
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
       
-        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+      <div class="bd-sidebar-primary bd-sidebar">
         
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../intro/introduction.html">
+  
+  
+  
+  
+    
+    
       
-      
-      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
-      
-      
-      <h1 class="site-logo" id="site-title">ML4Floods</h1>
-      
-    </a>
-</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
-  <i class="icon fas fa-search"></i>
-  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
-</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
-    <div class="bd-toc-item active">
-        <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../intro/introduction.html">
-   Introduction
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Install
- </span>
-</p>
+    
+    
+    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../intro/introduction.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../config.html">
-   Install
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">Install</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Data prep
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/full_data_ingest.html">
-   Ingest Flood Extent Maps
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/gt_masks_generation.html">
-   Ground Truth
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../worldfloods_dataset.html">
-   The
-   <em>
-    WorldFloods
-   </em>
-   database
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../labeling.html">
-   Viewer and label editor
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/full_data_ingest.html">Ingest Flood Extent Maps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/gt_masks_generation.html">Ground Truth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  MLOps
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
 <ul class="current nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml_overview.html">
-   MLOps overview
-  </a>
- </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
-   Train models
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_performance_metrics_workflow.html">
-   Model Metrics
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">
-   Run inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../ml_overview.html">MLOps overview</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Train models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  End-to-end Pipeline
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_inference_on_image_time_series.html">
-   Run inference on time series of Sentinel-2 images
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_inference_SAFE_file.html">
-   Inference on Sentinel-2
-   <code class="docutils literal notranslate">
-    <span class="pre">
-     SAFE
-    </span>
-   </code>
-   files
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Experimental
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../prep/demo_pytorch_transforms.html">
-   Pre-processing Demonstration
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Calculate_uncertainty_maps.html">
-   Probabilistic neural networks
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">
-   Cloud removal inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  About
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../about.html">
-   About
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
 </ul>
 
     </div>
-</nav> <!-- To handle the deprecated key -->
-
-<div class="navbar_extra_footer">
-  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
-</div>
-
-</div>
-
-
-          
-
-
-          
-<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
-    
-    <div class="topbar container-xl fixed-top">
-    <div class="topbar-contents row">
-        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
-        <div class="col pl-md-4 topbar-main">
-            
-            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
-                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
-                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
-                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
-                <i class="fas fa-bars"></i>
-                <i class="fas fa-arrow-left"></i>
-                <i class="fas fa-arrow-up"></i>
-            </button>
-            
-            
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
-            class="fas fa-download"></i></button>
-
-    <div class="dropdown-buttons">
-        <!-- ipynb file if we had a myst markdown file -->
-        
-        <!-- Download raw file -->
-        <a class="dropdown-buttons" href="../../_sources/content/ml4ops/HOWTO_Train_models.ipynb"><button type="button"
-                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
-                data-placement="left">.ipynb</button></a>
-        <!-- Download PDF via print -->
-        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
-                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+</nav></div>
     </div>
-</div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
 
-            <!-- Source interaction buttons -->
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
-    <div class="dropdown-buttons sourcebuttons">
-        <a class="repository-button"
-            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
-                data-toggle="tooltip" data-placement="left" title="Source repository"><i
-                    class="fab fa-github"></i>repository</button></a>
+      </div>
+      
+      <main id="main-content" class="bd-main">
         
         
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
     </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-launch-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Launch interactive content">
+    <i class="fas fa-rocket"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb" target="_blank"
+   class="btn btn-sm dropdown-item"
+   title="Launch onColab"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  
+    <img src="../../_static/images/logo_colab.png">
+  </span>
+<span class="btn__text-container">Colab</span>
+</a>
+</li>
+      
+  </ul>
 </div>
 
-            <!-- Full screen (wrap in <a> to have style consistency -->
 
-<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
-        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
-        title="Fullscreen mode"><i
-            class="fas fa-expand"></i></button></a>
 
-            <!-- Launch buttons -->
+<a href="https://github.com/spaceml-org/ml4floods" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Repositorio de origen"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
-    <div class="dropdown-buttons">
-        
-        
-        
-        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
-                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
-                    src="../../_static/images/logo_colab.png"
-                    alt="Interact on Colab">Colab</button></a>
-        
-        
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/content/ml4ops/HOWTO_Train_models.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Descargar archivo fuente"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Imprimir en PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Modo de pantalla completa"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
     </div>
+  
 </div>
+</div>
+              
+              
 
-        </div>
-
-        <!-- Table of contents -->
-        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Train models</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
             
-            <div class="tocsection onthispage pt-5 pb-3">
-                <i class="fas fa-list"></i> Contents
+            <div>
+                <h2> Contenido </h2>
             </div>
-            <nav id="bd-toc-nav" aria-label="Page">
+            <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-download-the-training-data">
-   Step 0: Download the training data
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-   Step 0a: mount the Public folder if you are in Google Colab
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0b-unzip-the-worldfloods-sample-folder">
-   Step 0b: Unzip the worldfloods sample folder
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-setup-configuration-file">
-   Step 1: Setup Configuration file
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-a-seed-everything-for-reproducibility">
-   Step 1.a: Seed everything for reproducibility
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-b-make-it-a-unique-experiment">
-   Step 1.b: Make it a unique experiment
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-2-setup-dataloader">
-   Step 2: Setup Dataloader
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-some-images-from-the-dataloader">
-     Show some images from the dataloader
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-3-setup-model">
-   Step 3: Setup Model
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment">
-   Step 4:  (Optional) Set up Weights and Biases Logger for experiment
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-5-setup-lightning-callbacks">
-   Step 5: Setup Lightning Callbacks
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-6-setup-lighting-trainer">
-   Step 6: Setup Lighting Trainer
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#start-training">
-   Start Training!
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-7-eval-model">
-   Step 7: Eval model
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#plot-some-images-and-predictions">
-     Plot some images and predictions
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#eval-in-the-val-dataset">
-     Eval in the val dataset
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-results-for-each-flood-event-in-the-validation-dataset">
-     Show results for each flood event in the validation dataset
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-8-save-trained-model">
-   Step 8: Save trained model
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#optional-save-weights-and-biases-model-and-finish-connection">
-     Optional: Save weights and biases model and finish connection
-    </a>
-   </li>
-  </ul>
- </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-download-the-training-data">Step 0: Download the training data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">Step 0a: mount the Public folder if you are in Google Colab</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0b-unzip-the-worldfloods-sample-folder">Step 0b: Unzip the worldfloods sample folder</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-setup-configuration-file">Step 1: Setup Configuration file</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-a-seed-everything-for-reproducibility">Step 1.a: Seed everything for reproducibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-b-make-it-a-unique-experiment">Step 1.b: Make it a unique experiment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-setup-dataloader">Step 2: Setup Dataloader</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-some-images-from-the-dataloader">Show some images from the dataloader</a></li>
 </ul>
-
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-setup-model">Step 3: Setup Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment">Step 4:  (Optional) Set up Weights and Biases Logger for experiment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-setup-lightning-callbacks">Step 5: Setup Lightning Callbacks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-setup-lighting-trainer">Step 6: Setup Lighting Trainer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#start-training">Start Training!</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-eval-model">Step 7: Eval model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-some-images-and-predictions">Plot some images and predictions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-in-the-val-dataset">Eval in the val dataset</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-results-for-each-flood-event-in-the-validation-dataset">Show results for each flood event in the validation dataset</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-8-save-trained-model">Step 8: Save trained model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-save-weights-and-biases-model-and-finish-connection">Optional: Save weights and biases model and finish connection</a></li>
+</ul>
+</li>
+</ul>
             </nav>
         </div>
     </div>
 </div>
-    <div id="main-content" class="row">
-        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
-            <!-- Table of contents that is only displayed when printing the page -->
-            <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Train models</h1>
-                <!-- Table of contents -->
-                <div id="print-main-content">
-                    <div id="jb-print-toc">
-                        
-                        <div>
-                            <h2> Contents </h2>
-                        </div>
-                        <nav aria-label="Page">
-                            <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-download-the-training-data">
-   Step 0: Download the training data
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-   Step 0a: mount the Public folder if you are in Google Colab
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0b-unzip-the-worldfloods-sample-folder">
-   Step 0b: Unzip the worldfloods sample folder
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-setup-configuration-file">
-   Step 1: Setup Configuration file
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-a-seed-everything-for-reproducibility">
-   Step 1.a: Seed everything for reproducibility
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-1-b-make-it-a-unique-experiment">
-   Step 1.b: Make it a unique experiment
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-2-setup-dataloader">
-   Step 2: Setup Dataloader
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-some-images-from-the-dataloader">
-     Show some images from the dataloader
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-3-setup-model">
-   Step 3: Setup Model
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment">
-   Step 4:  (Optional) Set up Weights and Biases Logger for experiment
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-5-setup-lightning-callbacks">
-   Step 5: Setup Lightning Callbacks
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-6-setup-lighting-trainer">
-   Step 6: Setup Lighting Trainer
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#start-training">
-   Start Training!
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-7-eval-model">
-   Step 7: Eval model
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#plot-some-images-and-predictions">
-     Plot some images and predictions
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#eval-in-the-val-dataset">
-     Eval in the val dataset
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-results-for-each-flood-event-in-the-validation-dataset">
-     Show results for each flood event in the validation dataset
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-8-save-trained-model">
-   Step 8: Save trained model
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#optional-save-weights-and-biases-model-and-finish-connection">
-     Optional: Save weights and biases model and finish connection
-    </a>
-   </li>
-  </ul>
- </li>
-</ul>
 
-                        </nav>
-                    </div>
-                </div>
-            </div>
-            
-              <div>
+              
                 
-  <div class="tex2jax_ignore mathjax_ignore section" id="train-models">
-<h1>Train models<a class="headerlink" href="#train-models" title="Permalink to this headline">¶</a></h1>
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="train-models">
+<h1>Train models<a class="headerlink" href="#train-models" title="Permalink to this headline">#</a></h1>
 <ul class="simple">
 <li><p><strong>Last Modified</strong>: 07-04-2021</p></li>
 <li><p><strong>Authors</strong>: Sam Budd, Gonzalo Mateo-García</p></li>
@@ -576,12 +437,12 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-<div class="section" id="step-0-download-the-training-data">
-<h2>Step 0: Download the training data<a class="headerlink" href="#step-0-download-the-training-data" title="Permalink to this headline">¶</a></h2>
+<section id="step-0-download-the-training-data">
+<h2>Step 0: Download the training data<a class="headerlink" href="#step-0-download-the-training-data" title="Permalink to this headline">#</a></h2>
 <p>In order to run this tutorial you need (at least a subset of) the <em>WorldFloods</em> dataset. For this tutorial we will get it from our <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>. For other alternatives see <span class="xref myst">the download <em>WorldFloods</em> documentation</span>.</p>
-</div>
-<div class="section" id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
+<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">#</a></h2>
 <p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>.</p>
 <p><img alt="add_shortcut_drive.png" src="../../_images/add_shortcut_drive.png" /></p>
 <p>Then, mount that directory with the following code:</p>
@@ -607,9 +468,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-0b-unzip-the-worldfloods-sample-folder">
-<h2>Step 0b: Unzip the worldfloods sample folder<a class="headerlink" href="#step-0b-unzip-the-worldfloods-sample-folder" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-0b-unzip-the-worldfloods-sample-folder">
+<h2>Step 0b: Unzip the worldfloods sample folder<a class="headerlink" href="#step-0b-unzip-the-worldfloods-sample-folder" title="Permalink to this headline">#</a></h2>
 <p>If the folder could not be mounted it tries download the data using the <code class="docutils literal notranslate"><span class="pre">gdown</span></code> package (if not installed run: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdown</span></code>).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -647,9 +508,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-1-setup-configuration-file">
-<h2>Step 1: Setup Configuration file<a class="headerlink" href="#step-1-setup-configuration-file" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-1-setup-configuration-file">
+<h2>Step 1: Setup Configuration file<a class="headerlink" href="#step-1-setup-configuration-file" title="Permalink to this headline">#</a></h2>
 <p>First we will load configuration file form <code class="docutils literal notranslate"><span class="pre">models/configurations/worldfloods_template.json</span></code> in the config file we specify many different hyperparameters to train the model; you could either use this or make a copy of it and modify the hyper-parameters that you want to try out.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -715,9 +576,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-1-a-seed-everything-for-reproducibility">
-<h2>Step 1.a: Seed everything for reproducibility<a class="headerlink" href="#step-1-a-seed-everything-for-reproducibility" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-1-a-seed-everything-for-reproducibility">
+<h2>Step 1.a: Seed everything for reproducibility<a class="headerlink" href="#step-1-a-seed-everything-for-reproducibility" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pytorch_lightning</span> <span class="kn">import</span> <span class="n">seed_everything</span>
@@ -735,9 +596,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-1-b-make-it-a-unique-experiment">
-<h2>Step 1.b: Make it a unique experiment<a class="headerlink" href="#step-1-b-make-it-a-unique-experiment" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-1-b-make-it-a-unique-experiment">
+<h2>Step 1.b: Make it a unique experiment<a class="headerlink" href="#step-1-b-make-it-a-unique-experiment" title="Permalink to this headline">#</a></h2>
 <p>The ‘experiment_name’ is used to specify the folder in which to save models and associated files</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -746,9 +607,9 @@ const thebe_selector_output = ".output, .cell_output"
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-2-setup-dataloader">
-<h2>Step 2: Setup Dataloader<a class="headerlink" href="#step-2-setup-dataloader" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-2-setup-dataloader">
+<h2>Step 2: Setup Dataloader<a class="headerlink" href="#step-2-setup-dataloader" title="Permalink to this headline">#</a></h2>
 <ul class="simple">
 <li><p>‘loader_type’ can be one of ‘local’ which assumes the images are already saved locally, or ‘bucket’ which will load images directly from the bucket specified in ‘bucket_id’. To load images from the bucket the <code class="docutils literal notranslate"><span class="pre">GOOGLE_APPLICATION_CREDENTIALS</span></code> and <code class="docutils literal notranslate"><span class="pre">GS_USER_PROJECT</span></code> env variables must be set. If set to ‘local’ and the dataset is not found in the path <code class="docutils literal notranslate"><span class="pre">config.data_params.path_to_splits</span></code> it will trigger the download of the data.</p></li>
 <li><p>The <em>WorldFloods</em> dataset contains 264.29GB of data. We can load a subset of this by using a custom <code class="docutils literal notranslate"><span class="pre">train_test_split_sample.json</span></code> which will only download a subset of the training dataset and the validation and test sets.</p></li>
@@ -780,8 +641,8 @@ Wall time: 169 ms
 </div>
 </div>
 </div>
-<div class="section" id="show-some-images-from-the-dataloader">
-<h3>Show some images from the dataloader<a class="headerlink" href="#show-some-images-from-the-dataloader" title="Permalink to this headline">¶</a></h3>
+<section id="show-some-images-from-the-dataloader">
+<h3>Show some images from the dataloader<a class="headerlink" href="#show-some-images-from-the-dataloader" title="Permalink to this headline">#</a></h3>
 <p>The dataset object is a <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/api/pytorch_lightning.core.datamodule.html">pytorch_lightining DataModule object</a>. This object has the <em>WorldFloods</em> train, val and test datasets as attributes (<code class="docutils literal notranslate"><span class="pre">dataset.train_dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">dataset.val_dataset</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.test_dataset</span></code>). In addition we can create pytorch DataLoaders from them using the methods <code class="docutils literal notranslate"><span class="pre">train_dataloader()</span></code>, <code class="docutils literal notranslate"><span class="pre">val_dataloader()</span></code> and <code class="docutils literal notranslate"><span class="pre">test_dataloader()</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -815,13 +676,13 @@ Wall time: 169 ms
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/HOWTO_Train_models_18_0.png" src="../../_images/HOWTO_Train_models_18_0.png" />
+<img alt="../../_images/54c034f70576156c25e17f57a7c3c5a7daf4e66e497042c9bcf7b1113397fb64.png" src="../../_images/54c034f70576156c25e17f57a7c3c5a7daf4e66e497042c9bcf7b1113397fb64.png" />
 </div>
 </div>
-</div>
-</div>
-<div class="section" id="step-3-setup-model">
-<h2>Step 3: Setup Model<a class="headerlink" href="#step-3-setup-model" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="step-3-setup-model">
+<h2>Step 3: Setup Model<a class="headerlink" href="#step-3-setup-model" title="Permalink to this headline">#</a></h2>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span> - &#39;train&#39; = True specifies that we are training a new model from scratch
  - get_model(args) constructs a pytorch lightning model using the configuration specified in &#39;config.model_params&#39;
 </pre></div>
@@ -894,9 +755,9 @@ Wall time: 169 ms
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-4-optional-set-up-weights-and-biases-logger-for-experiment">
-<h2>Step 4:  (Optional) Set up Weights and Biases Logger for experiment<a class="headerlink" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-4-optional-set-up-weights-and-biases-logger-for-experiment">
+<h2>Step 4:  (Optional) Set up Weights and Biases Logger for experiment<a class="headerlink" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment" title="Permalink to this headline">#</a></h2>
 <p>We pass this to the model trainer in a later cell to automaticall log relevant metrics to wandb</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -925,9 +786,9 @@ Wall time: 169 ms
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-5-setup-lightning-callbacks">
-<h2>Step 5: Setup Lightning Callbacks<a class="headerlink" href="#step-5-setup-lightning-callbacks" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-5-setup-lightning-callbacks">
+<h2>Step 5: Setup Lightning Callbacks<a class="headerlink" href="#step-5-setup-lightning-callbacks" title="Permalink to this headline">#</a></h2>
 <ul class="simple">
 <li><p>We implement checkpointing using the ModelCheckpoint callback to save the best performing checkpoints to local/gcs storage</p></li>
 <li><p>We implement early stopping using the EarlyStopping callback to stop training early if there is no performance improvement after 10 epochs from the latest best checkpoint</p></li>
@@ -966,9 +827,9 @@ Wall time: 169 ms
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-6-setup-lighting-trainer">
-<h2>Step 6: Setup Lighting Trainer<a class="headerlink" href="#step-6-setup-lighting-trainer" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-6-setup-lighting-trainer">
+<h2>Step 6: Setup Lighting Trainer<a class="headerlink" href="#step-6-setup-lighting-trainer" title="Permalink to this headline">#</a></h2>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-- Pytorch Lightning Trainer handles all the rest of the model training for us!
 -- add flags from 
 https://pytorch-lightning.readthedocs.io/en/0.7.5/trainer.html 
@@ -1011,9 +872,9 @@ IPU available: False, using: 0 IPUs
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="start-training">
-<h2>Start Training!<a class="headerlink" href="#start-training" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="start-training">
+<h2>Start Training!<a class="headerlink" href="#start-training" title="Permalink to this headline">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
@@ -1027,12 +888,12 @@ IPU available: False, using: 0 IPUs
 </pre></div>
 </div>
 <div class="output text_html">
-Tracking run with wandb version 0.10.21<br/>
-Syncing run <strong style="color:#cdcd00">training_demo</strong> to <a href="https://wandb.ai" target="_blank">Weights & Biases</a> <a href="https://docs.wandb.com/integrations/jupyter.html" target="_blank">(Documentation)</a>.<br/>
-Project page: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project</a><br/>
-Run page: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a</a><br/>
-Run data is saved locally in <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a</code><br/><br/>
-</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  | Name    | Type      | Params
+                Tracking run with wandb version 0.10.21<br/>
+                Syncing run <strong style="color:#cdcd00">training_demo</strong> to <a href="https://wandb.ai" target="_blank">Weights & Biases</a> <a href="https://docs.wandb.com/integrations/jupyter.html" target="_blank">(Documentation)</a>.<br/>
+                Project page: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project</a><br/>
+                Run page: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a</a><br/>
+                Run data is saved locally in <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a</code><br/><br/>
+            </div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  | Name    | Type      | Params
 --------------------------------------
 0 | network | SimpleCNN | 266 K 
 --------------------------------------
@@ -1044,28 +905,16 @@ Run data is saved locally in <code>/home/gonzalo/ml4floods/jupyterbook/content/m
   warnings.warn(*args, **kwargs)
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "807b0cdbe2ab43e196a4efda6842f4e9", "version_major": 2, "version_minor": 0}
-</script><script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 0, global step 393: val_dice_loss reached 0.60017 (best 0.60017), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=0-step=393.ckpt&quot; as top True
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "807b0cdbe2ab43e196a4efda6842f4e9", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 0, global step 393: val_dice_loss reached 0.60017 (best 0.60017), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=0-step=393.ckpt&quot; as top True
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1, global step 787: val_dice_loss reached 0.59220 (best 0.59220), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=1-step=787.ckpt&quot; as top True
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1, global step 787: val_dice_loss reached 0.59220 (best 0.59220), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=1-step=787.ckpt&quot; as top True
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 2, global step 1181: val_dice_loss reached 0.56052 (best 0.56052), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=2-step=1181-v1.ckpt&quot; as top True
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 2, global step 1181: val_dice_loss reached 0.56052 (best 0.56052), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=2-step=1181-v1.ckpt&quot; as top True
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 3, global step 1575: val_dice_loss reached 0.55334 (best 0.55334), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=3-step=1575.ckpt&quot; as top True
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 3, global step 1575: val_dice_loss reached 0.55334 (best 0.55334), saving model to &quot;/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/models/training_demo/checkpoint/epoch=3-step=1575.ckpt&quot; as top True
 </pre></div>
 </div>
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>1
@@ -1073,11 +922,11 @@ Run data is saved locally in <code>/home/gonzalo/ml4floods/jupyterbook/content/m
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="step-7-eval-model">
-<h2>Step 7: Eval model<a class="headerlink" href="#step-7-eval-model" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="plot-some-images-and-predictions">
-<h3>Plot some images and predictions<a class="headerlink" href="#plot-some-images-and-predictions" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="step-7-eval-model">
+<h2>Step 7: Eval model<a class="headerlink" href="#step-7-eval-model" title="Permalink to this headline">#</a></h2>
+<section id="plot-some-images-and-predictions">
+<h3>Plot some images and predictions<a class="headerlink" href="#plot-some-images-and-predictions" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run inference on the images shown before</span>
@@ -1116,12 +965,12 @@ Shape of prediction: torch.Size([16, 256, 256])
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/HOWTO_Train_models_33_0.png" src="../../_images/HOWTO_Train_models_33_0.png" />
+<img alt="../../_images/8989c68772f0e895430df5e8c6ce4a807223760bfd1288e83958dab37c7a15c4.png" src="../../_images/8989c68772f0e895430df5e8c6ce4a807223760bfd1288e83958dab37c7a15c4.png" />
 </div>
 </div>
-</div>
-<div class="section" id="eval-in-the-val-dataset">
-<h3>Eval in the val dataset<a class="headerlink" href="#eval-in-the-val-dataset" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="eval-in-the-val-dataset">
+<h3>Eval in the val dataset<a class="headerlink" href="#eval-in-the-val-dataset" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
@@ -1163,8 +1012,8 @@ Max tile size: 256
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>81it [00:52,  1.55it/s]                        
 </pre></div>
 </div>
-<img alt="../../_images/HOWTO_Train_models_35_2.png" src="../../_images/HOWTO_Train_models_35_2.png" />
-<img alt="../../_images/HOWTO_Train_models_35_3.png" src="../../_images/HOWTO_Train_models_35_3.png" />
+<img alt="../../_images/dd9ee2e66c471f11550f0fb947cc83e41b59d0c241ec0c67cd3ce6061b20bd05.png" src="../../_images/dd9ee2e66c471f11550f0fb947cc83e41b59d0c241ec0c67cd3ce6061b20bd05.png" />
+<img alt="../../_images/24c16d8c97e9604667a7eef12defda50363c0d93e2a8c249039d3a20b3f6de14.png" src="../../_images/24c16d8c97e9604667a7eef12defda50363c0d93e2a8c249039d3a20b3f6de14.png" />
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Per Class IOU {
     &quot;cloud&quot;: 0.8116431733608086,
     &quot;land&quot;: 0.9123927497732395,
@@ -1174,9 +1023,9 @@ Max tile size: 256
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="show-results-for-each-flood-event-in-the-validation-dataset">
-<h3>Show results for each flood event in the validation dataset<a class="headerlink" href="#show-results-for-each-flood-event-in-the-validation-dataset" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="show-results-for-each-flood-event-in-the-validation-dataset">
+<h3>Show results for each flood event in the validation dataset<a class="headerlink" href="#show-results-for-each-flood-event-in-the-validation-dataset" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dl</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;image_files&quot;</span><span class="p">):</span>
@@ -1296,10 +1145,10 @@ Max tile size: 256
 </table>
 </div></div></div>
 </div>
-</div>
-</div>
-<div class="section" id="step-8-save-trained-model">
-<h2>Step 8: Save trained model<a class="headerlink" href="#step-8-save-trained-model" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="step-8-save-trained-model">
+<h2>Step 8: Save trained model<a class="headerlink" href="#step-8-save-trained-model" title="Permalink to this headline">#</a></h2>
 <p>Save model to local/gcs along with configuration file used to conduct training!</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1316,8 +1165,8 @@ Max tile size: 256
 </div>
 </div>
 </div>
-<div class="section" id="optional-save-weights-and-biases-model-and-finish-connection">
-<h3>Optional: Save weights and biases model and finish connection<a class="headerlink" href="#optional-save-weights-and-biases-model-and-finish-connection" title="Permalink to this headline">¶</a></h3>
+<section id="optional-save-weights-and-biases-model-and-finish-connection">
+<h3>Optional: Save weights and biases model and finish connection<a class="headerlink" href="#optional-save-weights-and-biases-model-and-finish-connection" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">setup_weights_and_biases</span><span class="p">:</span>
@@ -1331,22 +1180,20 @@ Max tile size: 256
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span><span class=" -Color -Color-Bold -Color-Bold-Blue">wandb</span>: <span class=" -Color -Color-Yellow">WARNING</span> Saving files without folders. If you want to preserve sub directories pass base_path to wandb.save, i.e. wandb.save(&quot;/mnt/folder/file.h5&quot;, base_path=&quot;/mnt&quot;)
 </pre></div>
 </div>
-<div class="output text_html"><br/>Waiting for W&B process to finish, PID 3265<br/>Program ended successfully.</div><script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "", "version_major": 2, "version_minor": 0}
-</script><div class="output text_html">Find user logs for this run at: <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a/logs/debug.log</code></div><div class="output text_html">Find internal logs for this run at: <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a/logs/debug-internal.log</code></div><div class="output text_html"><h3>Run summary:</h3><br/><style>
+<div class="output text_html"><br/>Waiting for W&B process to finish, PID 3265<br/>Program ended successfully.</div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "", "version_major": 2, "version_minor": 0}</script><div class="output text_html">Find user logs for this run at: <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a/logs/debug.log</code></div><div class="output text_html">Find internal logs for this run at: <code>/home/gonzalo/ml4floods/jupyterbook/content/ml4ops/wandb/run-20210408_084312-2b206f4a/logs/debug-internal.log</code></div><div class="output text_html"><h3>Run summary:</h3><br/><style>
     table.wandb td:nth-child(1) { padding: 0 10px; text-align: right }
     </style><table class="wandb">
 <tr><td>_runtime</td><td>619</td></tr><tr><td>_timestamp</td><td>1617872011</td></tr><tr><td>_step</td><td>1575</td></tr><tr><td>loss</td><td>0.76066</td></tr><tr><td>epoch</td><td>3</td></tr><tr><td>val_bce_loss</td><td>1.32021</td></tr><tr><td>val_dice_loss</td><td>0.55334</td></tr><tr><td>val_recall land</td><td>0.93818</td></tr><tr><td>val_recall water</td><td>0.84217</td></tr><tr><td>val_recall cloud</td><td>0.6011</td></tr><tr><td>val_iou land</td><td>0.89992</td></tr><tr><td>val_iou water</td><td>0.57418</td></tr><tr><td>val_iou cloud</td><td>0.31644</td></tr></table></div><div class="output text_html"><h3>Run history:</h3><br/><style>
     table.wandb td:nth-child(1) { padding: 0 10px; text-align: right }
     </style><table class="wandb">
 <tr><td>_runtime</td><td>▁▁▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▄▄▅▅▅▅▅▅▆▆▆▆▆▇▇▇▇█</td></tr><tr><td>_timestamp</td><td>▁▁▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▄▄▅▅▅▅▅▅▆▆▆▆▆▇▇▇▇█</td></tr><tr><td>_step</td><td>▁▁▁▁▁▁▁▂▂▃▃▃▃▃▃▃▃▄▄▄▄▄▅▅▅▅▆▆▆▆▆▆▆▇▇▇████</td></tr><tr><td>loss</td><td>██▄▄▂▂▁▄▄▄▄▁▁▂▂▂▂▂▂▂▂▃▃▃▃▁▁▃▃▂▂</td></tr><tr><td>epoch</td><td>▁▁▁▁▁▁▁▁▃▃▃▃▃▃▃▃▃▆▆▆▆▆▆▆▆▆█████████</td></tr><tr><td>val_bce_loss</td><td>▅▁█▃</td></tr><tr><td>val_dice_loss</td><td>█▇▂▁</td></tr><tr><td>val_recall land</td><td>▄▁█▆</td></tr><tr><td>val_recall water</td><td>██▁▃</td></tr><tr><td>val_recall cloud</td><td>▁▄▇█</td></tr><tr><td>val_iou land</td><td>▁▁█▇</td></tr><tr><td>val_iou water</td><td>▂▁█▆</td></tr><tr><td>val_iou cloud</td><td>▂▁▇█</td></tr></table><br/></div><div class="output text_html">Synced 5 W&B file(s), 864 media file(s), 0 artifact file(s) and 1 other file(s)</div><div class="output text_html">
-<br/>Synced <strong style="color:#cdcd00">training_demo</strong>: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a</a><br/>
-</div></div>
+                    <br/>Synced <strong style="color:#cdcd00">training_demo</strong>: <a href="https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a" target="_blank">https://wandb.ai/ml4floods/worldfloods-notebook-demo-project/runs/2b206f4a</a><br/>
+                </div></div>
 </div>
 <p>All Done - Now head to the Model Inference Tutorial to see how your model performed!</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
     <script type="text/x-thebe-config">
     {
@@ -1360,7 +1207,7 @@ Max tile size: 256
             mode: "conda-env-ml4floods-py"
         },
         kernelOptions: {
-            kernelName: "conda-env-ml4floods-py",
+            name: "conda-env-ml4floods-py",
             path: "./content/ml4ops"
         },
         predefinedOutput: true
@@ -1368,44 +1215,129 @@ Max tile size: 256
     </script>
     <script>kernelName = 'conda-env-ml4floods-py'</script>
 
-              </div>
+                </article>
               
-            
-                <!-- Previous / next buttons -->
-<div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="../ml_overview.html" title="previous page">
-        <i class="fas fa-angle-left"></i>
-        <div class="prev-next-info">
-            <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">MLOps overview</p>
-        </div>
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../ml_overview.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">MLOps overview</p>
+      </div>
     </a>
-    <a class='right-next' id="next-link" href="HOWTO_performance_metrics_workflow.html" title="next page">
-    <div class="prev-next-info">
+    <a class="right-next"
+       href="HOWTO_performance_metrics_workflow.html"
+       title="next page">
+      <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
         <p class="prev-next-title">Model Metrics</p>
-    </div>
-    <i class="fas fa-angle-right"></i>
-    </a>
-</div>
-            
-        </div>
-    </div>
-    <footer class="footer">
-  <p>
-    
-      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
-    
-        &copy; Copyright 2021.<br/>
-  </p>
-</footer>
-</main>
-
-
       </div>
-    </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
   
-  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+</div>
 
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contenido
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-download-the-training-data">Step 0: Download the training data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">Step 0a: mount the Public folder if you are in Google Colab</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0b-unzip-the-worldfloods-sample-folder">Step 0b: Unzip the worldfloods sample folder</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-setup-configuration-file">Step 1: Setup Configuration file</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-a-seed-everything-for-reproducibility">Step 1.a: Seed everything for reproducibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-b-make-it-a-unique-experiment">Step 1.b: Make it a unique experiment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-setup-dataloader">Step 2: Setup Dataloader</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-some-images-from-the-dataloader">Show some images from the dataloader</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-setup-model">Step 3: Setup Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-optional-set-up-weights-and-biases-logger-for-experiment">Step 4:  (Optional) Set up Weights and Biases Logger for experiment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-setup-lightning-callbacks">Step 5: Setup Lightning Callbacks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-setup-lighting-trainer">Step 6: Setup Lighting Trainer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#start-training">Start Training!</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-eval-model">Step 7: Eval model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-some-images-and-predictions">Plot some images and predictions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-in-the-val-dataset">Eval in the val dataset</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-results-for-each-flood-event-in-the-validation-dataset">Show results for each flood event in the validation dataset</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-8-save-trained-model">Step 8: Save trained model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-save-weights-and-biases-model-and-finish-connection">Optional: Save weights and biases model and finish connection</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2021.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
   </body>
 </html>

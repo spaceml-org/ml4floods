@@ -1,37 +1,45 @@
 
+
 <!DOCTYPE html>
 
-<html>
+
+<html >
+
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Ground Truth &#8212; ML4Floods</title>
-    
-  <link href="../../_static/css/theme.css" rel="stylesheet">
-  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
 
-    
-  <link rel="stylesheet"
-    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    
-      
-
-    
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-book-theme.css?digest=c3fdc42140077d1ad13ad2f1588a4309" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
-    
-  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
@@ -39,541 +47,399 @@
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
     <script>let toggleHintShow = 'Click to show';</script>
     <script>let toggleHintHide = 'Click to hide';</script>
     <script>let toggleOpenOnPrint = 'true';</script>
     <script src="../../_static/togglebutton.js"></script>
-    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
-    <script src="../../_static/sphinx-book-theme.d59cb220de22ca1c485ebbdc042f0030.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js"></script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
 const thebe_selector = ".thebe,.cell"
 const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="../../_static/sphinx-thebe.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'content/prep/gt_masks_generation';</script>
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="The WorldFloods database" href="../worldfloods_dataset.html" />
     <link rel="prev" title="Ingest Flood Extent Maps" href="full_data_ingest.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
 
-    
-
-    <div class="container-xl">
-      <div class="row">
-          
-<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
-    
-        <div class="navbar-brand-box">
-    <a class="navbar-brand text-wrap" href="../../index.html">
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
       
-        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+      <div class="bd-sidebar-primary bd-sidebar">
         
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../intro/introduction.html">
+  
+  
+  
+  
+    
+    
       
-      
-      <img src="../../_static/ml4cc_logo.png" class="logo" alt="logo">
-      
-      
-      <h1 class="site-logo" id="site-title">ML4Floods</h1>
-      
-    </a>
-</div><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
-  <i class="icon fas fa-search"></i>
-  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
-</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
-    <div class="bd-toc-item active">
-        <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../intro/introduction.html">
-   Introduction
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Install
- </span>
-</p>
+    
+    
+    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../intro/introduction.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../config.html">
-   Install
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">Install</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Data prep
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="current nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="full_data_ingest.html">
-   Ingest Flood Extent Maps
-  </a>
- </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
-   Ground Truth
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../worldfloods_dataset.html">
-   The
-   <em>
-    WorldFloods
-   </em>
-   database
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../labeling.html">
-   Viewer and label editor
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="full_data_ingest.html">Ingest Flood Extent Maps</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Ground Truth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  MLOps
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml_overview.html">
-   MLOps overview
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">
-   Train models
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">
-   Model Metrics
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">
-   Run inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../ml_overview.html">MLOps overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">Train models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  End-to-end Pipeline
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">
-   Run inference on time series of Sentinel-2 images
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_inference_SAFE_file.html">
-   Inference on Sentinel-2
-   <code class="docutils literal notranslate">
-    <span class="pre">
-     SAFE
-    </span>
-   </code>
-   files
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Experimental
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="demo_pytorch_transforms.html">
-   Pre-processing Demonstration
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">
-   Probabilistic neural networks
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">
-   Cloud removal inference
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  About
- </span>
-</p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
 <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../about.html">
-   About
-  </a>
- </li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
 </ul>
 
     </div>
-</nav> <!-- To handle the deprecated key -->
-
-<div class="navbar_extra_footer">
-  See the project in <a href="https://github.com/spaceml-org/ml4floods">GitHub</a>
-</div>
-
-</div>
-
-
-          
-
-
-          
-<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
-    
-    <div class="topbar container-xl fixed-top">
-    <div class="topbar-contents row">
-        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
-        <div class="col pl-md-4 topbar-main">
-            
-            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
-                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
-                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
-                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
-                <i class="fas fa-bars"></i>
-                <i class="fas fa-arrow-left"></i>
-                <i class="fas fa-arrow-up"></i>
-            </button>
-            
-            
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
-            class="fas fa-download"></i></button>
-
-    <div class="dropdown-buttons">
-        <!-- ipynb file if we had a myst markdown file -->
-        
-        <!-- Download raw file -->
-        <a class="dropdown-buttons" href="../../_sources/content/prep/gt_masks_generation.ipynb"><button type="button"
-                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
-                data-placement="left">.ipynb</button></a>
-        <!-- Download PDF via print -->
-        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
-                onclick="printPdf(this)" data-toggle="tooltip" data-placement="left">.pdf</button>
+</nav></div>
     </div>
-</div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
 
-            <!-- Source interaction buttons -->
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
-    <div class="dropdown-buttons sourcebuttons">
-        <a class="repository-button"
-            href="https://github.com/spaceml-org/ml4floods"><button type="button" class="btn btn-secondary topbarbtn"
-                data-toggle="tooltip" data-placement="left" title="Source repository"><i
-                    class="fab fa-github"></i>repository</button></a>
+      </div>
+      
+      <main id="main-content" class="bd-main">
         
         
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
     </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-launch-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Launch interactive content">
+    <i class="fas fa-rocket"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/gt_masks_generation.ipynb" target="_blank"
+   class="btn btn-sm dropdown-item"
+   title="Launch onColab"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  
+    <img src="../../_static/images/logo_colab.png">
+  </span>
+<span class="btn__text-container">Colab</span>
+</a>
+</li>
+      
+  </ul>
 </div>
 
-            <!-- Full screen (wrap in <a> to have style consistency -->
 
-<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
-        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
-        title="Fullscreen mode"><i
-            class="fas fa-expand"></i></button></a>
 
-            <!-- Launch buttons -->
+<a href="https://github.com/spaceml-org/ml4floods" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Repositorio de origen"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
 
-<div class="dropdown-buttons-trigger">
-    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
-        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
-    <div class="dropdown-buttons">
-        
-        
-        
-        <a class="colab-button" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/gt_masks_generation.ipynb"><button type="button" class="btn btn-secondary topbarbtn"
-                title="Launch Colab" data-toggle="tooltip" data-placement="left"><img class="colab-button-logo"
-                    src="../../_static/images/logo_colab.png"
-                    alt="Interact on Colab">Colab</button></a>
-        
-        
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/content/prep/gt_masks_generation.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Descargar archivo fuente"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Imprimir en PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Modo de pantalla completa"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
     </div>
+  
 </div>
+</div>
+              
+              
 
-        </div>
-
-        <!-- Table of contents -->
-        <div class="d-none d-md-block col-md-2 bd-toc show noprint">
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Ground Truth</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
             
-            <div class="tocsection onthispage pt-5 pb-3">
-                <i class="fas fa-list"></i> Contents
+            <div>
+                <h2> Contenido </h2>
             </div>
-            <nav id="bd-toc-nav" aria-label="Page">
+            <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#brief-description">
-   Brief Description
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">
-   Step 0: Access the data for this tutorial
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-   Step 0a: mount the Public folder if you are in Google Colab
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#original-image">
-   Original Image
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#demo-plot">
-   Demo Plot
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#cloud-masks">
-   Cloud Masks
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#last-channel-cloud-probabilities">
-     Last Channel Cloud Probabilities
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#model-based">
-     Model-Based
-    </a>
-    <ul class="nav section-nav flex-column">
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#figure">
-       Figure
-      </a>
-     </li>
-    </ul>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#water-masks">
-   Water Masks
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#permanent-water">
-     Permanent Water
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#flood-events">
-     Flood Events
-    </a>
-    <ul class="nav section-nav flex-column">
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">
-       Plot - FloodMaps On Permanent Water
-      </a>
-     </li>
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">
-       Figure - FloodMaps On S2 Image
-      </a>
-     </li>
-    </ul>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Ground Truth
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#class-problem">
-     3-Class Problem
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-3-class-ground-truth">
-     Show 3-class ground truth
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id2">
-   2-Class Problem
-  </a>
- </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#brief-description">Brief Description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">Step 0: Access the data for this tutorial</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">Step 0a: mount the Public folder if you are in Google Colab</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#original-image">Original Image</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#demo-plot">Demo Plot</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cloud-masks">Cloud Masks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#last-channel-cloud-probabilities">Last Channel Cloud Probabilities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-based">Model-Based</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#figure">Figure</a></li>
 </ul>
-
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#water-masks">Water Masks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#permanent-water">Permanent Water</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#flood-events">Flood Events</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">Plot - FloodMaps On Permanent Water</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">Figure - FloodMaps On S2 Image</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Ground Truth</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#class-problem">3-Class Problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-3-class-ground-truth">Show 3-class ground truth</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">2-Class Problem</a></li>
+</ul>
             </nav>
         </div>
     </div>
 </div>
-    <div id="main-content" class="row">
-        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
-            <!-- Table of contents that is only displayed when printing the page -->
-            <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Ground Truth</h1>
-                <!-- Table of contents -->
-                <div id="print-main-content">
-                    <div id="jb-print-toc">
-                        
-                        <div>
-                            <h2> Contents </h2>
-                        </div>
-                        <nav aria-label="Page">
-                            <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#brief-description">
-   Brief Description
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">
-   Step 0: Access the data for this tutorial
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-   Step 0a: mount the Public folder if you are in Google Colab
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#original-image">
-   Original Image
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#demo-plot">
-   Demo Plot
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#cloud-masks">
-   Cloud Masks
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#last-channel-cloud-probabilities">
-     Last Channel Cloud Probabilities
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#model-based">
-     Model-Based
-    </a>
-    <ul class="nav section-nav flex-column">
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#figure">
-       Figure
-      </a>
-     </li>
-    </ul>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#water-masks">
-   Water Masks
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#permanent-water">
-     Permanent Water
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#flood-events">
-     Flood Events
-    </a>
-    <ul class="nav section-nav flex-column">
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">
-       Plot - FloodMaps On Permanent Water
-      </a>
-     </li>
-     <li class="toc-h4 nav-item toc-entry">
-      <a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">
-       Figure - FloodMaps On S2 Image
-      </a>
-     </li>
-    </ul>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id1">
-   Ground Truth
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#class-problem">
-     3-Class Problem
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#show-3-class-ground-truth">
-     Show 3-class ground truth
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#id2">
-   2-Class Problem
-  </a>
- </li>
-</ul>
 
-                        </nav>
-                    </div>
-                </div>
-            </div>
-            
-              <div>
+              
                 
-  <div class="tex2jax_ignore mathjax_ignore section" id="ground-truth">
-<h1>Ground Truth<a class="headerlink" href="#ground-truth" title="Permalink to this headline">¶</a></h1>
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="ground-truth">
+<h1>Ground Truth<a class="headerlink" href="#ground-truth" title="Permalink to this headline">#</a></h1>
 <ul class="simple">
 <li><p><strong>Last Modified</strong>: 17-03-2022</p></li>
 <li><p><strong>Authors</strong>: Satyarth Praveen, J. Emmanuel Johnson, Nadia Ahmed, Gonzalo Mateo-García</p></li>
 </ul>
 <hr class="docutils" />
-<div class="section" id="brief-description">
-<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this headline">¶</a></h2>
+<section id="brief-description">
+<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this headline">#</a></h2>
 <p>In this notebook, we will explore how to visualize the different products that we use in the <em>WorldFloods</em> dataset. In addition we will show how to create the ground truth that we used for training the models (the 3-class ground truth used in <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Mateo-García et al. 2021</a> and the new binary ground truth for multi-output binary classification).</p>
 <p>This tutorial follows the previous one about <span class="xref myst">ingesting floodmaps</span> which shows how to pre-process and download floodmaps and how to download Sentinel-2 images using the Google Earth Engine. In this notebook we use these products (floodmaps, S2 images and JRC Permanent Water Layer also downlinked from the GEE).</p>
 <p>To create the ground truth necessary in the <em>WorldFloods</em> data, we need access to water layers, clouds. So let’s show how we do this!</p>
-</div>
+</section>
 <hr class="docutils" />
-<div class="section" id="step-0-access-the-data-for-this-tutorial">
-<h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this headline">¶</a></h2>
+<section id="step-0-access-the-data-for-this-tutorial">
+<h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this headline">#</a></h2>
 <p>In order to run this tutorial we will use some products from the forthcoming <em>WorldFloods Extra Dataset</em>. We have copied some of those in our <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>. To access the <em>WorldFloods</em> database see <span class="xref myst">the download <em>WorldFloods</em> documentation</span>.</p>
-</div>
-<div class="section" id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
+<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">#</a></h2>
 <p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a> and mount that directory with the following code:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -600,9 +466,9 @@ Setting google colab to false, it will need to install the gdown package!
 </div>
 </div>
 <p>If you’re not in Google Colab you need to install the <code class="docutils literal notranslate"><span class="pre">gdown</span></code> package to access the products. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdown</span></code>.</p>
-</div>
-<div class="section" id="original-image">
-<h2>Original Image<a class="headerlink" href="#original-image" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="original-image">
+<h2>Original Image<a class="headerlink" href="#original-image" title="Permalink to this headline">#</a></h2>
 <p>Let’s load a demo Sentinel-2 (S2) image which will be the basis for all of our demonstrations.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -628,9 +494,9 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="demo-plot">
-<h2>Demo Plot<a class="headerlink" href="#demo-plot" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="demo-plot">
+<h2>Demo Plot<a class="headerlink" href="#demo-plot" title="Permalink to this headline">#</a></h2>
 <p>We have an easy plot function to visualize the S2 image.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -655,16 +521,16 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[Text(0.5, 1.0, &#39;Demo Sentinel-2 Image&#39;)]
 </pre></div>
 </div>
-<img alt="../../_images/gt_masks_generation_8_1.png" src="../../_images/gt_masks_generation_8_1.png" />
+<img alt="../../_images/56622cbfb7032dec320c7ab2f653e9e74a8b590f88ea1da2a6191bfc4e6620b7.png" src="../../_images/56622cbfb7032dec320c7ab2f653e9e74a8b590f88ea1da2a6191bfc4e6620b7.png" />
 </div>
 </div>
 <p>This is mainly for demonstration purposes. For more advanced plotting utilities, please consult a specialized library.</p>
 <p>So now we have our image, let’s see what tools we have available to do masks.</p>
-</div>
-<div class="section" id="cloud-masks">
-<h2>Cloud Masks<a class="headerlink" href="#cloud-masks" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="last-channel-cloud-probabilities">
-<h3>Last Channel Cloud Probabilities<a class="headerlink" href="#last-channel-cloud-probabilities" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="cloud-masks">
+<h2>Cloud Masks<a class="headerlink" href="#cloud-masks" title="Permalink to this headline">#</a></h2>
+<section id="last-channel-cloud-probabilities">
+<h3>Last Channel Cloud Probabilities<a class="headerlink" href="#last-channel-cloud-probabilities" title="Permalink to this headline">#</a></h3>
 <p>Fortunately for some of the newer S2 images obtained from GEE, we can simply use the final channel.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -686,15 +552,15 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_12_0.png" src="../../_images/gt_masks_generation_12_0.png" />
+<img alt="../../_images/af97554b9e9d31b8f98ab086d17f07f5dfbf9f5690af8ac3d173bf423f34265f.png" src="../../_images/af97554b9e9d31b8f98ab086d17f07f5dfbf9f5690af8ac3d173bf423f34265f.png" />
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[Text(0.5, 1.0, &#39;Cloud Probabilities&#39;)]
 </pre></div>
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="model-based">
-<h3>Model-Based<a class="headerlink" href="#model-based" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="model-based">
+<h3>Model-Based<a class="headerlink" href="#model-based" title="Permalink to this headline">#</a></h3>
 <p>In other cases where this is not available, we can also use models on the original image. One method that we use within this library is called <code class="docutils literal notranslate"><span class="pre">s2cloudless</span></code>, found <a class="reference external" href="https://github.com/sentinel-hub/sentinel2-cloud-detector">here</a>. This is a model from the sentinel-hub which has a very convenient API for our uses. See <a class="reference external" href="https://medium.com/sentinel-hub/improving-cloud-detection-with-machine-learning-c09dc5d7cf13">this blog</a> for more details.</p>
 <p>Below, we showcase how we can return cloudmasks in a single function within this library.</p>
 <p><strong>Warnings</strong>: This will take a while to run. Please skip over the section to resume the tutorial.</p>
@@ -709,8 +575,8 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 </div>
-<div class="section" id="figure">
-<h4>Figure<a class="headerlink" href="#figure" title="Permalink to this headline">¶</a></h4>
+<section id="figure">
+<h4>Figure<a class="headerlink" href="#figure" title="Permalink to this headline">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fig, ax = plt.subplots(figsize=(16,16))</span>
@@ -729,13 +595,13 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <p><strong>Note</strong>: This is actually the same library that is used within the GEE platform! See <a class="reference external" href="https://developers.google.com/earth-engine/tutorials/community/sentinel-2-s2cloudless">this tutorial</a> for more information.</p>
-</div>
-</div>
-</div>
-<div class="section" id="water-masks">
-<h2>Water Masks<a class="headerlink" href="#water-masks" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="permanent-water">
-<h3>Permanent Water<a class="headerlink" href="#permanent-water" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+</section>
+<section id="water-masks">
+<h2>Water Masks<a class="headerlink" href="#water-masks" title="Permalink to this headline">#</a></h2>
+<section id="permanent-water">
+<h3>Permanent Water<a class="headerlink" href="#permanent-water" title="Permalink to this headline">#</a></h3>
 <p>So firstly, we have the permanent water. These are streams, rivers and lakes that already exist. This serves as a basis for where the flood events <em>could</em> occur.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -776,12 +642,12 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_21_0.png" src="../../_images/gt_masks_generation_21_0.png" />
+<img alt="../../_images/1a29fc4c21ec7177cc221a260c90c18d8f52ba00114862c66bfab613b08e0afe.png" src="../../_images/1a29fc4c21ec7177cc221a260c90c18d8f52ba00114862c66bfab613b08e0afe.png" />
 </div>
 </div>
-</div>
-<div class="section" id="flood-events">
-<h3>Flood Events<a class="headerlink" href="#flood-events" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="flood-events">
+<h3>Flood Events<a class="headerlink" href="#flood-events" title="Permalink to this headline">#</a></h3>
 <p>We need the flood events. These come from the Copernicus EMS data source where we have already preprocessed them to extract the necessary information for floods. These come in the form of <code class="docutils literal notranslate"><span class="pre">geojson</span></code> files which keep all of the polygons indicating the specific coordinates where there was a drought. We can easily read it with the <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> package.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -946,11 +812,11 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_28_0.png" src="../../_images/gt_masks_generation_28_0.png" />
+<img alt="../../_images/a633627a7b5961fe32f943e0876f7c4d141092986639c6621d34ea6cabccca04.png" src="../../_images/a633627a7b5961fe32f943e0876f7c4d141092986639c6621d34ea6cabccca04.png" />
 </div>
 </div>
-<div class="section" id="plot-floodmaps-on-permanent-water">
-<h4>Plot - FloodMaps On Permanent Water<a class="headerlink" href="#plot-floodmaps-on-permanent-water" title="Permalink to this headline">¶</a></h4>
+<section id="plot-floodmaps-on-permanent-water">
+<h4>Plot - FloodMaps On Permanent Water<a class="headerlink" href="#plot-floodmaps-on-permanent-water" title="Permalink to this headline">#</a></h4>
 <p>We can also plot the floodmaps on the permanent water to get an overview of how much these flood maps overlap with the already placed permanent water areas.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -974,13 +840,13 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
 </pre></div>
 </div>
-<img alt="../../_images/gt_masks_generation_30_1.png" src="../../_images/gt_masks_generation_30_1.png" />
+<img alt="../../_images/727451bb8292e0e0000874549924ca010f689a436c01d29dddaa0d533370b6c3.png" src="../../_images/727451bb8292e0e0000874549924ca010f689a436c01d29dddaa0d533370b6c3.png" />
 </div>
 </div>
 <p>So we can see that it’s very clear that there is some overlap between the permanent water and the flood maps, but there are also many areas that extend beyond the standard region.</p>
-</div>
-<div class="section" id="figure-floodmaps-on-s2-image">
-<h4>Figure - FloodMaps On S2 Image<a class="headerlink" href="#figure-floodmaps-on-s2-image" title="Permalink to this headline">¶</a></h4>
+</section>
+<section id="figure-floodmaps-on-s2-image">
+<h4>Figure - FloodMaps On S2 Image<a class="headerlink" href="#figure-floodmaps-on-s2-image" title="Permalink to this headline">#</a></h4>
 <p>We can actually overlay the floodmaps onto the S2 Image. Because all of the geocoordinates are consistent, this allows us to visualize all of the pieces together.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1000,17 +866,17 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_33_0.png" src="../../_images/gt_masks_generation_33_0.png" />
+<img alt="../../_images/453d187dfeb09b0b84a3f533848e045220fdcfb1ad9b2d1e6fabcebf770bb017.png" src="../../_images/453d187dfeb09b0b84a3f533848e045220fdcfb1ad9b2d1e6fabcebf770bb017.png" />
 </div>
 </div>
-</div>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>Ground Truth<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+</section>
+<section id="id1">
+<h2>Ground Truth<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h2>
 <p>So now we’ve seen all of the bits and pieces needed to get the data required to create the ground truth: 1) S2 Image, 2) Cloud Masks, 3) FloodMaps, 4) Permanent Water. We can now create some ground truth images which can be used for our machine learning problem.</p>
-<div class="section" id="class-problem">
-<h3>3-Class Problem<a class="headerlink" href="#class-problem" title="Permalink to this headline">¶</a></h3>
+<section id="class-problem">
+<h3>3-Class Problem<a class="headerlink" href="#class-problem" title="Permalink to this headline">#</a></h3>
 <p>This first ground truth type is a 3-class problem: Land, Water, Cloud. We basically fuse these four resources together to create the ground truth. So a simple logistic regression model would be able to use this. However, it would probably do poorly due to the complexity of the data.</p>
 <p>It’s very simple to generate ground truth with the functions we created.</p>
 <div class="cell docutils container">
@@ -1074,9 +940,9 @@ Wall time: 24.3 s
 </div>
 </div>
 </div>
-</div>
-<div class="section" id="show-3-class-ground-truth">
-<h3>Show 3-class ground truth<a class="headerlink" href="#show-3-class-ground-truth" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="show-3-class-ground-truth">
+<h3>Show 3-class ground truth<a class="headerlink" href="#show-3-class-ground-truth" title="Permalink to this headline">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
@@ -1086,16 +952,16 @@ Wall time: 24.3 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_40_0.png" src="../../_images/gt_masks_generation_40_0.png" />
+<img alt="../../_images/efb5532bc439d7b5ea20ba03e11d8c3d85d21e0dfd9a0118d115e6ef7541e73a.png" src="../../_images/efb5532bc439d7b5ea20ba03e11d8c3d85d21e0dfd9a0118d115e6ef7541e73a.png" />
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;AxesSubplot:&gt;
 </pre></div>
 </div>
 </div>
 </div>
-</div>
-</div>
-<div class="section" id="id2">
-<h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="id2">
+<h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this headline">#</a></h2>
 <p>In this ground truth, we generate 2-band ground truth. This ground truth can be used to train a multioutput binary segmentation model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1192,7 +1058,7 @@ Wall time: 16.3 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../../_images/gt_masks_generation_46_0.png" src="../../_images/gt_masks_generation_46_0.png" />
+<img alt="../../_images/510ffbc3746faa716906dc2f4c66a8119a8fe6731ae31f1204889a2ea7fe1992.png" src="../../_images/510ffbc3746faa716906dc2f4c66a8119a8fe6731ae31f1204889a2ea7fe1992.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1229,11 +1095,11 @@ Wall time: 16.3 s
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7faf1f253e20&gt;
 </pre></div>
 </div>
-<img alt="../../_images/gt_masks_generation_48_1.png" src="../../_images/gt_masks_generation_48_1.png" />
+<img alt="../../_images/88dac27bc7252d4f40fff19e2b643bbcf7e266c152789bf82e4d27df335b26fe.png" src="../../_images/88dac27bc7252d4f40fff19e2b643bbcf7e266c152789bf82e4d27df335b26fe.png" />
 </div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
     <script type="text/x-thebe-config">
     {
@@ -1247,7 +1113,7 @@ Wall time: 16.3 s
             mode: "conda-env-ml4floods-py"
         },
         kernelOptions: {
-            kernelName: "conda-env-ml4floods-py",
+            name: "conda-env-ml4floods-py",
             path: "./content/prep"
         },
         predefinedOutput: true
@@ -1255,44 +1121,132 @@ Wall time: 16.3 s
     </script>
     <script>kernelName = 'conda-env-ml4floods-py'</script>
 
-              </div>
+                </article>
               
-            
-                <!-- Previous / next buttons -->
-<div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="full_data_ingest.html" title="previous page">
-        <i class="fas fa-angle-left"></i>
-        <div class="prev-next-info">
-            <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Ingest Flood Extent Maps</p>
-        </div>
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="full_data_ingest.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Ingest Flood Extent Maps</p>
+      </div>
     </a>
-    <a class='right-next' id="next-link" href="../worldfloods_dataset.html" title="next page">
-    <div class="prev-next-info">
+    <a class="right-next"
+       href="../worldfloods_dataset.html"
+       title="next page">
+      <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
         <p class="prev-next-title">The <em>WorldFloods</em> database</p>
-    </div>
-    <i class="fas fa-angle-right"></i>
-    </a>
-</div>
-            
-        </div>
-    </div>
-    <footer class="footer">
-  <p>
-    
-      By <a href="http://spaceml.org/" target="_blank">spaceml.org</a><br/>
-    
-        &copy; Copyright 2021.<br/>
-  </p>
-</footer>
-</main>
-
-
       </div>
-    </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
   
-  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+</div>
 
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contenido
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#brief-description">Brief Description</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-access-the-data-for-this-tutorial">Step 0: Access the data for this tutorial</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab">Step 0a: mount the Public folder if you are in Google Colab</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#original-image">Original Image</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#demo-plot">Demo Plot</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cloud-masks">Cloud Masks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#last-channel-cloud-probabilities">Last Channel Cloud Probabilities</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-based">Model-Based</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#figure">Figure</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#water-masks">Water Masks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#permanent-water">Permanent Water</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#flood-events">Flood Events</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-floodmaps-on-permanent-water">Plot - FloodMaps On Permanent Water</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#figure-floodmaps-on-s2-image">Figure - FloodMaps On S2 Image</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Ground Truth</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#class-problem">3-Class Problem</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#show-3-class-ground-truth">Show 3-class ground truth</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">2-Class Problem</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2021.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
   </body>
 </html>
