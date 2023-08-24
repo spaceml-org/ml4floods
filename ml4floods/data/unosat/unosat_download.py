@@ -12,6 +12,7 @@ import shutil
 import numpy as np
 import traceback as tb
 from ml4floods.data.unosat.unosat_download_arg_parser import UnosatDownloadArgParser
+import os
 
 def get_map_links(fetched_page):
     map_links = list(filter(lambda x: re.match(r"^/maps/map/[0-9]+", x), fetched_page.html.links))
@@ -189,13 +190,16 @@ def get_shapefile_from_zip(zip_file):
             if len(flood_extent_shapefiles) != 1:
                 print("WARN: More than one flood shapefile... We will only be using the first one...")
             base_shape_name = os.path.splitext(flood_extent_shapefiles[0])[0]
-            relevant_shapefiles = filter(lambda x: x.startswith(base_shape_name), contents)
+            # relevant_shapefiles = [os.path.join(temp_dir, f) for f in list(filter(lambda x: x.startswith(base_shape_name), contents))]
+            relevant_shapefiles = list(filter(lambda x: x.startswith(base_shape_name), contents))
+
             # We write all the relevant files out to disk like this because that's the only way I was
             # able to get GeoPandas to accept the file -- it seems not to like a BytesIO object (shapefile)
             # or a list of BytesIO objects (relevant files). It seems to need a path to a .shp file that is
             # located in the same place as its supporting files. If we want to optimize for efficiency,
             # this may be one place to look.
             for relevant_file in relevant_shapefiles:
+                os.makedirs(os.path.dirname(f"./tmp/{relevant_file}"), exist_ok=True)
                 try:
                     with f.open(relevant_file, "r") as shp_f, open(f"./tmp/{relevant_file}", "wb") as f_out:
                         f_out.write(shp_f.read())
