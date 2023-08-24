@@ -12,6 +12,7 @@ import shutil
 import numpy as np
 import traceback as tb
 from ml4floods.data.unosat.unosat_download_arg_parser import UnosatDownloadArgParser
+from ml4floods.data import utils
 import os
 
 def get_map_links(fetched_page):
@@ -156,6 +157,7 @@ def produce_metadata_dict(shapefile_info, shapefile_path):
         
     meta = {
         'event id': shapefile_info.glide_id,
+        'aoi_code': shapefile_path.split("_FloodExtent_")[-1].split(".shp")[0],
         'layer name': os.path.basename(shapefile_info.download_url),
         'event type': event_type,
         'satellite date': shapefile_info.imagery_dates if shapefile_info.imagery_dates is not None else "NaN",
@@ -171,7 +173,7 @@ def produce_metadata_dict(shapefile_info, shapefile_path):
         'source': 'UNOSAT'
     }
     
-    return meta
+    return pd_geo, meta
 
 def get_shapefile_from_zip(zip_file):
     
@@ -190,7 +192,6 @@ def get_shapefile_from_zip(zip_file):
             if len(flood_extent_shapefiles) != 1:
                 print("WARN: More than one flood shapefile... We will only be using the first one...")
             base_shape_name = os.path.splitext(flood_extent_shapefiles[0])[0]
-            # relevant_shapefiles = [os.path.join(temp_dir, f) for f in list(filter(lambda x: x.startswith(base_shape_name), contents))]
             relevant_shapefiles = list(filter(lambda x: x.startswith(base_shape_name), contents))
 
             # We write all the relevant files out to disk like this because that's the only way I was
@@ -220,12 +221,21 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
         shapefiles_and_dbf_zip = requests.get(shapefile_info.download_url).content
         shapefile_path = get_shapefile_from_zip(io.BytesIO(shapefiles_and_dbf_zip))
         if shapefile_path != None:
-            meta = produce_metadata_dict(shapefile_info, shapefile_path)
+            floodmap, meta = produce_metadata_dict(shapefile_info, shapefile_path)
             metadata_name = os.path.splitext(meta["layer name"])[0] + ".json"
-            with open_fs(metadata_output_dir +"?strict=False") as fs:
-                with fs.open(metadata_name, "w") as f:
-                    json.dump(meta, f)
-
+            
+            zipfile_bucket_path_path = shapefile_output_dir + f"{meta['event id']}_{meta['aoi_code']}.zip"
+            fs_bucket = utils.get_filesystem(zipfile_bucket_path_path)
+            with open(f"./tmp/{meta['event id']}", "wb") as f:
+                f.write(shapefiles_and_dbf_zip)
+            fs_bucket.put_file(f"./tmp/{meta['event id']}",zipfile_bucket_path_path)
+            
+            # Write metadata to gcp
+            meta_bucket_path = metadata_output_dir + f"{meta['event id']}_{meta['aoi_code']}.json"
+            utils.write_json_to_gcp(meta_bucket_path, meta)
+            
+            ## Function to process floodmap and write to Staging
+            
             shapefile_name = shapefile_path.replace("./tmp/", "")
             shapefile_basename = os.path.splitext(shapefile_name)[0]
             layer_basename = os.path.splitext(meta["layer name"])[0]
