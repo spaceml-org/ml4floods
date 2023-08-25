@@ -148,13 +148,14 @@ def get_all_map_links(session, base_url, only_first_page = True):
     pages_urls = list(filter(lambda x: re.match(r'.*\?page=.*', x), first_page_links))
     last_page = max([int(f.split('=')[-1]) for f in pages_urls])
     for page_number in range(last_page):
+        
+        if page_number > 0 and only_first_page:
+            break
         page_url = f'https://unitar.org/maps/all-maps?page={page_number}'
         page = session.get(page_url)
         all_links.extend(page.html.absolute_links)
         print(f'Finished page {page_number}')
 
-        if page_number == 1 and only_first_page:
-            break
         
     map_links = list(filter(lambda x: re.match(r'.*\/maps/map/.*', x), all_links))
     
@@ -325,11 +326,11 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     permanent_water_file = list(filter(lambda x: re.match(rf".*\{pattern_first}_PermanentWater\_.*\.shp$", x), files_unziped))
 
 
-    flood_pols = read_unosat_shapefile(zipfile_path, flood_files, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
+    flood_pols = read_unosat_shapefile(unzipped_path, flood_files, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
     if len(water_extent_file) > 0:
-        water_pols = read_unosat_shapefile(zipfile_path, water_extent_file, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
+        water_pols = read_unosat_shapefile(unzipped_path, water_extent_file, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
     if len(permanent_water_file) > 0:
-        permanent_pols = read_unosat_shapefile(zipfile_path, permanent_water_file, class_dict = {'source': 'hydro', 'w_class': 'Not Applicable'})
+        permanent_pols = read_unosat_shapefile(unzipped_path, permanent_water_file, class_dict = {'source': 'hydro', 'w_class': 'Not Applicable'})
 
     floodmap = pd.concat([flood_pols, water_pols, permanent_pols], axis = 0)
     floodmap = floodmap.dissolve(by='source')
@@ -338,7 +339,7 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     # Maybe eliminate small polygons
 
     if len(area_of_interest_file) > 0:
-        area_of_interest = gpd.read_file(f"{zipfile_path}/{area_of_interest_file[0]}")
+        area_of_interest = gpd.read_file(f"{unzipped_path}/{area_of_interest_file[0]}")
         floodmap = floodmap.clip(area_of_interest)
     # else:
     #     area_of_interest = gpd.GeoDataFrame(geometry=[box(*floodmap.total_bounds)], crs=floodmap.crs)
@@ -349,7 +350,7 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     
     ## Update metadata
     
-    flood_source = gpd.read_file(f"{zipfile_path}/{flood_files[0]}")
+    flood_source = gpd.read_file(f"{unzipped_path}/{flood_files[0]}")
     metadata_dict = update_metadata_dict(metadata_dict, flood_source, area_of_interest)
     
     return floodmap, metadata_dict
@@ -385,7 +386,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
                 ## Function to process floodmap and write to Staging
                 
                 print('Exrtacting Staging data')
-                floodmap, meta = extract_unosat_staging(shapefile_path, meta)
+                floodmap, meta = extract_unosat_staging(os.path.dirname(shapefile_path), meta)
                 
                 flood_date = meta['satellite date'].strftime("%Y%m%d")
                 staging_floodmap_path = os.path.join(STATING_PATH, meta['ems_code'], meta['aoi_code'], 'floodmap',f'{flood_date}.geojson')
