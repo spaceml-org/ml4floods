@@ -15,6 +15,8 @@ from ml4floods.data.unosat.unosat_download_arg_parser import UnosatDownloadArgPa
 from ml4floods.data import utils
 import os
 from typing import Dict
+import pandas as pd
+from datetime import datetime
 
 
 RAW_ZIP_PATH = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/shapefiles/unosat/"
@@ -327,12 +329,15 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
 
 
     flood_pols = read_unosat_shapefile(unzipped_path, flood_files, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
+    data_concat = [flood_pols]
     if len(water_extent_file) > 0:
         water_pols = read_unosat_shapefile(unzipped_path, water_extent_file, class_dict = {'source': 'flood', 'w_class': 'Flooded area'})
+        data_concat.append(water_pols)
     if len(permanent_water_file) > 0:
         permanent_pols = read_unosat_shapefile(unzipped_path, permanent_water_file, class_dict = {'source': 'hydro', 'w_class': 'Not Applicable'})
+        data_concat.append(permanent_pols)
 
-    floodmap = pd.concat([flood_pols, water_pols, permanent_pols], axis = 0)
+    floodmap = pd.concat(data_concat, axis = 0)
     floodmap = floodmap.dissolve(by='source')
     floodmap = floodmap.explode().reset_index(drop=True)
     floodmap['source'] = floodmap.w_class.apply(lambda x: 'flood' if x == 'Flooded area' else 'hydro')
