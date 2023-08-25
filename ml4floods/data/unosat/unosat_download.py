@@ -3,7 +3,7 @@ import re
 import time
 from dataclasses import dataclass
 import json
-import geopandas
+import geopandas as gpd
 from fs import open_fs
 import requests
 import io
@@ -14,6 +14,8 @@ import traceback as tb
 from ml4floods.data.unosat.unosat_download_arg_parser import UnosatDownloadArgParser
 from ml4floods.data import utils
 import os
+from typing import Dict
+
 
 RAW_ZIP_PATH = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/shapefiles/unosat/"
 RAW_META_PATH = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/meta/"
@@ -210,7 +212,7 @@ def get_bbox(pd_geo):
 
 def produce_metadata_dict(shapefile_info, shapefile_path):
     
-    pd_geo = geopandas.read_file(shapefile_path)
+    pd_geo = gpd.read_file(shapefile_path)
     bounding_box = get_bbox(pd_geo)
 
     if "obj_desc" in pd_geo:
