@@ -165,9 +165,10 @@ def get_all_map_links(session, base_url, only_first_page = True):
     return map_links
 
 def get_flood_shape_and_meta(session, download_base_regex, map_link):
+    base_url = "https://unitar.org"
     fetched_page = session.get(map_link)
     if has_shapefile(fetched_page):
-        shape_link, glide_id = unosat_download.get_flood_shape_link(fetched_page, download_base_regex)
+        shape_link, glide_id = get_flood_shape_link(fetched_page, download_base_regex)
         if shape_link is not None:
             info = ShapeFileInfo()
             info.date_published = get_flood_shape_published_date(fetched_page)
@@ -256,6 +257,7 @@ def get_shapefile_from_zip(zip_file):
     os.mkdir("./tmp")
     
     with ZipFile(zip_file, "r") as f:
+        f.extractall('./tmp/')
         contents = f.namelist()
         # TODO: Some zips only contain WaterExtent but no FloodExtent files -- we should investigate
         # what this means and whether we want to use these too (are they floods?)
@@ -271,15 +273,17 @@ def get_shapefile_from_zip(zip_file):
             # or a list of BytesIO objects (relevant files). It seems to need a path to a .shp file that is
             # located in the same place as its supporting files. If we want to optimize for efficiency,
             # this may be one place to look.
-            for relevant_file in relevant_shapefiles:
-                os.makedirs(os.path.dirname(f"./tmp/{relevant_file}"), exist_ok=True)
-                try:
-                    with f.open(relevant_file, "r") as shp_f, open(f"./tmp/{relevant_file}", "wb") as f_out:
-                        f_out.write(shp_f.read())
-                except NotImplementedError:
-                    print("Unimplemented compression... Skipping...")
-                    tb.print_exc()
-                    return None
+            
+            
+            # for relevant_file in relevant_shapefiles:
+            #     os.makedirs(os.path.dirname(f"./tmp/{relevant_file}"), exist_ok=True)
+            #     try:
+            #         with f.open(relevant_file, "r") as shp_f, open(f"./tmp/{relevant_file}", "wb") as f_out:
+            #             f_out.write(shp_f.read())
+            #     except NotImplementedError:
+            #         print("Unimplemented compression... Skipping...")
+            #         tb.print_exc()
+            #         return None
                     
 
             return "./tmp/" + flood_extent_shapefiles[0]
@@ -356,7 +360,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
     fs_bucket = utils.get_filesystem(RAW_ZIP_PATH)
     
     for i, shapefile_info in enumerate(shapefile_infos):
-        print(f"Processing shapefile {i+1}/{len(shapefile_infos)}: {shapefile_info.event_id} ")
+        print(f"Processing shapefile {i+1}/{len(shapefile_infos)}: {shapefile_info.glide_id} ")
         if shapefile_info.resolution > 50:
             print("Skipping shapefile with resolution > 50m")
             continue
@@ -398,7 +402,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
                 #         with fs.open(target_fname, "wb") as f, open("./tmp/"+tmpfile, "rb") as f_in:
                 #             f.write(f_in.read())
         except Exception as e:
-            print(f"Error processing shapefile {shapefile_info.event_id} -- skipping...")
+            print(f"Error processing shapefile {shapefile_info.glid_id} -- skipping...")
             tb.print_exc()
             continue
         
