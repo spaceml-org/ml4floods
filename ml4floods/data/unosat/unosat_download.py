@@ -112,28 +112,6 @@ class ShapeFileInfo:
     def __hash__(self):
         return self.download_url.__hash__() + self.date_published.__hash__() + self.glide_id.__hash__()
 
-# def get_flood_shape_and_meta(session, download_base_regex, base_url, map_link):
-#     fetched_page = session.get(base_url + map_link)
-#     if has_shapefile(fetched_page):
-#         shape_link, glide_id = get_flood_shape_link(fetched_page, download_base_regex)
-#         if shape_link is not None:
-#             info = ShapeFileInfo()
-#             info.date_published = get_flood_shape_published_date(fetched_page)
-#             info.glide_id = glide_id
-#             info.download_url = shape_link
-#             info.source_url = base_url + map_link
-#             # Get satellite source -- this is formatted in many different ways
-#             # and needs more work, so will not always be populated. In instances
-#             # with separate pre-event and post-event imagery, only the first
-#             # mentioned on the page will be taken.
-#             info.satellite_data = get_satellite_source(fetched_page)
-#             # Get imagery dates -- this is not always populated, like satellite data
-#             # There are many different ways UNOSAT expresses dates over the pages.
-#             # More work would be helpful here in the long term
-#             info.imagery_dates = get_satellite_imagery_dates(fetched_page)
-            
-#             return info
-#     return None
 
 def get_map_link(session, map_url):
     map_links = session.get(map_url).html.absolute_links
@@ -192,13 +170,11 @@ def get_flood_shape_and_meta(session, download_base_regex, map_link):
             return info
     return None
 
-def get_flood_shapefiles(session, base_url, country_list_url, download_base_regex):
-    all_country_links = get_country_links_from_url(session, country_list_url)
-    all_map_links = get_map_links_from_country_links_and_url(session, base_url, all_country_links)
+def get_flood_shapefiles(session, base_url, download_base_regex = r'https://unosat-maps\.web\.cern\.ch/' ):
+    map_links = unosat_download.get_all_map_links(session, base_url)
     flood_shapes = []
-    for link in all_map_links:
-        fetched_page = session.get(base_url + link)
-        info = get_flood_shape_and_meta(session, download_base_regex, base_url, link)
+    for link in map_links:
+        info = unosat_download.get_flood_shape_and_meta(session, download_base_regex=download_base_regex, map_link=link)
         if info is not None:
             flood_shapes.append(info)
         time.sleep(0.08)
@@ -276,18 +252,6 @@ def get_shapefile_from_zip(zip_file):
             # or a list of BytesIO objects (relevant files). It seems to need a path to a .shp file that is
             # located in the same place as its supporting files. If we want to optimize for efficiency,
             # this may be one place to look.
-            
-            
-            # for relevant_file in relevant_shapefiles:
-            #     os.makedirs(os.path.dirname(f"./tmp/{relevant_file}"), exist_ok=True)
-            #     try:
-            #         with f.open(relevant_file, "r") as shp_f, open(f"./tmp/{relevant_file}", "wb") as f_out:
-            #             f_out.write(shp_f.read())
-            #     except NotImplementedError:
-            #         print("Unimplemented compression... Skipping...")
-            #         tb.print_exc()
-            #         return None
-                    
 
             return "./tmp/" + flood_extent_shapefiles[0]
         return None
@@ -313,7 +277,26 @@ def read_unosat_shapefile(folder: str, shp_name: str, class_dict: Dict):
         return pols
         
 def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
+    
     """
+    This function takes the folder where the UNOSAT shapefile has been unzipped and extracts the 
+    flood mask and area of interest shapefile. It returns a GeoDataFrame with the flood extent and
+    area of interest polygons, as well as a metadata dictionary with the updated metadata information.
+    
+    Parameters
+    ----------
+    unzipped_path : str
+        Path to the folder where the UNOSAT shapefile has been unzipped
+    metadata_dict : Dict
+        Dictionary containing the metadata information from the UNOSAT product page
+        
+    Returns
+    -------
+    floodmap : gpd.GeoDataFrame
+        GeoDataFrame containing the flood extent and area of interest polygons
+    metadata_dict : Dict
+        Metadata dictionary updated with useful information based on the data stored inside the shapefiles released by UNOSAT, e.g. 
+        the degree of the confidence of the labeller or the satellite source and date used to generate the annotations. 
     
     
     """
@@ -346,6 +329,8 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     if len(area_of_interest_file) > 0:
         area_of_interest = gpd.read_file(f"{unzipped_path}/{area_of_interest_file[0]}")
         floodmap = floodmap.clip(area_of_interest)
+    
+    # TODO if something fails: draw area of interest from floodmap bounding boxes 
     # else:
     #     area_of_interest = gpd.GeoDataFrame(geometry=[box(*floodmap.total_bounds)], crs=floodmap.crs)
     #     area_of_interest['source'] = 'area_of_interest'
@@ -393,20 +378,12 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
                 print('Exrtacting Staging data')
                 floodmap, meta = extract_unosat_staging(os.path.dirname(shapefile_path), meta)
                 
-                flood_date = meta['satellite date'].strftime("%Y%m%d")
+                flood_date = meta['satellite date'].strftime("%Y-%m-%d")
                 staging_floodmap_path = os.path.join(STATING_PATH, meta['ems_code'], meta['aoi_code'], 'floodmap',f'{flood_date}.geojson')
                 utils.write_geojson_to_gcp(staging_floodmap_path, floodmap)
                 staging_pickle_path = os.path.join(STATING_PATH, meta['ems_code'], meta['aoi_code'], 'flood_meta',f'{flood_date}.pickle')
                 utils.write_pickle_to_gcp(staging_pickle_path, meta)
-                
-                # shapefile_name = shapefile_path.replace("./tmp/", "")
-                # shapefile_basename = os.path.splitext(shapefile_name)[0]
-                # layer_basename = os.path.splitext(meta["layer name"])[0]
-                # for tmpfile in os.listdir("./tmp"):
-                #     target_fname = tmpfile.replace(shapefile_basename, layer_basename)
-                #     with open_fs(os.path.join(shapefile_output_dir) + "?strict=False") as fs:
-                #         with fs.open(target_fname, "wb") as f, open("./tmp/"+tmpfile, "rb") as f_in:
-                #             f.write(f_in.read())
+
         except Exception as e:
             print(f"Error processing shapefile {shapefile_info.glid_id} -- skipping...")
             tb.print_exc()
