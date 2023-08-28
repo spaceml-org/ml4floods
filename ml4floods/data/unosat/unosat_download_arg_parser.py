@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 
-
 class UnosatDownloadArgParser(ArgumentParser):
 
     def __init__(self):
@@ -21,6 +20,14 @@ class UnosatDownloadArgParser(ArgumentParser):
             default="https://unitar.org/maps/countries",
             help="URL of UNITAR country list for accessing map data",
         )
+    
+        self.add_argument(
+        "--update_dataset",
+        type=bool,
+        action="store_true",
+        default=False,
+        help="Download first page of archive or fetch all pages of the dataset",
+    )
 
         self.add_argument(
             "--download-base-regex",

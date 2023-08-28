@@ -17,6 +17,7 @@ import os
 from typing import Dict
 import pandas as pd
 from datetime import datetime
+from datetime import timezone
 
 
 RAW_ZIP_PATH = "gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/shapefiles/unosat/"
@@ -118,8 +119,11 @@ def get_map_link(session, map_url):
     vector_url = list(filter(lambda x: re.match(r'https://unosat-maps\.web\.cern\.ch/[^/]+/[^/]+/[^/]+_SHP\.zip', x), map_links))
     return vector_url
 
-def get_all_map_links(session, base_url, only_first_page = True):
+def get_all_map_links(session, base_url, update_dataset = True):
 
+    printer = "Fetching first page map links" if update_dataset else "Fetching all map links"
+    print(printer)
+    
     all_links = []
     first_page_url = 'https://unitar.org/maps/all-maps?page=0'
     # first_page_url = base_url + '?page=0'
@@ -129,7 +133,7 @@ def get_all_map_links(session, base_url, only_first_page = True):
     last_page = max([int(f.split('=')[-1]) for f in pages_urls])
     for page_number in range(last_page):
         
-        if page_number > 0 and only_first_page:
+        if page_number > 0 and update_dataset:
             break
         page_url = f'https://unitar.org/maps/all-maps?page={page_number}'
         page = session.get(page_url)
@@ -171,10 +175,10 @@ def get_flood_shape_and_meta(session, download_base_regex, map_link):
     return None
 
 def get_flood_shapefiles(session, base_url, download_base_regex = r'https://unosat-maps\.web\.cern\.ch/' ):
-    map_links = unosat_download.get_all_map_links(session, base_url)
+    map_links = get_all_map_links(session, base_url)
     flood_shapes = []
     for link in map_links:
-        info = unosat_download.get_flood_shape_and_meta(session, download_base_regex=download_base_regex, map_link=link)
+        info = get_flood_shape_and_meta(session, download_base_regex=download_base_regex, map_link=link)
         if info is not None:
             flood_shapes.append(info)
         time.sleep(0.08)
@@ -260,7 +264,7 @@ def update_metadata_dict(meta: Dict, flood_source: gpd.GeoDataFrame, area_of_int
     
     flood_info = flood_source.to_dict()
     meta['area_of_interest_polygon'] = area_of_interest.geometry.unary_union
-    meta['satellite date'] = datetime.strptime(flood_info['Sensor_Dat'][0], "%Y-%m-%d")
+    meta['satellite date'] = datetime.strptime(flood_info['Sensor_Dat'][0], "%Y-%m-%d").replace(tzinfo=timezone.utc)
     meta['date_ems_code'] = meta['satellite date']
     meta['confidence'] = flood_info['Confidence'][0]
     meta['water_status'] = flood_info['Water_Stat'][0]
@@ -275,6 +279,19 @@ def read_unosat_shapefile(folder: str, shp_name: str, class_dict: Dict):
         pols['w_class'] = class_dict['w_class']
         
         return pols
+    
+def check_floodmap_crs(floodmap: gpd.GeoDataFrame):
+
+    if floodmap.crs.is_compound:
+        floodmap_return = floodmap.to_crs(epsg=4326)
+    elif 'utm' in floodmap.crs.to_proj4():
+        floodmap_return = floodmap   
+    else: 
+        print('Warning: crs not recognized')
+        
+    crs_return = floodmap_return.crs.to_string().lower()
+    
+    return floodmap_return, crs_return
         
 def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     
@@ -328,6 +345,7 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
 
     if len(area_of_interest_file) > 0:
         area_of_interest = gpd.read_file(f"{unzipped_path}/{area_of_interest_file[0]}")
+        area_of_interest_pol = read_unosat_shapefile(unzipped_path, area_of_interest_file, class_dict = {'source': 'area_of_interest', 'w_class': 'area_of_interest'})
         floodmap = floodmap.clip(area_of_interest)
     
     # TODO if something fails: draw area of interest from floodmap bounding boxes 
@@ -336,12 +354,12 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
     #     area_of_interest['source'] = 'area_of_interest'
     #     area_of_interest['w_class'] = 'area_of_interest'
 
-    floodmap = pd.concat([floodmap, area_of_interest], axis = 0)
-    
-    ## Update metadata
+    floodmap = pd.concat([floodmap, area_of_interest_pol], axis = 0)
+    floodmap, crs_return = check_floodmap_crs(floodmap)
     
     flood_source = gpd.read_file(f"{unzipped_path}/{flood_files[0]}")
     metadata_dict = update_metadata_dict(metadata_dict, flood_source, area_of_interest)
+    metadata_dict['reference system'] = crs_return
     
     return floodmap, metadata_dict
 
@@ -349,8 +367,12 @@ def extract_unosat_staging(unzipped_path:str, metadata_dict: Dict):
 def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_dir):
     
     fs_bucket = utils.get_filesystem(RAW_ZIP_PATH)
-    
     for i, shapefile_info in enumerate(shapefile_infos):
+        # ñapa per a que agafe el UNOSATFL20220801GMB
+        
+        if shapefile_info.glide_id != "FL20220801GMB":
+            print('not gambia, continue')
+            continue
         print(f"Processing shapefile {i+1}/{len(shapefile_infos)}: {shapefile_info.glide_id} ")
         if shapefile_info.resolution > 50:
             print("Skipping shapefile with resolution > 50m")
@@ -375,7 +397,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
                 
                 ## Function to process floodmap and write to Staging
                 
-                print('Exrtacting Staging data')
+                print('Extracting Staging data')
                 floodmap, meta = extract_unosat_staging(os.path.dirname(shapefile_path), meta)
                 
                 flood_date = meta['satellite date'].strftime("%Y-%m-%d")
@@ -390,9 +412,10 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
             continue
         
 
-def run_unosat_pipeline(base_url, country_list_url, download_base_regex, shapefile_bucket, metadata_bucket):
+def run_unosat_pipeline(base_url, country_list_url, download_base_regex, shapefile_bucket, metadata_bucket,
+                        update_dataset = False):
     session = requests_html.HTMLSession()
-    flood_shapefiles = get_flood_shapefiles(session, base_url, country_list_url, download_base_regex)
+    flood_shapefiles = get_flood_shapefiles(session, base_url, update_dataset = update_dataset)
     download_shapefiles(flood_shapefiles, shapefile_bucket, metadata_bucket)
 
 if __name__ == "__main__":
@@ -402,5 +425,8 @@ if __name__ == "__main__":
     download_base_regex = args.download_base_regex
     shapefile_bucket = args.shapefile_bucket
     metadata_bucket = args.metadata_bucket
-    run_unosat_pipeline(base_url, country_list_url, download_base_regex, shapefile_bucket, metadata_bucket)
+    update_dataset = args.update_dataset
+    
+    run_unosat_pipeline(base_url, country_list_url, download_base_regex, 
+                        shapefile_bucket, metadata_bucket, update_dataset = update_dataset)
 
