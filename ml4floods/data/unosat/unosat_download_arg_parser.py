@@ -23,9 +23,8 @@ class UnosatDownloadArgParser(ArgumentParser):
     
         self.add_argument(
         "--update_dataset",
-        type=bool,
         action="store_true",
-        default=False,
+        default=True,
         help="Download first page of archive or fetch all pages of the dataset",
     )
 

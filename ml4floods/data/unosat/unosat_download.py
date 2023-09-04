@@ -174,8 +174,9 @@ def get_flood_shape_and_meta(session, download_base_regex, map_link):
             return info
     return None
 
-def get_flood_shapefiles(session, base_url, download_base_regex = r'https://unosat-maps\.web\.cern\.ch/' ):
-    map_links = get_all_map_links(session, base_url)
+def get_flood_shapefiles(session, base_url, download_base_regex = r'https://unosat-maps\.web\.cern\.ch/',
+                            update_dataset = True):
+    map_links = get_all_map_links(session, base_url, update_dataset = update_dataset)
     flood_shapes = []
     for link in map_links:
         info = get_flood_shape_and_meta(session, download_base_regex=download_base_regex, map_link=link)
@@ -210,7 +211,7 @@ def produce_metadata_dict(shapefile_info, shapefile_path):
     crs_code_space, crs_code = str(pd_geo.crs).split(":")
         
     meta = {
-        'event id': shapefile_info.glide_id,
+        'event id': f"UNOSAT{shapefile_info.glide_id}_{shapefile_path.split('_FloodExtent_')[-1].split('.shp')[0]}",
         'ems_code': f"UNOSAT{shapefile_info.glide_id}",
         'aoi_code': shapefile_path.split("_FloodExtent_")[-1].split(".shp")[0],
         'layer name': os.path.basename(shapefile_info.download_url),
@@ -413,7 +414,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
         
 
 def run_unosat_pipeline(base_url, country_list_url, download_base_regex, shapefile_bucket, metadata_bucket,
-                        update_dataset = False):
+                        update_dataset = True):
     session = requests_html.HTMLSession()
     flood_shapefiles = get_flood_shapefiles(session, base_url, update_dataset = update_dataset)
     download_shapefiles(flood_shapefiles, shapefile_bucket, metadata_bucket)
