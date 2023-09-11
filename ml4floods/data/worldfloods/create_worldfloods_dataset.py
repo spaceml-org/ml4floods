@@ -4,7 +4,7 @@ import traceback
 
 import tqdm
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from ml4floods.data import utils, vectorize
 from ml4floods.data.ee_download import process_metadata
 import os
@@ -105,6 +105,7 @@ def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any,
     """
     index = None
     s2_date = None
+    floodmap_date = floodmap_date.replace(tzinfo=timezone.utc)
     for tup in metadatas2[metadatas2.s2available].itertuples():
         date_img = tup.datetime
         if (floodmap_date < date_img) or ((floodmap_date - date_img).total_seconds() / 3600. < 10):
