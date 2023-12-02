@@ -2,11 +2,13 @@ format: jb-book
 root: content/config.md
 
 parts:
--caption: Inference with clouds-aware models
+- caption: Inference with clouds-aware models
+  chapters:
   - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
   - file: content/ml4ops/HOWTO_postprocess_inference.ipynb
 
--caption: The *WorldFloods* dataset
+- caption: The *WorldFloods* dataset
+  chapters:
   - file: content/worldfloods_dataset.md
 
 - caption: Data prep

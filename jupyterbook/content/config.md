@@ -12,7 +12,7 @@ To install the package run:
 pip install ml4floods
 ```
 
-The package is available in [GitHub](https://github.com/spaceml-org/ml4floods). ML4Floods is published under a [GNU Lesser GPL v3 licence](https://www.gnu.org/licenses/lgpl-3.0.en.html) <img src="https://www.gnu.org/graphics/lgplv3-88x31.png" alt="licence" width="100">
+The package is available in [GitHub](https://github.com/spaceml-org/ml4floods). ML4Floods is published under a [GNU Lesser GPL v3 licence](https://www.gnu.org/licenses/lgpl-3.0.en.html) <img src="https://www.gnu.org/graphics/lgplv3-88x31.png" alt="licence" width="80">
 
 
 ## Tutorials
