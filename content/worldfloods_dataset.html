@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html >
+<html lang="en" data-content_root="" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>The WorldFloods database &#8212; ML4Floods</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -38,12 +38,14 @@
     <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/clipboard.min.js"></script>
     <script src="../_static/copybutton.js"></script>
@@ -64,10 +66,10 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Viewer and label editor" href="labeling.html" />
-    <link rel="prev" title="Ground Truth" href="prep/gt_masks_generation.html" />
+    <link rel="next" title="Ingest Flood Extent Maps" href="prep/full_data_ingest.html" />
+    <link rel="prev" title="Postprocess inference" href="ml4ops/HOWTO_postprocess_inference.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="None"/>
+  <meta name="docsearch:language" content="en"/>
   </head>
   
   
@@ -76,6 +78,15 @@ const thebe_selector_output = ".output, .cell_output"
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -129,9 +140,11 @@ const thebe_selector_output = ".output, .cell_output"
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
         <div class="sidebar-primary-item">
+
   
 
-<a class="navbar-brand logo" href="intro/introduction.html">
+<a class="navbar-brand logo" href="config.html">
+  
   
   
   
@@ -141,8 +154,8 @@ const thebe_selector_output = ".output, .cell_output"
       
     
     
-    <img src="../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../_static/ml4cc_logo.png" class="logo__image only-light" alt="ML4Floods - Home"/>
+    <script>document.write(`<img src="../_static/ml4cc_logo.png" class="logo__image only-dark" alt="ML4Floods - Home"/>`);</script>
   
   
 </a></div>
@@ -151,30 +164,32 @@ const thebe_selector_output = ".output, .cell_output"
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
-                <a class="reference internal" href="intro/introduction.html">
+                <a class="reference internal" href="config.html">
                     Introduction
                 </a>
             </li>
         </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inference with clouds-aware models</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="config.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">The <em>WorldFloods</em> database</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
-<ul class="current nav bd-sidenav">
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="prep/full_data_ingest.html">Ingest Flood Extent Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prep/gt_masks_generation.html">Ground Truth</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">The <em>WorldFloods</em> database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ML model development</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ml_overview.html">MLOps overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Train_models.html">Train models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
@@ -186,9 +201,9 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Introduction</a></li>
 </ul>
 
     </div>
@@ -234,7 +249,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <a href="https://github.com/spaceml-org/ml4floods" target="_blank"
    class="btn btn-sm btn-source-repository-button"
-   title="Repositorio de origen"
+   title="Source repository"
    data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -251,7 +266,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 
 <div class="dropdown dropdown-download-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
     <i class="fas fa-download"></i>
   </button>
   <ul class="dropdown-menu">
@@ -260,7 +275,7 @@ const thebe_selector_output = ".output, .cell_output"
       
       <li><a href="../_sources/content/worldfloods_dataset.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
-   title="Descargar archivo fuente"
+   title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -278,7 +293,7 @@ const thebe_selector_output = ".output, .cell_output"
       <li>
 <button onclick="window.print()"
   class="btn btn-sm btn-download-pdf-button dropdown-item"
-  title="Imprimir en PDF"
+  title="Print to PDF"
   data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -298,7 +313,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <button onclick="toggleFullScreen()"
   class="btn btn-sm btn-fullscreen-button"
-  title="Modo de pantalla completa"
+  title="Fullscreen mode"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -310,20 +325,22 @@ const thebe_selector_output = ".output, .cell_output"
 </button>
 
 
+
 <script>
 document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
   </button>
 `);
 </script>
 
+
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -346,12 +363,13 @@ document.write(`
         <div id="jb-print-toc">
             
             <div>
-                <h2> Contenido </h2>
+                <h2> Contents </h2>
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-data-from-the-google-drive">Download the data from the Google Drive</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-data-from-the-google-bucket">Download the data from the Google Bucket</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-zenodo">Download the v2 data from Zenodo</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-drive">Download the v1 data from the Google Drive</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-bucket">Download the v1 data from the Google Bucket</a></li>
 </ul>
             </nav>
         </div>
@@ -364,13 +382,23 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="the-worldfloods-database">
-<h1>The <em>WorldFloods</em> database<a class="headerlink" href="#the-worldfloods-database" title="Permalink to this headline">#</a></h1>
-<p>The <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z"><em>WorldFloods</em> database</a> contains 424 pairs of Sentinel-2 images and flood segmentation masks.
-It requires approximately 300GB of hard-disk storage. The <em>WorldFloods</em> database is released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>
+<h1>The <em>WorldFloods</em> database<a class="headerlink" href="#the-worldfloods-database" title="Permalink to this heading">#</a></h1>
+<p>The <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7"><em>WorldFloods</em> database</a> contains 509 pairs of Sentinel-2 images and flood segmentation masks.
+It requires approximately 300GB of hard-disk storage.</p>
+<img alt="WorldFloods dataset" class="align-center" src="../_images/worldfloods_v2.png" />
+<p>The <em>WorldFloods</em> database and all pre-trained models are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/></p>
-<img alt="Floods devestate the world every year." class="align-center" src="../_images/worldfloods_v1.png" />
-<section id="download-the-data-from-the-google-drive">
-<h2>Download the data from the Google Drive<a class="headerlink" href="#download-the-data-from-the-google-drive" title="Permalink to this headline">#</a></h2>
+<p>There are two versions of the database available:</p>
+<ol class="arabic simple">
+<li><p>The latest version (v2) was released with the article <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7"><em>Global flood extent segmentation in optical satellite images</em></a>. It contains flood events from 2016 and 2023. It is mainly based on Copernicus EMS flood maps which have been manually curated. In addition the ground truth binary masks are divided in two channels one with clear/cloudy pixels and another one with land/water.</p></li>
+<li><p>The first version of the dataset was released with the article <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z"><em>Towards global flood mapping onboard low cost satellites with machine learning</em></a>. It contains flood events from 2016 to 2019. This dataset was created semi-automatically and only the validation and test events where manually curated.</p></li>
+</ol>
+<section id="download-the-v2-data-from-zenodo">
+<h2>Download the v2 data from Zenodo<a class="headerlink" href="#download-the-v2-data-from-zenodo" title="Permalink to this heading">#</a></h2>
+<p>Currently only the manually curated flood maps and metadata are available online at (<a class="reference external" href="https://zenodo.org/records/8153514">https://zenodo.org/records/8153514</a>)[<a class="reference external" href="https://zenodo.org/records/8153514">https://zenodo.org/records/8153514</a>].</p>
+</section>
+<section id="download-the-v1-data-from-the-google-drive">
+<h2>Download the v1 data from the Google Drive<a class="headerlink" href="#download-the-v1-data-from-the-google-drive" title="Permalink to this heading">#</a></h2>
 <p>A subset of the data and the pretrained models are available in this <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>.</p>
 <p>If you want to use this data from the Google Colab you can <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a> and mount that directory:</p>
 <img alt="Floods devestate the world every year." class="align-center" src="../_images/add_shortcut_drive.png" />
@@ -380,35 +408,48 @@ drive.mount(&#39;/content/drive&#39;)
 </pre></div>
 </div>
 <p>Alternatively you can download it manually from that folder or even automatically with the <a class="reference external" href="https://github.com/wkentaro/gdown">gdown</a> package.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gdown --id 11O6aKZk4R6DERIx32o4mMTJ5dtzRRKgV
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gdown<span class="w"> </span>--id<span class="w"> </span>11O6aKZk4R6DERIx32o4mMTJ5dtzRRKgV
 </pre></div>
 </div>
 </section>
-<section id="download-the-data-from-the-google-bucket">
-<h2>Download the data from the Google Bucket<a class="headerlink" href="#download-the-data-from-the-google-bucket" title="Permalink to this headline">#</a></h2>
+<section id="download-the-v1-data-from-the-google-bucket">
+<h2>Download the v1 data from the Google Bucket<a class="headerlink" href="#download-the-v1-data-from-the-google-bucket" title="Permalink to this heading">#</a></h2>
 <p>The database is available in this Google bucket: <code class="docutils literal notranslate"><span class="pre">gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/</span></code>. This Google bucket is in <em>requester pays</em> mode, hence you’d need a GCP project to download the data. To download the entire dataset run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/worldfloods_v1_0.zip .
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/worldfloods_v1_0.zip<span class="w"> </span>.
 </pre></div>
 </div>
 <p>If you want only an specific subset (train, train_sample, val or test) run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_v1_0.zip .
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_sample_v1_0.zip .
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/val_v1_0.zip .
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/test_v1_0.zip .
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_v1_0.zip<span class="w"> </span>.
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_sample_v1_0.zip<span class="w"> </span>.
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/val_v1_0.zip<span class="w"> </span>.
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/test_v1_0.zip<span class="w"> </span>.
 </pre></div>
 </div>
-<p>If you want to download the pre-trained models of <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">this work</a> run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir WFV1_scnn20
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_scnn20/config.json WFV1_scnn20/
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_scnn20/model.pt WFV1_scnn20/
+<p>If you want to download the pre-trained models of this paper <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z"><em>Towards global flood mapping onboard low cost satellites with machine learning</em></a> run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>WFV1_scnn20
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_scnn20/config.json<span class="w"> </span>WFV1_scnn20/
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_scnn20/model.pt<span class="w"> </span>WFV1_scnn20/
 
-mkdir WFV1_unet
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_unet/config.json WFV1_unet/
-gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_unet/model.pt WFV1_unet/
+mkdir<span class="w"> </span>WFV1_unet
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_unet/config.json<span class="w"> </span>WFV1_unet/
+gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class="w"> </span>cp<span class="w"> </span>gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_unet/model.pt<span class="w"> </span>WFV1_unet/
 </pre></div>
 </div>
 <p>If you find this work useful please cite:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">mateo</span><span class="o">-</span><span class="n">garcia_towards_2021</span><span class="p">,</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">portales</span><span class="o">-</span><span class="n">julia_global_2023</span><span class="p">,</span>
+	<span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Global</span> <span class="n">flood</span> <span class="n">extent</span> <span class="n">segmentation</span> <span class="ow">in</span> <span class="n">optical</span> <span class="n">satellite</span> <span class="n">images</span><span class="p">},</span>
+	<span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">13</span><span class="p">},</span>
+	<span class="n">issn</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2045</span><span class="o">-</span><span class="mi">2322</span><span class="p">},</span>
+	<span class="n">doi</span> <span class="o">=</span> <span class="p">{</span><span class="mf">10.1038</span><span class="o">/</span><span class="n">s41598</span><span class="o">-</span><span class="mi">023</span><span class="o">-</span><span class="mi">47595</span><span class="o">-</span><span class="mi">7</span><span class="p">},</span>
+	<span class="n">number</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">},</span>
+	<span class="n">urldate</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">30</span><span class="p">},</span>
+	<span class="n">journal</span> <span class="o">=</span> <span class="p">{</span><span class="n">Scientific</span> <span class="n">Reports</span><span class="p">},</span>
+	<span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Portalés</span><span class="o">-</span><span class="n">Julià</span><span class="p">,</span> <span class="n">Enrique</span> <span class="ow">and</span> <span class="n">Mateo</span><span class="o">-</span><span class="n">García</span><span class="p">,</span> <span class="n">Gonzalo</span> <span class="ow">and</span> <span class="n">Purcell</span><span class="p">,</span> <span class="n">Cormac</span> <span class="ow">and</span> <span class="n">Gómez</span><span class="o">-</span><span class="n">Chova</span><span class="p">,</span> <span class="n">Luis</span><span class="p">},</span>
+	<span class="n">month</span> <span class="o">=</span> <span class="n">nov</span><span class="p">,</span>
+	<span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="p">},</span>
+	<span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">20316</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="nd">@article</span><span class="p">{</span><span class="n">mateo</span><span class="o">-</span><span class="n">garcia_towards_2021</span><span class="p">,</span>
 	<span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Towards</span> <span class="k">global</span> <span class="n">flood</span> <span class="n">mapping</span> <span class="n">onboard</span> <span class="n">low</span> <span class="n">cost</span> <span class="n">satellites</span> <span class="k">with</span> <span class="n">machine</span> <span class="n">learning</span><span class="p">},</span>
 	<span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">11</span><span class="p">},</span>
 	<span class="n">issn</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2045</span><span class="o">-</span><span class="mi">2322</span><span class="p">},</span>
@@ -451,34 +492,30 @@ gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_
 
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
-       href="prep/gt_masks_generation.html"
+       href="ml4ops/HOWTO_postprocess_inference.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Ground Truth</p>
+        <p class="prev-next-title">Postprocess inference</p>
       </div>
     </a>
     <a class="right-next"
-       href="labeling.html"
+       href="prep/full_data_ingest.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Viewer and label editor</p>
+        <p class="prev-next-title">Ingest Flood Extent Maps</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
-</div></div>
-  
 </div>
-
                 </footer>
               
             </div>
@@ -489,12 +526,13 @@ gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_
 
   <div class="sidebar-secondary-item">
   <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> Contenido
+    <i class="fa-solid fa-list"></i> Contents
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-data-from-the-google-drive">Download the data from the Google Drive</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-data-from-the-google-bucket">Download the data from the Google Bucket</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-zenodo">Download the v2 data from Zenodo</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-drive">Download the v1 data from the Google Drive</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-bucket">Download the v1 data from the Google Bucket</a></li>
 </ul>
   </nav></div>
 
@@ -509,13 +547,14 @@ gsutil -u your-project cp gs://ml4cc_data_lake/2_PROD/2_Mart/2_MLModelMart/WFV1_
   <div class="footer-item">
     
 <p class="component-author">
-Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+By <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
 </p>
 
   </div>
   
   <div class="footer-item">
     
+
   <p class="copyright">
     
       © Copyright 2021.
@@ -542,8 +581,8 @@ Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
 
   <footer class="bd-footer">
   </footer>

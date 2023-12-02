@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html >
+<html lang="en" data-content_root="" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Introduction &#8212; ML4Floods</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
 
   
-  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -38,12 +38,14 @@
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
@@ -64,9 +66,9 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Install" href="../config.html" />
+    <link rel="prev" title="Probabilistic neural networks" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="None"/>
+  <meta name="docsearch:language" content="en"/>
   </head>
   
   
@@ -75,6 +77,15 @@ const thebe_selector_output = ".output, .cell_output"
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -128,9 +139,11 @@ const thebe_selector_output = ".output, .cell_output"
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
         <div class="sidebar-primary-item">
+
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="../config.html">
+  
   
   
   
@@ -140,8 +153,8 @@ const thebe_selector_output = ".output, .cell_output"
       
     
     
-    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="ML4Floods - Home"/>
+    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="ML4Floods - Home"/>`);</script>
   
   
 </a></div>
@@ -149,31 +162,33 @@ const thebe_selector_output = ".output, .cell_output"
     <div class="bd-toc-item navbar-nav active">
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1 current active">
-                <a class="reference internal" href="#">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../config.html">
                     Introduction
                 </a>
             </li>
         </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inference with clouds-aware models</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../config.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../prep/full_data_ingest.html">Ingest Flood Extent Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../prep/gt_masks_generation.html">Ground Truth</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ML model development</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ml_overview.html">MLOps overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">Train models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
@@ -185,9 +200,9 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Introduction</a></li>
 </ul>
 
     </div>
@@ -233,7 +248,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <a href="https://github.com/spaceml-org/ml4floods" target="_blank"
    class="btn btn-sm btn-source-repository-button"
-   title="Repositorio de origen"
+   title="Source repository"
    data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -250,7 +265,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 
 <div class="dropdown dropdown-download-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
     <i class="fas fa-download"></i>
   </button>
   <ul class="dropdown-menu">
@@ -259,7 +274,7 @@ const thebe_selector_output = ".output, .cell_output"
       
       <li><a href="../../_sources/content/intro/introduction.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
-   title="Descargar archivo fuente"
+   title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -277,7 +292,7 @@ const thebe_selector_output = ".output, .cell_output"
       <li>
 <button onclick="window.print()"
   class="btn btn-sm btn-download-pdf-button dropdown-item"
-  title="Imprimir en PDF"
+  title="Print to PDF"
   data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -297,7 +312,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <button onclick="toggleFullScreen()"
   class="btn btn-sm btn-fullscreen-button"
-  title="Modo de pantalla completa"
+  title="Fullscreen mode"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -309,20 +324,22 @@ const thebe_selector_output = ".output, .cell_output"
 </button>
 
 
+
 <script>
 document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
   </button>
 `);
 </script>
 
+
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -345,7 +362,7 @@ document.write(`
         <div id="jb-print-toc">
             
             <div>
-                <h2> Contenido </h2>
+                <h2> Contents </h2>
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
@@ -366,12 +383,12 @@ document.write(`
   <img alt="../../_images/ml4floods_banner.png" class="align-center" id="banner" src="../../_images/ml4floods_banner.png" />
 <p style="text-align: center; font-style: italic;">ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML</p>
 <section class="tex2jax_ignore mathjax_ignore" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">#</a></h1>
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
 <p>Satellites image the whole globe, revisiting locations every few days or even hours to record the changing landscape. Their cameras see deep into the infrared and radar sensors see through clouds and at night. They capture information on many different observable parameters including dynamic and rapid processes and events like floods. Newer instruments can now provide contextual details at more and more precise scale, locating for instance individual buildings that are flooded, or even search and rescue people using airborne platforms. At the same time, ground-based sensors like rain gauges or river level stations record surface conditions unavailable from space. All of this data is stored - sometimes by commercial companies, but often by government agencies under open- or restricted-access policies. However, there remain significant barriers for non-specialists to access and use this information or to respond quickly in emergency situations.</p>
 <a class="reference internal image-reference" href="../../_images/flood_context.png"><img alt="Floods devestate the world every year." class="align-center" src="../../_images/flood_context.png" style="width: 500px;" /></a>
 <p>For flood disaster management, the real promise of this data is in translating it to actionable intelligence, directly answering queries like “Which areas will be flooded if rain continues to fall and rivers swell up in the next days?” or “Show me a map of the water level in streams wider than 1 meter.”</p>
 <section id="democratising-ai-enhanced-flooding-tools">
-<h2>Democratising AI-Enhanced Flooding Tools<a class="headerlink" href="#democratising-ai-enhanced-flooding-tools" title="Permalink to this headline">#</a></h2>
+<h2>Democratising AI-Enhanced Flooding Tools<a class="headerlink" href="#democratising-ai-enhanced-flooding-tools" title="Permalink to this heading">#</a></h2>
 <p>Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types. Such ‘data fusion’ capabilities are potentially game-changing for a broad spectrum of users, from emergency workers to urban planners.</p>
 <p>Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.</p>
 <figure class="align-center" id="ts-albania">
@@ -382,7 +399,7 @@ document.write(`
 </figure>
 </section>
 <section id="mlops-tools-from-data-preparation-to-deployment">
-<h2>MLOps tools: from data preparation to deployment<a class="headerlink" href="#mlops-tools-from-data-preparation-to-deployment" title="Permalink to this headline">#</a></h2>
+<h2>MLOps tools: from data preparation to deployment<a class="headerlink" href="#mlops-tools-from-data-preparation-to-deployment" title="Permalink to this heading">#</a></h2>
 <p>For machine learning practitioners, the operational tools supporting model development, from data-preparation to deployment, are still in infancy. Such ‘MLOps’ tools are the equivalent of ‘DevOps’ tools in software development. Analysing Earth-observation (EO) data also requires highly specialist knowledge, which doubly-complicates the workflows, and it is rare to find individual data scientists who are masters of both the ML and EO domains.</p>
 <p>In this project, the four ML4CC teams have built a dedicated MLOps toolkit that makes applying machine-learning to satellite data easy, for the purpose of mapping flood extent. The toolkit is carefully designed to cater for different types of beneficiaries with a range of needs:</p>
 <ul class="simple">
@@ -393,23 +410,11 @@ document.write(`
 </ul>
 </section>
 <section id="understanding-and-using-the-tools">
-<h2>Understanding and using the tools<a class="headerlink" href="#understanding-and-using-the-tools" title="Permalink to this headline">#</a></h2>
+<h2>Understanding and using the tools<a class="headerlink" href="#understanding-and-using-the-tools" title="Permalink to this heading">#</a></h2>
 <p>The figure below presents an overview of the ML4Floods toolkit alongside the users of each component (click for a larger version). The toolkit is structured as an end-to-end pipeline with components that 1) ingest, sort and organise satellite data, integrating ground-truth masks, 2) tile, augment and normalise the data, 3) train new models on the data, or run existing models on new data, and display uncertainty maps generated by the models, and 4) query and visualise the results via a web-based mapping application.</p>
 <a class="reference internal image-reference" href="../../_images/ml4cc_diagram_export.png"><img alt="Diagram of the ML4CC pipeline" class="align-center" src="../../_images/ml4cc_diagram_export.png" style="width: 1000px;" /></a>
 <p>Each of the components 1-3 can be accessed via an application programming interface (API) so that technical users can fine-tune their workflows, or adopt the components in their own tools. However, the teams also developed a graphical interface (4) that can run the toolkit through a simple point-and-click interface. This last component places the power of ML-enhanced flood segmentation models in the hands of ordinary users, like disaster relief coordinators and urban planners. Finally, the graphical tool is incredibly useful for machine-learning researchers, allowing them to quickly compare and contrast model results on the same interface, greatly speeding up the model development process.</p>
 </section>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
 </section>
 
     <script type="text/x-thebe-config">
@@ -437,25 +442,21 @@ document.write(`
 
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
-    <a class="right-next"
-       href="../config.html"
-       title="next page">
+    <a class="left-prev"
+       href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Install</p>
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Probabilistic neural networks</p>
       </div>
-      <i class="fa-solid fa-angle-right"></i>
     </a>
-</div></div>
-  
 </div>
-
                 </footer>
               
             </div>
@@ -466,7 +467,7 @@ document.write(`
 
   <div class="sidebar-secondary-item">
   <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> Contenido
+    <i class="fa-solid fa-list"></i> Contents
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
@@ -487,13 +488,14 @@ document.write(`
   <div class="footer-item">
     
 <p class="component-author">
-Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+By <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
 </p>
 
   </div>
   
   <div class="footer-item">
     
+
   <p class="copyright">
     
       © Copyright 2021.
@@ -520,8 +522,8 @@ Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
 
   <footer class="bd-footer">
   </footer>

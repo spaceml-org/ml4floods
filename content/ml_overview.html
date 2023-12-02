@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html >
+<html lang="en" data-content_root="" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>MLOps overview &#8212; ML4Floods</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -38,12 +38,14 @@
     <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
 
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/clipboard.min.js"></script>
     <script src="../_static/copybutton.js"></script>
@@ -67,7 +69,7 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="next" title="Train models" href="ml4ops/HOWTO_Train_models.html" />
     <link rel="prev" title="Viewer and label editor" href="labeling.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="None"/>
+  <meta name="docsearch:language" content="en"/>
   </head>
   
   
@@ -76,6 +78,15 @@ const thebe_selector_output = ".output, .cell_output"
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -129,9 +140,11 @@ const thebe_selector_output = ".output, .cell_output"
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
         <div class="sidebar-primary-item">
+
   
 
-<a class="navbar-brand logo" href="intro/introduction.html">
+<a class="navbar-brand logo" href="config.html">
+  
   
   
   
@@ -141,8 +154,8 @@ const thebe_selector_output = ".output, .cell_output"
       
     
     
-    <img src="../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../_static/ml4cc_logo.png" class="logo__image only-light" alt="ML4Floods - Home"/>
+    <script>document.write(`<img src="../_static/ml4cc_logo.png" class="logo__image only-dark" alt="ML4Floods - Home"/>`);</script>
   
   
 </a></div>
@@ -151,30 +164,32 @@ const thebe_selector_output = ".output, .cell_output"
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
-                <a class="reference internal" href="intro/introduction.html">
+                <a class="reference internal" href="config.html">
                     Introduction
                 </a>
             </li>
         </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inference with clouds-aware models</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="config.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="prep/full_data_ingest.html">Ingest Flood Extent Maps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prep/gt_masks_generation.html">Ground Truth</a></li>
-<li class="toctree-l1"><a class="reference internal" href="worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ML model development</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">MLOps overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Train_models.html">Train models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
@@ -186,9 +201,9 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Introduction</a></li>
 </ul>
 
     </div>
@@ -234,7 +249,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <a href="https://github.com/spaceml-org/ml4floods" target="_blank"
    class="btn btn-sm btn-source-repository-button"
-   title="Repositorio de origen"
+   title="Source repository"
    data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -251,7 +266,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 
 <div class="dropdown dropdown-download-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
     <i class="fas fa-download"></i>
   </button>
   <ul class="dropdown-menu">
@@ -260,7 +275,7 @@ const thebe_selector_output = ".output, .cell_output"
       
       <li><a href="../_sources/content/ml_overview.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
-   title="Descargar archivo fuente"
+   title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -278,7 +293,7 @@ const thebe_selector_output = ".output, .cell_output"
       <li>
 <button onclick="window.print()"
   class="btn btn-sm btn-download-pdf-button dropdown-item"
-  title="Imprimir en PDF"
+  title="Print to PDF"
   data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -298,7 +313,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <button onclick="toggleFullScreen()"
   class="btn btn-sm btn-fullscreen-button"
-  title="Modo de pantalla completa"
+  title="Fullscreen mode"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -310,20 +325,22 @@ const thebe_selector_output = ".output, .cell_output"
 </button>
 
 
+
 <script>
 document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
   </button>
 `);
 </script>
 
+
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -353,7 +370,7 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="mlops-overview">
-<h1>MLOps overview<a class="headerlink" href="#mlops-overview" title="Permalink to this headline">#</a></h1>
+<h1>MLOps overview<a class="headerlink" href="#mlops-overview" title="Permalink to this heading">#</a></h1>
 <ul class="simple">
 <li><p><strong>Authors</strong>: Sam Budd, Gonzalo Mateo-García</p></li>
 </ul>
@@ -401,11 +418,10 @@ Each of the tutorials is self-contained and can be run on Google Colab.</p>
 
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="labeling.html"
@@ -425,10 +441,7 @@ Each of the tutorials is self-contained and can be run on Google Colab.</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
-</div></div>
-  
 </div>
-
                 </footer>
               
             </div>
@@ -444,13 +457,14 @@ Each of the tutorials is self-contained and can be run on Google Colab.</p>
   <div class="footer-item">
     
 <p class="component-author">
-Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+By <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
 </p>
 
   </div>
   
   <div class="footer-item">
     
+
   <p class="copyright">
     
       © Copyright 2021.
@@ -477,8 +491,8 @@ Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
 
   <footer class="bd-footer">
   </footer>

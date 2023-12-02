@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html >
+<html lang="en" data-content_root="" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Ground Truth &#8212; ML4Floods</title>
   
@@ -19,12 +19,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
 
   
-  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -38,12 +38,14 @@
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
@@ -64,10 +66,10 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="The WorldFloods database" href="../worldfloods_dataset.html" />
+    <link rel="next" title="Viewer and label editor" href="../labeling.html" />
     <link rel="prev" title="Ingest Flood Extent Maps" href="full_data_ingest.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="None"/>
+  <meta name="docsearch:language" content="en"/>
   </head>
   
   
@@ -76,6 +78,15 @@ const thebe_selector_output = ".output, .cell_output"
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -129,9 +140,11 @@ const thebe_selector_output = ".output, .cell_output"
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
         <div class="sidebar-primary-item">
+
   
 
-<a class="navbar-brand logo" href="../intro/introduction.html">
+<a class="navbar-brand logo" href="../config.html">
+  
   
   
   
@@ -141,8 +154,8 @@ const thebe_selector_output = ".output, .cell_output"
       
     
     
-    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../../_static/ml4cc_logo.png" class="logo__image only-light" alt="ML4Floods - Home"/>
+    <script>document.write(`<img src="../../_static/ml4cc_logo.png" class="logo__image only-dark" alt="ML4Floods - Home"/>`);</script>
   
   
 </a></div>
@@ -151,30 +164,32 @@ const thebe_selector_output = ".output, .cell_output"
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
-                <a class="reference internal" href="../intro/introduction.html">
+                <a class="reference internal" href="../config.html">
                     Introduction
                 </a>
             </li>
         </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Install</span></p>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inference with clouds-aware models</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../config.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="full_data_ingest.html">Ingest Flood Extent Maps</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Ground Truth</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../labeling.html">Viewer and label editor</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">MLOps</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ML model development</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ml_overview.html">MLOps overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Train_models.html">Train models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Cloud removal inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
 <ul class="nav bd-sidenav">
@@ -186,9 +201,9 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Calculate_uncertainty_maps.html">Probabilistic neural networks</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">About</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Introduction</a></li>
 </ul>
 
     </div>
@@ -265,7 +280,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <a href="https://github.com/spaceml-org/ml4floods" target="_blank"
    class="btn btn-sm btn-source-repository-button"
-   title="Repositorio de origen"
+   title="Source repository"
    data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -282,7 +297,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 
 <div class="dropdown dropdown-download-buttons">
-  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Descarga esta pagina">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
     <i class="fas fa-download"></i>
   </button>
   <ul class="dropdown-menu">
@@ -291,7 +306,7 @@ const thebe_selector_output = ".output, .cell_output"
       
       <li><a href="../../_sources/content/prep/gt_masks_generation.ipynb" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
-   title="Descargar archivo fuente"
+   title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -309,7 +324,7 @@ const thebe_selector_output = ".output, .cell_output"
       <li>
 <button onclick="window.print()"
   class="btn btn-sm btn-download-pdf-button dropdown-item"
-  title="Imprimir en PDF"
+  title="Print to PDF"
   data-bs-placement="left" data-bs-toggle="tooltip"
 >
   
@@ -329,7 +344,7 @@ const thebe_selector_output = ".output, .cell_output"
 
 <button onclick="toggleFullScreen()"
   class="btn btn-sm btn-fullscreen-button"
-  title="Modo de pantalla completa"
+  title="Fullscreen mode"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
   
@@ -341,20 +356,22 @@ const thebe_selector_output = ".output, .cell_output"
 </button>
 
 
+
 <script>
 document.write(`
-  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
-    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
-    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
   </button>
 `);
 </script>
 
+
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -377,7 +394,7 @@ document.write(`
         <div id="jb-print-toc">
             
             <div>
-                <h2> Contenido </h2>
+                <h2> Contents </h2>
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
@@ -421,25 +438,25 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="ground-truth">
-<h1>Ground Truth<a class="headerlink" href="#ground-truth" title="Permalink to this headline">#</a></h1>
+<h1>Ground Truth<a class="headerlink" href="#ground-truth" title="Permalink to this heading">#</a></h1>
 <ul class="simple">
 <li><p><strong>Last Modified</strong>: 17-03-2022</p></li>
 <li><p><strong>Authors</strong>: Satyarth Praveen, J. Emmanuel Johnson, Nadia Ahmed, Gonzalo Mateo-García</p></li>
 </ul>
 <hr class="docutils" />
 <section id="brief-description">
-<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this headline">#</a></h2>
+<h2>Brief Description<a class="headerlink" href="#brief-description" title="Permalink to this heading">#</a></h2>
 <p>In this notebook, we will explore how to visualize the different products that we use in the <em>WorldFloods</em> dataset. In addition we will show how to create the ground truth that we used for training the models (the 3-class ground truth used in <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Mateo-García et al. 2021</a> and the new binary ground truth for multi-output binary classification).</p>
 <p>This tutorial follows the previous one about <span class="xref myst">ingesting floodmaps</span> which shows how to pre-process and download floodmaps and how to download Sentinel-2 images using the Google Earth Engine. In this notebook we use these products (floodmaps, S2 images and JRC Permanent Water Layer also downlinked from the GEE).</p>
 <p>To create the ground truth necessary in the <em>WorldFloods</em> data, we need access to water layers, clouds. So let’s show how we do this!</p>
 </section>
 <hr class="docutils" />
 <section id="step-0-access-the-data-for-this-tutorial">
-<h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this headline">#</a></h2>
+<h2>Step 0: Access the data for this tutorial<a class="headerlink" href="#step-0-access-the-data-for-this-tutorial" title="Permalink to this heading">#</a></h2>
 <p>In order to run this tutorial we will use some products from the forthcoming <em>WorldFloods Extra Dataset</em>. We have copied some of those in our <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a>. To access the <em>WorldFloods</em> database see <span class="xref myst">the download <em>WorldFloods</em> documentation</span>.</p>
 </section>
 <section id="step-0a-mount-the-public-folder-if-you-are-in-google-colab">
-<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this headline">#</a></h2>
+<h2>Step 0a: mount the Public folder if you are in Google Colab<a class="headerlink" href="#step-0a-mount-the-public-folder-if-you-are-in-google-colab" title="Permalink to this heading">#</a></h2>
 <p>If you’re running this tutorial in Google Colab you need to <em>‘add a shortcut to your Google Drive’</em> from the <a class="reference external" href="https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH">public Google Drive folder</a> and mount that directory with the following code:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -468,7 +485,7 @@ Setting google colab to false, it will need to install the gdown package!
 <p>If you’re not in Google Colab you need to install the <code class="docutils literal notranslate"><span class="pre">gdown</span></code> package to access the products. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdown</span></code>.</p>
 </section>
 <section id="original-image">
-<h2>Original Image<a class="headerlink" href="#original-image" title="Permalink to this headline">#</a></h2>
+<h2>Original Image<a class="headerlink" href="#original-image" title="Permalink to this heading">#</a></h2>
 <p>Let’s load a demo Sentinel-2 (S2) image which will be the basis for all of our demonstrations.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -496,7 +513,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </section>
 <section id="demo-plot">
-<h2>Demo Plot<a class="headerlink" href="#demo-plot" title="Permalink to this headline">#</a></h2>
+<h2>Demo Plot<a class="headerlink" href="#demo-plot" title="Permalink to this heading">#</a></h2>
 <p>We have an easy plot function to visualize the S2 image.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -528,9 +545,9 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 <p>So now we have our image, let’s see what tools we have available to do masks.</p>
 </section>
 <section id="cloud-masks">
-<h2>Cloud Masks<a class="headerlink" href="#cloud-masks" title="Permalink to this headline">#</a></h2>
+<h2>Cloud Masks<a class="headerlink" href="#cloud-masks" title="Permalink to this heading">#</a></h2>
 <section id="last-channel-cloud-probabilities">
-<h3>Last Channel Cloud Probabilities<a class="headerlink" href="#last-channel-cloud-probabilities" title="Permalink to this headline">#</a></h3>
+<h3>Last Channel Cloud Probabilities<a class="headerlink" href="#last-channel-cloud-probabilities" title="Permalink to this heading">#</a></h3>
 <p>Fortunately for some of the newer S2 images obtained from GEE, we can simply use the final channel.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -560,7 +577,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </section>
 <section id="model-based">
-<h3>Model-Based<a class="headerlink" href="#model-based" title="Permalink to this headline">#</a></h3>
+<h3>Model-Based<a class="headerlink" href="#model-based" title="Permalink to this heading">#</a></h3>
 <p>In other cases where this is not available, we can also use models on the original image. One method that we use within this library is called <code class="docutils literal notranslate"><span class="pre">s2cloudless</span></code>, found <a class="reference external" href="https://github.com/sentinel-hub/sentinel2-cloud-detector">here</a>. This is a model from the sentinel-hub which has a very convenient API for our uses. See <a class="reference external" href="https://medium.com/sentinel-hub/improving-cloud-detection-with-machine-learning-c09dc5d7cf13">this blog</a> for more details.</p>
 <p>Below, we showcase how we can return cloudmasks in a single function within this library.</p>
 <p><strong>Warnings</strong>: This will take a while to run. Please skip over the section to resume the tutorial.</p>
@@ -576,7 +593,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <section id="figure">
-<h4>Figure<a class="headerlink" href="#figure" title="Permalink to this headline">#</a></h4>
+<h4>Figure<a class="headerlink" href="#figure" title="Permalink to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># fig, ax = plt.subplots(figsize=(16,16))</span>
@@ -599,9 +616,9 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </section>
 </section>
 <section id="water-masks">
-<h2>Water Masks<a class="headerlink" href="#water-masks" title="Permalink to this headline">#</a></h2>
+<h2>Water Masks<a class="headerlink" href="#water-masks" title="Permalink to this heading">#</a></h2>
 <section id="permanent-water">
-<h3>Permanent Water<a class="headerlink" href="#permanent-water" title="Permalink to this headline">#</a></h3>
+<h3>Permanent Water<a class="headerlink" href="#permanent-water" title="Permalink to this heading">#</a></h3>
 <p>So firstly, we have the permanent water. These are streams, rivers and lakes that already exist. This serves as a basis for where the flood events <em>could</em> occur.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -647,7 +664,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </section>
 <section id="flood-events">
-<h3>Flood Events<a class="headerlink" href="#flood-events" title="Permalink to this headline">#</a></h3>
+<h3>Flood Events<a class="headerlink" href="#flood-events" title="Permalink to this heading">#</a></h3>
 <p>We need the flood events. These come from the Copernicus EMS data source where we have already preprocessed them to extract the necessary information for floods. These come in the form of <code class="docutils literal notranslate"><span class="pre">geojson</span></code> files which keep all of the polygons indicating the specific coordinates where there was a drought. We can easily read it with the <code class="docutils literal notranslate"><span class="pre">geopandas</span></code> package.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -816,7 +833,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </div>
 </div>
 <section id="plot-floodmaps-on-permanent-water">
-<h4>Plot - FloodMaps On Permanent Water<a class="headerlink" href="#plot-floodmaps-on-permanent-water" title="Permalink to this headline">#</a></h4>
+<h4>Plot - FloodMaps On Permanent Water<a class="headerlink" href="#plot-floodmaps-on-permanent-water" title="Permalink to this heading">#</a></h4>
 <p>We can also plot the floodmaps on the permanent water to get an overview of how much these flood maps overlap with the already placed permanent water areas.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -846,7 +863,7 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 <p>So we can see that it’s very clear that there is some overlap between the permanent water and the flood maps, but there are also many areas that extend beyond the standard region.</p>
 </section>
 <section id="figure-floodmaps-on-s2-image">
-<h4>Figure - FloodMaps On S2 Image<a class="headerlink" href="#figure-floodmaps-on-s2-image" title="Permalink to this headline">#</a></h4>
+<h4>Figure - FloodMaps On S2 Image<a class="headerlink" href="#figure-floodmaps-on-s2-image" title="Permalink to this heading">#</a></h4>
 <p>We can actually overlay the floodmaps onto the S2 Image. Because all of the geocoordinates are consistent, this allows us to visualize all of the pieces together.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -873,10 +890,10 @@ To: /home/gonzalo/git/ml4floods/jupyterbook/content/prep/products_sample_tutoria
 </section>
 </section>
 <section id="id1">
-<h2>Ground Truth<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h2>
+<h2>Ground Truth<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h2>
 <p>So now we’ve seen all of the bits and pieces needed to get the data required to create the ground truth: 1) S2 Image, 2) Cloud Masks, 3) FloodMaps, 4) Permanent Water. We can now create some ground truth images which can be used for our machine learning problem.</p>
 <section id="class-problem">
-<h3>3-Class Problem<a class="headerlink" href="#class-problem" title="Permalink to this headline">#</a></h3>
+<h3>3-Class Problem<a class="headerlink" href="#class-problem" title="Permalink to this heading">#</a></h3>
 <p>This first ground truth type is a 3-class problem: Land, Water, Cloud. We basically fuse these four resources together to create the ground truth. So a simple logistic regression model would be able to use this. However, it would probably do poorly due to the complexity of the data.</p>
 <p>It’s very simple to generate ground truth with the functions we created.</p>
 <div class="cell docutils container">
@@ -942,7 +959,7 @@ Wall time: 24.3 s
 </div>
 </section>
 <section id="show-3-class-ground-truth">
-<h3>Show 3-class ground truth<a class="headerlink" href="#show-3-class-ground-truth" title="Permalink to this headline">#</a></h3>
+<h3>Show 3-class ground truth<a class="headerlink" href="#show-3-class-ground-truth" title="Permalink to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
@@ -961,7 +978,7 @@ Wall time: 24.3 s
 </section>
 </section>
 <section id="id2">
-<h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this headline">#</a></h2>
+<h2>2-Class Problem<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h2>
 <p>In this ground truth, we generate 2-band ground truth. This ground truth can be used to train a multioutput binary segmentation model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1126,11 +1143,10 @@ Wall time: 16.3 s
 
               
               
-                <footer class="bd-footer-article">
+              
+              
+                <footer class="prev-next-footer">
                   
-<div class="footer-article-items footer-article__inner">
-  
-    <div class="footer-article-item"><!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
        href="full_data_ingest.html"
@@ -1142,18 +1158,15 @@ Wall time: 16.3 s
       </div>
     </a>
     <a class="right-next"
-       href="../worldfloods_dataset.html"
+       href="../labeling.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">The <em>WorldFloods</em> database</p>
+        <p class="prev-next-title">Viewer and label editor</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
-</div></div>
-  
 </div>
-
                 </footer>
               
             </div>
@@ -1164,7 +1177,7 @@ Wall time: 16.3 s
 
   <div class="sidebar-secondary-item">
   <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> Contenido
+    <i class="fa-solid fa-list"></i> Contents
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
@@ -1210,13 +1223,14 @@ Wall time: 16.3 s
   <div class="footer-item">
     
 <p class="component-author">
-Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
+By <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
 </p>
 
   </div>
   
   <div class="footer-item">
     
+
   <p class="copyright">
     
       © Copyright 2021.
@@ -1243,8 +1257,8 @@ Por <a href="http://spaceml.org/" target="_blank">spaceml.org</a>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
 
   <footer class="bd-footer">
   </footer>
