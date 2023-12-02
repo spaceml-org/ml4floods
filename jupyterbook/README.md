@@ -18,6 +18,8 @@ Install `twine`.
 First update the version number in `ml4floods/__init__.py`
 
 ```
+rm -rf build/
+rm -rf dist/
 python setup.py sdist bdist_wheel
 
 # upload to testpypi
