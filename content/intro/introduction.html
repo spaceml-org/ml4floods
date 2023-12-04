@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Introduction &#8212; ML4Floods</title>
+    <title>Project rationale &#8212; ML4Floods</title>
   
   
   
@@ -172,6 +172,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -190,11 +191,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ml4ops/HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -202,7 +198,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Introduction</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Project rationale</a></li>
 </ul>
 
     </div>
@@ -356,7 +352,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Introduction</h1>
+    <h1>Project rationale</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -366,6 +362,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#democratising-ai-enhanced-flooding-tools">Democratising AI-Enhanced Flooding Tools</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mlops-tools-from-data-preparation-to-deployment">MLOps tools: from data preparation to deployment</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-and-using-the-tools">Understanding and using the tools</a></li>
@@ -382,11 +379,14 @@ document.write(`
                   
   <img alt="../../_images/ml4floods_banner.png" class="align-center" id="banner" src="../../_images/ml4floods_banner.png" />
 <p style="text-align: center; font-style: italic;">ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML</p>
-<section class="tex2jax_ignore mathjax_ignore" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
+<section class="tex2jax_ignore mathjax_ignore" id="project-rationale">
+<h1>Project rationale<a class="headerlink" href="#project-rationale" title="Permalink to this heading">#</a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
 <p>Satellites image the whole globe, revisiting locations every few days or even hours to record the changing landscape. Their cameras see deep into the infrared and radar sensors see through clouds and at night. They capture information on many different observable parameters including dynamic and rapid processes and events like floods. Newer instruments can now provide contextual details at more and more precise scale, locating for instance individual buildings that are flooded, or even search and rescue people using airborne platforms. At the same time, ground-based sensors like rain gauges or river level stations record surface conditions unavailable from space. All of this data is stored - sometimes by commercial companies, but often by government agencies under open- or restricted-access policies. However, there remain significant barriers for non-specialists to access and use this information or to respond quickly in emergency situations.</p>
 <a class="reference internal image-reference" href="../../_images/flood_context.png"><img alt="Floods devestate the world every year." class="align-center" src="../../_images/flood_context.png" style="width: 500px;" /></a>
 <p>For flood disaster management, the real promise of this data is in translating it to actionable intelligence, directly answering queries like “Which areas will be flooded if rain continues to fall and rivers swell up in the next days?” or “Show me a map of the water level in streams wider than 1 meter.”</p>
+</section>
 <section id="democratising-ai-enhanced-flooding-tools">
 <h2>Democratising AI-Enhanced Flooding Tools<a class="headerlink" href="#democratising-ai-enhanced-flooding-tools" title="Permalink to this heading">#</a></h2>
 <p>Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types. Such ‘data fusion’ capabilities are potentially game-changing for a broad spectrum of users, from emergency workers to urban planners.</p>
@@ -471,6 +471,7 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">Introduction</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#democratising-ai-enhanced-flooding-tools">Democratising AI-Enhanced Flooding Tools</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mlops-tools-from-data-preparation-to-deployment">MLOps tools: from data preparation to deployment</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-and-using-the-tools">Understanding and using the tools</a></li>

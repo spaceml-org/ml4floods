@@ -173,6 +173,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -191,11 +192,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -203,7 +199,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Project rationale</a></li>
 </ul>
 
     </div>
@@ -490,7 +486,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "c80c8e5867ad4aaf8c294edaec4c8e17", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "f6c30a0d269b4c47a83da89e9dfbea66", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5a2735cf3d4f450eb182c7eadff15d44", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2b0aaead05ab48f0bde7b573f291a4a3", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1103,7 +1099,24 @@ Wall time: 1.35 s
 </section>
 <section id="licence">
 <h2>Licence<a class="headerlink" href="#licence" title="Permalink to this heading">#</a></h2>
+<p>The ML4Floods package is published under a <a class="reference external" href="https://www.gnu.org/licenses/lgpl-3.0.en.html">GNU Lesser GPL v3 licence</a></p>
 <p>The <em>WorldFloods</em> database and all pre-trained models are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>. For using the models in comercial pipelines written consent by the authors must be provided.</p>
+<p>If you find this work useful please cite:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">portales</span><span class="o">-</span><span class="n">julia_global_2023</span><span class="p">,</span>
+	<span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Global</span> <span class="n">flood</span> <span class="n">extent</span> <span class="n">segmentation</span> <span class="ow">in</span> <span class="n">optical</span> <span class="n">satellite</span> <span class="n">images</span><span class="p">},</span>
+	<span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">13</span><span class="p">},</span>
+	<span class="n">issn</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2045</span><span class="o">-</span><span class="mi">2322</span><span class="p">},</span>
+	<span class="n">doi</span> <span class="o">=</span> <span class="p">{</span><span class="mf">10.1038</span><span class="o">/</span><span class="n">s41598</span><span class="o">-</span><span class="mi">023</span><span class="o">-</span><span class="mi">47595</span><span class="o">-</span><span class="mi">7</span><span class="p">},</span>
+	<span class="n">number</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">},</span>
+	<span class="n">urldate</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">30</span><span class="p">},</span>
+	<span class="n">journal</span> <span class="o">=</span> <span class="p">{</span><span class="n">Scientific</span> <span class="n">Reports</span><span class="p">},</span>
+	<span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Portalés</span><span class="o">-</span><span class="n">Julià</span><span class="p">,</span> <span class="n">Enrique</span> <span class="ow">and</span> <span class="n">Mateo</span><span class="o">-</span><span class="n">García</span><span class="p">,</span> <span class="n">Gonzalo</span> <span class="ow">and</span> <span class="n">Purcell</span><span class="p">,</span> <span class="n">Cormac</span> <span class="ow">and</span> <span class="n">Gómez</span><span class="o">-</span><span class="n">Chova</span><span class="p">,</span> <span class="n">Luis</span><span class="p">},</span>
+	<span class="n">month</span> <span class="o">=</span> <span class="n">nov</span><span class="p">,</span>
+	<span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="p">},</span>
+	<span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">20316</span><span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 

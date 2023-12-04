@@ -173,6 +173,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -191,11 +192,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -203,7 +199,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Project rationale</a></li>
 </ul>
 
     </div>
@@ -376,21 +372,29 @@ document.write(`
 </ul>
 <hr class="docutils" />
 <p>The MLOps section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2.
-Models are trained in the <em>WorldFloods</em>[1] dataset which is freely accessible at <code class="docutils literal notranslate"><span class="pre">gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/</span></code>.
+Models are trained in the <em>WorldFloods</em> dataset which is <a class="reference internal" href="worldfloods_dataset.html"><span class="doc std std-doc">freely accessible</span></a>.
 Each of the tutorials is self-contained and can be run on Google Colab.</p>
 <a class="reference internal image-reference" href="../_images/diagram_mlops.png"><img alt="MLOps diagram" class="align-center" src="../_images/diagram_mlops.png" style="width: 90%;" /></a>
 <hr class="docutils" />
-<p>Content:</p>
+<p>Tutorials on models of <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">Portalés-Julià et al 2023</a>.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html"><span class="doc std std-doc">Inference with clouds aware flood segmentation model</span></a>: Run inference of the multioutput binary classification model. This model is able to predict land/water under the clouds. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html"><span class="doc std std-doc">Inference on time series of Sentinel-2 images</span></a>: Download a time series of Sentinel-2 images over an area of interest and run inference on them. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_postprocess_inference.html">Run the clouds-aware flood segmentation model in Sentinel-2 and Landsat and vectorise the flood maps</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_postprocess_inference.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+<p>Tutorials on models of <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">Mateo-García et al 2021</a>.</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="ml4ops/HOWTO_Train_models.html"><span class="doc std std-doc">Train models</span></a>: trains the WorldFloods model on the WorldFloods dataset from scratch <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html"><span class="doc std std-doc">Model metrics</span></a>: loads a worldfloods trained model and run inference on all images of the <em>WorldFloods</em> test dataset. It computes displays some standard metrics and the PR and ROC curves for water detection. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html"><span class="doc std std-doc">Inference on Sentinel-2 images</span></a>: loads a worldfloods pretrained model and runs inference on a Sentinel-2 image from the WorldFloods dataset. It shows the predictions vs the ground truth on that image. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
-<li><p><a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html"><span class="doc std std-doc">Probabilistic Neural Networks</span></a>: Run inference of the U-Nets trained with dropout. We apply Bayesian dropout at inference time to obtain an ensemble of predictions. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
-<li><p><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html"><span class="doc std std-doc">Cloud removal inference</span></a>: Run inference of the multioutput binary classification model. This model is able to predict land/water under the clouds. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
-<li><p><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html"><span class="doc std std-doc">Inference on time series of Sentinel-2 images</span></a>: Download a time series of Sentinel-2 images over an area of interest and run inference on them. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
-<li><p><a class="reference internal" href="ml4ops/HOWTO_inference_SAFE_file.html"><span class="doc std std-doc">Inference on Sentinel-2 SAFE files</span></a>: Download Sentinel-2 images from Copernicus Open Hub over an area of interest and run inference on them. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_SAFE_file.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
-<p>[1] Mateo-Garcia, G. et al. <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Towards global flood mapping onboard low cost satellites with machine learning</a>. <em>Scientific Reports 11, 7249</em> (2021).</p>
+<p>Exploratory work:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="ml4ops/HOWTO_Calculate_uncertainty_maps.html"><span class="doc std std-doc">Probabilistic Neural Networks</span></a>: Run inference of the U-Nets trained with dropout. We apply Bayesian dropout at inference time to obtain an ensemble of predictions. <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+<hr class="docutils" />
+<p>[[Mateo-Garcia et al 2021]] Mateo-Garcia, G. et al. <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Towards global flood mapping onboard low cost satellites with machine learning</a>. <em>Scientific Reports 11, 7249</em> (2021). DOI: 10.1038/s41598-021-86650-z.</p>
+<p>[[Portalés-Julià et al 2023]] E. Portalés-Julià, G. Mateo-García, C. Purcell, and L. Gómez-Chova <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">Global flood extent segmentation in optical satellite images</a>. <em>Scientific Reports 13, 20316</em> (2023). DOI: 10.1038/s41598-023-47595-7.</p>
 </section>
 
     <script type="text/x-thebe-config">

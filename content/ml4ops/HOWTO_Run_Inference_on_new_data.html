@@ -66,7 +66,7 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Run inference on time series of Sentinel-2 images" href="HOWTO_inference_on_image_time_series.html" />
+    <link rel="next" title="Pre-processing Demonstration" href="../prep/demo_pytorch_transforms.html" />
     <link rel="prev" title="Model Metrics" href="HOWTO_performance_metrics_workflow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -173,6 +173,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -191,11 +192,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -203,7 +199,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Project rationale</a></li>
 </ul>
 
     </div>
@@ -425,6 +421,7 @@ document.write(`
 <li><p><strong>Authors</strong>: Sam Budd, Gonzalo Mateo-García</p></li>
 </ul>
 <hr class="docutils" />
+<div class="alert alert-block alert-danger"> This tutorial is deprecated. In order to run inference with the latest flood detection model go to <a href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_Run_Inference_multioutput_binary.html">this notebook</a></div>
 <blockquote>
 <div><p>Run inference on Sentinel-2 images using a trained model</p>
 </div></blockquote>
@@ -785,16 +782,16 @@ described in <a class="reference external" href="https://arxiv.org/abs/1805.1221
         },
         codeMirrorConfig: {
             theme: "abcdef",
-            mode: "conda-env-ml4floods-py"
+            mode: "ml4floods"
         },
         kernelOptions: {
-            name: "conda-env-ml4floods-py",
+            name: "ml4floods",
             path: "./content/ml4ops"
         },
         predefinedOutput: true
     }
     </script>
-    <script>kernelName = 'conda-env-ml4floods-py'</script>
+    <script>kernelName = 'ml4floods'</script>
 
                 </article>
               
@@ -816,11 +813,11 @@ described in <a class="reference external" href="https://arxiv.org/abs/1805.1221
       </div>
     </a>
     <a class="right-next"
-       href="HOWTO_inference_on_image_time_series.html"
+       href="../prep/demo_pytorch_transforms.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Run inference on time series of Sentinel-2 images</p>
+        <p class="prev-next-title">Pre-processing Demonstration</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

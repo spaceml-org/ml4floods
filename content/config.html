@@ -172,6 +172,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -190,11 +191,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -202,7 +198,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro/introduction.html">Project rationale</a></li>
 </ul>
 
     </div>
@@ -366,10 +362,12 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#democratising-ai-enhanced-flooding-tools">Democratising AI-Enhanced Flooding Tools</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install">Install</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorials">Tutorials</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citation">Citation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citation">Citation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#licence">Licence</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributors">Contributors</a></li>
 </ul>
             </nav>
@@ -385,23 +383,31 @@ document.write(`
   <section class="tex2jax_ignore mathjax_ignore" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
 <hr class="docutils" />
+<p>ML4Floods is python package to do <em>end-to-end</em> flood extent estimation from optical images using deep learning models.</p>
+<figure class="align-center" id="ts-albania">
+<a class="reference internal image-reference" href="../_images/ts_albania.gif"><img alt="../_images/ts_albania.gif" src="../_images/ts_albania.gif" style="width: 100%;" /></a>
+</figure>
+<section id="democratising-ai-enhanced-flooding-tools">
+<h2>Democratising AI-Enhanced Flooding Tools<a class="headerlink" href="#democratising-ai-enhanced-flooding-tools" title="Permalink to this heading">#</a></h2>
+<p>Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types. Such ‘data fusion’ capabilities are potentially game-changing for a broad spectrum of users, from emergency workers to urban planners.</p>
+<p>Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.</p>
+</section>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Permalink to this heading">#</a></h2>
-<p>ML4Floods is python package to do <em>end-to-end</em> flood extent estimation from optical images using deep learning models.</p>
 <p>To install the package run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">ml4floods</span>
 </pre></div>
 </div>
-<p>The package is available in <a class="reference external" href="https://github.com/spaceml-org/ml4floods">GitHub</a>. ML4Floods is published under a <a class="reference external" href="https://www.gnu.org/licenses/lgpl-3.0.en.html">GNU Lesser GPL v3 licence</a> <img src="https://www.gnu.org/graphics/lgplv3-88x31.png" alt="licence" width="80"></p>
 </section>
 <section id="tutorials">
 <h2>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading">#</a></h2>
 <p>ML4Floods is a self-contained tool for training and deploying flood extent segmentation models for Sentinel-2 and Landsat. These tools include: image downloading, flood map acquisition, neural network training, testing and the visualization of the results in an interactive map.
-See the <a class="reference internal" href="intro/introduction.html"><span class="doc std std-doc">project rationale</span></a> for a more detailed explanation.</p>
+See the <a class="reference internal" href="intro/introduction.html"><span class="doc std std-doc">project rationale</span></a> for a more detailed explanation of the goals of the tool.</p>
 <p>These tutorials may help you explore the datasets and models:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_postprocess_inference.html">Run the clouds-aware flood segmentation model in Sentinel-2 and Landsat and vectorise the flood maps</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_postprocess_inference.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_inference_on_image_time_series.html">Run the model on time series of Sentinel-2 images</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/prep/full_data_ingest.html">Ingest data from Copernicus EMS</a>  <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/full_data_ingest.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml_overview.html">ML-models step by step</a></p>
 <ul>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_Train_models.html">Training</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
@@ -409,8 +415,19 @@ See the <a class="reference internal" href="intro/introduction.html"><span class
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html">Perf metrics</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/prep/full_data_ingest.html">Ingest data from Copernicus EMS</a>  <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/full_data_ingest.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
+</section>
+<section id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this heading">#</a></h2>
+<p>This work is an extension of the <a class="reference external" href="https://fdleurope.org/">FDL Europe 2019</a> <em>“Disaster Prevention, Progress and Response”</em> team which results are published in:</p>
+<blockquote>
+<div><p>G. Mateo-Garcia, J. Veitch-Michaelis, L. Smith, S. Oprea, G. Schumann, Y. Gal, Baydin G.A., Backes D.  <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Towards global flood mapping onboard low cost satellites with machine learning</a>. <em>Scientific Reports 11, 7249</em> (2021). DOI: 10.1038/s41598-021-86650-z</p>
+</div></blockquote>
+<p>This work has been further extended in:</p>
+<blockquote>
+<div><p>E. Portalés-Julià, G. Mateo-García, C. Purcell, and L. Gómez-Chova <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">Global flood extent segmentation in optical satellite images</a>. <em>Scientific Reports 13, 20316</em> (2023). DOI: 10.1038/s41598-023-47595-7.</p>
+</div></blockquote>
+<p>ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by <a class="reference external" href="http://trillium.tech/">Trillium Technologies</a>. It has also been partially supported by the Spanish Ministry of Science and Innovation project PID2019-109026RB-I00 (MINECO-ERDF MCIN/AEI/10.13039/501100011033).</p>
 </section>
 <section id="citation">
 <h2>Citation<a class="headerlink" href="#citation" title="Permalink to this heading">#</a></h2>
@@ -444,24 +461,16 @@ See the <a class="reference internal" href="intro/introduction.html"><span class
 </pre></div>
 </div>
 </section>
-<section id="about">
-<h2>About<a class="headerlink" href="#about" title="Permalink to this heading">#</a></h2>
-<p>This work is an extension of the <a class="reference external" href="https://fdleurope.org/">FDL Europe 2019</a> <em>“Disaster Prevention, Progress and Response”</em> team which results are published in:</p>
-<blockquote>
-<div><p>G. Mateo-Garcia, J. Veitch-Michaelis, L. Smith, S. Oprea, G. Schumann, Y. Gal, Baydin G.A., Backes D.  <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z">Towards global flood mapping onboard low cost satellites with machine learning</a>. <em>Scientific Reports 11, 7249</em> (2021). DOI: 10.1038/s41598-021-86650-z</p>
-</div></blockquote>
-<p>This work has been further extended in:</p>
-<blockquote>
-<div><p>E. Portalés-Julià, G. Mateo-García, C. Purcell, and L. Gómez-Chova <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">Global flood extent segmentation in optical satellite images</a>. <em>Scientific Reports 13, 20316</em> (2023). DOI: 10.1038/s41598-023-47595-7.</p>
-</div></blockquote>
-<p>ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by <a class="reference external" href="http://trillium.tech/">Trillium Technologies</a>. It has also been partially supported by the Spanish Ministry of Science and Innovation project PID2019-109026RB-I00 (MINECO-ERDF MCIN/AEI/10.13039/501100011033).</p>
+<section id="licence">
+<h2>Licence<a class="headerlink" href="#licence" title="Permalink to this heading">#</a></h2>
+<p>The package is available in <a class="reference external" href="https://github.com/spaceml-org/ml4floods">GitHub</a>. ML4Floods is published under a <a class="reference external" href="https://www.gnu.org/licenses/lgpl-3.0.en.html">GNU Lesser GPL v3 licence</a> <img src="https://www.gnu.org/graphics/lgplv3-88x31.png" alt="licence" width="80">.</p>
+<p>The <em>WorldFloods</em> database and all pre-trained models are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>
+<img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/></p>
 </section>
 <section id="contributors">
 <h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">#</a></h2>
-<p><a class="reference external" href="https://www.uv.es/gonmagar/"><em>Gonzalo Mateo-García</em></a>, <em>Enrique Portalés-Julià</em>, <em>Tarun Narayanan</em>, <em>J. Emmanuel Jonhson</em>, <em>Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes and James Parr.</em></p>
+<p><em>Gonzalo Mateo-García</em>, <em>Enrique Portalés-Julià</em>, <em>Tarun Narayanan</em>, <em>J. Emmanuel Jonhson</em>, <em>Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes</em> and <em>James Parr</em>.</p>
 </section>
-<div class="toctree-wrapper compound">
-</div>
 <div class="toctree-wrapper compound">
 </div>
 <div class="toctree-wrapper compound">
@@ -530,10 +539,12 @@ See the <a class="reference internal" href="intro/introduction.html"><span class
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#democratising-ai-enhanced-flooding-tools">Democratising AI-Enhanced Flooding Tools</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install">Install</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tutorials">Tutorials</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citation">Citation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#about">About</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#citation">Citation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#licence">Licence</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributors">Contributors</a></li>
 </ul>
   </nav></div>

@@ -66,7 +66,7 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="The WorldFloods database" href="../worldfloods_dataset.html" />
+    <link rel="next" title="Run inference on time series of Sentinel-2 images" href="HOWTO_inference_on_image_time_series.html" />
     <link rel="prev" title="Inference with clouds aware floods segmentation model" href="HOWTO_Run_Inference_multioutput_binary.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -173,6 +173,7 @@ const thebe_selector_output = ".output, .cell_output"
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Postprocess inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
 <ul class="nav bd-sidenav">
@@ -191,11 +192,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_performance_metrics_workflow.html">Model Metrics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="HOWTO_Run_Inference_on_new_data.html">Run inference</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">End-to-end Pipeline</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="HOWTO_inference_SAFE_file.html">Inference on Sentinel-2 <code class="docutils literal notranslate"><span class="pre">SAFE</span></code> files</a></li>
-</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Experimental</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../prep/demo_pytorch_transforms.html">Pre-processing Demonstration</a></li>
@@ -203,7 +199,7 @@ const thebe_selector_output = ".output, .cell_output"
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Project rationale</span></p>
 <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro/introduction.html">Project rationale</a></li>
 </ul>
 
     </div>
@@ -403,7 +399,8 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-read-the-data">Step 3: Read the data</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-load-the-model">Step 3: Load the model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-run-inference">Step 4: Run inference</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-vectorize-predictions-into-prepost-flood-products">Step 4: Vectorize predictions into prepost flood products</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-plot-the-results">Step 5: Plot the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-vectorize-predictions-into-prepost-flood-products">Step 5: Vectorize predictions into prepost flood products</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-inference-in-landsat-8-9">Run inference in Landsat 8/9</a></li>
 </ul>
 </li>
@@ -466,7 +463,6 @@ document.write(`
 <span class="kn">from</span> <span class="nn">rasterio.plot</span> <span class="kn">import</span> <span class="n">show</span>
 <span class="kn">from</span> <span class="nn">georeader.readers</span> <span class="kn">import</span> <span class="n">ee_image</span>
 <span class="kn">from</span> <span class="nn">ml4floods.models</span> <span class="kn">import</span> <span class="n">postprocess</span>
-<span class="kn">from</span> <span class="nn">ml4floods.scripts.inference</span> <span class="kn">import</span> <span class="n">vectorize_outputv1</span>
 <span class="kn">from</span> <span class="nn">georeader</span> <span class="kn">import</span> <span class="n">plot</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">ml4floods.visualization</span> <span class="kn">import</span> <span class="n">plot_utils</span>
@@ -662,7 +658,7 @@ document.write(`
 <span class="n">showcolumns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">,</span><span class="s2">&quot;overlappercentage&quot;</span><span class="p">,</span><span class="s2">&quot;cloudcoverpercentage&quot;</span><span class="p">,</span> <span class="s2">&quot;localdatetime_str&quot;</span><span class="p">,</span><span class="s2">&quot;solarday&quot;</span><span class="p">,</span><span class="s2">&quot;satellite&quot;</span><span class="p">]</span>
 <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#ff7777&quot;</span><span class="p">,</span> <span class="s2">&quot;#fffa69&quot;</span><span class="p">,</span> <span class="s2">&quot;#8fff84&quot;</span><span class="p">,</span> <span class="s2">&quot;#52adf1&quot;</span><span class="p">,</span> <span class="s2">&quot;#ff6ac2&quot;</span><span class="p">,</span><span class="s2">&quot;#1b6d52&quot;</span><span class="p">,</span> <span class="s2">&quot;#fce5cd&quot;</span><span class="p">,</span><span class="s2">&quot;#705334&quot;</span><span class="p">]</span>
    
-<span class="c1"># Add the flooding data</span>
+<span class="c1"># Add the extent of the products</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">((</span><span class="n">day</span><span class="p">,</span><span class="n">satellite</span><span class="p">),</span> <span class="n">images_day</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flood_images_gee</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;solarday&quot;</span><span class="p">,</span><span class="s2">&quot;satellite&quot;</span><span class="p">])):</span>
     <span class="n">images_day</span><span class="p">[</span><span class="n">showcolumns</span><span class="p">]</span><span class="o">.</span><span class="n">explore</span><span class="p">(</span>
         <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> 
@@ -670,7 +666,7 @@ document.write(`
         <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)],</span> 
         <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="c1"># Add the flooding data</span>
+<span class="c1"># Add the satellite data</span>
 <span class="k">for</span> <span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="n">satellite</span><span class="p">),</span> <span class="n">images_day</span> <span class="ow">in</span> <span class="n">flood_images_gee</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;solarday&quot;</span><span class="p">,</span> <span class="s2">&quot;satellite&quot;</span><span class="p">]):</span>    
     <span class="n">image_col_day_sat</span> <span class="o">=</span> <span class="n">flood_collection</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">inList</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="n">images_day</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>    
     <span class="n">bands</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;B11&quot;</span><span class="p">,</span><span class="s2">&quot;B8&quot;</span><span class="p">,</span><span class="s2">&quot;B4&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">satellite</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;S2&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;B6&quot;</span><span class="p">,</span><span class="s2">&quot;B5&quot;</span><span class="p">,</span><span class="s2">&quot;B4&quot;</span><span class="p">]</span>
@@ -1941,7 +1937,7 @@ document.write(`
 <section id="step-3-read-the-data">
 <h2>Step 3: Read the data<a class="headerlink" href="#step-3-read-the-data" title="Permalink to this heading">#</a></h2>
 <p>There are Sentinel-2 cloud free images on 2023-06-03 and 2023-06-05 but only the first one covers the entire AoI. For the postflood data we will use 2023-06-08, which is partially cloudy but allows to see some flood extent. We will read and mosaic the tiles T36TVS and T36TWS using <strong>georeader</strong>.
-Te advantage of this workflow over Google Earth Engine (GEE) is that the images are read directly from the Sentinel-2 public bucket into the jupyter notebook. Also, there is no size limit in the download, which may cause GEE taks to fail sometimes.</p>
+The advantage of this workflow over Google Earth Engine (GEE) is that the images are read directly from the Sentinel-2 public bucket into the jupyter notebook. Also, there is no size limit in the download, which may cause GEE tasks to fail sometimes.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
@@ -2026,7 +2022,7 @@ Wall time: 5min 24s
 </section>
 <section id="step-3-load-the-model">
 <h2>Step 3: Load the model<a class="headerlink" href="#step-3-load-the-model" title="Permalink to this heading">#</a></h2>
-<p>For this we will use an Ml4floods multioutput binary model trained on the WorldFloods data set. See</p>
+<p>For this we will use an Ml4floods multioutput binary model trained on the WorldFloods data set. See the <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7">paper</a>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">huggingface_hub</span> <span class="kn">import</span> <span class="n">hf_hub_download</span>
@@ -2241,6 +2237,9 @@ Wall time: 365 ms
             </style>
             </div></div>
 </div>
+</section>
+<section id="step-5-plot-the-results">
+<h2>Step 5: Plot the results<a class="headerlink" href="#step-5-plot-the-results" title="Permalink to this heading">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">12</span><span class="p">),</span><span class="n">squeeze</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -2296,8 +2295,8 @@ Wall time: 365 ms
 </div>
 </div>
 </section>
-<section id="step-4-vectorize-predictions-into-prepost-flood-products">
-<h2>Step 4: Vectorize predictions into prepost flood products<a class="headerlink" href="#step-4-vectorize-predictions-into-prepost-flood-products" title="Permalink to this heading">#</a></h2>
+<section id="step-5-vectorize-predictions-into-prepost-flood-products">
+<h2>Step 5: Vectorize predictions into prepost flood products<a class="headerlink" href="#step-5-vectorize-predictions-into-prepost-flood-products" title="Permalink to this heading">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prediction_preflood_raster</span><span class="o">.</span><span class="n">shape</span>
@@ -2459,7 +2458,7 @@ Wall time: 365 ms
 </div>
 <section id="run-inference-in-landsat-8-9">
 <h3>Run inference in Landsat 8/9<a class="headerlink" href="#run-inference-in-landsat-8-9" title="Permalink to this heading">#</a></h3>
-<p>There is a cloud free Landsat 9 image from the 2023-06-09. In the following cells we downloaded the image from Google Earth Engine and we run inference on it and show how to aggregate several post-flood maps over time of different acquired by different sensors.</p>
+<p>There is a cloud free Landsat 9 image from the 2023-06-09. In the following cells we downloaded the image from Google Earth Engine, we run inference on it and show how to aggregate several post-flood maps over time of images acquired by different sensors.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
@@ -2807,7 +2806,24 @@ Wall time: 1min 18s
 </section>
 <section id="licence">
 <h2>Licence<a class="headerlink" href="#licence" title="Permalink to this heading">#</a></h2>
+<p>The ML4Floods package is published under a <a class="reference external" href="https://www.gnu.org/licenses/lgpl-3.0.en.html">GNU Lesser GPL v3 licence</a></p>
 <p>The <em>WorldFloods</em> database and all pre-trained models are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>. For using the models in comercial pipelines written consent by the authors must be provided.</p>
+<p>If you find this work useful please cite:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">portales</span><span class="o">-</span><span class="n">julia_global_2023</span><span class="p">,</span>
+	<span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Global</span> <span class="n">flood</span> <span class="n">extent</span> <span class="n">segmentation</span> <span class="ow">in</span> <span class="n">optical</span> <span class="n">satellite</span> <span class="n">images</span><span class="p">},</span>
+	<span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">13</span><span class="p">},</span>
+	<span class="n">issn</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2045</span><span class="o">-</span><span class="mi">2322</span><span class="p">},</span>
+	<span class="n">doi</span> <span class="o">=</span> <span class="p">{</span><span class="mf">10.1038</span><span class="o">/</span><span class="n">s41598</span><span class="o">-</span><span class="mi">023</span><span class="o">-</span><span class="mi">47595</span><span class="o">-</span><span class="mi">7</span><span class="p">},</span>
+	<span class="n">number</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">},</span>
+	<span class="n">urldate</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">30</span><span class="p">},</span>
+	<span class="n">journal</span> <span class="o">=</span> <span class="p">{</span><span class="n">Scientific</span> <span class="n">Reports</span><span class="p">},</span>
+	<span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Portalés</span><span class="o">-</span><span class="n">Julià</span><span class="p">,</span> <span class="n">Enrique</span> <span class="ow">and</span> <span class="n">Mateo</span><span class="o">-</span><span class="n">García</span><span class="p">,</span> <span class="n">Gonzalo</span> <span class="ow">and</span> <span class="n">Purcell</span><span class="p">,</span> <span class="n">Cormac</span> <span class="ow">and</span> <span class="n">Gómez</span><span class="o">-</span><span class="n">Chova</span><span class="p">,</span> <span class="n">Luis</span><span class="p">},</span>
+	<span class="n">month</span> <span class="o">=</span> <span class="n">nov</span><span class="p">,</span>
+	<span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="p">},</span>
+	<span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">20316</span><span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -2851,11 +2867,11 @@ Wall time: 1min 18s
       </div>
     </a>
     <a class="right-next"
-       href="../worldfloods_dataset.html"
+       href="HOWTO_inference_on_image_time_series.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">The <em>WorldFloods</em> database</p>
+        <p class="prev-next-title">Run inference on time series of Sentinel-2 images</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -2879,7 +2895,8 @@ Wall time: 1min 18s
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-read-the-data">Step 3: Read the data</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-load-the-model">Step 3: Load the model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-run-inference">Step 4: Run inference</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-vectorize-predictions-into-prepost-flood-products">Step 4: Vectorize predictions into prepost flood products</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-plot-the-results">Step 5: Plot the results</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-vectorize-predictions-into-prepost-flood-products">Step 5: Vectorize predictions into prepost flood products</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-inference-in-landsat-8-9">Run inference in Landsat 8/9</a></li>
 </ul>
 </li>
