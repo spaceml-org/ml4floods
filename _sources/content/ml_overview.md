@@ -22,9 +22,9 @@ Tutorials on models of [Portalés-Julià et al 2023](https://www.nature.com/arti
 
 Tutorials on models of [Mateo-García et al 2021](https://www.nature.com/articles/s41598-023-47595-7).
 
-* [Train models](./ml4ops/HOWTO_Train_models.ipynb): trains the WorldFloods model on the WorldFloods dataset from scratch [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
-* [Model metrics](./ml4ops/HOWTO_performance_metrics_workflow.ipynb): loads a worldfloods trained model and run inference on all images of the *WorldFloods* test dataset. It computes displays some standard metrics and the PR and ROC curves for water detection. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
-* [Inference on Sentinel-2 images](./ml4ops/HOWTO_Run_Inference_on_new_data.ipynb): loads a worldfloods pretrained model and runs inference on a Sentinel-2 image from the WorldFloods dataset. It shows the predictions vs the ground truth on that image. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
+* [Train models](./ml4ops/HOWTO_Train_models.ipynb): trains the WorldFloods model on the *WorldFloods* V1 dataset from scratch [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Train_models.ipynb)
+* [Model metrics](./ml4ops/HOWTO_performance_metrics_workflow.ipynb): loads a worldfloods trained model and run inference on all images of the *WorldFloods* V1 test dataset. It computes displays some standard metrics and the PR and ROC curves for water detection. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
+* [Inference on Sentinel-2 images](./ml4ops/HOWTO_Run_Inference_on_new_data.ipynb): loads a worldfloods pretrained model and runs inference on a Sentinel-2 image from the *WorldFloods* V1 dataset. It shows the predictions vs the ground truth on that image. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
 
 
 Exploratory work: 
@@ -32,6 +32,6 @@ Exploratory work:
 * [Probabilistic Neural Networks](./ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb): Run inference of the U-Nets trained with dropout. We apply Bayesian dropout at inference time to obtain an ensemble of predictions. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb)
 
 -----
-[[Mateo-Garcia et al 2021]] Mateo-Garcia, G. et al. [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021). DOI: 10.1038/s41598-021-86650-z.
+Mateo-Garcia, G. et al. [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021). DOI: 10.1038/s41598-021-86650-z.
 
-[[Portalés-Julià et al 2023]] E. Portalés-Julià, G. Mateo-García, C. Purcell, and L. Gómez-Chova [Global flood extent segmentation in optical satellite images](https://www.nature.com/articles/s41598-023-47595-7). _Scientific Reports 13, 20316_ (2023). DOI: 10.1038/s41598-023-47595-7.
+Portalés-Julià E., Mateo-García G., Purcell C. and Gómez-Chova L. [Global flood extent segmentation in optical satellite images](https://www.nature.com/articles/s41598-023-47595-7). _Scientific Reports 13, 20316_ (2023). DOI: 10.1038/s41598-023-47595-7.
