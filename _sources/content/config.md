@@ -49,10 +49,13 @@ This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) *"Dis
  
  > G. Mateo-Garcia, J. Veitch-Michaelis, L. Smith, S. Oprea, G. Schumann, Y. Gal, Baydin G.A., Backes D.  [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021). DOI: 10.1038/s41598-021-86650-z
 
-This work has been further extended in:
+FDL work has been further extended in the following paper where better models are proposed and trained on a curated version of the *WorldFloods* dataset.
 
 > E. Portalés-Julià, G. Mateo-García, C. Purcell, and L. Gómez-Chova [Global flood extent segmentation in optical satellite images](https://www.nature.com/articles/s41598-023-47595-7). _Scientific Reports 13, 20316_ (2023). DOI: 10.1038/s41598-023-47595-7.
 
+Additionally, ML4Floods models have been [deployed onboard a D-Orbit satellite](https://philab.esa.int/esa-explores-cognitive-computing-in-space-with-fdl-breakthrough-experiments/) where we conducted several experiments published in:
+
+> Mateo-Garcia, G., Veitch-Michaelis, J., Purcell, C., Longepe, N., Reid, S., Anlind, A., Bruhn, F., Parr, J., & Mathieu, P. P. , [In-orbit demonstration of a re-trainable machine learning payload for processing optical imagery](https://www.nature.com/articles/s41598-023-34436-w),  _Scientific Reports 13, 10391_ (2023). DOI: 10.1038/s41598-023-34436-w.
 
 ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [Trillium Technologies](http://trillium.tech/). It has also been partially supported by the Spanish Ministry of Science and Innovation project PID2019-109026RB-I00 (MINECO-ERDF MCIN/AEI/10.13039/501100011033).
 
@@ -74,6 +77,21 @@ ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [
 	year = {2023},
 	pages = {20316},
 }
+@article{mateo-garcia_inorbit_2023,
+	title = {In-orbit demonstration of a re-trainable machine learning payload for processing optical imagery},
+	volume = {13},
+	issn = {2045-2322},
+	url = {https://www.nature.com/articles/s41598-023-34436-w},
+	doi = {10.1038/s41598-023-34436-w},
+	number = {1},
+	urldate = {2023-06-27},
+	journal = {Scientific Reports},
+	author = {Mateo-Garcia, Gonzalo and Veitch-Michaelis, Josh and Purcell, Cormac and Longepe, Nicolas and Reid, Simon and Anlind, Alice and Bruhn, Fredrik and Parr, James and Mathieu, Pierre Philippe},
+	month = jun,
+	year = {2023},
+	pages = {10391},
+}
+
 @article{mateo-garcia_towards_2021,
 	title = {Towards global flood mapping onboard low cost satellites with machine learning},
 	volume = {11},
