@@ -396,13 +396,14 @@ document.write(`
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ml4floods-trained-model">ml4floods trained model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-trained-model">Load trained model</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-sentinel-2">Inference on Sentinel-2</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-s2-data-from-the-worldfloodsv2-dataset">Inference on S2 data from the <em>WorldFloodsv2</em> dataset</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-a-new-sentinel-2-image">Inference on a new Sentinel-2 image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-a-sentinel-2-image">Download a Sentinel-2 image</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-inference">Run inference</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-results">Plot results</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-landsat">Inference on Landsat</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-a-new-landsat-image">Inference on a new Landsat image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-a-landsat-image">Download a Landsat image</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Run inference</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Plot results</a></li>
@@ -448,18 +449,29 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">huggingface_hub</span> <span class="kn">import</span> <span class="n">hf_hub_download</span>
+<span class="kn">from</span> <span class="nn">huggingface_hub</span> <span class="kn">import</span> <span class="n">hf_hub_download</span><span class="p">,</span> <span class="n">hf_hub_url</span>
+
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">georeader.geotensor</span> <span class="kn">import</span> <span class="n">GeoTensor</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">shape</span>
+
+<span class="kn">from</span> <span class="nn">georeader.rasterio_reader</span> <span class="kn">import</span> <span class="n">RasterioReader</span>
+<span class="kn">from</span> <span class="nn">georeader.geotensor</span> <span class="kn">import</span> <span class="n">GeoTensor</span>
 <span class="kn">from</span> <span class="nn">georeader.readers</span> <span class="kn">import</span> <span class="n">ee_query</span>
 <span class="kn">from</span> <span class="nn">georeader.readers</span> <span class="kn">import</span> <span class="n">ee_image</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">import</span> <span class="nn">ee</span>
 <span class="kn">from</span> <span class="nn">georeader</span> <span class="kn">import</span> <span class="n">plot</span>
+
+<span class="kn">import</span> <span class="nn">ee</span>
 <span class="kn">from</span> <span class="nn">ml4floods.visualization</span> <span class="kn">import</span> <span class="n">plot_utils</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">COLORS_PRED</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 0: invalid</span>
+                       <span class="p">[</span><span class="mi">139</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 1: land</span>
+                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">240</span><span class="p">],</span> <span class="c1"># 2: water</span>
+                       <span class="p">[</span><span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">],</span> <span class="c1"># 3: cloud</span>
+                       <span class="p">[</span><span class="mi">60</span><span class="p">,</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">92</span><span class="p">]],</span> <span class="c1"># 5: flood_trace</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
 </pre></div>
 </div>
 </div>
@@ -486,7 +498,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5a2735cf3d4f450eb182c7eadff15d44", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2b0aaead05ab48f0bde7b573f291a4a3", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ace3c9d3eefc486b9eac986912f26bc3", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "cb93a8bfbdae4b96b0bf8752b3069a7c", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -520,10 +532,88 @@ Getting model inference function
 </div>
 </div>
 </section>
-<section id="inference-on-sentinel-2">
-<h2>Inference on Sentinel-2<a class="headerlink" href="#inference-on-sentinel-2" title="Permalink to this heading">#</a></h2>
+<section id="inference-on-s2-data-from-the-worldfloodsv2-dataset">
+<h2>Inference on S2 data from the <em>WorldFloodsv2</em> dataset<a class="headerlink" href="#inference-on-s2-data-from-the-worldfloodsv2-dataset" title="Permalink to this heading">#</a></h2>
+<p>The <em>WorldFloodsv2</em> dataset is in this <a class="reference external" href="https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2">HuggingFace repository</a>. We’ll grab a S2 image from the dataset and run inference on them.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Select image to use</span>
+<span class="n">subset</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;EMSR333_01RATTALORO_DEL_MONIT01_v1&quot;</span>
+
+<span class="n">s2url</span> <span class="o">=</span> <span class="n">hf_hub_url</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;isp-uv-es/WorldFloodsv2&quot;</span><span class="p">,</span>
+                    <span class="n">subfolder</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">/S2&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">,</span>
+                    <span class="n">repo_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">)</span>
+
+<span class="n">channels</span>  <span class="o">=</span> <span class="n">get_channel_configuration_bands</span><span class="p">(</span><span class="n">channel_configuration</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s1">&#39;S2&#39;</span><span class="p">)</span>
+
+<span class="n">s2rst</span> <span class="o">=</span> <span class="n">RasterioReader</span><span class="p">(</span><span class="n">s2url</span><span class="p">)</span><span class="o">.</span><span class="n">isel</span><span class="p">({</span><span class="s2">&quot;band&quot;</span><span class="p">:</span> <span class="n">channels</span><span class="p">})</span>
+<span class="n">s2rst</span> <span class="o">=</span> <span class="n">s2rst</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+<span class="n">prediction_test</span><span class="p">,</span> <span class="n">prediction_test_cont</span>  <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">s2rst</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">))))</span>
+<span class="n">prediction_test_raster</span> <span class="o">=</span> <span class="n">GeoTensor</span><span class="p">(</span><span class="n">prediction_test</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">transform</span><span class="o">=</span><span class="n">s2rst</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+                                   <span class="n">fill_value_default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">s2rst</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+<span class="n">prediction_test_raster</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 
+         Transform: | 10.00, 0.00, 275730.00|
+| 0.00,-10.00, 4202330.00|
+| 0.00, 0.00, 1.00|
+         Shape: (1268, 1535)
+         Resolution: (10.0, 10.0)
+         Bounds: (275730.0, 4189650.0, 291080.0, 4202330.0)
+         CRS: EPSG:32633
+         fill_value_default: 0
+        
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">((</span><span class="n">s2rst</span><span class="o">.</span><span class="n">isel</span><span class="p">({</span><span class="s2">&quot;band&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span><span class="o">/</span><span class="mi">3_500</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">add_scalebar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="n">plot</span><span class="o">.</span><span class="n">plot_segmentation_mask</span><span class="p">(</span><span class="n">prediction_test_raster</span><span class="p">,</span> <span class="n">COLORS_PRED</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="n">interpretation_array</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;invalids&quot;</span><span class="p">,</span> <span class="s2">&quot;land&quot;</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">,</span> <span class="s2">&quot;cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;flood_trace&quot;</span><span class="p">])</span>
+
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> floodmap&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;test/EMSR333_01RATTALORO_DEL_MONIT01_v1 floodmap&#39;)
+</pre></div>
+</div>
+<img alt="../../_images/da804c475821d2f502c8e351b6094e446f92493b7bb4dad34639933f6436d798.png" src="../../_images/da804c475821d2f502c8e351b6094e446f92493b7bb4dad34639933f6436d798.png" />
+</div>
+</div>
+</section>
+<section id="inference-on-a-new-sentinel-2-image">
+<h2>Inference on a new Sentinel-2 image<a class="headerlink" href="#inference-on-a-new-sentinel-2-image" title="Permalink to this heading">#</a></h2>
 <section id="download-a-sentinel-2-image">
 <h3>Download a Sentinel-2 image<a class="headerlink" href="#download-a-sentinel-2-image" title="Permalink to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ee</span><span class="o">.</span><span class="n">Authenticate</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><p>To authorize access needed by Earth Engine, open the following
+        URL in a web browser and follow the instructions:</p>
+        <p><a href=https://code.earthengine.google.com/client-auth?scopes=https%3A//www.googleapis.com/auth/earthengine%20https%3A//www.googleapis.com/auth/devstorage.full_control&request_id=XAMgP9HKY_HJuM4sXUd9_TzeA0MWeymG1RT3nx2_8hQ&tc=71pdOr00jI6wQuV1l1DkNwNYrhz5nCAe1FAEwdCZt2I&cc=HMDLgD_n4P0-eEPKqgMag-jS5BxGxaSJi4RT1Ds7vf8>https://code.earthengine.google.com/client-auth?scopes=https%3A//www.googleapis.com/auth/earthengine%20https%3A//www.googleapis.com/auth/devstorage.full_control&request_id=XAMgP9HKY_HJuM4sXUd9_TzeA0MWeymG1RT3nx2_8hQ&tc=71pdOr00jI6wQuV1l1DkNwNYrhz5nCAe1FAEwdCZt2I&cc=HMDLgD_n4P0-eEPKqgMag-jS5BxGxaSJi4RT1Ds7vf8</a></p>
+        <p>The authorization workflow will generate a code, which you should paste in the box below.</p>
+        </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Successfully saved authorization token.
+</pre></div>
+</div>
+</div>
+</div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ee.Authenticate()</span>
@@ -586,8 +676,8 @@ Warning 1: TIFFReadDirectory:Sum of Photometric type-related color channels and 
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 1min 27s, sys: 15.8 s, total: 1min 43s
-Wall time: 13.6 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 1min 9s, sys: 15.3 s, total: 1min 24s
+Wall time: 11.3 s
 </pre></div>
 </div>
 </div>
@@ -597,14 +687,7 @@ Wall time: 13.6 s
 <h3>Plot results<a class="headerlink" href="#plot-results" title="Permalink to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">COLORS_PRED</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 0: invalid</span>
-                       <span class="p">[</span><span class="mi">139</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="c1"># 1: land</span>
-                       <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">240</span><span class="p">],</span> <span class="c1"># 2: water</span>
-                       <span class="p">[</span><span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">220</span><span class="p">],</span> <span class="c1"># 3: cloud</span>
-                       <span class="p">[</span><span class="mi">60</span><span class="p">,</span> <span class="mi">85</span><span class="p">,</span> <span class="mi">92</span><span class="p">]],</span> <span class="c1"># 5: flood_trace</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
-
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
 
 <span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">((</span><span class="n">postflood</span><span class="o">.</span><span class="n">isel</span><span class="p">({</span><span class="s2">&quot;band&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">]})</span><span class="o">/</span><span class="mi">3_500</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">add_scalebar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">s2data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">satellite</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">s2data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">solarday</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -622,13 +705,13 @@ Wall time: 13.6 s
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;2022-03-02 floodmap&#39;)
 </pre></div>
 </div>
-<img alt="../../_images/621f4142811f076498172b27f9483297bf0e9799441e01a9faf39ac070b38483.png" src="../../_images/621f4142811f076498172b27f9483297bf0e9799441e01a9faf39ac070b38483.png" />
+<img alt="../../_images/819aa822e9026cf60a39be4f2d77da3b1d610e0f4e1dd66884dfe939247e878f.png" src="../../_images/819aa822e9026cf60a39be4f2d77da3b1d610e0f4e1dd66884dfe939247e878f.png" />
 </div>
 </div>
 </section>
 </section>
-<section id="inference-on-landsat">
-<h2>Inference on Landsat<a class="headerlink" href="#inference-on-landsat" title="Permalink to this heading">#</a></h2>
+<section id="inference-on-a-new-landsat-image">
+<h2>Inference on a new Landsat image<a class="headerlink" href="#inference-on-a-new-landsat-image" title="Permalink to this heading">#</a></h2>
 <section id="download-a-landsat-image">
 <h3>Download a Landsat image<a class="headerlink" href="#download-a-landsat-image" title="Permalink to this heading">#</a></h3>
 <div class="cell docutils container">
@@ -650,8 +733,8 @@ Wall time: 13.6 s
   result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 131 ms, sys: 33.6 ms, total: 165 ms
-Wall time: 3.89 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 146 ms, sys: 16.5 ms, total: 163 ms
+Wall time: 4.36 s
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Warning 1: TIFFReadDirectory:Sum of Photometric type-related color channels and ExtraSamples doesn&#39;t match SamplesPerPixel. Defining non-color channels as ExtraSamples.
@@ -686,8 +769,8 @@ Wall time: 3.89 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 8.73 s, sys: 1.61 s, total: 10.3 s
-Wall time: 1.35 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 7.48 s, sys: 1.43 s, total: 8.92 s
+Wall time: 1.16 s
 </pre></div>
 </div>
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 
@@ -726,7 +809,7 @@ Wall time: 1.35 s
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;2022-04-05 floodmap&#39;)
 </pre></div>
 </div>
-<img alt="../../_images/a35a2efd9872a1d14c4ce41cd5a72f20a8c88cbc6e094441a4c1a9268d2680ee.png" src="../../_images/a35a2efd9872a1d14c4ce41cd5a72f20a8c88cbc6e094441a4c1a9268d2680ee.png" />
+<img alt="../../_images/b6814b42289a182a54a4f9b54d3f55aafeef7bcd3742968afa99a13e30a99cf3.png" src="../../_images/b6814b42289a182a54a4f9b54d3f55aafeef7bcd3742968afa99a13e30a99cf3.png" />
 </div>
 </div>
 </section>
@@ -1185,13 +1268,14 @@ Wall time: 1.35 s
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ml4floods-trained-model">ml4floods trained model</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-trained-model">Load trained model</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-sentinel-2">Inference on Sentinel-2</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-s2-data-from-the-worldfloodsv2-dataset">Inference on S2 data from the <em>WorldFloodsv2</em> dataset</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-a-new-sentinel-2-image">Inference on a new Sentinel-2 image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-a-sentinel-2-image">Download a Sentinel-2 image</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-inference">Run inference</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-results">Plot results</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-landsat">Inference on Landsat</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-a-new-landsat-image">Inference on a new Landsat image</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#download-a-landsat-image">Download a Landsat image</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Run inference</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Plot results</a></li>

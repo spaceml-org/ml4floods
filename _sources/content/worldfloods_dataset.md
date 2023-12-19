@@ -15,8 +15,20 @@ There are two versions of the database available:
 1. The latest version (v2) was released with the article [*Global flood extent segmentation in optical satellite images*](https://www.nature.com/articles/s41598-023-47595-7). It contains flood events from 2016 and 2023. It is mainly based on Copernicus EMS flood maps which have been manually curated. In addition the ground truth binary masks are divided in two channels one with clear/cloudy pixels and another one with land/water.
 1. The first version of the dataset was released with the article [*Towards global flood mapping onboard low cost satellites with machine learning*](https://www.nature.com/articles/s41598-021-86650-z). It contains flood events from 2016 to 2019. This dataset was created semi-automatically and only the validation and test events where manually curated.
 
+### Download the v2 data from Hugging-Face 🤗
+
+The WorldFloods v2 dataset is stored in Hugging-Face in the repository: [isp-uv-es/WorldFloodsv2](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2/). 
+
+To download the full dataset (~315GB) run:
+
+```
+huggingface-cli download --repo-type dataset isp-uv-es/WorldFloodsv2
+```
+
+To download single files see the [Hugging Face docs](https://huggingface.co/docs/huggingface_hub/guides/download).
+
 ### Download the v2 data from Zenodo
-Currently only the manually curated flood maps and metadata are available online at (https://zenodo.org/records/8153514)[https://zenodo.org/records/8153514].  
+In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. [10.5281/zenodo.8153514](https://zenodo.org/records/8153514).  
 
 ### Download the v1 data from the Google Drive
 

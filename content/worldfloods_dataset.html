@@ -363,6 +363,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-hugging-face">Download the v2 data from Hugging-Face 🤗</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-zenodo">Download the v2 data from Zenodo</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-drive">Download the v1 data from the Google Drive</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-bucket">Download the v1 data from the Google Bucket</a></li>
@@ -389,9 +390,18 @@ It requires approximately 300GB of hard-disk storage.</p>
 <li><p>The latest version (v2) was released with the article <a class="reference external" href="https://www.nature.com/articles/s41598-023-47595-7"><em>Global flood extent segmentation in optical satellite images</em></a>. It contains flood events from 2016 and 2023. It is mainly based on Copernicus EMS flood maps which have been manually curated. In addition the ground truth binary masks are divided in two channels one with clear/cloudy pixels and another one with land/water.</p></li>
 <li><p>The first version of the dataset was released with the article <a class="reference external" href="https://www.nature.com/articles/s41598-021-86650-z"><em>Towards global flood mapping onboard low cost satellites with machine learning</em></a>. It contains flood events from 2016 to 2019. This dataset was created semi-automatically and only the validation and test events where manually curated.</p></li>
 </ol>
+<section id="download-the-v2-data-from-hugging-face">
+<h2>Download the v2 data from Hugging-Face 🤗<a class="headerlink" href="#download-the-v2-data-from-hugging-face" title="Permalink to this heading">#</a></h2>
+<p>The WorldFloods v2 dataset is stored in Hugging-Face in the repository: <a class="reference external" href="https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2/">isp-uv-es/WorldFloodsv2</a>.</p>
+<p>To download the full dataset (~315GB) run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">huggingface</span><span class="o">-</span><span class="n">cli</span> <span class="n">download</span> <span class="o">--</span><span class="n">repo</span><span class="o">-</span><span class="nb">type</span> <span class="n">dataset</span> <span class="n">isp</span><span class="o">-</span><span class="n">uv</span><span class="o">-</span><span class="n">es</span><span class="o">/</span><span class="n">WorldFloodsv2</span>
+</pre></div>
+</div>
+<p>To download single files see the <a class="reference external" href="https://huggingface.co/docs/huggingface_hub/guides/download">Hugging Face docs</a>.</p>
+</section>
 <section id="download-the-v2-data-from-zenodo">
 <h2>Download the v2 data from Zenodo<a class="headerlink" href="#download-the-v2-data-from-zenodo" title="Permalink to this heading">#</a></h2>
-<p>Currently only the manually curated flood maps and metadata are available online at (<a class="reference external" href="https://zenodo.org/records/8153514">https://zenodo.org/records/8153514</a>)[<a class="reference external" href="https://zenodo.org/records/8153514">https://zenodo.org/records/8153514</a>].</p>
+<p>In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. <a class="reference external" href="https://zenodo.org/records/8153514">10.5281/zenodo.8153514</a>.</p>
 </section>
 <section id="download-the-v1-data-from-the-google-drive">
 <h2>Download the v1 data from the Google Drive<a class="headerlink" href="#download-the-v1-data-from-the-google-drive" title="Permalink to this heading">#</a></h2>
@@ -526,6 +536,7 @@ gsutil<span class="w"> </span>-u<span class="w"> </span>your-project<span class=
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-hugging-face">Download the v2 data from Hugging-Face 🤗</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v2-data-from-zenodo">Download the v2 data from Zenodo</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-drive">Download the v1 data from the Google Drive</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#download-the-v1-data-from-the-google-bucket">Download the v1 data from the Google Bucket</a></li>
