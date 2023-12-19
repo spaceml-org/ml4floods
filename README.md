@@ -1,9 +1,9 @@
 
+[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  ![PyPI](https://img.shields.io/pypi/v/ml4floods) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods) ![PyPI - License](https://img.shields.io/pypi/l/ml4floods) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514)
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
-
-[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  ![PyPI](https://img.shields.io/pypi/v/ml4floods) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods) ![PyPI - License](https://img.shields.io/pypi/l/ml4floods) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514)
 
 ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
 
