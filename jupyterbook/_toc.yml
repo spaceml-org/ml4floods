@@ -4,8 +4,8 @@ root: content/config.md
 parts:
 - caption: Inference with clouds-aware models
   chapters:
-  - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
   - file: content/ml4ops/HOWTO_postprocess_inference.ipynb
+  - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
   - file: content/ml4ops/HOWTO_inference_on_image_time_series.ipynb
 
 - caption: The *WorldFloods* dataset
