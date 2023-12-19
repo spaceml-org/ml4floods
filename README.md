@@ -1,5 +1,5 @@
 
-[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  ![PyPI](https://img.shields.io/pypi/v/ml4floods) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods) ![PyPI - License](https://img.shields.io/pypi/l/ml4floods) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514) [![docs](https://badgen.net/badge/docs/spaceml-org.github.io/blue)](https://spaceml-org.github.io/ml4floods/)
+[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  ![PyPI](https://img.shields.io/pypi/v/ml4floods) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods) ![PyPI - License](https://img.shields.io/pypi/l/ml4floods) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514) [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/)
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
@@ -25,8 +25,9 @@ Install the latest version from GitHub:
 pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 ```
 
-## Docs
-[spaceml-org.github.io/ml4floods](https://spaceml-org.github.io/ml4floods)
+## Docs 
+
+[![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/)
 
 These tutorials may help you explore the datasets and models:
 * [Run the clouds-aware flood segmentation model in Sentinel-2 and Landsat and vectorise the flood maps](https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_postprocess_inference.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_postprocess_inference.ipynb)
@@ -38,7 +39,8 @@ These tutorials may help you explore the datasets and models:
     * [Perf metrics](https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
 
 ## The *WorldFloods* database
-
+ [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514)
+ 
 The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
 It requires approximately 300GB of hard-disk storage. 
 
