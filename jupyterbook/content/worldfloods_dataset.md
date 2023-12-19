@@ -28,7 +28,7 @@ huggingface-cli download --repo-type dataset isp-uv-es/WorldFloodsv2
 To download single files see the [Hugging Face docs](https://huggingface.co/docs/huggingface_hub/guides/download).
 
 ### Download the v2 data from Zenodo
-In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. (https://zenodo.org/records/8153514)[https://zenodo.org/records/8153514].  
+In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. [10.5281/zenodo.8153514](https://zenodo.org/records/8153514).  
 
 ### Download the v1 data from the Google Drive
 
