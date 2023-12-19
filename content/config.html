@@ -66,7 +66,7 @@ const thebe_selector_output = ".output, .cell_output"
     <link rel="shortcut icon" href="../_static/ml4cc_logo.png"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Inference with clouds aware floods segmentation model" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html" />
+    <link rel="next" title="Kherson Dam Break end-to-end floodmap" href="ml4ops/HOWTO_postprocess_inference.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -170,8 +170,8 @@ const thebe_selector_output = ".output, .cell_output"
         </ul>
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">Inference with clouds-aware models</span></p>
 <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Kherson Dam Break <em>end-to-end</em> floodmap</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_postprocess_inference.html">Postprocess inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
@@ -389,8 +389,7 @@ document.write(`
 </figure>
 <section id="democratising-ai-enhanced-flooding-tools">
 <h2>Democratising AI-Enhanced Flooding Tools<a class="headerlink" href="#democratising-ai-enhanced-flooding-tools" title="Permalink to this heading">#</a></h2>
-<p>Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types. Such ‘data fusion’ capabilities are potentially game-changing for a broad spectrum of users, from emergency workers to urban planners.</p>
-<p>Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. The full workflow is embedded in a visualisation tool that enables users to query, understand and use the insights and information generated. This unified suite of tools can get users 80% of the way and then allows straightforward customisation to a specific problem sub-domain.</p>
+<p>Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types.  Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface.</p>
 </section>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Permalink to this heading">#</a></h2>
@@ -405,7 +404,7 @@ document.write(`
 See the <a class="reference internal" href="intro/introduction.html"><span class="doc std std-doc">project rationale</span></a> for a more detailed explanation of the goals of the tool.</p>
 <p>These tutorials may help you explore the datasets and models:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_postprocess_inference.html">Run the clouds-aware flood segmentation model in Sentinel-2 and Landsat and vectorise the flood maps</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_postprocess_inference.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_postprocess_inference.html">Kherson Dam Break <em>end-to-end</em> floodmap</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_postprocess_inference.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_inference_on_image_time_series.html">Run the model on time series of Sentinel-2 images</a> <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_inference_on_image_time_series.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/prep/full_data_ingest.html">Ingest data from Copernicus EMS</a>  <a class="reference external" href="https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/prep/full_data_ingest.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p><a class="reference external" href="https://spaceml-org.github.io/ml4floods/content/ml_overview.html">ML-models step by step</a></p>
@@ -538,11 +537,11 @@ src="https://www.youtube.com/embed/wMLuHf9s9zk?autoplay=0">
                   
 <div class="prev-next-area">
     <a class="right-next"
-       href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html"
+       href="ml4ops/HOWTO_postprocess_inference.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Inference with clouds aware floods segmentation model</p>
+        <p class="prev-next-title">Kherson Dam Break <em>end-to-end</em> floodmap</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
