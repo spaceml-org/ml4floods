@@ -498,7 +498,7 @@ document.write(`
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ace3c9d3eefc486b9eac986912f26bc3", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "cb93a8bfbdae4b96b0bf8752b3069a7c", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "82c1b38215ea41f091049fa53ecbaec1", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "5e40d3e60f924adc966f396d04be3cb2", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -506,7 +506,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">ml4floods.models.model_setup</span> <span class="kn">import</span> <span class="n">get_channel_configuration_bands</span>
 
 <span class="n">inference_function</span><span class="p">,</span> <span class="n">config</span> <span class="o">=</span> <span class="n">load_inference_function</span><span class="p">(</span><span class="n">subfolder_local</span><span class="p">,</span> <span class="n">device_name</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">max_tile_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
-                                                     <span class="n">th_water</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">th_brightness</span><span class="o">=</span><span class="mi">3500</span><span class="p">)</span>
+                                                     <span class="n">th_water</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">th_brightness</span><span class="o">=</span><span class="mi">3500</span><span class="p">)</span>
 
 <span class="n">channel_configuration</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;data_params&#39;</span><span class="p">][</span><span class="s1">&#39;channel_configuration&#39;</span><span class="p">]</span>
 <span class="n">channels</span>  <span class="o">=</span> <span class="n">get_channel_configuration_bands</span><span class="p">(</span><span class="n">channel_configuration</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s1">&#39;S2&#39;</span><span class="p">)</span>
@@ -534,16 +534,16 @@ Getting model inference function
 </section>
 <section id="inference-on-s2-data-from-the-worldfloodsv2-dataset">
 <h2>Inference on S2 data from the <em>WorldFloodsv2</em> dataset<a class="headerlink" href="#inference-on-s2-data-from-the-worldfloodsv2-dataset" title="Permalink to this heading">#</a></h2>
-<p>The <em>WorldFloodsv2</em> dataset is in this <a class="reference external" href="https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2">HuggingFace repository</a>. We’ll grab a S2 image from the dataset and run inference on them.</p>
+<p>The <em>WorldFloodsv2</em> dataset is stored in this <a class="reference external" href="https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2">HuggingFace repository</a>. We’ll grab a S2 image from the dataset and run inference on them.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Select image to use</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span>
-<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;EMSR333_01RATTALORO_DEL_MONIT01_v1&quot;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;EMSR264_18MIANDRIVAZODETAIL_DEL_v2&quot;</span>
 
 <span class="n">s2url</span> <span class="o">=</span> <span class="n">hf_hub_url</span><span class="p">(</span><span class="n">repo_id</span><span class="o">=</span><span class="s2">&quot;isp-uv-es/WorldFloodsv2&quot;</span><span class="p">,</span>
-                    <span class="n">subfolder</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">/S2&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">,</span>
-                    <span class="n">repo_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">)</span>
+                   <span class="n">subfolder</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s2">/S2&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">,</span>
+                   <span class="n">repo_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">)</span>
 
 <span class="n">channels</span>  <span class="o">=</span> <span class="n">get_channel_configuration_bands</span><span class="p">(</span><span class="n">channel_configuration</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s1">&#39;S2&#39;</span><span class="p">)</span>
 
@@ -558,13 +558,13 @@ Getting model inference function
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 
-         Transform: | 10.00, 0.00, 275730.00|
-| 0.00,-10.00, 4202330.00|
+         Transform: | 10.00, 0.00, 537430.00|
+| 0.00,-10.00, 7844180.00|
 | 0.00, 0.00, 1.00|
-         Shape: (1268, 1535)
+         Shape: (1313, 1530)
          Resolution: (10.0, 10.0)
-         Bounds: (275730.0, 4189650.0, 291080.0, 4202330.0)
-         CRS: EPSG:32633
+         Bounds: (537430.0, 7831050.0, 552730.0, 7844180.0)
+         CRS: EPSG:32738
          fill_value_default: 0
         
 </pre></div>
@@ -587,10 +587,10 @@ Getting model inference function
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;test/EMSR333_01RATTALORO_DEL_MONIT01_v1 floodmap&#39;)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;test/EMSR264_18MIANDRIVAZODETAIL_DEL_v2 floodmap&#39;)
 </pre></div>
 </div>
-<img alt="../../_images/da804c475821d2f502c8e351b6094e446f92493b7bb4dad34639933f6436d798.png" src="../../_images/da804c475821d2f502c8e351b6094e446f92493b7bb4dad34639933f6436d798.png" />
+<img alt="../../_images/f42c025c294d7f64498ea3301e5680d824fb0677cccfc596999a22b3885c3aed.png" src="../../_images/f42c025c294d7f64498ea3301e5680d824fb0677cccfc596999a22b3885c3aed.png" />
 </div>
 </div>
 </section>
@@ -676,8 +676,8 @@ Warning 1: TIFFReadDirectory:Sum of Photometric type-related color channels and 
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 1min 9s, sys: 15.3 s, total: 1min 24s
-Wall time: 11.3 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 1min 33s, sys: 16.5 s, total: 1min 50s
+Wall time: 15.7 s
 </pre></div>
 </div>
 </div>
@@ -705,7 +705,7 @@ Wall time: 11.3 s
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;2022-03-02 floodmap&#39;)
 </pre></div>
 </div>
-<img alt="../../_images/819aa822e9026cf60a39be4f2d77da3b1d610e0f4e1dd66884dfe939247e878f.png" src="../../_images/819aa822e9026cf60a39be4f2d77da3b1d610e0f4e1dd66884dfe939247e878f.png" />
+<img alt="../../_images/0fd38f0b6c5efc80df071967d05bb4659b0bb04c1e376ed19a4c28550b8603e8.png" src="../../_images/0fd38f0b6c5efc80df071967d05bb4659b0bb04c1e376ed19a4c28550b8603e8.png" />
 </div>
 </div>
 </section>
@@ -733,8 +733,8 @@ Wall time: 11.3 s
   result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 146 ms, sys: 16.5 ms, total: 163 ms
-Wall time: 4.36 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 133 ms, sys: 34 ms, total: 167 ms
+Wall time: 13.1 s
 </pre></div>
 </div>
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Warning 1: TIFFReadDirectory:Sum of Photometric type-related color channels and ExtraSamples doesn&#39;t match SamplesPerPixel. Defining non-color channels as ExtraSamples.
@@ -769,8 +769,8 @@ Wall time: 4.36 s
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 7.48 s, sys: 1.43 s, total: 8.92 s
-Wall time: 1.16 s
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>CPU times: user 8.05 s, sys: 1.45 s, total: 9.5 s
+Wall time: 1.22 s
 </pre></div>
 </div>
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 
@@ -809,7 +809,7 @@ Wall time: 1.16 s
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0.5, 1.0, &#39;2022-04-05 floodmap&#39;)
 </pre></div>
 </div>
-<img alt="../../_images/b6814b42289a182a54a4f9b54d3f55aafeef7bcd3742968afa99a13e30a99cf3.png" src="../../_images/b6814b42289a182a54a4f9b54d3f55aafeef7bcd3742968afa99a13e30a99cf3.png" />
+<img alt="../../_images/6a2df2635176c066fbf203badc12549909929df7aa827cc2b9975cc5547216b3.png" src="../../_images/6a2df2635176c066fbf203badc12549909929df7aa827cc2b9975cc5547216b3.png" />
 </div>
 </div>
 </section>
@@ -1184,6 +1184,7 @@ Wall time: 1.16 s
 <h2>Licence<a class="headerlink" href="#licence" title="Permalink to this heading">#</a></h2>
 <p>The ML4Floods package is published under a <a class="reference external" href="https://www.gnu.org/licenses/lgpl-3.0.en.html">GNU Lesser GPL v3 licence</a></p>
 <p>The <em>WorldFloods</em> database and all pre-trained models are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>. For using the models in comercial pipelines written consent by the authors must be provided.</p>
+<p>The Ml4Floods notebooks and docs are released under a <a class="reference external" href="https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt">Creative Commons non-commercial licence</a>.</p>
 <p>If you find this work useful please cite:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">portales</span><span class="o">-</span><span class="n">julia_global_2023</span><span class="p">,</span>
 	<span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Global</span> <span class="n">flood</span> <span class="n">extent</span> <span class="n">segmentation</span> <span class="ow">in</span> <span class="n">optical</span> <span class="n">satellite</span> <span class="n">images</span><span class="p">},</span>
