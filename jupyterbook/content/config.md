@@ -111,6 +111,9 @@ The package is available in [GitHub](https://github.com/spaceml-org/ml4floods). 
 The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
+The Ml4Floods notebooks and docs are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+<img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
+
  ## Contributors
  
  *Gonzalo Mateo-García*, *Enrique Portalés-Julià*, *Tarun Narayanan*, *J. Emmanuel Jonhson*, *Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes* and *James Parr*.
