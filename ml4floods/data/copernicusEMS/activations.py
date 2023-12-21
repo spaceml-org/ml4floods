@@ -59,16 +59,16 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
       A pandas.DataFrame of Flood events.
 
     """
-    ems_web_page = "https://emergency.copernicus.eu/mapping/list-of-activations-rapid"
-    tables = pd.read_html(ems_web_page)[1]
+    ems_web_page = "https://poc-d8.lolandese.site/search-activations1"
+    tables = pd.read_html(ems_web_page)[0]
     tables_floods = tables[(tables.Type == "Flood") | (tables.Type == "Storm")]
-    tables_floods = tables_floods[tables_floods["Event Date"] >= event_start_date]
+    tables_floods = tables_floods[tables_floods["Act. Date"] >= event_start_date]
     tables_floods = tables_floods.reset_index()[
-        ["Act. Code", "Title", "Event Date", "Type", "Country/Terr."]
+        ["Act. Code", "Title", "Act. Date", "Type", "Country/Terr."]
     ]
 
     tables_floods = tables_floods.rename(
-        {"Act. Code": "Code", "Country/Terr.": "Country", "Event Date": "CodeDate"},
+        {"Act. Code": "Code", "Country/Terr.": "Country", "Act. Date": "CodeDate"},
         axis=1,
     )
 
