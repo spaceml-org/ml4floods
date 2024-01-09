@@ -347,7 +347,7 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket:Optional="worldfloods", crs:str='EPSG:4326',
+def export_task_image(bucket:Optional[str]="worldfloods", crs:str='EPSG:4326',
                       scale:float=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
     """
     function to export images in the WorldFloods format.
@@ -473,6 +473,15 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         bucket_name=bucket_name,
         verbose=2,
     )
+
+
+def permanent_water_image(year:int, pol:ee.Geometry) -> ee.Image:
+    if year >= 2021:
+        year = 2021
+    
+    img_export = ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
+    return img_export.clip(pol)
+
 
 def download_merit_layer(area_of_interest: Polygon,
                          path_bucket: str, crs:str='EPSG:4326',

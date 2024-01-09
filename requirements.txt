@@ -14,3 +14,8 @@ gcsfs
 requests_html
 earthengine-api
 mercantile
+seaborn
+gdown
+matplotlib-scalebar
+georeader-spaceml
+huggingface_hub[cli,torch]

@@ -8,7 +8,7 @@ from matplotlib import colors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Dict, Any
 from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
 from ml4floods.models.model_setup import get_channel_configuration_bands
 from ml4floods.data.worldfloods import configs
@@ -149,6 +149,41 @@ def get_image_transform(array_or_file:Union[str, np.ndarray],
     return output, transform
 
 
+def show(add_scalebar:bool=False, kwargs_scalebar:Optional[Dict[str, Any]]=None, **kwargs):
+    """
+    Shows the current plot with a scalebar if `add_scalebar` is True.
+
+    Args:
+        add_scalebar: whether to add a scalebar or not
+        kwargs_scalebar: kwargs for the scalebar
+        kwargs: kwargs for the plot
+    """
+    if "ax" in kwargs:
+        ax = kwargs.pop("ax")
+    else:
+        ax = plt.gca()
+
+    rasterioplt.show(**kwargs, ax=ax)
+
+    if add_scalebar:
+        try:
+             from matplotlib_scalebar.scalebar import ScaleBar
+        except ImportError as e:
+            raise ImportError("Install matplotlib-scalebar to use scalebar"
+                              "pip install matplotlib-scalebar"
+                              f"{e}")
+        
+        assert "transform" in kwargs, "transform must be in passed to the function to add scalebar"
+        
+        if kwargs_scalebar is None:
+            kwargs_scalebar = {"dx":1}
+        if "dx" not in kwargs_scalebar:
+            kwargs_scalebar["dx"] = 1
+        ax.add_artist(ScaleBar(**kwargs_scalebar))
+    
+    return ax
+
+
 def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Affine]=None,
                    window:Optional[rasterio.windows.Window]=None,
                    max_clip_val:Optional[float]=3000.,
@@ -202,7 +237,7 @@ def plot_rgb_image(input: Union[str, np.ndarray], transform:Optional[rasterio.Af
         min_clip_val = 0 if min_clip_val is None else min_clip_val
         image = np.clip((image-min_clip_val)/(max_clip_val - min_clip_val), 0, 1)
 
-    return rasterioplt.show(image, transform=transform, **kwargs)
+    return show(source=image, transform=transform, **kwargs)
 
 COLORS_FLOODMAP = {"water": "#0010F6",
                    # "cloud": "#CFCFCF",
@@ -311,7 +346,7 @@ def plot_swirnirred_image(input: Union[str, np.ndarray],
         min_clip_val = 0 if min_clip_val is None else min_clip_val
         image = np.clip((image-min_clip_val)/(max_clip_val - min_clip_val), 0, 1)
 
-    return rasterioplt.show(image, transform=transform, **kwargs)
+    return show(source=image, transform=transform, **kwargs)
 
 
 def plots_preds_v1(prediction: Union[str, np.ndarray],transform:Optional[rasterio.Affine]=None,
@@ -372,8 +407,8 @@ def plots_preds_v2(prediction: Union[str, np.ndarray],transform:Optional[rasteri
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS_INVLANDWATER,
                                                                  INTERPRETATION_INVLANDWATER)
 
-    ax = rasterioplt.show(prediction_show, transform=transform, cmap=cmap_preds, norm=norm_preds,
-                          interpolation='nearest',**kwargs)
+    ax = show(source=prediction_show, transform=transform, cmap=cmap_preds, norm=norm_preds,
+              interpolation='nearest',**kwargs)
 
     if legend:
         ax.legend(handles=patches_preds,
@@ -404,8 +439,8 @@ def plot_gt_v1(target: Union[str, np.ndarray], transform:Optional[rasterio.Affin
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
-    ax = rasterioplt.show(target, transform=transform, cmap=cmap_preds, norm=norm_preds,
-                          interpolation='nearest', **kwargs)
+    ax = show(source=target, transform=transform, cmap=cmap_preds, norm=norm_preds,
+              interpolation='nearest', **kwargs)
 
     if legend:
         ax.legend(handles=patches_preds,
@@ -445,8 +480,8 @@ def plot_gt_v2(target: Union[str, np.ndarray], transform:Optional[rasterio.Affin
     cmap_preds, norm_preds, patches_preds = get_cmap_norm_colors(configs.COLORS_WORLDFLOODS,
                                                                  INTERPRETATION_WORLDFLOODS)
 
-    ax = rasterioplt.show(v1gt, transform=transform, cmap=cmap_preds, norm=norm_preds,
-                          interpolation='nearest', **kwargs)
+    ax = show(source=v1gt, transform=transform, cmap=cmap_preds, norm=norm_preds,
+              interpolation='nearest', **kwargs)
 
     if legend:
         ax.legend(handles=patches_preds,
@@ -480,8 +515,8 @@ def plot_gt_v1_with_permanent(target: Union[str, np.ndarray], permanent: Optiona
 
     cmap_gt, norm_gt, patches_gt = get_cmap_norm_colors(COLORS_WORLDFLOODS_PERMANENT, INTERPRETATION_WORLDFLOODS_PERMANENT)
 
-    ax = rasterioplt.show(target,transform=transform, cmap=cmap_gt, norm=norm_gt,
-                          interpolation='nearest', **kwargs)
+    ax = show(source=target,transform=transform, cmap=cmap_gt, norm=norm_gt,
+              interpolation='nearest', **kwargs)
 
     if legend:
         ax.legend(handles=patches_gt,
@@ -512,7 +547,7 @@ def plot_s2_and_confusions(input: Union[str, np.ndarray], positives: np.ndarray 
     cmap_colors = ['orange','C9', 'blue']
     cmap = colors.ListedColormap(cmap_colors)
     
-    return rasterioplt.show(np.moveaxis(image,-1,0), cmap = cmap, transform = transform, title = title, **kwargs)
+    return show(source=np.moveaxis(image,-1,0), cmap = cmap, transform = transform, title = title, **kwargs)
 
 
 def plot_segmentation_mask(mask, color_array,
@@ -540,8 +575,8 @@ def plot_segmentation_mask(mask, color_array,
             0], f"Different numbers of colors and interpretation {len(interpretation_array)} {color_array.shape[0]}"
 
 
-    ax = rasterioplt.show(mask,transform=transform, ax=ax,
-                          cmap=cmap_categorical, norm=norm_categorical, interpolation='nearest')
+    ax = show(source=mask,transform=transform, ax=ax,
+              cmap=cmap_categorical, norm=norm_categorical, interpolation='nearest')
 
     if legend:
         patches = []

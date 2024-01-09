@@ -5,7 +5,9 @@
 
 <p style="text-align: center; font-style: italic;">ML4Floods: an ecosystem of data, models and code pipelines to tackle flooding with ML</p>
 
-# Introduction
+# Project rationale
+
+## Introduction
 
 Satellites image the whole globe, revisiting locations every few days or even hours to record the changing landscape. Their cameras see deep into the infrared and radar sensors see through clouds and at night. They capture information on many different observable parameters including dynamic and rapid processes and events like floods. Newer instruments can now provide contextual details at more and more precise scale, locating for instance individual buildings that are flooded, or even search and rescue people using airborne platforms. At the same time, ground-based sensors like rain gauges or river level stations record surface conditions unavailable from space. All of this data is stored - sometimes by commercial companies, but often by government agencies under open- or restricted-access policies. However, there remain significant barriers for non-specialists to access and use this information or to respond quickly in emergency situations.
 

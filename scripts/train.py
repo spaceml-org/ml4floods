@@ -101,7 +101,7 @@ def train(config):
         gpus=config.gpus,
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
-        log_gpu_memory=None,
+        # log_gpu_memory=None,
         resume_from_checkpoint=checkpoint_path if config.resume_from_checkpoint else None
     )
     

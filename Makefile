@@ -84,3 +84,14 @@ build-jupyterbook:  ## build jupyter book documentation
 
 clean-jupyterbook:  ## clean the jupyter book html files
 	jupyter-book clean jupyterbook
+
+build-package:
+	rm -rf build/
+	rm -rf dist/
+	python setup.py sdist bdist_wheel
+
+publish-package:
+	python -m twine upload dist/*
+
+publish-docs:
+	ghp-import -n -p -f jupyterbook/_build/html

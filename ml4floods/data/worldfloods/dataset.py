@@ -48,6 +48,7 @@ class WorldFloodsDataset(Dataset):
         gt_prefix: str = "/gt_files/",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
+        mndwi_indices: List[int] = None,
         lock_read: bool = False,
     ) -> None:
 
@@ -56,6 +57,7 @@ class WorldFloodsDataset(Dataset):
         self.gt_prefix = gt_prefix
         self.transforms = transforms
         self.bands_read = bands
+        self.mndwi_indices = mndwi_indices
         if lock_read:
             self._lock = threading.Lock()
         else:
@@ -90,6 +92,10 @@ class WorldFloodsDataset(Dataset):
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
+        
+        if self.mndwi_indices is not None:
+            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6)
+            image = np.concatenate([image,mndwi[np.newaxis]], axis = 0)
 
         # The 0-index comes from reading all the bands with f.read()
         mask = np.nan_to_num(mask_tif)
@@ -138,6 +144,7 @@ class WorldFloodsDatasetTiled(Dataset):
         gt_prefix: str = "/gt_files/",
         transforms: Optional[Callable] = None,
         bands: List[int] = list(range(len(BANDS_S2))),
+        mndwi_indices: List[int] = None,
         lock_read: bool = False,
     ) -> None:
 
@@ -145,6 +152,7 @@ class WorldFloodsDatasetTiled(Dataset):
         self.gt_prefix = gt_prefix
         self.transforms = transforms
         self.channels_read = bands
+        self.mndwi_indices = mndwi_indices
 
         if lock_read:
             # Useful when reading from bucket
@@ -223,7 +231,10 @@ class WorldFloodsDatasetTiled(Dataset):
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
-
+        
+        if self.mndwi_indices is not None:
+            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6)
+            image = np.concatenate([image,mndwi[np.newaxis]], axis = 0)
         mask = np.nan_to_num(mask_tif).astype(int)
 
         # Apply transformation

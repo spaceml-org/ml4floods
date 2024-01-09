@@ -13,6 +13,7 @@ from typing import Dict, List, Callable, Tuple, Optional
 from ml4floods.preprocess.worldfloods import prepare_patches
 from ml4floods.models.config_setup import load_json, get_filesystem
 import warnings
+import numpy as np
 
 
 def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
@@ -157,11 +158,12 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
                     folder_local = os.path.join(path_to_splits, isplit, input_target_folder)
                     os.makedirs(folder_local, exist_ok=True)
                     basename = os.path.basename(filename)
+                    file_src = filenames_train_test[isplit][input_target_folder][idx]
                     file_dest = os.path.join(folder_local, basename)
                     if not os.path.isfile(file_dest):
-                        fs.get_file(filename, file_dest)
-                        print(f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_folder])}) {filename}")
-                    filenames_train_test[isplit][input_folder][idx] = file_dest
+                        fs.get_file(file_src, file_dest)
+                        print(f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_target_folder])}) {file_src}")
+                    filenames_train_test[isplit][input_target_folder][idx] = file_dest
 
     return filenames_train_test
 
@@ -207,6 +209,7 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         train_transformations=train_transform,
         test_transformations=test_transform,
         bands=CHANNELS_CONFIGURATIONS[data_config.channel_configuration],
+        add_mndwi_input = data_config.add_mndwi_input,
         num_workers=data_config.num_workers,
         window_size=data_config.window_size,
         batch_size=data_config.batch_size,
@@ -284,6 +287,10 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     channel_mean = None
     if data_config.train_transformation.normalize:
         channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+        if data_config.add_mndwi_input:
+            channel_mean = np.concatenate([channel_mean,np.zeros((1,1,1))],axis = -1)
+            channel_std = np.concatenate([channel_std,np.ones((1,1,1))],axis = -1)
+            
         train_transform.append(transformations.Normalize(
             mean=channel_mean,
             std=channel_std,
