@@ -82,8 +82,8 @@ def save_floodmap(subset:str, eventid:str):
     floodmap = floodmap[(~floodmap.geometry.isna()) & (~floodmap.geometry.is_empty)]
 
     # add AoI
-    floodmap = floodmap.append({"geometry": aoi, "w_class": "area_of_interest", "source": "area_of_interest"},
-                               ignore_index=True)
+    floodmap = pd.concat([floodmap, gpd.GeoDataFrame([{"geometry": aoi, "w_class": "area_of_interest", "source": "area_of_interest"}], geometry="geometry", crs=floodmap.crs)],
+                         ignore_index=True)
     floodmap = floodmap.set_crs(epsg=4326)
 
     # reproject to S2 crs
