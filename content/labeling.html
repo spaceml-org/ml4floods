@@ -175,9 +175,10 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_Run_Inference_multioutput_binary.html">Inference with clouds aware floods segmentation model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ml4ops/HOWTO_inference_on_image_time_series.html">Run inference on time series of Sentinel-2 images</a></li>
 </ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">The *WorldFloods* dataset</span></p>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">WorldFloods</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="worldfloods_dataset.html">The <em>WorldFloods</em> database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prep/exploring_worldfloods.html">Exploring <em>WorldFloods</em></a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Data prep</span></p>
 <ul class="current nav bd-sidenav">
@@ -385,12 +386,13 @@ document.write(`
 <h2>Brief description<a class="headerlink" href="#brief-description" title="Permalink to this heading">#</a></h2>
 <p>The ml4floods viewer and label editor is a Flask web application to view and manually edit the floodmaps of the <em>WorldFloods</em> dataset.
 We use this application to keep growing <em>WorldFloods</em> and to improve the quality of its labels. In order to test it, you need
-to <a class="reference internal" href="worldfloods_dataset.html"><span class="doc std std-doc">download the <em>Worldfloods</em> dataset (at least a subset of it)</span></a>.</p>
+to <a class="reference internal" href="worldfloods_dataset.html"><span class="doc std std-doc">download the <em>WorldFloodsv2</em> dataset (at least a subset of it)</span></a>.</p>
 <p>To launch the viewer clone the package and run:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:spaceml-org/ml4floods.git
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>flask<span class="w"> </span>ml4floods
+git<span class="w"> </span>clone<span class="w"> </span>git@github.com:spaceml-org/ml4floods.git
 <span class="nb">cd</span><span class="w"> </span>ml4floods/viewer
 
-python<span class="w"> </span>serve.py<span class="w"> </span>--root_location<span class="w"> </span>/path/to/worldfloods_v1_0/<span class="w"> </span>--gt_version<span class="w"> </span>v1<span class="w"> </span>--no_save_floodmap_bucket
+python<span class="w"> </span>serve.py<span class="w"> </span>--root_location<span class="w"> </span>/path/to/localdir/WorldFloodsv2<span class="w"> </span>--gt_version<span class="w"> </span>v2<span class="w"> </span>--no_save_floodmap_bucket
 </pre></div>
 </div>
 <p>The following video shows the viewer in action:</p>
