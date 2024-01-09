@@ -22,7 +22,7 @@ The WorldFloods v2 dataset is stored in Hugging-Face in the repository: [isp-uv-
 To download the full dataset (~315GB) run:
 
 ```
-huggingface-cli download --repo-type dataset isp-uv-es/WorldFloodsv2
+huggingface-cli download --cache-dir . --local-dir WorldFloodsv2 --repo-type dataset isp-uv-es/WorldFloodsv2
 ```
 
 To download single files see the [Hugging Face docs](https://huggingface.co/docs/huggingface_hub/guides/download).
