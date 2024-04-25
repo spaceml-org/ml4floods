@@ -5,7 +5,7 @@
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/ml4floods_banner.png" alt="awesome ml4floods" width="50%">
 </p>
 
-ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization.
+ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization. Here you can find the [WorldFloodsV2🌊 dataset](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html) and [trained models 🤗](https://huggingface.co/isp-uv-es/ml4floods) for flood extent estimation in Sentinel-2 and Landsat.
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
@@ -42,7 +42,7 @@ These tutorials may help you explore the datasets and models:
  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514)
  
 The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
-It requires approximately 300GB of hard-disk storage. 
+It requires approximately 76GB of hard-disk storage. 
 
 The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
