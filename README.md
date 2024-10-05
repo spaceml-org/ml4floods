@@ -39,7 +39,7 @@ These tutorials may help you explore the datasets and models:
     * [Perf metrics](https://spaceml-org.github.io/ml4floods/content/ml4ops/HOWTO_performance_metrics_workflow.html) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_performance_metrics_workflow.ipynb)
 
 ## The *WorldFloods* database
- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8153514.svg)](https://doi.org/10.5281/zenodo.8153514)
+ [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2)
  
 The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
 It requires approximately 76GB of hard-disk storage. 
