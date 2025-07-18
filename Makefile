@@ -85,13 +85,15 @@ build-jupyterbook:  ## build jupyter book documentation
 clean-jupyterbook:  ## clean the jupyter book html files
 	jupyter-book clean jupyterbook
 
-build-package:
+##@ Building and Publishing
+
+build-package: ## Build the package
 	rm -rf build/
 	rm -rf dist/
 	python setup.py sdist bdist_wheel
 
-publish-package:
+publish-package: ## Publish the package to PyPI
 	python -m twine upload dist/*
 
-publish-docs:
+publish-docs: ## Publish the documentation to GitHub Pages
 	ghp-import -n -p -f jupyterbook/_build/html
