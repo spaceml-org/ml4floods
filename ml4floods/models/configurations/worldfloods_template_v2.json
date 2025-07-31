@@ -2,7 +2,7 @@
     "experiment_name": "worldfloods_demo_test",
     "seed": 12,
     "model_params": {
-        "model_folder": "gs://ml4cc_data_lake/0_DEV/2_Mart/2_MLModelMart",
+        "model_folder": "MODEL_PATH",
         "model_version": "v2",
         "hyperparameters": {
             "max_tile_size": 256,
