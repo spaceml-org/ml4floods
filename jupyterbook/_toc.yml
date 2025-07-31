@@ -7,10 +7,12 @@ parts:
   - file: content/ml4ops/HOWTO_postprocess_inference.ipynb
   - file: content/ml4ops/HOWTO_Run_Inference_multioutput_binary.ipynb
   - file: content/ml4ops/HOWTO_inference_on_image_time_series.ipynb
+  - file: content/ml4ops/run_with_ml4floods.ipynb
 
-- caption: The *WorldFloods* dataset
+- caption: WorldFloods
   chapters:
   - file: content/worldfloods_dataset.md
+  - file: content/prep/exploring_worldfloods.ipynb
 
 - caption: Data prep
   chapters:

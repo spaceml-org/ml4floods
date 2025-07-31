@@ -277,8 +277,9 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
 
     train_transform = [
         transformations.InversePermuteChannels(),
-        transformations.RandomRotate90(always_apply=True, p=0.5),
-        transformations.Flip(always_apply=True, p=0.5)]
+        transformations.RandomRotate90(p=0.5),
+        transformations.HorizontalFlip(p=0.25),
+        transformations.VerticalFlip(p=0.25)]
     
     if "train_transformation" not in data_config:
         warnings.warn("Train transformation not found in data config. Assume normalize is True")
@@ -287,13 +288,11 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
     channel_mean = None
     if data_config.train_transformation.normalize:
         channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
-        if data_config.add_mndwi_input:
-            channel_mean = np.concatenate([channel_mean,np.zeros((1,1,1))],axis = -1)
-            channel_std = np.concatenate([channel_std,np.ones((1,1,1))],axis = -1)
+
             
         train_transform.append(transformations.Normalize(
-            mean=channel_mean,
-            std=channel_std,
+            mean=channel_mean[0, 0, :].tolist(),
+            std=channel_std[0, 0, :].tolist(),
             max_pixel_value=1))
 
     train_transform.extend([
@@ -301,7 +300,7 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         transformations.ToTensor(),
     ])
 
-    train_transform = transformations.Compose(train_transform)
+    train_transform = transformations.Compose(train_transform, is_check_shapes=False)
 
     if "test_transformation" not in data_config:
         warnings.warn("Test transformation not found in data config. Assume normalize is True")
@@ -314,13 +313,13 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         test_transform = [
         transformations.InversePermuteChannels(), 
         transformations.Normalize(
-            mean=channel_mean, 
-            std=channel_std, 
+            mean=channel_mean[0, 0, :].tolist(),
+            std=channel_std[0, 0, :].tolist(),
             max_pixel_value=1),
         transformations.PermuteChannels(),
         transformations.ToTensor(),
         ]
-        test_transform = transformations.Compose(test_transform)
+        test_transform = transformations.Compose(test_transform, is_check_shapes=False)
     else:
         test_transform = transformations.ToTensor()
     

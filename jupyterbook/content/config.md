@@ -55,7 +55,9 @@ Additionally, ML4Floods models have been [deployed onboard a D-Orbit satellite](
 
 > Mateo-Garcia, G., Veitch-Michaelis, J., Purcell, C., Longepe, N., Reid, S., Anlind, A., Bruhn, F., Parr, J., & Mathieu, P. P. , [In-orbit demonstration of a re-trainable machine learning payload for processing optical imagery](https://www.nature.com/articles/s41598-023-34436-w),  _Scientific Reports 13, 10391_ (2023). DOI: 10.1038/s41598-023-34436-w.
 
-ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [Trillium Technologies](http://trillium.tech/). It has also been partially supported by the Spanish Ministry of Science and Innovation project PID2019-109026RB-I00 (MINECO-ERDF MCIN/AEI/10.13039/501100011033).
+ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [Trillium Technologies](http://trillium.tech/). Additionally, this research has been supported by the DEEPCLOUD project (PID2019-109026RB-I00) funded by the Spanish Ministry of Science and Innovation (MCIN/AEI/10.13039/501100011033) and the European Union (NextGenerationEU).
+
+<img width="300" title="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." alt="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." src="https://www.uv.es/chovago/logos/logoMICIN.jpg">
 
  ## Citation
  

@@ -19,10 +19,10 @@ There are two versions of the database available:
 
 The WorldFloods v2 dataset is stored in Hugging-Face in the repository: [isp-uv-es/WorldFloodsv2](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2/). 
 
-To download the full dataset (~315GB) run:
+To download the full dataset (~76GB) run:
 
 ```
-huggingface-cli download --repo-type dataset isp-uv-es/WorldFloodsv2
+huggingface-cli download --cache-dir /path/to/cachedir --local-dir /path/to/localdir/WorldFloodsv2 --repo-type dataset isp-uv-es/WorldFloodsv2
 ```
 
 To download single files see the [Hugging Face docs](https://huggingface.co/docs/huggingface_hub/guides/download).
@@ -114,3 +114,9 @@ If you find this work useful please cite:
 	pages = {7249},
 }
 ```
+
+## Acknowledgments
+
+This research has been supported by the DEEPCLOUD project (PID2019-109026RB-I00) funded by the Spanish Ministry of Science and Innovation (MCIN/AEI/10.13039/501100011033) and the European Union (NextGenerationEU).
+
+<img width="300" title="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." alt="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." src="https://www.uv.es/chovago/logos/logoMICIN.jpg">

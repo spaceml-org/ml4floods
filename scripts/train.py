@@ -92,17 +92,15 @@ def train(config):
         fast_dev_run=False,
         logger=wandb_logger,
         callbacks=callbacks,
-        auto_select_gpus=True,
         default_root_dir=os.path.join(config.model_params.model_folder, config.experiment_name).replace("\\","/"),
         accumulate_grad_batches=1,
         gradient_clip_val=0.0,
-        auto_lr_find=False,
         benchmark=False,
-        gpus=config.gpus,
+        accelerator="gpu" if config.gpus > 0 else "cpu",
+        devices=config.gpus if config.gpus > 0 else "auto",
         max_epochs=config.model_params.hyperparameters.max_epochs,
         check_val_every_n_epoch=config.model_params.hyperparameters.val_every,
-        # log_gpu_memory=None,
-        resume_from_checkpoint=checkpoint_path if config.resume_from_checkpoint else None
+        log_every_n_steps=1,
     )
     
     trainer.fit(model, data_module)

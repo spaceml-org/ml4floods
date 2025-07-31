@@ -4,8 +4,8 @@ import albumentations
 import cv2
 import numpy as np
 import torch
-from albumentations import (Compose, Flip, GaussNoise, MotionBlur, Normalize,
-                            PadIfNeeded, RandomRotate90, ShiftScaleRotate)
+from albumentations import (GaussNoise, MotionBlur, Normalize, RandomRotate90,
+                            Resize, HorizontalFlip, VerticalFlip, Compose)
 from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
 from albumentations.core.transforms_interface import (BasicTransform,
@@ -25,7 +25,7 @@ def permute_channels(
 
 class ToTensor(BasicTransform):
     def __init__(self):
-        super(ToTensor, self).__init__(always_apply=True, p=1.0)
+        super(ToTensor, self).__init__(p=1.0)
 
     # def __call__(self, input_data: dict, force_apply=True) -> dict:
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -49,12 +49,18 @@ class ToTensor(BasicTransform):
 
     @property
     def targets(self):
-        raise NotImplementedError
+        return {"image": self.apply, "mask": self.apply_to_mask}
+    
+    def apply(self, img, **params):
+        return self._image_to_tensor(img)
+    
+    def apply_to_mask(self, mask, **params):
+        return self._mask_to_tensor(mask)
 
 
 class PermuteChannels(BasicTransform):
     def __init__(self):
-        super(PermuteChannels, self).__init__(always_apply=True, p=1.0)
+        super(PermuteChannels, self).__init__(p=1.0)
 
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
@@ -74,14 +80,20 @@ class PermuteChannels(BasicTransform):
 
     @property
     def targets(self):
-        raise NotImplementedError
+        return {"image": self.apply, "mask": self.apply_to_mask}
+    
+    def apply(self, img, **params):
+        return self._permute_channels(img)
+    
+    def apply_to_mask(self, mask, **params):
+        return self._permute_channels(mask)
 
 
 class InversePermuteChannels(BasicTransform):
     def __init__(
         self,
     ):
-        super(InversePermuteChannels, self).__init__(always_apply=True, p=1.0)
+        super(InversePermuteChannels, self).__init__(p=1.0)
 
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
@@ -101,7 +113,13 @@ class InversePermuteChannels(BasicTransform):
 
     @property
     def targets(self):
-        raise NotImplementedError
+        return {"image": self.apply, "mask": self.apply_to_mask}
+    
+    def apply(self, img, **params):
+        return self._inverse_permute_channels(img)
+    
+    def apply_to_mask(self, mask, **params):
+        return self._inverse_permute_channels(mask)
 
 
 class OneHotEncoding(BasicTransform):
@@ -111,7 +129,7 @@ class OneHotEncoding(BasicTransform):
     """
 
     def __init__(self, num_classes: int):
-        super(OneHotEncoding, self).__init__(always_apply=True, p=1.0)
+        super(OneHotEncoding, self).__init__(p=1.0)
         self.num_classes = num_classes
 
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -132,7 +150,13 @@ class OneHotEncoding(BasicTransform):
 
     @property
     def targets(self):
-        raise NotImplementedError
+        return {"mask": self.apply_to_mask}
+    
+    def apply_to_mask(self, mask, **params):
+        return self._one_hot_encode(mask)
+    
+    def get_transform_init_args_names(self):
+        return ("num_classes",)
 
 
 # IGNORE FOR NOW
@@ -196,10 +220,9 @@ class ResizeFactor(DualTransform):
         self,
         downsampling_factor,
         interpolation=cv2.INTER_LINEAR,
-        always_apply=True,
         p=1,
     ):
-        super(ResizeFactor, self).__init__(always_apply, p)
+        super(ResizeFactor, self).__init__(p)
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
 
@@ -218,6 +241,35 @@ class ResizeFactor(DualTransform):
         # create output dictionary
         data["image"], data["mask"] = image, mask
         return data
+
+    @property
+    def targets(self):
+        return {"image": self.apply, "mask": self.apply_to_mask}
+    
+    def apply(self, img, **params):
+        new_size = np.round(
+            np.array(img.shape[:2]) / self.downsampling_factor
+        ).astype(np.int64)
+        return F.resize(
+            img,
+            height=new_size[0],
+            width=new_size[1],
+            interpolation=self.interpolation,
+        )
+    
+    def apply_to_mask(self, mask, **params):
+        new_size = np.round(
+            np.array(mask.shape[:2]) / self.downsampling_factor
+        ).astype(np.int64)
+        return F.resize(
+            mask,
+            height=new_size[0],
+            width=new_size[1],
+            interpolation=cv2.INTER_NEAREST,  # Use nearest for masks to preserve class labels
+        )
+
+    def get_transform_init_args_names(self):
+        return ("downsampling_factor", "interpolation")
 
 
 def transforms_generator(config: Dict) -> albumentations.Compose:
