@@ -12,37 +12,37 @@
             "pos_weight": [1.0, 20.0],
             "label_names": [["invalid", "clear", "cloud"],
                             ["invalid", "land", "water"]],
-            "model_type": "linear",
+            "model_type": "unet",
             "num_classes": 2,
-            "max_epochs": 10,
+            "max_epochs": 30,
             "val_every": 1,
             "lr": 1e-4,
             "lr_decay": 0.5,
             "lr_patience": 2,
-            "early_stopping_patience": 4
+            "early_stopping_patience": 45
         },
         "train": true,
         "test": true
     },
     "data_params": {
         "loader_type": "local",
-        "num_workers": 4,
+        "num_workers": 8,
         "filter_windows": {
             "version" : "v2",
             "threshold_clouds" : 0.8,
-            "apply" : false
+            "apply" : true
         },
         "download": {
-            "train": true,
-            "val": true,
-            "test": true
+            "train": false,
+            "val": false,
+            "test": false
         },
-        "bucket_id": "ml4cc_data_lake",
-        "path_to_splits": "worldfloods_v2",
-        "train_test_split_file": "0_DEV/2_Mart/worldfloods_v2_0/train_test_split.json",
+        "bucket_id": "",
+        "path_to_splits": "DATASET_PATH",
+        "train_test_split_file": "DATASET_PATH/train_test_split_from_csv.json",
         "input_folder": "S2",
         "target_folder": "gt",
-        "batch_size": 32,
+        "batch_size": 128,
         "window_size": [256, 256],
         "channel_configuration": "all",
         "train_transformation": {
