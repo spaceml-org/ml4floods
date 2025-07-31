@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from albumentations import (GaussNoise, MotionBlur, Normalize, RandomRotate90,
                             Resize, HorizontalFlip, VerticalFlip, Compose)
-from albumentations.augmentations import functional as F
 from albumentations.core.composition import BaseCompose
 from albumentations.core.transforms_interface import (BasicTransform,
                                                       DualTransform)
@@ -225,10 +224,11 @@ class ResizeFactor(DualTransform):
         super(ResizeFactor, self).__init__(p)
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
+        from albumentations.augmentations import functional as F
 
     def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
         image, mask = data["image"], data["mask"]
-
+        from albumentations.augmentations import functional as F
         new_size = np.round(
             np.array(image.shape[:2]) / self.downsampling_factor
         ).astype(np.int64)
@@ -247,6 +247,7 @@ class ResizeFactor(DualTransform):
         return {"image": self.apply, "mask": self.apply_to_mask}
     
     def apply(self, img, **params):
+        from albumentations.augmentations import functional as F
         new_size = np.round(
             np.array(img.shape[:2]) / self.downsampling_factor
         ).astype(np.int64)
@@ -261,6 +262,7 @@ class ResizeFactor(DualTransform):
         new_size = np.round(
             np.array(mask.shape[:2]) / self.downsampling_factor
         ).astype(np.int64)
+        from albumentations.augmentations import functional as F
         return F.resize(
             mask,
             height=new_size[0],
