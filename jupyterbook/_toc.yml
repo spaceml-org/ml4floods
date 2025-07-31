@@ -13,6 +13,7 @@ parts:
   chapters:
   - file: content/worldfloods_dataset.md
   - file: content/prep/exploring_worldfloods.ipynb
+  - file: content/ml4ops/HOWTO_WF2_load_dataset.ipynb
 
 - caption: Data prep
   chapters:
