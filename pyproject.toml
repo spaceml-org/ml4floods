@@ -83,7 +83,6 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by formatter)
-    "E731",  # lambda assignment
 ]
 
 [tool.ruff.format]
