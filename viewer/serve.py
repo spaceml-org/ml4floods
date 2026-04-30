@@ -12,7 +12,7 @@ import pandas as pd
 from flask import Flask, request, send_file
 from PIL import Image
 from rasterio import features, warp
-from shapely.geometry import shape
+from shapely.geometry import box, mapping, shape
 
 from ml4floods.data import create_gt, save_cog, utils, vectorize
 from ml4floods.data.worldfloods.configs import BANDS_S2
@@ -483,8 +483,6 @@ def mask_to_rgb(mask: np.ndarray, values: list[int], colors: np.ndarray) -> np.n
 def root():
     return app.send_static_file("index.html")
 
-
-from shapely.geometry import box, mapping
 
 # KEYS_COPY_V2 = ["satellite", "event id", "satellite date", "ems_code", "aoi_code", "date_ems_code", "s2_date"]
 KEYS_COPY = ["satellite", "satellite date"]

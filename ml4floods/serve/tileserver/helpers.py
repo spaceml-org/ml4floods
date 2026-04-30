@@ -3,13 +3,13 @@ import os
 from xml.dom import minidom
 
 import geojson
+import geopandas as gpd
 import pandas as pd
 import requests
 from google.cloud import storage
 from shapely import geometry
 
 from ml4floods.data import utils
-from ml4floods.data.copernicusEMS.activations import *
 
 COUNTRIES_MAP = {
     "mozambique, eswatini, zimbabwe": "MZ,ZW",
@@ -123,7 +123,7 @@ def walk_bucket(events_df):
     for ems_code in do_codes:
         try:
             _ingest_event_aoi(ems_code)
-        except:
+        except Exception:
             pass
 
     # 2. Add custom aois

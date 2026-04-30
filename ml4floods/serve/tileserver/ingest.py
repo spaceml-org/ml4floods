@@ -4,18 +4,17 @@ import os
 import time
 from datetime import datetime, timedelta
 
-import requests
-
-logging.basicConfig(level=logging.INFO)
-
 import ee
 import pandas as pd
 import rasterio
+import requests
 from shapely import geometry
 
 from ml4floods.data import create_gt, ee_download, utils
 from ml4floods.data.copernicusEMS import activations
 from ml4floods.serve.tileserver.REST_mosaic import RESTMosaic
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Ingestor:
@@ -234,8 +233,8 @@ class Ingestor:
         ### can also into multiprocess...
         try:
             ee.Initialize()
-        except:
-            raise ValueError("Error initializing EE")
+        except Exception as e:
+            raise ValueError("Error initializing EE") from e
 
         if self.source == "EE":
             ingest_fn = self._ingest_S2_EE

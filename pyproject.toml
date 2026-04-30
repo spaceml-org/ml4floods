@@ -82,14 +82,8 @@ select = [
     "UP",           # pyupgrade
 ]
 ignore = [
-    "E402",  # module-import-not-at-top
     "E501",  # line too long (handled by formatter)
-    "E721",  # type comparison via ==
-    "E722",  # bare except
     "E731",  # lambda assignment
-    "E741",  # ambiguous variable name
-    "F403",  # star imports
-    "F405",  # may-be-undefined-from-star
 ]
 
 [tool.ruff.format]

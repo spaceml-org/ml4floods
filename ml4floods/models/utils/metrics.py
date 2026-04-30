@@ -136,8 +136,8 @@ def calculate_iou(confusions: torch.Tensor, labels: list[str]) -> dict[str, floa
     iou = true_positive / (true_positive + false_positive + false_negative)
 
     iou_dict = {}
-    for i, l in enumerate(labels):
-        iou_dict[l] = iou[i]
+    for i, label in enumerate(labels):
+        iou_dict[label] = iou[i]
     return iou_dict
 
 
@@ -149,8 +149,8 @@ def calculate_recall(confusions: torch.Tensor, labels: list[str]) -> dict[str, f
     recall = true_positive / (true_positive + false_negative + 1e-6)
 
     recall_dict = {}
-    for i, l in enumerate(labels):
-        recall_dict[l] = recall[i]
+    for i, label in enumerate(labels):
+        recall_dict[label] = recall[i]
     return recall_dict
 
 
@@ -162,8 +162,8 @@ def calculate_precision(confusions: torch.Tensor, labels: list[str]) -> dict[str
     precision = true_positive / (true_positive + false_positive + 1e-6)
 
     precision_dict = {}
-    for i, l in enumerate(labels):
-        precision_dict[l] = precision[i]
+    for i, label in enumerate(labels):
+        precision_dict[label] = precision[i]
     return precision_dict
 
 

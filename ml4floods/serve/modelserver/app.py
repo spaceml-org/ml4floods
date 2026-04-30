@@ -11,7 +11,7 @@ from rasterio.windows import Window
 from ml4floods.data import utils
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from ml4floods.models.config_setup import get_default_config
-from ml4floods.models.model_setup import get_model_inference_function
+from ml4floods.models.model_setup import get_model, get_model_inference_function
 
 logger = logging.getLogger("ModelServer")
 
@@ -20,8 +20,6 @@ app = Flask(__name__)
 ### load models into memory
 channel_configuration_name = "all"
 inference_funcs = {}
-
-from ml4floods.models.model_setup import get_model
 
 models_conf = {
     "simplecnn": {

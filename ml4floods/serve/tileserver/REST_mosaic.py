@@ -5,13 +5,11 @@ A python class to create a mosaic from the GEE REST API (https://developers.goog
 import io
 import json
 import logging
+import multiprocessing as mp
 import os
 import urllib
 from datetime import datetime as dt
 from datetime import timedelta
-
-logging.basicConfig(level=logging.INFO)
-import multiprocessing as mp
 
 import geopandas as gpd
 import numpy as np
@@ -24,6 +22,8 @@ from shapely import geometry, ops
 from shapely.affinity import affine_transform
 
 from ml4floods.data import utils
+
+logging.basicConfig(level=logging.INFO)
 
 
 def get_utm_zone(lat, lon):
@@ -327,7 +327,7 @@ class RESTMosaic:
 
         fills = []
         for ii, _id in enumerate(self.image_ids):
-            if type(self.s2_tiles) == gpd.GeoDataFrame:
+            if isinstance(self.s2_tiles, gpd.GeoDataFrame):
                 granule = self.s2_tiles.loc[
                     _id[-5:], "geometry"
                 ]  # get the granule from the geodataframe

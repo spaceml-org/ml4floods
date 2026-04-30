@@ -219,7 +219,7 @@ def produce_metadata_dict(shapefile_info, shapefile_path):
 def get_shapefile_from_zip(zip_file):
     try:
         shutil.rmtree("./tmp")
-    except:
+    except FileNotFoundError:
         pass
     os.mkdir("./tmp")
 
