@@ -44,6 +44,10 @@ dependencies = [
     "matplotlib-scalebar",
     "georeader-spaceml",
     "huggingface_hub[torch]",
+    "scikit-image",
+    "fs",
+    "geojson",
+    "lxml",
 ]
 
 [project.urls]
@@ -53,6 +57,9 @@ Homepage = "https://github.com/spaceml-org/ml4floods"
 dev = ["ruff", "mypy", "pre-commit", "pyprojroot"]
 tests = ["pytest"]
 docs = ["furo", "nbsphinx", "sphinx-copybutton", "jupyter-book", "ghp-import"]
+serve = ["flask", "gunicorn"]
+cloudmasks = ["segmentation-models-pytorch", "s2cloudless"]
+kappazeta = ["tensorflow"]
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -417,7 +417,7 @@ def group_confusion(
 def compute_metrics_v2(
     dataloader: torch.utils.data.dataloader.DataLoader,
     pred_fun: Callable,
-    thresholds_water: np.array | None = None,
+    thresholds_water: np.ndarray | None = None,
     threshold_water: float = 0.5,
     threshold_clouds=0.5,
     plot=False,
