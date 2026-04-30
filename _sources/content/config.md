@@ -1,7 +1,7 @@
 # Introduction
 
 ---
-ML4Floods is python package to do *end-to-end* flood extent estimation from optical images using deep learning models.
+FloodMapper (also known as ML4Floods) is python package to do *end-to-end* flood extent estimation from optical images using deep learning models.
 
 ```{figure} ./ml4ops/ts_albania.gif
 ---
