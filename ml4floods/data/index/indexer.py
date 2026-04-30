@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     numeric_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
+        raise ValueError(f"Invalid log level: {args.log_level}")
     logging.basicConfig(level=numeric_level)
 
     index_worldfloods(args.worldfloods_path, args.output_path)

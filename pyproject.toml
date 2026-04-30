@@ -91,7 +91,6 @@ ignore = [
     "F401",  # unused import
     "F403",  # star imports
     "F405",  # may-be-undefined-from-star
-    "F821",  # undefined name (pre-existing latent bugs; address per file)
     "F841",  # unused local
 ]
 

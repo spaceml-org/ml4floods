@@ -124,92 +124,6 @@ def best_s2_match(metadatas2: pd.DataFrame, floodmap_date: datetime) -> tuple[An
     return index, s2_date
 
 
-def worldfloods_old_gcp_paths(
-    main_path: str,
-) -> tuple[gpd.GeoDataFrame, str, str | None, dict, str]:
-    """
-    Given a S2 tiff file in the V0 WorldFloods dataset it returns the rest of the anciliary files to
-    the corresponding floodmap, cloud probability and permanent water
-
-    Args:
-        main_path: S2 path in gs://ml4floods/worldfloods/public folder
-
-    Returns:
-        GCPPaths with locations of corresponding  floodmap, cloud probability,  permanent water, meta_floodmap and sentinel2 image
-
-    Examples
-        >>> s2_path_file = "gs://ml4floods/worldfloods/public/train/S2/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif"
-        >>> worldfloods_old_gcp_paths(GCPPath(s2_path_file))
-
-    (GCPPath(full_path='gs://ml4floods/worldfloods/public/train/floodmaps/EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', bucket_id='ml4floods', parent_path='worldfloods/public/train/floodmaps', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', suffix='shp'),
-     GCPPath(full_path='gs://ml4floods/worldfloods/tiffimages/cloudprob/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', bucket_id='ml4floods', parent_path='worldfloods/tiffimages/cloudprob', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', suffix='tif'),
-     'gs://ml4floods/worldfloods/tiffimages/PERMANENTWATERJRC/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif')
-
-    """
-    assert main_path.check_if_file_exists(), f"File {main_path} does not exists"
-
-    s2_image_path = main_path
-
-    # path to floodmap path
-    floodmap_path = s2_image_path.replace("/S2/", "/floodmaps/")
-    floodmap_path = floodmap_path.replace(".tif", ".shp")
-
-    assert floodmap_path.check_if_file_exists(), f"Floodmap not found in {floodmap_path}"
-
-    # open floodmap with geopandas
-    floodmap = gpd.read_file(floodmap_path.full_path)
-
-    # create cloudprob path
-    cloudprob_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-            .joinpath(CLOUDPROB_PARENT_PATH)
-            .joinpath("cloudprob_edited")
-            .joinpath(s2_image_path.file_name)
-        )
-    )
-    if not cloudprob_path.check_if_file_exists():
-        cloudprob_path = GCPPath(
-            str(
-                Path(WORLDFLOODS_V0_BUCKET)
-                .joinpath(CLOUDPROB_PARENT_PATH)
-                .joinpath("cloudprob")
-                .joinpath(s2_image_path.file_name)
-            )
-        )
-
-    assert cloudprob_path.check_if_file_exists(), f"Clouds not found in {cloudprob_path}"
-
-    # create permenant water path
-    permanent_water_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-            .joinpath(PERMANENT_WATER_PARENT_PATH)
-            .joinpath(s2_image_path.file_name)
-        )
-    )
-
-    if not permanent_water_path.check_if_file_exists():
-        warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")
-        permanent_water_path = None
-
-    # path to meta_floodmap
-    meta_floodmap_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-            .joinpath(META_FLOODMAP_PARENT_PATH)
-            .joinpath(s2_image_path.file_name.replace(".tif", ".json"))
-        )
-    )
-    assert meta_floodmap_path.check_if_file_exists(), (
-        f"Meta floodmap not found in {meta_floodmap_path}"
-    )
-
-    meta_floodmap = utils.read_json_from_gcp(meta_floodmap_path.full_path)
-
-    return floodmap, cloudprob_path, permanent_water_path, meta_floodmap, s2_image_path
-
-
 def generate_item(
     main_path: str,
     output_path: str,
@@ -218,7 +132,7 @@ def generate_item(
     pbar: tqdm.tqdm | None = None,
     gt_fun: Callable = None,
     delete_if_error: bool = True,
-    paths_function: Callable = worldfloods_old_gcp_paths,
+    paths_function: Callable = worldfloods_extra_gcp_paths,
 ) -> bool:
     """
 
