@@ -1,6 +1,6 @@
 ## *WorldFloods* viewer
 
-Flask web application to view and label the *WorldFloods* extended dataset. It requires 
+Flask web application to view and label the *WorldFloods* extended dataset. It requires
 that some part of the dataset is downloaded in the hard disk (it could be copied from `gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_extra_v2_0`)
 
 Test it on the new version of the data:

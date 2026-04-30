@@ -1,7 +1,4 @@
-import os
-import sys
 from pathlib import Path
-from typing import List, Optional
 
 from ml4floods.data.utils import download_data_from_bucket, save_file_from_bucket
 
@@ -37,10 +34,10 @@ def download_image(datclass, destination: str, ml_type: str = "train") -> str:
 
 
 def download_worldfloods_data(
-    directories: List[str],
+    directories: list[str],
     destination_dir: str,
     ml_split: str = "train",
-    bucket_id: Optional[str] = None,
+    bucket_id: str | None = None,
 ) -> None:
     """Function to download data from the bucket to a local destination directory.
     This function differs from the save_file_from_bucket() function in that
@@ -63,7 +60,6 @@ def download_worldfloods_data(
 
     for ifile in directories:
         for iprefix in ["S2", "gt"]:
-
             # where to grab the file
             source = str(Path(DIR).joinpath(ml_split).joinpath(iprefix).joinpath(ifile))
             # Image where to save the file

@@ -1,16 +1,14 @@
 from pathlib import Path
-from typing import Optional
-from ml4floods.data.utils import create_folder, get_files_in_directory
-import rasterio
-from ml4floods.preprocess.tiling import WindowSize, save_tiles
-import sys, os
+
 from pyprojroot import here
+
+from ml4floods.data.utils import create_folder, get_files_in_directory
+from ml4floods.preprocess.tiling import WindowSize, save_tiles
 
 ROOT = here(project_files=[".here"])
 
 
-def test_save_tiles(test_dir: Optional[str] = None):
-
+def test_save_tiles(test_dir: str | None = None):
     if test_dir is None:
         test_dir = "./"
 

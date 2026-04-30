@@ -1,22 +1,25 @@
-from ml4floods.preprocess.worldfloods import normalize as wf_normalization
-import ml4floods.preprocess.transformations as transformations
-from ml4floods.preprocess.tiling import WindowSlices, load_windows, save_windows
+import json
+import os
+import warnings
+from collections.abc import Callable
 from glob import glob
+
+import pytorch_lightning as pl
+
+import ml4floods.preprocess.transformations as transformations
 from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS
 from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled
 from ml4floods.data.worldfloods.lightning import WorldFloodsDataModule
+from ml4floods.models.config_setup import get_filesystem, load_json
 from ml4floods.models.utils.configuration import AttrDict
-import pytorch_lightning as pl
-import os
-import json
-from typing import Dict, List, Callable, Tuple, Optional
+from ml4floods.preprocess.tiling import WindowSlices, load_windows, save_windows
+from ml4floods.preprocess.worldfloods import normalize as wf_normalization
 from ml4floods.preprocess.worldfloods import prepare_patches
-from ml4floods.models.config_setup import load_json, get_filesystem
-import warnings
-import numpy as np
 
 
-def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:str) -> Dict[str, Dict[str, List[str]]]:
+def filenames_train_test_split(
+    bucket_name: str | None, train_test_split_file: str
+) -> dict[str, dict[str, list[str]]]:
     """
     Read train test split json file from remote if needed.
 
@@ -35,22 +38,24 @@ def filenames_train_test_split(bucket_name:Optional[str], train_test_split_file:
         # Preprend the bucket name to the files
         for splitname, split in filenames_train_test.items():
             for foldername, listoftiffs in split.items():
-                for idx,tiffname in enumerate(listoftiffs):
+                for idx, tiffname in enumerate(listoftiffs):
                     if not tiffname.startswith("gs://"):
                         tiffname = f"gs://{bucket_name}/{tiffname}"
                         # assert fs.exists(tiffname), f"File {tiffname} does not exists"
                         listoftiffs[idx] = tiffname
     else:
-        with open(train_test_split_file, "r") as fh:
+        with open(train_test_split_file) as fh:
             filenames_train_test = json.load(fh)
 
     return filenames_train_test
 
 
-def validate_worldfloods_data(path_to_splits:str,
-                              split_folders:List[str] = ["train", "val", "test"],
-                              folders_to_test:List[str] = ["S2", "gt"],
-                              verbose:bool=True):
+def validate_worldfloods_data(
+    path_to_splits: str,
+    split_folders: list[str] = ["train", "val", "test"],
+    folders_to_test: list[str] = ["S2", "gt"],
+    verbose: bool = True,
+):
     """
     Check the structure of the data follows the expected convention
     Args:
@@ -76,7 +81,10 @@ def validate_worldfloods_data(path_to_splits:str,
             folder_path = os.path.join(folder_split, foldername)
             if not os.path.exists(folder_path):
                 raise FileNotFoundError(f" Folder not found {folder_path}")
-            filenames_folder = [os.path.basename(os.path.splitext(f)[0]) for f in sorted(glob(os.path.join(folder_path, "*")))]
+            filenames_folder = [
+                os.path.basename(os.path.splitext(f)[0])
+                for f in sorted(glob(os.path.join(folder_path, "*")))
+            ]
             if len(filenames_folder) == 0:
                 raise FileNotFoundError(f"Folder {folder_path} does not have any files on it")
             if filenames is None:
@@ -88,11 +96,15 @@ def validate_worldfloods_data(path_to_splits:str,
         print("Data downloaded follows the expected format")
 
 
-def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_test_split.json",
-                                input_folder:str="S2",
-                                target_folder:str="gt",
-                                bucket_id:Optional[str]=None, path_to_splits:Optional[str]=None,
-                                download:Optional[Dict[str,bool]]=None) -> Dict[str,Dict[str, List[str]]]:
+def process_filename_train_test(
+    train_test_split_file: str
+    | None = "gs://ml4cc_data_lake/2_PROD/2_Mart/worldfloods_v1_0/train_test_split.json",
+    input_folder: str = "S2",
+    target_folder: str = "gt",
+    bucket_id: str | None = None,
+    path_to_splits: str | None = None,
+    download: dict[str, bool] | None = None,
+) -> dict[str, dict[str, list[str]]]:
     """
     The train_test_split_file contains which files go to the train/val/test splits. This function validate that
     the content is as expected and that all files referred there exists. Additionally it downloads the data to loca
@@ -116,30 +128,40 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
     if train_test_split_file:
         filenames_train_test = filenames_train_test_split(bucket_id, train_test_split_file)
     else:
-        assert (path_to_splits is not None) and os.path.exists(path_to_splits), \
+        assert (path_to_splits is not None) and os.path.exists(path_to_splits), (
             f"train_test_split_file not provided and path_to_splits folder {path_to_splits} does not exist"
+        )
 
-        print(f"train_test_split_file not provided. We will use the content in the folder {path_to_splits}")
-        filenames_train_test = {'train': {target_folder:[], input_folder:[]},
-                                'test': {target_folder:[],input_folder:[]},
-                                'val': {target_folder:[],input_folder:[]}}
+        print(
+            f"train_test_split_file not provided. We will use the content in the folder {path_to_splits}"
+        )
+        filenames_train_test = {
+            "train": {target_folder: [], input_folder: []},
+            "test": {target_folder: [], input_folder: []},
+            "val": {target_folder: [], input_folder: []},
+        }
 
     # loop through the naming splits
     for isplit in ["train", "test", "val"]:
         for foldername in [input_folder, target_folder]:
-
             # glob files in path_to_splits dir if there're not files in the given split
             if len(filenames_train_test[isplit][foldername]) == 0:
                 # get the subdirectory
-                assert (path_to_splits is not None) and os.path.exists(path_to_splits), \
+                assert (path_to_splits is not None) and os.path.exists(path_to_splits), (
                     f"path_to_splits {path_to_splits} doesn't exists or not provided and there're no files in split {isplit} folder {foldername}"
+                )
 
                 path_2_glob = os.path.join(path_to_splits, isplit, foldername, "*.tif")
                 filenames_train_test[isplit][foldername] = glob(path_2_glob)
-                assert len(filenames_train_test[isplit][foldername]) > 0, f"No files found in {path_2_glob}"
+                assert len(filenames_train_test[isplit][foldername]) > 0, (
+                    f"No files found in {path_2_glob}"
+                )
 
-        assert len(filenames_train_test[isplit][input_folder]) == len(filenames_train_test[isplit][target_folder]), \
+        assert len(filenames_train_test[isplit][input_folder]) == len(
+            filenames_train_test[isplit][target_folder]
+        ), (
             f"Different number of files in {input_folder} and {target_folder} for split {isplit}: {len(filenames_train_test[isplit][input_folder])} {len(filenames_train_test[isplit][target_folder])}"
+        )
 
         # check correspondence input output files (assert files exists)
         for idx, filename in enumerate(filenames_train_test[isplit][input_folder]):
@@ -151,8 +173,9 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
 
             # Download if needed and replace filenames_train_test with the downloaded version
             if filename.startswith("gs://") and download[isplit]:
-                assert (path_to_splits is not None) and os.path.exists(path_to_splits), \
+                assert (path_to_splits is not None) and os.path.exists(path_to_splits), (
                     f"path_to_splits {path_to_splits} doesn't exists or not provided ad requested to download the data"
+                )
 
                 for input_target_folder in [input_folder, target_folder]:
                     folder_local = os.path.join(path_to_splits, isplit, input_target_folder)
@@ -162,7 +185,9 @@ def process_filename_train_test(train_test_split_file:Optional[str]="gs://ml4cc_
                     file_dest = os.path.join(folder_local, basename)
                     if not os.path.isfile(file_dest):
                         fs.get_file(file_src, file_dest)
-                        print(f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_target_folder])}) {file_src}")
+                        print(
+                            f"Downloaded ({idx}/{len(filenames_train_test[isplit][input_target_folder])}) {file_src}"
+                        )
                     filenames_train_test[isplit][input_target_folder][idx] = file_dest
 
     return filenames_train_test
@@ -172,9 +197,9 @@ def get_dataset(data_config) -> pl.LightningDataModule:
     """
     Function to set up dataloaders for model training
     """
-    
+
     # 1. Setup transformations for dataset
-    
+
     train_transform, test_transform = get_transformations(data_config)
 
     # ======================================================
@@ -182,22 +207,29 @@ def get_dataset(data_config) -> pl.LightningDataModule:
     # ======================================================
     download = data_config.get("download")
     if download is None:
-        download = {"train": data_config.get("loader_type","local")=="local",
-                    "val": data_config.get("loader_type","local")=="local",
-                    "test": data_config.get("loader_type","local")=="local"}
+        download = {
+            "train": data_config.get("loader_type", "local") == "local",
+            "val": data_config.get("loader_type", "local") == "local",
+            "test": data_config.get("loader_type", "local") == "local",
+        }
 
-    filenames_train_test = process_filename_train_test(data_config.get("train_test_split_file"),
-                                                       input_folder=data_config.input_folder,
-                                                       target_folder=data_config.target_folder,
-                                                       bucket_id=data_config.get("bucket_id"),
-                                                       path_to_splits=data_config.get("path_to_splits"),
-                                                       download=download)
+    filenames_train_test = process_filename_train_test(
+        data_config.get("train_test_split_file"),
+        input_folder=data_config.input_folder,
+        target_folder=data_config.target_folder,
+        bucket_id=data_config.get("bucket_id"),
+        path_to_splits=data_config.get("path_to_splits"),
+        download=download,
+    )
 
     filter_windows_attr = data_config.get("filter_windows", None)
     if filter_windows_attr is not None and filter_windows_attr.get("apply", False):
-        filter_windows_config = filter_windows_fun(data_config.filter_windows.version, data_config.train_test_split_file,
-                                                   threshold_clouds=data_config.filter_windows.threshold_clouds,
-                                                   local_destination_dir=data_config.path_to_splits)
+        filter_windows_config = filter_windows_fun(
+            data_config.filter_windows.version,
+            data_config.train_test_split_file,
+            threshold_clouds=data_config.filter_windows.threshold_clouds,
+            local_destination_dir=data_config.path_to_splits,
+        )
     else:
         filter_windows_config = None
 
@@ -209,21 +241,27 @@ def get_dataset(data_config) -> pl.LightningDataModule:
         train_transformations=train_transform,
         test_transformations=test_transform,
         bands=CHANNELS_CONFIGURATIONS[data_config.channel_configuration],
-        add_mndwi_input = data_config.add_mndwi_input,
+        add_mndwi_input=data_config.add_mndwi_input,
         num_workers=data_config.num_workers,
         window_size=data_config.window_size,
         batch_size=data_config.batch_size,
-        filter_windows= filter_windows_config
+        filter_windows=filter_windows_config,
     )
     datamodule.setup()
 
     print("train", datamodule.train_dataset.__len__(), " tiles")
     print("val", datamodule.val_dataset.__len__(), " tiles")
     print("test", datamodule.test_dataset.__len__(), " tiles")
-    
+
     return datamodule
 
-def filter_windows_fun(data_version:str, train_test_split_file:str, local_destination_dir:Optional[str]=None, threshold_clouds=.5) -> Callable:
+
+def filter_windows_fun(
+    data_version: str,
+    train_test_split_file: str,
+    local_destination_dir: str | None = None,
+    threshold_clouds=0.5,
+) -> Callable:
     """
     Returns a function to filter the windows in the  WorldFloodsDatasetTiled dataset. This is used for pre-filtering
     the training images to discard patches with high cloud content.
@@ -240,26 +278,30 @@ def filter_windows_fun(data_version:str, train_test_split_file:str, local_destin
     """
     if local_destination_dir is not None:
         if train_test_split_file:
-            split_name = "_"+os.path.basename(train_test_split_file)
+            split_name = "_" + os.path.basename(train_test_split_file)
         else:
-            split_name =".json"
-        #windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
+            split_name = ".json"
+        # windows_file = os.path.join(local_destination_dir, f"windows_{data_version}.json")
         windows_file = os.path.join(local_destination_dir, f"windows{split_name}")
     else:
         windows_file = None
 
-    def filter_windows(tiledDataset: WorldFloodsDatasetTiled) -> List[WindowSlices]:
+    def filter_windows(tiledDataset: WorldFloodsDatasetTiled) -> list[WindowSlices]:
         if windows_file and os.path.exists(windows_file):
             selected_windows = load_windows(windows_file)
         else:
             if data_version == "v1":
-                selected_windows =  prepare_patches.filter_windows_v1(tiledDataset,
-                                                                      threshold_clouds=threshold_clouds)
+                selected_windows = prepare_patches.filter_windows_v1(
+                    tiledDataset, threshold_clouds=threshold_clouds
+                )
             elif data_version == "v2":
-                selected_windows = prepare_patches.filter_windows_v2(tiledDataset,
-                                                                     threshold_clouds=threshold_clouds)
+                selected_windows = prepare_patches.filter_windows_v2(
+                    tiledDataset, threshold_clouds=threshold_clouds
+                )
             else:
-                raise NotImplementedError(f"Unknown ground truth version {data_version} expected v1 or v2")
+                raise NotImplementedError(
+                    f"Unknown ground truth version {data_version} expected v1 or v2"
+                )
 
             if windows_file:
                 save_windows(selected_windows, windows_file)
@@ -269,7 +311,7 @@ def filter_windows_fun(data_version:str, train_test_split_file:str, local_destin
     return filter_windows
 
 
-def get_transformations(data_config) -> Tuple[Callable, Callable]:
+def get_transformations(data_config) -> tuple[Callable, Callable]:
     """
     Function to generate transformations object to pass to dataloader
     TODO: Build from config instead of using default values
@@ -279,48 +321,58 @@ def get_transformations(data_config) -> Tuple[Callable, Callable]:
         transformations.InversePermuteChannels(),
         transformations.RandomRotate90(p=0.5),
         transformations.HorizontalFlip(p=0.25),
-        transformations.VerticalFlip(p=0.25)]
-    
+        transformations.VerticalFlip(p=0.25),
+    ]
+
     if "train_transformation" not in data_config:
         warnings.warn("Train transformation not found in data config. Assume normalize is True")
         data_config["train_transformation"] = AttrDict({"normalize": True})
 
     channel_mean = None
     if data_config.train_transformation.normalize:
-        channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+        channel_mean, channel_std = wf_normalization.get_normalisation(
+            data_config.channel_configuration
+        )
 
-            
-        train_transform.append(transformations.Normalize(
-            mean=channel_mean[0, 0, :].tolist(),
-            std=channel_std[0, 0, :].tolist(),
-            max_pixel_value=1))
+        train_transform.append(
+            transformations.Normalize(
+                mean=channel_mean[0, 0, :].tolist(),
+                std=channel_std[0, 0, :].tolist(),
+                max_pixel_value=1,
+            )
+        )
 
-    train_transform.extend([
-        transformations.PermuteChannels(),
-        transformations.ToTensor(),
-    ])
+    train_transform.extend(
+        [
+            transformations.PermuteChannels(),
+            transformations.ToTensor(),
+        ]
+    )
 
     train_transform = transformations.Compose(train_transform, is_check_shapes=False)
 
     if "test_transformation" not in data_config:
         warnings.warn("Test transformation not found in data config. Assume normalize is True")
         data_config["test_transformation"] = AttrDict({"normalize": True})
-    
+
     if data_config.test_transformation.normalize:
         if channel_mean is None:
-            channel_mean, channel_std = wf_normalization.get_normalisation(data_config.channel_configuration)
+            channel_mean, channel_std = wf_normalization.get_normalisation(
+                data_config.channel_configuration
+            )
 
         test_transform = [
-        transformations.InversePermuteChannels(), 
-        transformations.Normalize(
-            mean=channel_mean[0, 0, :].tolist(),
-            std=channel_std[0, 0, :].tolist(),
-            max_pixel_value=1),
-        transformations.PermuteChannels(),
-        transformations.ToTensor(),
+            transformations.InversePermuteChannels(),
+            transformations.Normalize(
+                mean=channel_mean[0, 0, :].tolist(),
+                std=channel_std[0, 0, :].tolist(),
+                max_pixel_value=1,
+            ),
+            transformations.PermuteChannels(),
+            transformations.ToTensor(),
         ]
         test_transform = transformations.Compose(test_transform, is_check_shapes=False)
     else:
         test_transform = transformations.ToTensor()
-    
+
     return train_transform, test_transform

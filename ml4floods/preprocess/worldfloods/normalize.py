@@ -1,12 +1,11 @@
-from typing import Tuple
-
 import numpy as np
 
-from ml4floods.data.worldfloods.configs import (CHANNELS_CONFIGURATIONS,
-                                                SENTINEL2_NORMALIZATION)
+from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION
 
 
-def get_normalisation(use_channels: str, channels_first:bool=False) -> Tuple[np.ndarray, np.ndarray]:
+def get_normalisation(
+    use_channels: str, channels_first: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
     """Normalization for the S2 datasets.
 
     Args:
@@ -19,8 +18,8 @@ def get_normalisation(use_channels: str, channels_first:bool=False) -> Tuple[np.
     Example:
         >>> from ml4floods.preprocess.worldfloods import get_normalization
         >>> use_channels = 'all'
-        >>> mu, std = get_normalization(use_channels)    
-    """    
+        >>> mu, std = get_normalization(use_channels)
+    """
 
     s2_channels = CHANNELS_CONFIGURATIONS[use_channels]
 

@@ -1,18 +1,14 @@
 """
 Demo script to download some demo data files. Mainly used for testing but can also be used for other explorations.
 """
-import argparse
-from ml4floods.data.utils import create_folder
+
 from dataclasses import dataclass, field
 from datetime import datetime
-import subprocess
 from pathlib import Path
-from typing import Optional
-
-import rasterio
-from google.cloud import storage
 
 from pyprojroot import here
+
+from ml4floods.data.utils import create_folder
 
 root = here(project_files=[".here"])
 
@@ -35,8 +31,7 @@ class WorldFloodsImage:
     source_system: str = field(default="Not Specified")
 
 
-def test_data_download(ml_split: str = "train", test_dir: Optional[str] = None):
-
+def test_data_download(ml_split: str = "train", test_dir: str | None = None):
     # STEP 1 - Create Demo Directory
 
     if test_dir is None:
@@ -60,8 +55,7 @@ def test_data_download(ml_split: str = "train", test_dir: Optional[str] = None):
     )
 
 
-def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] = None):
-
+def download_demo_image(dest_dir: str | None = None, test_dir: str | None = None):
     if test_dir is None:
         test_dir = "./"
 
@@ -74,9 +68,7 @@ def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] 
     # ============
 
     # filename
-    file_name = (
-        "ml4floods/worldfloods/public/train/S2/01042016_Holmes_Creek_at_Vernon_FL.tif"
-    )
+    file_name = "ml4floods/worldfloods/public/train/S2/01042016_Holmes_Creek_at_Vernon_FL.tif"
 
     # initialize the dataclass (specific to the worldfloods images)
     dc_image_example = WorldFloodsImage(filename=file_name)
@@ -90,9 +82,7 @@ def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] 
     # ============
 
     # filename
-    file_name = (
-        "ml4floods/worldfloods/public/train/gt/01042016_Holmes_Creek_at_Vernon_FL.tif"
-    )
+    file_name = "ml4floods/worldfloods/public/train/gt/01042016_Holmes_Creek_at_Vernon_FL.tif"
 
     # initialize the dataclass (specific to the worldfloods images)
     dc_gt_example = WorldFloodsImage(filename=file_name)
@@ -104,10 +94,7 @@ def download_demo_image(dest_dir: Optional[str] = None, test_dir: Optional[str] 
     return None
 
 
-def download_demo_trainsplit_image(
-    dest_dir: Optional[str] = None, test_dir: Optional[str] = None
-):
-
+def download_demo_trainsplit_image(dest_dir: str | None = None, test_dir: str | None = None):
     if test_dir is None:
         test_dir = "./"
 
@@ -127,7 +114,7 @@ def download_demo_trainsplit_image(
     ]
 
     # filename
-    for i_split, i_image in zip(splits, image_names):
+    for i_split, i_image in zip(splits, image_names, strict=False):
         file_name = f"ml4floods/worldfloods/public/{i_split}/S2/{i_image}"
 
         # initialize the dataclass (specific to the worldfloods images)

@@ -1,12 +1,16 @@
 import numpy as np
-from typing import Optional, List
 import rasterio
-from shapely.geometry import Polygon, shape, mapping
 from rasterio import features
+from shapely.geometry import Polygon, mapping, shape
 
 
-def get_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
-                 polygon_buffer:int=0, tolerance:float=1., transform: Optional[rasterio.Affine]=None) -> List[Polygon]:
+def get_polygons(
+    binary_water_mask: np.ndarray,
+    min_area: float = 25.5,
+    polygon_buffer: int = 0,
+    tolerance: float = 1.0,
+    transform: rasterio.Affine | None = None,
+) -> list[Polygon]:
     """
     Vectorize a binary mask excluding polygons smaller than `min_area` pixels.
 
@@ -24,8 +28,7 @@ def get_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
     assert binary_water_mask.ndim == 2, f"Expected mask with 2 dim found {binary_water_mask.shape}"
 
     geoms_polygons = []
-    polygon_generator = features.shapes(binary_water_mask.astype(np.int16),
-                                        binary_water_mask)
+    polygon_generator = features.shapes(binary_water_mask.astype(np.int16), binary_water_mask)
 
     for polygon, value in polygon_generator:
         p = shape(polygon)
@@ -34,12 +37,13 @@ def get_polygons(binary_water_mask: np.ndarray, min_area:float=25.5,
         if p.area >= min_area:
             p = p.simplify(tolerance=tolerance)
             if transform is not None:
-                p = transform_polygon(p, transform) # Convert polygon to raster coordinates
+                p = transform_polygon(p, transform)  # Convert polygon to raster coordinates
             geoms_polygons.append(p)
 
     return geoms_polygons
 
-def transform_polygon(polygon:Polygon, transform: rasterio.Affine) -> Polygon:
+
+def transform_polygon(polygon: Polygon, transform: rasterio.Affine) -> Polygon:
     """
     Transforms a polygon from pixel coordinates to the coordinates specified by the affine transform
 

@@ -1,14 +1,14 @@
 # The *WorldFloods* database
 
-The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
-It requires approximately 300GB of hard-disk storage. 
+The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks.
+It requires approximately 300GB of hard-disk storage.
 
 ```{image} ./prep/images/worldfloods_v2.png
 :alt: WorldFloods dataset
 :align: center
 ```
 
-The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
 There are two versions of the database available:
@@ -17,7 +17,7 @@ There are two versions of the database available:
 
 ### Download the v2 data from Hugging-Face 🤗
 
-The WorldFloods v2 dataset is stored in Hugging-Face in the repository: [isp-uv-es/WorldFloodsv2](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2/). 
+The WorldFloods v2 dataset is stored in Hugging-Face in the repository: [isp-uv-es/WorldFloodsv2](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2/).
 
 To download the full dataset (~76GB) run:
 
@@ -28,11 +28,11 @@ huggingface-cli download --cache-dir /path/to/cachedir --local-dir /path/to/loca
 To download single files see the [Hugging Face docs](https://huggingface.co/docs/huggingface_hub/guides/download).
 
 ### Download the v2 data from Zenodo
-In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. [10.5281/zenodo.8153514](https://zenodo.org/records/8153514).  
+In zenodo we store the manually curated flood maps and metadata together with the flood extent map of the Pakistan 2023 flood event. [10.5281/zenodo.8153514](https://zenodo.org/records/8153514).
 
 ### Download the v1 data from the Google Drive
 
-A subset of the data and the pretrained models are available in this [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH). 
+A subset of the data and the pretrained models are available in this [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH).
 
 If you want to use this data from the Google Colab you can *'add a shortcut to your Google Drive'* from the [public Google Drive folder](https://drive.google.com/folderview?id=1dqFYWetX614r49kuVE3CbZwVO6qHvRVH) and mount that directory:
 
@@ -41,14 +41,14 @@ If you want to use this data from the Google Colab you can *'add a shortcut to y
 :alt: Floods devestate the world every year.
 :align: center
 ```
-	
+
 ```python
 from google.colab import drive
 drive.mount('/content/drive')
 !ls '/content/drive/My Drive/Public WorldFloods Dataset'
 ```
 
-Alternatively you can download it manually from that folder or even automatically with the [gdown](https://github.com/wkentaro/gdown) package. 
+Alternatively you can download it manually from that folder or even automatically with the [gdown](https://github.com/wkentaro/gdown) package.
 
 ```bash
 gdown --id 11O6aKZk4R6DERIx32o4mMTJ5dtzRRKgV

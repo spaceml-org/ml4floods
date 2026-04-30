@@ -1,46 +1,49 @@
+import json
 from collections import namedtuple
 from itertools import product
 from pathlib import Path
-from typing import Callable, List, Optional, Dict
 
 import rasterio
 from rasterio import windows
-from rasterio.io import DatasetReader
-import json
 
 WindowSize = namedtuple("WindowSize", ["height", "width"])
 WindowSlices = namedtuple("WindowSlices", ["file_name", "window"])
 
 
-def load_windows(filename:str) -> List[WindowSlices]:
-    with open(filename, "r") as fh:
+def load_windows(filename: str) -> list[WindowSlices]:
+    with open(filename) as fh:
         list_of_windows = [Dict_to_WindowSlices(dictio) for dictio in json.load(fh)["slices"]]
     return list_of_windows
 
-def save_windows(list_windows:List[WindowSlices], filename:str) -> None:
+
+def save_windows(list_windows: list[WindowSlices], filename: str) -> None:
     list_save = [WindowSlices_to_Dict(ws) for ws in list_windows]
     with open(filename, "w") as fh:
         json.dump({"slices": list_save}, fh)
 
 
-def WindowSlices_to_Dict(ws: WindowSlices) -> Dict:
+def WindowSlices_to_Dict(ws: WindowSlices) -> dict:
     return {
-        "file_name" : ws.file_name,
+        "file_name": ws.file_name,
         "window": {
-            "col_off" : ws.window.col_off,
+            "col_off": ws.window.col_off,
             "row_off": ws.window.row_off,
             "width": ws.window.width,
             "height": ws.window.height,
-        }
+        },
     }
 
-def Dict_to_WindowSlices(ds: Dict) -> WindowSlices:
-    return WindowSlices(file_name=ds["file_name"],
-                        window=windows.Window(col_off=ds["window"]["col_off"],
-                                              row_off=ds["window"]["row_off"],
-                                              width=ds["window"]["width"],
-                                              height=ds["window"]["height"]))
 
+def Dict_to_WindowSlices(ds: dict) -> WindowSlices:
+    return WindowSlices(
+        file_name=ds["file_name"],
+        window=windows.Window(
+            col_off=ds["window"]["col_off"],
+            row_off=ds["window"]["row_off"],
+            width=ds["window"]["width"],
+            height=ds["window"]["height"],
+        ),
+    )
 
 
 def yield_window_tiles(
@@ -71,7 +74,7 @@ def yield_window_tiles(
 
 def get_window_tiles(
     ds: rasterio.io.DatasetReader, height: int = 128, width: int = 128, **kwargs
-) -> List[rasterio.windows.Window]:
+) -> list[rasterio.windows.Window]:
     """a generator for rasterio specific slices given a rasterio dataset
 
     Args:
@@ -100,10 +103,10 @@ def get_window_tiles(
 def save_tiles(
     file_name: str,
     dest_dir: str,
-    bands: List[str],
+    bands: list[str],
     window_size: WindowSize,
     verbose: bool = False,
-    n_samples: Optional[int] = None,
+    n_samples: int | None = None,
 ) -> None:
     """does tiling from a predefined window size and saves them to a directory
 
@@ -118,16 +121,12 @@ def save_tiles(
         None
     """
     with rasterio.open(file_name) as dataset:
-
         itile = 0
 
         # copy the metadata
         window_meta = dataset.meta.copy()
 
-        for window_tile in get_window_tiles(
-            dataset, window_size.height, window_size.width
-        ):
-
+        for window_tile in get_window_tiles(dataset, window_size.height, window_size.width):
             # copy the meta data
             window_meta["width"] = window_tile.width
             window_meta["height"] = window_tile.height
@@ -147,9 +146,7 @@ def save_tiles(
 
             # open file and also save meta data
             with rasterio.open(output_tile_file_name, "w", **window_meta) as out_f:
-                out_f.write(
-                    dataset.read(window=window_tile, boundless=True, fill_value=0)
-                )
+                out_f.write(dataset.read(window=window_tile, boundless=True, fill_value=0))
 
             itile += 1
             if verbose:

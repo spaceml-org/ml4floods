@@ -1,25 +1,24 @@
+import os
+import tempfile
+
+import numpy as np
 import rasterio
 import rasterio.rio.overview
 import rasterio.shutil as rasterio_shutil
-import os
-import tempfile
-import numpy as np
 
-
-from typing import Optional, List
 
 def add_overviews(rst_out, tile_size, verbose=False):
-    """ Add overviews to be a cog and be displayed nicely in GIS software """
+    """Add overviews to be a cog and be displayed nicely in GIS software"""
 
     overview_level = rasterio.rio.overview.get_maximum_overview_level(*rst_out.shape, tile_size)
-    overviews = [2 ** j for j in range(1, overview_level + 1)]
+    overviews = [2**j for j in range(1, overview_level + 1)]
 
     if verbose:
         print(f"Adding pyramid overviews to raster {overviews}")
 
     # Copied from https://github.com/cogeotiff/rio-cogeo/blob/master/rio_cogeo/cogeo.py#L274
     rst_out.build_overviews(overviews, rasterio.warp.Resampling.average)
-    rst_out.update_tags(ns='rio_overview', resampling='nearest')
+    rst_out.update_tags(ns="rio_overview", resampling="nearest")
     tags = rst_out.tags()
     tags.update(OVR_RESAMPLING_ALG="NEAREST")
     rst_out.update_tags(**tags)
@@ -27,10 +26,14 @@ def add_overviews(rst_out, tile_size, verbose=False):
     rst_out._set_all_offsets([rst_out.offsets[b - 1] for b in rst_out.indexes])
 
 
-def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
-             descriptions:Optional[List[str]] = None,
-             tags: Optional[dict] = None,
-             dir_tmpfiles:str="."):
+def save_cog(
+    out_np: np.ndarray,
+    path_tiff_save: str,
+    profile: dict,
+    descriptions: list[str] | None = None,
+    tags: dict | None = None,
+    dir_tmpfiles: str = ".",
+):
     """
     Saves `out_np` np array as a COG GeoTIFF in path_tiff_save. profile is a dict with the geospatial info to be saved
     with the TiFF.
@@ -54,7 +57,9 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
 
     assert len(out_np.shape) == 3, f"Expected 3d tensor found tensor with shape {out_np.shape}"
     if descriptions is not None:
-        assert len(descriptions) == out_np.shape[0], f"Unexpected band descriptions {len(descriptions)} expected {out_np.shape[0]}"
+        assert len(descriptions) == out_np.shape[0], (
+            f"Unexpected band descriptions {len(descriptions)} expected {out_np.shape[0]}"
+        )
 
     # Set count, height, width
     for idx, c in enumerate(["count", "height", "width"]):
@@ -64,12 +69,14 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
             profile[c] = out_np.shape[idx]
 
     for field in ["crs", "transform"]:
-        assert field in profile, f"{field} not in profile: {profile}. it will not write cog without geo information"
+        assert field in profile, (
+            f"{field} not in profile: {profile}. it will not write cog without geo information"
+        )
 
     profile["BIGTIFF"] = "IF_SAFER"
     if "dtype" not in profile:
         profile["dtype"] = str(out_np.dtype)
-    
+
     with rasterio.Env() as env:
         cog_driver = "COG" in env.drivers()
 
@@ -80,7 +87,10 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
         # Save tiff locally and copy it to GCP with fsspec is path is a GCP path
         if path_tiff_save.startswith("gs://"):
             import fsspec
-            with tempfile.NamedTemporaryFile(dir=dir_tmpfiles, suffix=".tif", delete=True) as fileobj:
+
+            with tempfile.NamedTemporaryFile(
+                dir=dir_tmpfiles, suffix=".tif", delete=True
+            ) as fileobj:
                 name_save = fileobj.name
         else:
             name_save = path_tiff_save
@@ -91,7 +101,7 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
             rst_out.write(out_np)
             if descriptions is not None:
                 for i in range(1, out_np.shape[0] + 1):
-                    rst_out.set_band_description(i, descriptions[i-1])
+                    rst_out.set_band_description(i, descriptions[i - 1])
 
         if path_tiff_save.startswith("gs://"):
             fs = fsspec.filesystem("gs", requester_pays=True)
@@ -125,13 +135,18 @@ def save_cog(out_np: np.ndarray, path_tiff_save: str, profile: dict,
         if descriptions is not None:
             for i in range(1, out_np.shape[0] + 1):
                 rst_out.set_band_description(i, descriptions[i - 1])
-        
+
         add_overviews(rst_out, tile_size=profile["blockysize"])
         print("Copying temp file")
-        rasterio_shutil.copy(rst_out, path_tiff_save, copy_src_overviews=True, tiled=True,
-                             blockxsize=profile["blockxsize"],
-                             blockysize=profile["blockysize"],
-                             driver="GTiff")
+        rasterio_shutil.copy(
+            rst_out,
+            path_tiff_save,
+            copy_src_overviews=True,
+            tiled=True,
+            blockxsize=profile["blockxsize"],
+            blockysize=profile["blockysize"],
+            driver="GTiff",
+        )
 
     rasterio_shutil.delete(named_tempfile)
     return path_tiff_save

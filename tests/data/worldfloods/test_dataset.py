@@ -5,8 +5,9 @@ sys.dont_write_bytecode = True
 
 from pprint import pprint
 
-from ml4floods.data.worldfloods.dataset import WorldFloodsDataset, WorldFloodsImage
 from ml4floods.data.worldfloods.test_download import data_download
+
+from ml4floods.data.worldfloods.dataset import WorldFloodsDataset
 
 
 def test_toy_data():
@@ -45,7 +46,6 @@ def test_toy_data():
 
 
 def test_real_data():
-
     print("Downloading Sample Data...")
     ml_split = "train"
     data_download(ml_split=ml_split)

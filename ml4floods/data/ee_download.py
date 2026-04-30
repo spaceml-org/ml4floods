@@ -1,42 +1,73 @@
+import math
+import os
+import time
 import traceback
 import warnings
+from collections.abc import Callable
+from datetime import UTC, datetime
+from glob import glob
 
 import ee
-import time
-import os
-from glob import glob
-from typing import Optional, Callable, List, Tuple, Union
-from shapely.geometry import mapping, Polygon
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+from shapely.geometry import Polygon, mapping
+
 from ml4floods.data.utils import get_filesystem
-from datetime import datetime, timezone
-import math
 
 BANDS_NAMES = {
     # Sentinel-2 L1C COPERNICUS/S2 COPERNICUS/S2_HARMONIZED
-    "COPERNICUS/S2_HARMONIZED" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12", "QA60"],
+    "COPERNICUS/S2_HARMONIZED": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B8A",
+        "B9",
+        "B10",
+        "B11",
+        "B12",
+        "QA60",
+    ],
     # Sentinel-2 L2A COPERNICUS/S2_SR
-    "COPERNICUS/S2_SR_HARMONIZED" : ["B1","B2","B3","B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12", "SCL"],
+    "COPERNICUS/S2_SR_HARMONIZED": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B8A",
+        "B9",
+        "B11",
+        "B12",
+        "SCL",
+    ],
     # Landsat-8/9 TOA
-    "Landsat" : ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B9", "B10", "B11", "QA_PIXEL"]
+    "Landsat": ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B9", "B10", "B11", "QA_PIXEL"],
 }
 
 
 def _get_collection(collection_name, date_start, date_end, bounds):
     collection = ee.ImageCollection(collection_name)
-    collection_filtered = collection.filterDate(date_start, date_end) \
-        .filterBounds(bounds)
+    collection_filtered = collection.filterDate(date_start, date_end).filterBounds(bounds)
 
     n_images = int(collection_filtered.size().getInfo())
 
     return collection_filtered, n_images
 
     # add cloud probability
-def add_cloud_prob_landsat(img:ee.Image) -> ee.Image:
+
+
+def add_cloud_prob_landsat(img: ee.Image) -> ee.Image:
     bqa = img.select(["QA_PIXEL"], ["probability"])
-    clouds = bqa.bitwise_and(int("0000000000001000",2)).gt(0).multiply(100).toUint16()
+    clouds = bqa.bitwise_and(int("0000000000001000", 2)).gt(0).multiply(100).toUint16()
 
     # Store images in S2 range
     img_radiances = img.select(BANDS_NAMES["Landsat"][:-1]).multiply(10_000).toUint16()
@@ -45,9 +76,10 @@ def add_cloud_prob_landsat(img:ee.Image) -> ee.Image:
     img_return = img_return.set("system:time_start", img.get("system:time_start"))
     return img_return
 
-def get_landsat_collection(date_start:datetime, date_end:datetime,
-                           bounds:ee.Geometry,
-                           verbose:int=1) -> Optional[ee.ImageCollection]:
+
+def get_landsat_collection(
+    date_start: datetime, date_end: datetime, bounds: ee.Geometry, verbose: int = 1
+) -> ee.ImageCollection | None:
     """
     Returns a Landsat-8 and Landsat-9 time series of daily mosaicked images over the bounds. It adds a probability band
     to mimic the S2 case; additionally values are 10_000 and casted to uint16.
@@ -66,13 +98,23 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
     # GEE doesnt like time zones
     date_start = date_start.replace(tzinfo=None)
     date_end = date_end.replace(tzinfo=None)
-    l8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_RT_TOA").filterDate(date_start, date_end).filterBounds(bounds)
-    l9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_TOA").filterDate(date_start, date_end).filterBounds(bounds)
+    l8 = (
+        ee.ImageCollection("LANDSAT/LC08/C02/T1_RT_TOA")
+        .filterDate(date_start, date_end)
+        .filterBounds(bounds)
+    )
+    l9 = (
+        ee.ImageCollection("LANDSAT/LC09/C02/T1_TOA")
+        .filterDate(date_start, date_end)
+        .filterBounds(bounds)
+    )
     l89 = l8.merge(l9)
     n_images = int(l89.size().getInfo())
     if n_images <= 0:
         if verbose > 1:
-            print(f"Not images found for collection LANDSAT/LC08/C02/T1_RT_TOA and LANDSAT/LC09/C02/T1_TOA date start: {date_start} date end: {date_end}")
+            print(
+                f"Not images found for collection LANDSAT/LC08/C02/T1_RT_TOA and LANDSAT/LC09/C02/T1_TOA date start: {date_start} date end: {date_end}"
+            )
         return
 
     l89 = l89.map(add_cloud_prob_landsat)
@@ -86,7 +128,8 @@ def get_landsat_collection(date_start:datetime, date_end:datetime,
 
     return daily_mosaic
 
-def add_probability_from_BQA(img:ee.Image) -> ee.Image:
+
+def add_probability_from_BQA(img: ee.Image) -> ee.Image:
     """
     Adds to the image the cloud probability in [0,100] computed from BQA layer
 
@@ -101,8 +144,8 @@ def add_probability_from_BQA(img:ee.Image) -> ee.Image:
     var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
                  .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
     """
-    qa = img.select(['QA60'], ["probability"])
-    cloud_bit_mask =  1 << 10 # int("0000010000000000", 2)
+    qa = img.select(["QA60"], ["probability"])
+    cloud_bit_mask = 1 << 10  # int("0000010000000000", 2)
     cirrus_bit_mask = int("0000100000000000", 2)
     # qa.bitwiseAnd(cloud_bit_mask).gt(0).Or(qa.bitwiseAnd(cirrus_bit_mask).gt(0))
 
@@ -111,11 +154,15 @@ def add_probability_from_BQA(img:ee.Image) -> ee.Image:
     return img.addBands(cloud_mask)
 
 
-def get_s2_collection(date_start:datetime, date_end:datetime,
-                      bounds:ee.Geometry,
-                      collection_name:str="COPERNICUS/S2_HARMONIZED", bands:Optional[List[str]]=None,
-                      force_s2cloudless:bool=True,
-                      verbose:int=1) -> Optional[ee.ImageCollection]:
+def get_s2_collection(
+    date_start: datetime,
+    date_end: datetime,
+    bounds: ee.Geometry,
+    collection_name: str = "COPERNICUS/S2_HARMONIZED",
+    bands: list[str] | None = None,
+    force_s2cloudless: bool = True,
+    verbose: int = 1,
+) -> ee.ImageCollection | None:
     """
     Returns an ee.ImageCollection with mosaicked S2 images joined with the s2cloudless cloud masks
     (see collection COPERNICUS/S2_CLOUD_PROBABILITY). This function also filters repeated images of the same date
@@ -142,7 +189,9 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     img_col_all, n_images_col = _get_collection(collection_name, date_start, date_end, bounds)
     if n_images_col <= 0:
         if verbose > 1:
-            print(f"Not images found for collection {collection_name} date start: {date_start} date end: {date_end}")
+            print(
+                f"Not images found for collection {collection_name} date start: {date_start} date end: {date_end}"
+            )
         return
 
     if bands is None:
@@ -151,20 +200,27 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     img_col_all = img_col_all.select(bands)
 
     # Import and filter s2cloudless.
-    s2_cloudless_col = (ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY')
+    s2_cloudless_col = (
+        ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")
         # .filterBounds(bounds)
-        .filterDate(date_start, date_end))
+        .filterDate(date_start, date_end)
+    )
 
-    img_col_all_join = ee.ImageCollection(ee.Join.saveFirst('s2cloudless').apply(**{
-        'primary': img_col_all,
-        'secondary': s2_cloudless_col,
-        'condition': ee.Filter.equals(**{
-            'leftField': 'system:index',
-            'rightField': 'system:index'
-        })
-    }))
+    img_col_all_join = ee.ImageCollection(
+        ee.Join.saveFirst("s2cloudless").apply(
+            **{
+                "primary": img_col_all,
+                "secondary": s2_cloudless_col,
+                "condition": ee.Filter.equals(
+                    **{"leftField": "system:index", "rightField": "system:index"}
+                ),
+            }
+        )
+    )
     # Add s2cloudless as new band
-    img_col_all_join = img_col_all_join.map(lambda x: x.addBands(ee.Image(x.get('s2cloudless')).select('probability')))
+    img_col_all_join = img_col_all_join.map(
+        lambda x: x.addBands(ee.Image(x.get("s2cloudless")).select("probability"))
+    )
 
     # Check no image is lost in the inner join
     n_images_join = img_col_all_join.size().getInfo()
@@ -173,15 +229,17 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
         if not force_s2cloudless:
             # Compute cloud mask from BQA band and add it as probability layer
             warnings.warn(
-                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. WE WILL IGNORE CLOUDS!")
+                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. WE WILL IGNORE CLOUDS!"
+            )
             img_col_all_join = img_col_all.map(add_probability_from_BQA)
 
         else:
             warnings.warn(
-                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We will skip images with missing cloud masks")
+                f"Not all the images in the S2 collection {n_images_col} have s2cloudless cloud mask {n_images_join}. We will skip images with missing cloud masks"
+            )
 
-    daily_mosaic =  collection_mosaic_day(img_col_all_join, bounds)
-                                    #fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
+    daily_mosaic = collection_mosaic_day(img_col_all_join, bounds)
+    # fun_before_mosaic=lambda img: img.toFloat().resample("bicubic")) # Bicubic resampling for 60m res bands?
 
     # Add cloud info and valid info
     count_fun = get_count_function(bands, bounds)
@@ -190,20 +248,23 @@ def get_s2_collection(date_start:datetime, date_end:datetime,
     return daily_mosaic
     # Filter images with many invalids
 
+
 def get_count_function(bands, bounds):
-    def _count_valid_clouds(img:ee.Image) -> ee.Image:
+    def _count_valid_clouds(img: ee.Image) -> ee.Image:
         mascara_valids = img.mask()
         mascara_valids = mascara_valids.select(bands)
         mascara_valids = mascara_valids.reduce(ee.Reducer.allNonZero())
-        dictio = mascara_valids.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
-                                             bestEffort=True, scale=10.)
+        dictio = mascara_valids.reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=bounds, bestEffort=True, scale=10.0
+        )
 
         img = img.set("valids", dictio.get("all"))
 
         # Count clouds
         cloud_probability = img.select("probability")
-        dictio = cloud_probability.reduceRegion(reducer=ee.Reducer.mean(), geometry=bounds,
-                                                bestEffort=True, scale=10.)
+        dictio = cloud_probability.reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=bounds, bestEffort=True, scale=10.0
+        )
 
         img = img.set("cloud_probability", dictio.get("probability"))
 
@@ -212,7 +273,9 @@ def get_count_function(bands, bounds):
     return _count_valid_clouds
 
 
-def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geometry)-> ee.ImageCollection:
+def collection_mosaic_day(
+    imcol: ee.ImageCollection, region_of_interest: ee.Geometry
+) -> ee.ImageCollection:
     """
     Groups by solar day the images in the image collection. This function is useful to discard repeated images in
     image collections for example in the case of Sentinel-2 images.
@@ -230,10 +293,12 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
     # longitude, latitude = region_of_interest.centroid().coordinates().getInfo()
     longitude = region_of_interest.centroid().coordinates().get(0)
 
-    hours_add = ee.Number(longitude).multiply(12/180.)
+    hours_add = ee.Number(longitude).multiply(12 / 180.0)
     # solar_time = utc_time - hours_add
 
-    unique_solar_dates = imlist.map(lambda im: ee.Image(im).date().advance(hours_add, "hour").format("YYYY-MM-dd")).distinct()
+    unique_solar_dates = imlist.map(
+        lambda im: ee.Image(im).date().advance(hours_add, "hour").format("YYYY-MM-dd")
+    ).distinct()
 
     def mosaic_date(solar_date_str):
         solar_date = ee.Date(solar_date_str)
@@ -248,21 +313,27 @@ def collection_mosaic_day(imcol:ee.ImageCollection, region_of_interest:ee.Geomet
 
         im = im.copyProperties(ee.Image(ims_day.first()))
 
-        return im.set({
-            "system:time_start": median_date,
-            "system:id": solar_date.format("YYYY-MM-dd"),
-            "system:index": solar_date.format("YYYY-MM-dd")
-        })
+        return im.set(
+            {
+                "system:time_start": median_date,
+                "system:id": solar_date.format("YYYY-MM-dd"),
+                "system:index": solar_date.format("YYYY-MM-dd"),
+            }
+        )
 
     mosaic_imlist = unique_solar_dates.map(mosaic_date)
     return ee.ImageCollection(mosaic_imlist)
 
 
 PROPERTIES_DEFAULT = ["system:index", "system:time_start"]
-def img_collection_to_feature_collection(img_col:ee.ImageCollection,
-                                         properties:List[str]=PROPERTIES_DEFAULT,
-                                         as_geopandas:bool=False) -> Union[ee.FeatureCollection, gpd.GeoDataFrame]:
-    """Transforms the image collection to a feature collection """
+
+
+def img_collection_to_feature_collection(
+    img_col: ee.ImageCollection,
+    properties: list[str] = PROPERTIES_DEFAULT,
+    as_geopandas: bool = False,
+) -> ee.FeatureCollection | gpd.GeoDataFrame:
+    """Transforms the image collection to a feature collection"""
 
     properties = ee.List(properties)
 
@@ -275,13 +346,13 @@ def img_collection_to_feature_collection(img_col:ee.ImageCollection,
     if as_geopandas:
         geodf = gpd.GeoDataFrame.from_features(feature_collection.getInfo(), crs="EPSG:4326")
         if "system:time_start" in geodf.columns:
-            geodf["datetime"] = pd.to_datetime(geodf["system:time_start"],unit="ms")
+            geodf["datetime"] = pd.to_datetime(geodf["system:time_start"], unit="ms")
         return geodf
 
     return feature_collection
 
 
-def istaskrunning(description:str) -> bool:
+def istaskrunning(description: str) -> bool:
     task_list = ee.data.getTaskList()
     for t in task_list:
         if t["description"] == description:
@@ -290,13 +361,20 @@ def istaskrunning(description:str) -> bool:
     return False
 
 
-def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=False, verbose=1,
-             bucket_name="worldfloods"):
-
+def mayberun(
+    filename,
+    desc,
+    function,
+    export_task,
+    overwrite=False,
+    dry_run=False,
+    verbose=1,
+    bucket_name="worldfloods",
+):
     if bucket_name is not None:
         fs = get_filesystem("gs://")
-    
-        files_in_bucket = fs.glob(f'gs://{bucket_name}/{filename}*')
+
+        files_in_bucket = fs.glob(f"gs://{bucket_name}/{filename}*")
         if len(files_in_bucket) > 0:
             if overwrite:
                 print("\tFile %s exists in the bucket. removing" % filename)
@@ -347,8 +425,13 @@ def mayberun(filename, desc, function, export_task, overwrite=False, dry_run=Fal
     return
 
 
-def export_task_image(bucket:Optional[str]="worldfloods", crs:str='EPSG:4326',
-                      scale:float=10, file_dims=16_384, maxPixels=5_000_000_000) -> Callable:
+def export_task_image(
+    bucket: str | None = "worldfloods",
+    crs: str = "EPSG:4326",
+    scale: float = 10,
+    file_dims=16_384,
+    maxPixels=5_000_000_000,
+) -> Callable:
     """
     function to export images in the WorldFloods format.
 
@@ -364,50 +447,66 @@ def export_task_image(bucket:Optional[str]="worldfloods", crs:str='EPSG:4326',
     """
 
     if bucket is not None:
+
         def export_task(image_to_download, fileNamePrefix, description):
-            task = ee.batch.Export.image.toCloudStorage(image_to_download,
-                                                        fileNamePrefix=fileNamePrefix,
-                                                        description=description,
-                                                        crs=crs.upper(),
-                                                        skipEmptyTiles=True,
-                                                        bucket=bucket,
-                                                        scale=scale,
-                                                        fileFormat="GeoTIFF",
-                                                        formatOptions={"cloudOptimized": True},
-                                                        fileDimensions=file_dims,
-                                                        maxPixels=maxPixels)
+            task = ee.batch.Export.image.toCloudStorage(
+                image_to_download,
+                fileNamePrefix=fileNamePrefix,
+                description=description,
+                crs=crs.upper(),
+                skipEmptyTiles=True,
+                bucket=bucket,
+                scale=scale,
+                fileFormat="GeoTIFF",
+                formatOptions={"cloudOptimized": True},
+                fileDimensions=file_dims,
+                maxPixels=maxPixels,
+            )
             return task
     else:
+
         def export_task(image_to_download, fileNamePrefix, description):
-            task = ee.batch.Export.image.toDrive(image_to_download,
-                                                 fileNamePrefix=fileNamePrefix,
-                                                 description=description,
-                                                 crs=crs.upper(),
-                                                 skipEmptyTiles=True,
-                                                 scale=scale,
-                                                 fileFormat="GeoTIFF",
-                                                 formatOptions={"cloudOptimized": True},
-                                                 fileDimensions=file_dims,
-                                                 maxPixels=maxPixels)
+            task = ee.batch.Export.image.toDrive(
+                image_to_download,
+                fileNamePrefix=fileNamePrefix,
+                description=description,
+                crs=crs.upper(),
+                skipEmptyTiles=True,
+                scale=scale,
+                fileFormat="GeoTIFF",
+                formatOptions={"cloudOptimized": True},
+                fileDimensions=file_dims,
+                maxPixels=maxPixels,
+            )
             return task
 
     return export_task
 
 
-def generate_polygon(bbox:Tuple[float, float, float, float]) ->List[List[List[float]]]:
+def generate_polygon(bbox: tuple[float, float, float, float]) -> list[list[list[float]]]:
     """
     Generates a list of coordinates: [[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x1,y1]]
     """
-    return [[[bbox[0],bbox[1]],
-             [bbox[2],bbox[1]],
-             [bbox[2],bbox[3]],
-             [bbox[0],bbox[3]],
-             [bbox[0],bbox[1]]]]
+    return [
+        [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[1]],
+            [bbox[2], bbox[3]],
+            [bbox[0], bbox[3]],
+            [bbox[0], bbox[1]],
+        ]
+    ]
 
 
-def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
-                             path_bucket: str, crs:str='EPSG:4326',
-                             name_task:Optional[str]=None, resolution_meters:int=10, requester_pays:bool = True) -> Optional[ee.batch.Task]:
+def download_permanent_water(
+    area_of_interest: Polygon,
+    date_search: datetime,
+    path_bucket: str,
+    crs: str = "EPSG:4326",
+    name_task: str | None = None,
+    resolution_meters: int = 10,
+    requester_pays: bool = True,
+) -> ee.batch.Task | None:
     """
     Downloads yearly permanent water layer from the GEE. (JRC/GSW1_3/YearlyHistory product)
 
@@ -432,7 +531,7 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
         return
 
     ee.Initialize()
-    
+
     path_bucket_no_gs = path_bucket.replace("gs://", "")
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
@@ -475,17 +574,21 @@ def download_permanent_water(area_of_interest: Polygon, date_search:datetime,
     )
 
 
-def permanent_water_image(year:int, pol:ee.Geometry) -> ee.Image:
+def permanent_water_image(year: int, pol: ee.Geometry) -> ee.Image:
     if year >= 2021:
         year = 2021
-    
+
     img_export = ee.Image(f"JRC/GSW1_4/YearlyHistory/{year}")
     return img_export.clip(pol)
 
 
-def download_merit_layer(area_of_interest: Polygon,
-                         path_bucket: str, crs:str='EPSG:4326',
-                         name_task:Optional[str]=None, resolution_meters:int=10) -> Optional[ee.batch.Task]:
+def download_merit_layer(
+    area_of_interest: Polygon,
+    path_bucket: str,
+    crs: str = "EPSG:4326",
+    name_task: str | None = None,
+    resolution_meters: int = 10,
+) -> ee.batch.Task | None:
     """
     Downloads MERIT Hydro product ("MERIT/Hydro/v1_0_1") from GEE
 
@@ -503,14 +606,14 @@ def download_merit_layer(area_of_interest: Polygon,
     assert path_bucket.startswith("gs://"), f"Path bucket: {path_bucket} must start with gs://"
 
     fs = get_filesystem("gs://")
-    
-    filename_full_path = os.path.join(path_bucket, "merit").replace("\\",'/')
+
+    filename_full_path = os.path.join(path_bucket, "merit").replace("\\", "/")
     if fs.exists(filename_full_path):
         print(f"File {filename_full_path} exists. It will not be downloaded again")
         return
 
     ee.Initialize()
-    
+
     path_bucket_no_gs = path_bucket.replace("gs://", "")
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
@@ -526,8 +629,8 @@ def download_merit_layer(area_of_interest: Polygon,
     else:
         name_for_desc = name_task
 
-    filename = os.path.join(path_no_bucket_name, "merit").replace("\\",'/')
-    
+    filename = os.path.join(path_no_bucket_name, "merit").replace("\\", "/")
+
     desc = f"{name_for_desc}"
 
     export_task_fun_img = export_task_image(
@@ -535,7 +638,6 @@ def download_merit_layer(area_of_interest: Polygon,
         crs=crs,
         scale=resolution_meters,
     )
-    
 
     return mayberun(
         filename,
@@ -547,7 +649,6 @@ def download_merit_layer(area_of_interest: Polygon,
         bucket_name=bucket_name,
         verbose=2,
     )
-
 
 
 def convert_wgs_to_utm(lon: float, lat: float) -> str:
@@ -564,17 +665,17 @@ def convert_wgs_to_utm(lon: float, lat: float) -> str:
 
     """
 
-    utm_band = str((math.floor((lon + 180) / 6 ) % 60) + 1)
+    utm_band = str((math.floor((lon + 180) / 6) % 60) + 1)
     if len(utm_band) == 1:
-        utm_band = '0'+ utm_band
+        utm_band = "0" + utm_band
     if lat >= 0:
-        epsg_code = 'EPSG:326' + utm_band
+        epsg_code = "EPSG:326" + utm_band
         return epsg_code
-    epsg_code = 'EPSG:327' + utm_band
+    epsg_code = "EPSG:327" + utm_band
     return epsg_code
 
 
-def process_metadata(path_csv:str, fs=None) -> pd.DataFrame:
+def process_metadata(path_csv: str, fs=None) -> pd.DataFrame:
     """
     Opens s2info.csv file that are exported in download_s2l89 function. It converts the date fields and
     adds a column indicating which files are available.
@@ -588,28 +689,34 @@ def process_metadata(path_csv:str, fs=None) -> pd.DataFrame:
     """
     if fs is None:
         fs = get_filesystem("gs://")
-    
+
     if path_csv.startswith("gs"):
         with fs.open(path_csv, "r") as fh:
             datas2 = pd.read_csv(fh)
     else:
         datas2 = pd.read_csv(path_csv)
-        
-                         # converters={'datetime': pd.Timestamp})
 
-    datas2["datetime"] = datas2.datetime.apply(lambda x: datetime.fromisoformat(x).replace(tzinfo=timezone.utc))
+        # converters={'datetime': pd.Timestamp})
+
+    datas2["datetime"] = datas2.datetime.apply(
+        lambda x: datetime.fromisoformat(x).replace(tzinfo=UTC)
+    )
 
     datas2["names2file"] = datas2.datetime.apply(lambda x: x.strftime("%Y-%m-%d"))
-    datas2["s2available"] = datas2.names2file.apply(lambda x: fs.exists(os.path.join(os.path.dirname(path_csv),
-                                                                                     x +".tif")))
+    datas2["s2available"] = datas2.names2file.apply(
+        lambda x: fs.exists(os.path.join(os.path.dirname(path_csv), x + ".tif"))
+    )
 
     return datas2
 
 
-def _check_all_downloaded(data:pd.DataFrame,
-                          date_start_search: datetime, date_end_search: datetime,
-                          filter_s2_fun:Optional[Callable[[pd.DataFrame], pd.Series]],
-                          collection_name:str="S2") -> bool:
+def _check_all_downloaded(
+    data: pd.DataFrame,
+    date_start_search: datetime,
+    date_end_search: datetime,
+    filter_s2_fun: Callable[[pd.DataFrame], pd.Series] | None,
+    collection_name: str = "S2",
+) -> bool:
     """
     True if all images have been downloaded
 
@@ -625,11 +732,15 @@ def _check_all_downloaded(data:pd.DataFrame,
 
     min_date = min(data["datetime"])
 
-    if (min_date > date_start_search) and ((min_date-date_start_search).total_seconds() / 3600.) > 10:
+    if (min_date > date_start_search) and (
+        (min_date - date_start_search).total_seconds() / 3600.0
+    ) > 10:
         return False
 
     max_date = max(data["datetime"])
-    if (max_date < date_end_search) and ((date_end_search-max_date).total_seconds() / 3600.) > 10:
+    if (max_date < date_end_search) and (
+        (date_end_search - max_date).total_seconds() / 3600.0
+    ) > 10:
         return False
 
     if data.shape[0] <= 0:
@@ -643,12 +754,15 @@ def _check_all_downloaded(data:pd.DataFrame,
         print(
             f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
             f"{np.sum(filter_good)} satisfies the criteria "
-            f"{images_available} are already downloaded")
+            f"{images_available} are already downloaded"
+        )
     else:
         images_available = data["s2available"].sum()
-        print(f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
-              f"all satisfies the criteria "
-              f"{images_available} are already downloaded")
+        print(
+            f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()} "
+            f"all satisfies the criteria "
+            f"{images_available} are already downloaded"
+        )
 
     if data.shape[0] <= 0:
         return False
@@ -659,14 +773,18 @@ def _check_all_downloaded(data:pd.DataFrame,
     return False
 
 
-def download_s2l89(area_of_interest: Polygon,
-                   date_start_search: datetime, date_end_search: datetime,
-                   path_bucket: str,
-                   collection_name="COPERNICUS/S2_HARMONIZED", crs:str='EPSG:4326',
-                   filter_fun:Callable[[pd.DataFrame], pd.Series]=None,
-                   name_task:Optional[str]=None,
-                   force_s2cloudless:bool=True,
-                   resolution_meters:float=10) -> List[ee.batch.Task]:
+def download_s2l89(
+    area_of_interest: Polygon,
+    date_start_search: datetime,
+    date_end_search: datetime,
+    path_bucket: str,
+    collection_name="COPERNICUS/S2_HARMONIZED",
+    crs: str = "EPSG:4326",
+    filter_fun: Callable[[pd.DataFrame], pd.Series] = None,
+    name_task: str | None = None,
+    force_s2cloudless: bool = True,
+    resolution_meters: float = 10,
+) -> list[ee.batch.Task]:
     """
     Download time series of S2 or Landsat images between search dates over the given area of interest. It saves the images
     on the path_bucket location. It only downloads images that satisfies the filter_s2 condition.
@@ -709,10 +827,13 @@ def download_s2l89(area_of_interest: Polygon,
 
     if fs.exists(path_csv):
         data = process_metadata(path_csv, fs=fs)
-        if _check_all_downloaded(data, date_start_search=date_start_search,
-                                 date_end_search=date_end_search,
-                                 filter_s2_fun=filter_fun,
-                                 collection_name=collection_name):
+        if _check_all_downloaded(
+            data,
+            date_start_search=date_start_search,
+            date_end_search=date_end_search,
+            filter_s2_fun=filter_fun,
+            collection_name=collection_name,
+        ):
             return []
         else:
             min_date = min(data["datetime"])
@@ -731,10 +852,15 @@ def download_s2l89(area_of_interest: Polygon,
     if collection_name == "Landsat":
         img_col = get_landsat_collection(date_start_search, date_end_search, pol, verbose=2)
     else:
-        img_col = get_s2_collection(date_start_search, date_end_search, pol,
-                                    bands=BANDS_NAMES[collection_name],
-                                    force_s2cloudless=force_s2cloudless,
-                                    collection_name=collection_name, verbose=2)
+        img_col = get_s2_collection(
+            date_start_search,
+            date_end_search,
+            pol,
+            bands=BANDS_NAMES[collection_name],
+            force_s2cloudless=force_s2cloudless,
+            collection_name=collection_name,
+            verbose=2,
+        )
     if img_col is None:
         return []
 
@@ -747,7 +873,9 @@ def download_s2l89(area_of_interest: Polygon,
     with fs.open(path_csv, "wb") as fh:
         img_col_info_local.to_csv(fh, index=False, mode="wb")
 
-    print(f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()}")
+    print(
+        f"Found {n_images_col} {collection_name} images between {date_start_search.isoformat()} and {date_end_search.isoformat()}"
+    )
 
     imgs_list = img_col.toList(n_images_col, 0)
 
@@ -770,15 +898,19 @@ def download_s2l89(area_of_interest: Polygon,
     tasks = []
     for good_images in img_col_info_local_good.itertuples():
         img_export = ee.Image(imgs_list.get(good_images.index_image_collection))
-        img_export = img_export.select(BANDS_NAMES[collection_name] + ["probability"]).toUint16().clip(bounding_box_pol)
+        img_export = (
+            img_export.select(BANDS_NAMES[collection_name] + ["probability"])
+            .toUint16()
+            .clip(bounding_box_pol)
+        )
 
-        date = good_images.datetime.strftime('%Y-%m-%d')
+        date = good_images.datetime.strftime("%Y-%m-%d")
 
         if name_task is None:
             name_for_desc = os.path.basename(path_no_bucket_name)
         else:
             name_for_desc = name_task
-        
+
         filename = os.path.join(path_no_bucket_name, date)
         desc = f"{name_for_desc}_{date}"
         task = mayberun(
@@ -797,23 +929,26 @@ def download_s2l89(area_of_interest: Polygon,
     return tasks
 
 
-def image_collection_fetch_metadata(img_col:ee.ImageCollection) -> pd.DataFrame:
+def image_collection_fetch_metadata(img_col: ee.ImageCollection) -> pd.DataFrame:
     """
     Return the metadata of the provided image collection as a pandas dataframe.
     """
-    img_col_info = img_collection_to_feature_collection(img_col,
-                                                        ["system:time_start", "valids",
-                                                         "cloud_probability"])
+    img_col_info = img_collection_to_feature_collection(
+        img_col, ["system:time_start", "valids", "cloud_probability"]
+    )
     img_col_info_local = gpd.GeoDataFrame.from_features(img_col_info.getInfo())
     img_col_info_local["datetime"] = img_col_info_local["system:time_start"].apply(
-        lambda x: datetime.utcfromtimestamp(x / 1000).replace(tzinfo=timezone.utc))
+        lambda x: datetime.utcfromtimestamp(x / 1000).replace(tzinfo=UTC)
+    )
     img_col_info_local["cloud_probability"] /= 100
-    img_col_info_local = img_col_info_local[["system:time_start", "valids", "cloud_probability", "datetime"]]
+    img_col_info_local = img_col_info_local[
+        ["system:time_start", "valids", "cloud_probability", "datetime"]
+    ]
     img_col_info_local["index_image_collection"] = np.arange(img_col_info_local.shape[0])
     return img_col_info_local
 
 
-def wait_tasks(tasks:List[ee.batch.Task]) -> None:
+def wait_tasks(tasks: list[ee.batch.Task]) -> None:
     """
     Wait for a list of tasks to finish
 
@@ -824,7 +959,7 @@ def wait_tasks(tasks:List[ee.batch.Task]) -> None:
     task_down = []
     for task in tasks:
         if task.active():
-            task_down.append((task.status()["description"],task))
+            task_down.append((task.status()["description"], task))
 
     task_error = 0
     while len(task_down) > 0:
@@ -836,7 +971,7 @@ def wait_tasks(tasks:List[ee.batch.Task]) -> None:
                 task_down_new.append((t, task))
                 continue
             if task.status()["state"] != "COMPLETED":
-                print("Error in task {}:\n {}".format(t, task.status()))
+                print(f"Error in task {t}:\n {task.status()}")
                 task_error += 1
 
         task_down = task_down_new

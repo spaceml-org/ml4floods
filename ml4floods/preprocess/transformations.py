@@ -1,14 +1,14 @@
-from typing import Dict, Tuple
-
 import albumentations
 import cv2
 import numpy as np
 import torch
-from albumentations import (GaussNoise, MotionBlur, Normalize, RandomRotate90,
-                            Resize, HorizontalFlip, VerticalFlip, Compose)
+from albumentations import (
+    GaussNoise,
+    MotionBlur,
+    Normalize,
+)
 from albumentations.core.composition import BaseCompose
-from albumentations.core.transforms_interface import (BasicTransform,
-                                                      DualTransform)
+from albumentations.core.transforms_interface import BasicTransform, DualTransform
 
 from ml4floods.preprocess.worldfloods.normalize import get_normalisation
 
@@ -27,7 +27,7 @@ class ToTensor(BasicTransform):
         super(ToTensor, self).__init__(p=1.0)
 
     # def __call__(self, input_data: dict, force_apply=True) -> dict:
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
 
@@ -49,10 +49,10 @@ class ToTensor(BasicTransform):
     @property
     def targets(self):
         return {"image": self.apply, "mask": self.apply_to_mask}
-    
+
     def apply(self, img, **params):
         return self._image_to_tensor(img)
-    
+
     def apply_to_mask(self, mask, **params):
         return self._mask_to_tensor(mask)
 
@@ -61,7 +61,7 @@ class PermuteChannels(BasicTransform):
     def __init__(self):
         super(PermuteChannels, self).__init__(p=1.0)
 
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
 
@@ -80,10 +80,10 @@ class PermuteChannels(BasicTransform):
     @property
     def targets(self):
         return {"image": self.apply, "mask": self.apply_to_mask}
-    
+
     def apply(self, img, **params):
         return self._permute_channels(img)
-    
+
     def apply_to_mask(self, mask, **params):
         return self._permute_channels(mask)
 
@@ -94,7 +94,7 @@ class InversePermuteChannels(BasicTransform):
     ):
         super(InversePermuteChannels, self).__init__(p=1.0)
 
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
 
@@ -113,10 +113,10 @@ class InversePermuteChannels(BasicTransform):
     @property
     def targets(self):
         return {"image": self.apply, "mask": self.apply_to_mask}
-    
+
     def apply(self, img, **params):
         return self._inverse_permute_channels(img)
-    
+
     def apply_to_mask(self, mask, **params):
         return self._inverse_permute_channels(mask)
 
@@ -131,7 +131,7 @@ class OneHotEncoding(BasicTransform):
         super(OneHotEncoding, self).__init__(p=1.0)
         self.num_classes = num_classes
 
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
 
@@ -150,10 +150,10 @@ class OneHotEncoding(BasicTransform):
     @property
     def targets(self):
         return {"mask": self.apply_to_mask}
-    
+
     def apply_to_mask(self, mask, **params):
         return self._one_hot_encode(mask)
-    
+
     def get_transform_init_args_names(self):
         return ("num_classes",)
 
@@ -174,7 +174,7 @@ class PerChannel(BaseCompose):
         self.transforms = transforms
         self.channels = channels
 
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
         image, mask = data["image"], data["mask"]
         print(image.shape)
@@ -224,14 +224,12 @@ class ResizeFactor(DualTransform):
         super(ResizeFactor, self).__init__(p)
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
-        from albumentations.augmentations import functional as F
 
-    def __call__(self, force_apply=True, **data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         image, mask = data["image"], data["mask"]
         from albumentations.augmentations import functional as F
-        new_size = np.round(
-            np.array(image.shape[:2]) / self.downsampling_factor
-        ).astype(np.int64)
+
+        new_size = np.round(np.array(image.shape[:2]) / self.downsampling_factor).astype(np.int64)
         image = F.resize(
             image,
             height=new_size[0],
@@ -245,24 +243,22 @@ class ResizeFactor(DualTransform):
     @property
     def targets(self):
         return {"image": self.apply, "mask": self.apply_to_mask}
-    
+
     def apply(self, img, **params):
         from albumentations.augmentations import functional as F
-        new_size = np.round(
-            np.array(img.shape[:2]) / self.downsampling_factor
-        ).astype(np.int64)
+
+        new_size = np.round(np.array(img.shape[:2]) / self.downsampling_factor).astype(np.int64)
         return F.resize(
             img,
             height=new_size[0],
             width=new_size[1],
             interpolation=self.interpolation,
         )
-    
+
     def apply_to_mask(self, mask, **params):
-        new_size = np.round(
-            np.array(mask.shape[:2]) / self.downsampling_factor
-        ).astype(np.int64)
+        new_size = np.round(np.array(mask.shape[:2]) / self.downsampling_factor).astype(np.int64)
         from albumentations.augmentations import functional as F
+
         return F.resize(
             mask,
             height=new_size[0],
@@ -274,7 +270,7 @@ class ResizeFactor(DualTransform):
         return ("downsampling_factor", "interpolation")
 
 
-def transforms_generator(config: Dict) -> albumentations.Compose:
+def transforms_generator(config: dict) -> albumentations.Compose:
     """Function to create a transformation composition using the parameters of a config file.
     This motive of this function is to provide an ability to modify transformations without changing the code.
 
@@ -298,9 +294,7 @@ def transforms_generator(config: Dict) -> albumentations.Compose:
 
     if config["use_channels"] is not None:
         channel_mean, channel_std = get_normalisation(config["use_channels"])
-        transform_normalize = Normalize(
-            mean=channel_mean, std=channel_std, max_pixel_value=1.0
-        )
+        transform_normalize = Normalize(mean=channel_mean, std=channel_std, max_pixel_value=1.0)
         list_of_transforms += [
             transform_normalize,
         ]
@@ -326,7 +320,7 @@ def transforms_generator(config: Dict) -> albumentations.Compose:
     if config["totensor"] is True:
         list_of_transforms += [ToTensor()]
 
-#     if config["num_classes"] > 1:
-#         list_of_transforms += [OneHotEncoding(num_classes=3)]
+    #     if config["num_classes"] > 1:
+    #         list_of_transforms += [OneHotEncoding(num_classes=3)]
 
     return albumentations.Compose(list_of_transforms)

@@ -1,8 +1,8 @@
+import fsspec
+import numpy as np
+import segmentation_models_pytorch as smp
 import torch
 import torch.nn
-import segmentation_models_pytorch as smp
-import numpy as np
-import fsspec
 
 
 def load_weights(path, map_location=None):
@@ -21,15 +21,16 @@ def find_padding(v, divisor=8):
     return pad_1, pad_2
 
 
-def padded_predict(tensor:np.array, model:torch.nn.Module, divisor:int=32,
-                   device:torch.device=torch.device("cpu")) -> np.array:
-
+def padded_predict(
+    tensor: np.array,
+    model: torch.nn.Module,
+    divisor: int = 32,
+    device: torch.device = torch.device("cpu"),
+) -> np.array:
     pad_r = find_padding(tensor.shape[-2], divisor)
     pad_c = find_padding(tensor.shape[-1], divisor)
 
-    tensor_padded = np.pad(
-        tensor, ((0, 0), (pad_r[0], pad_r[1]), (pad_c[0], pad_c[1])), "reflect"
-    )
+    tensor_padded = np.pad(tensor, ((0, 0), (pad_r[0], pad_r[1]), (pad_c[0], pad_c[1])), "reflect")
 
     slice_rows = slice(pad_r[0], None if pad_r[1] <= 0 else -pad_r[1])
     slice_cols = slice(pad_c[0], None if pad_c[1] <= 0 else -pad_c[1])
@@ -43,8 +44,9 @@ def padded_predict(tensor:np.array, model:torch.nn.Module, divisor:int=32,
         elif len(pred_padded.shape) == 2:
             pred_cont = pred_padded[(slice_rows, slice_cols)]
         else:
-            raise NotImplementedError(f"Don't know how to slice the tensor of shape {pred_padded.shape}")
-
+            raise NotImplementedError(
+                f"Don't know how to slice the tensor of shape {pred_padded.shape}"
+            )
 
     return np.array(pred_cont.cpu())
 
@@ -57,19 +59,17 @@ class CDModel(torch.nn.Module):
         weights = load_weights(weights_file, map_location="cpu")
         model.load_state_dict(weights["state_dict"])
     """
+
     def __init__(self, device=torch.device("cpu")):
         super().__init__()
         self.model = smp.Unet(
-            encoder_name="mobilenet_v2",
-            encoder_weights=None,
-            in_channels=13,
-            classes=4
+            encoder_name="mobilenet_v2", encoder_weights=None, in_channels=13, classes=4
         )
         self.device = device
         self.model.eval()
         self.model.to(self.device)
 
-    def forward(self, tensor:torch.Tensor) -> torch.Tensor:
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         pred_cont = self.model(tensor)
         pred_discrete = torch.argmax(pred_cont, dim=1).type(torch.uint8)
         return pred_discrete
@@ -84,4 +84,3 @@ class CDModel(torch.nn.Module):
         assert tensor.shape[0] == 13, f"Expected 13 channels found {tensor.shape[0]}"
 
         return padded_predict(tensor, self, 32, self.device)
-

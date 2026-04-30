@@ -1,17 +1,17 @@
-import unittest
 import os
+import unittest
 
 from ml4floods.data.index.geographic_index import GeographicIndex
 
-class TestGeographicIndex(unittest.TestCase):
 
+class TestGeographicIndex(unittest.TestCase):
     def test_init(self):
         """
         Little more than a simple smoke test...
         Initialize the index and make sure that there is one entry in the list per degree on Earth.
         """
         idx = GeographicIndex()
-        assert len(idx.index_list) == 360*180
+        assert len(idx.index_list) == 360 * 180
 
     def test_save_load(self):
         """
@@ -22,5 +22,5 @@ class TestGeographicIndex(unittest.TestCase):
         idx.save_index("foobar_index.pkl")
         idx = GeographicIndex()
         idx.load_index("foobar_index.pkl")
-        assert idx.index_list[(45-90)*360 + 179+180]
+        assert idx.index_list[(45 - 90) * 360 + 179 + 180]
         os.remove("foobar_index.pkl")

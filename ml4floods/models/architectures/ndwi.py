@@ -8,7 +8,9 @@ import torch
 #     swir12 = 12
 
 
-def extract_ndwi(x: torch.Tensor, green:int=2, nir:int=7, epsilon:float=1e-8) -> torch.Tensor:
+def extract_ndwi(
+    x: torch.Tensor, green: int = 2, nir: int = 7, epsilon: float = 1e-8
+) -> torch.Tensor:
     """
     Normalize difference water index (Mcfeeters 1996) Band index defaults to Sentinel-2 image bands.
 
@@ -27,7 +29,10 @@ def extract_ndwi(x: torch.Tensor, green:int=2, nir:int=7, epsilon:float=1e-8) ->
 
     return ndwi[:, None]
 
-def extract_mndwi(x: torch.Tensor, green:int=2, swir:int=11, epsilon:float=1e-8) -> torch.Tensor:
+
+def extract_mndwi(
+    x: torch.Tensor, green: int = 2, swir: int = 11, epsilon: float = 1e-8
+) -> torch.Tensor:
     """
     Modified normalize difference water index (Xu 2006) Band index defaults to Sentinel-2 image bands.
 
@@ -45,4 +50,3 @@ def extract_mndwi(x: torch.Tensor, green:int=2, swir:int=11, epsilon:float=1e-8)
     ndwi = band_diff / (band_sum + epsilon)
 
     return ndwi[:, None]
-

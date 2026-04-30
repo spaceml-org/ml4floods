@@ -22,7 +22,7 @@ This will download the following:
 
 
 ```python
-python -u scripts/worldfloods/generate_ground_truth_wf1.0.py 
+python -u scripts/worldfloods/generate_ground_truth_wf1.0.py
 ```
 
 
@@ -48,7 +48,7 @@ This will download the following:
 
 
 ```python
-python -u scripts/worldfloods/generate_ground_truth_wf2.0.py 
+python -u scripts/worldfloods/generate_ground_truth_wf2.0.py
 ```
 
 

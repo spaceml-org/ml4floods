@@ -3,32 +3,29 @@ import os
 import shutil
 import zipfile
 from glob import glob
-from typing import List, Optional
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from requests_html import HTMLSession
+import requests
+from bs4 import BeautifulSoup
 from shapely.ops import unary_union
 
 from ml4floods.data.config import ACCEPTED_FIELDS, RENAME_SATELLITE
-import requests
-from typing import Dict
-
 from ml4floods.data.utils import filter_land, filter_pols
 
-
-
-COPERNICUS_EMS_WEBSCRAPE_DATA  = {"confirmation": 1,
-                                  "op":  "Download file",
-                                  "form_build_id": "xxxx",
-                                  "form_id":"emsmapping_disclaimer_download_form"}
+COPERNICUS_EMS_WEBSCRAPE_DATA = {
+    "confirmation": 1,
+    "op": "Download file",
+    "form_build_id": "xxxx",
+    "form_id": "emsmapping_disclaimer_download_form",
+}
 
 
 def is_downloadable(url: str) -> bool:
     """
     Function that checks if the url contains a downloadable resource.
-    Relies on requests_html package. Helper function for download_vector_cems.
+    Helper function for download_vector_cems.
 
     Args:
       url: A string containing the Copernicus EMS url grabbed
@@ -75,7 +72,7 @@ def table_floods_ems(event_start_date: str = "2014-05-01") -> pd.DataFrame:
     return tables_floods.set_index("Code")
 
 
-def fetch_zip_file_urls(code: str) -> List[str]:
+def fetch_zip_file_urls(code: str) -> list[str]:
     """
     This Function takes a unique Copernicus EMS hazard activation code and
     retrieves the url which holds the zip files associated with that code.
@@ -91,24 +88,19 @@ def fetch_zip_file_urls(code: str) -> List[str]:
         input code.
     """
     product_url = "https://emergency.copernicus.eu/mapping/list-of-components/" + code
-    session = HTMLSession()
-    r = session.get(product_url)
+    r = requests.get(product_url)
+    soup = BeautifulSoup(r.text, "html.parser")
 
     zip_url_per_code = []
-    for zf in r.html.find("a"):
-        if (
-            ("zip" in zf.attrs["href"])
-            and ("REFERENCE_MAP" not in zf.attrs["href"])
-            and ("RTP01" not in zf.attrs["href"])
-        ):
-            zip_url_per_code.append(
-                "https://emergency.copernicus.eu" + zf.attrs["href"]
-            )
+    for zf in soup.find_all("a", href=True):
+        href = zf["href"]
+        if "zip" in href and "REFERENCE_MAP" not in href and "RTP01" not in href:
+            zip_url_per_code.append("https://emergency.copernicus.eu" + href)
 
     return zip_url_per_code
 
 
-def download_vector_cems(zipfile_url:str, folder_out:str="CopernicusEMS") -> str:
+def download_vector_cems(zipfile_url: str, folder_out: str = "CopernicusEMS") -> str:
     """
     This function downloads the zip files from the zip file url of each
     Copernicus EMS hazard activation and saves them locally to a file
@@ -144,9 +136,7 @@ def download_vector_cems(zipfile_url:str, folder_out:str="CopernicusEMS") -> str
     if is_downloadable(zipfile_url):
         r = requests.get(zipfile_url, allow_redirects=True)
     else:
-        r = requests.post(
-            zipfile_url, allow_redirects=True, data=COPERNICUS_EMS_WEBSCRAPE_DATA
-        )
+        r = requests.post(zipfile_url, allow_redirects=True, data=COPERNICUS_EMS_WEBSCRAPE_DATA)
 
     with open(zipfullpath, "wb") as fh:
         fh.write(r.content)
@@ -220,7 +210,7 @@ formats = [
 ]
 
 
-def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> Optional[str]:
+def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -> str | None:
     """
     Helper function that checks whether a file already exists in the parent
     directory.
@@ -238,7 +228,9 @@ def is_file_in_directory(parent_dir_of_file: str, file_extension_pattern: str) -
     if len(source_file) == 1:
         return source_file[0]
     elif len(source_file) > 1:
-        print(f"Found {len(source_file)} {file_extension_pattern} files in directory. We will not process it {parent_dir_of_file}")
+        print(
+            f"Found {len(source_file)} {file_extension_pattern} files in directory. We will not process it {parent_dir_of_file}"
+        )
         return
     else:
         print(f"{file_extension_pattern} not found in directory {parent_dir_of_file}")
@@ -290,13 +282,9 @@ def _check_hydro_ok(shapefile) -> bool:
         print(f"{shapefile} file is not georeferenced")
         return False
 
-    if not all(
-        notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]
-    ):
+    if not all(notation in ACCEPTED_FIELDS for notation in gpd_obj[COLUMN_W_CLASS_HYDRO]):
         #         print(f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(gpd_obj[COLUMN_W_CLASS_HYDRO])}")
-        not_None_gpd_obj = [
-            row for row in gpd_obj[COLUMN_W_CLASS_HYDRO] if row is not None
-        ]
+        not_None_gpd_obj = [row for row in gpd_obj[COLUMN_W_CLASS_HYDRO] if row is not None]
         print(
             f"There are unknown fields in the {COLUMN_W_CLASS_HYDRO} column of {shapefile}: {np.unique(np.array(not_None_gpd_obj))}"
         )
@@ -311,7 +299,7 @@ COLUMN_W_CLASS_HYDRO = "obj_type"
 
 def filter_register_copernicusems(
     unzipped_directory: str, code_date: str, verbose: bool = False
-) -> Optional[Dict]:
+) -> dict | None:
     """
     Function that collects the following files from the unzipped directories for each Copernicus EMS
     activation code and stores them into a dictionary with additional metadata with respect to the source.
@@ -363,16 +351,21 @@ def filter_register_copernicusems(
     if not valid_srd_fields_bool.any():
         if verbose:
             print(f"dmg_srd_id fields not in source file {dmg_srd_id_fields}")
-        return 
+        return
 
-    min_date_post_event = min(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
-    max_date_post_event = max(pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"])
-
-    satellite_post_event = pd_source.loc[(pd_source.eventphase == "Post-event") & (pd_source.date == max_date_post_event), "source_nam"].iloc[0]
-
-    date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(
-        tzinfo=datetime.timezone.utc
+    min_date_post_event = min(
+        pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"]
     )
+    max_date_post_event = max(
+        pd_source.loc[valid_srd_fields_bool & (pd_source.eventphase == "Post-event"), "date"]
+    )
+
+    satellite_post_event = pd_source.loc[
+        (pd_source.eventphase == "Post-event") & (pd_source.date == max_date_post_event),
+        "source_nam",
+    ].iloc[0]
+
+    date_ems_code = datetime.datetime.strptime(code_date, "%Y-%m-%d").replace(tzinfo=datetime.UTC)
 
     if not post_event_date_difference_is_ok(
         min_date_post_event, date_ems_code, max_date_post_event, verbose
@@ -382,14 +375,11 @@ def filter_register_copernicusems(
     # Check if pre-event date precedes post-event date
     content_pre_event = {}
     if np.any(pd_source.eventphase == "Pre-event"):
-        date_pre_event = max(
-            np.array(pd_source[pd_source.eventphase == "Pre-event"]["date"])
-        )
+        date_pre_event = max(np.array(pd_source[pd_source.eventphase == "Pre-event"]["date"]))
         satellite_pre_event = np.array(
-            pd_source[
-                (pd_source.eventphase == "Pre-event")
-                & (pd_source.date == date_pre_event)
-            ]["source_nam"]
+            pd_source[(pd_source.eventphase == "Pre-event") & (pd_source.date == date_pre_event)][
+                "source_nam"
+            ]
         )[0]
 
         content_pre_event["satellite_pre_event"] = satellite_pre_event
@@ -405,7 +395,7 @@ def filter_register_copernicusems(
             return
 
     if not isinstance(satellite_post_event, str) and verbose:
-        print("Satellite post event: {} is not a string!".format(satellite_post_event))
+        print(f"Satellite post event: {satellite_post_event} is not a string!")
         return
 
     if satellite_post_event in RENAME_SATELLITE:
@@ -428,7 +418,7 @@ def filter_register_copernicusems(
     if "obj_desc" in pd_geo:
         event_type = np.unique(pd_geo.obj_desc)
         if len(event_type) > 1:
-            print("Multiple event types within shapefile {}".format(event_type))
+            print(f"Multiple event types within shapefile {event_type}")
         event_type = event_type[0]
     else:
         event_type = "NaN"
@@ -451,7 +441,7 @@ def filter_register_copernicusems(
         "area_of_interest_file": os.path.basename(area_of_interest_file),
         "ems_code": ems_code,
         "aoi_code": aoi_code,
-        "date_ems_code": date_ems_code
+        "date_ems_code": date_ems_code,
     }
 
     register.update(content_pre_event)
@@ -475,7 +465,10 @@ def filter_register_copernicusems(
 
     return register
 
-def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Optional[gpd.GeoDataFrame]:
+
+def load_observed_event_file(
+    observed_event_file: str, verbose: bool = False
+) -> gpd.GeoDataFrame | None:
     pd_geo = gpd.read_file(observed_event_file)
     if np.any(pd_geo["event_type"] != "5-Flood") and verbose:
         print(
@@ -485,13 +478,14 @@ def load_observed_event_file(observed_event_file:str, verbose:bool=False) -> Opt
 
     if pd_geo.notation.isna().any():
         if verbose:
-            print(f"Found na in field {COLUMN_W_CLASS_OBSERVED_EVENT}. Replacing them with 'Flooded area'")
-        pd_geo.loc[pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT].isna(), COLUMN_W_CLASS_OBSERVED_EVENT] = 'Flooded area'
+            print(
+                f"Found na in field {COLUMN_W_CLASS_OBSERVED_EVENT}. Replacing them with 'Flooded area'"
+            )
+        pd_geo.loc[pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT].isna(), COLUMN_W_CLASS_OBSERVED_EVENT] = (
+            "Flooded area"
+        )
 
-    if not all(
-        notation in ACCEPTED_FIELDS
-        for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]
-    ):
+    if not all(notation in ACCEPTED_FIELDS for notation in pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT]):
         print(
             f"There are unknown fields in the {COLUMN_W_CLASS_OBSERVED_EVENT} column of {observed_event_file}: {np.unique(pd_geo[COLUMN_W_CLASS_OBSERVED_EVENT])}"
         )
@@ -510,16 +504,12 @@ def parse_date_messy(date_list):
     for fm in formats:
         try:
             # date_list[0] = date_list[0].replace("119/09", "19/09").replace("05/24", "24/05")
-            time_part = (
-                date_list[1].replace(".", ":").replace(";", ":").replace("UCT", "UTC")
-            )
+            time_part = date_list[1].replace(".", ":").replace(";", ":").replace("UCT", "UTC")
             if time_part == "Not Applicable":
                 time_part = "00:00"
-            date_post_event = datetime.datetime.strptime(
-                date_list[0] + " " + time_part, fm
-            )
+            date_post_event = datetime.datetime.strptime(date_list[0] + " " + time_part, fm)
             if date_post_event.tzname() is None:
-                date_post_event = date_post_event.replace(tzinfo=datetime.timezone.utc)
+                date_post_event = date_post_event.replace(tzinfo=datetime.UTC)
             return date_post_event
         except ValueError:
             pass
@@ -536,9 +526,7 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
 
     # pd_source = Dbf5(source_file).to_dataframe()
 
-    if "eventphase" not in pd_source.columns or not np.any(
-        pd_source.eventphase == "Post-event"
-    ):
+    if "eventphase" not in pd_source.columns or not np.any(pd_source.eventphase == "Post-event"):
         if verbose:
             print("\t eventphase not found or not Post-event in source file")
         return
@@ -550,8 +538,7 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
     pd_source["date"] = dates_formated
     if filter_event_dates:
         pd_source = pd_source[
-            (pd_source.eventphase == "Post-event")
-            | (pd_source.eventphase == "Pre-event")
+            (pd_source.eventphase == "Post-event") | (pd_source.eventphase == "Pre-event")
         ]
 
         if np.any(pd.isna(pd_source.date)):
@@ -569,9 +556,9 @@ def load_source_file(source_file, filter_event_dates=True, verbose=False):
 
 
 def generate_floodmap(
-    metadata_floodmap: Dict, folder_files: str, filterland: bool = True
+    metadata_floodmap: dict, folder_files: str, filterland: bool = True
 ) -> gpd.GeoDataFrame:
-    """ Generates a floodmap with the joined info of the hydro and flood. """
+    """Generates a floodmap with the joined info of the hydro and flood."""
 
     area_of_interest = gpd.read_file(
         os.path.join(
@@ -610,9 +597,7 @@ def generate_floodmap(
             area_of_interest_pol,
         )
         mapdf_hydro = (
-            filter_land(mapdf_hydro)
-            if filterland and (mapdf_hydro.shape[0] > 0)
-            else mapdf_hydro
+            filter_land(mapdf_hydro) if filterland and (mapdf_hydro.shape[0] > 0) else mapdf_hydro
         )
         if mapdf_hydro.shape[0] > 0:
             mapdf_hydro["source"] = "hydro"
@@ -663,7 +648,7 @@ def generate_polygon(bbox):
     ]
 
 
-def get_bbox(pd_geo: gpd.GeoDataFrame) -> Dict:
+def get_bbox(pd_geo: gpd.GeoDataFrame) -> dict:
     """
     This function is a helper function of processing_register
     This function takes a geopandas dataframe

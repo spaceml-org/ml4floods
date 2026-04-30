@@ -13,7 +13,7 @@ align: center
 
 ## Democratising AI-Enhanced Flooding Tools
 
-Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types.  Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface. 
+Machine learning (ML) algorithms have the potential to offer significantly faster and more accurate flood mapping than traditional methods. Their adaptability means they can easily grow to accommodate more data over time, and expand to ingest a wide range of data types.  Training robust and reliable ML models is almost an art-form, requiring specialist knowledge of statistics, computing and data platforms. ML workflows have become much more accessible because of dedicated open-source libraries like PyTorch and TensorFlow. However, there are a myriad of subtle pitfalls associated with training and deploying ML models - these can produce deeply skewed results that still appear reasonable to the untrained eye. Democratising end-to-end integrated AI workflows avoids these pitfalls by creating a series of linked tools that non-ML expert users can trust to deploy machine learning. These tools incorporate data acquisition, preparation, calibration, enhancement and deployment steps, wrapped in an accessible interface.
 
 ## Install
 
@@ -25,7 +25,7 @@ pip install ml4floods
 
 ## Tutorials
 
-ML4Floods is a self-contained tool for training and deploying flood extent segmentation models for Sentinel-2 and Landsat. These tools include: image downloading, flood map acquisition, neural network training, testing and the visualization of the results in an interactive map. 
+ML4Floods is a self-contained tool for training and deploying flood extent segmentation models for Sentinel-2 and Landsat. These tools include: image downloading, flood map acquisition, neural network training, testing and the visualization of the results in an interactive map.
  See the [project rationale](./intro/introduction.md) for a more detailed explanation of the goals of the tool.
 
 These tutorials may help you explore the datasets and models:
@@ -40,11 +40,11 @@ These tutorials may help you explore the datasets and models:
 <iframe width="600" height="400"
 src="https://www.youtube.com/embed/wMLuHf9s9zk?autoplay=0">
 </iframe>
- 
-## About 
+
+## About
 
 This work is an extension of the [FDL Europe 2019](https://fdleurope.org/) *"Disaster Prevention, Progress and Response"* team which results are published in:
- 
+
  > G. Mateo-Garcia, J. Veitch-Michaelis, L. Smith, S. Oprea, G. Schumann, Y. Gal, Baydin G.A., Backes D.  [Towards global flood mapping onboard low cost satellites with machine learning](https://www.nature.com/articles/s41598-021-86650-z). _Scientific Reports 11, 7249_ (2021). DOI: 10.1038/s41598-021-86650-z
 
 FDL work has been further extended in the following paper where better models are proposed and trained on a curated version of the *WorldFloods* dataset.
@@ -60,7 +60,7 @@ ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [
 <img width="300" title="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." alt="DEEPCLOUD project (PID2019-109026RB-I00, University of Valencia) funded by MCIN/AEI/10.13039/501100011033." src="https://www.uv.es/chovago/logos/logoMICIN.jpg">
 
  ## Citation
- 
+
  If you find this work useful please cite:
 
 ```
@@ -110,12 +110,12 @@ ML4Floods has been funded by the United Kingdom Space Agency (UKSA) and led by [
 ## Licence
 The package is available in [GitHub](https://github.com/spaceml-org/ml4floods). ML4Floods is published under a [GNU Lesser GPL v3 licence](https://www.gnu.org/licenses/lgpl-3.0.en.html) <img src="https://www.gnu.org/graphics/lgplv3-88x31.png" alt="licence" width="80">.
 
-The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
-The Ml4Floods notebooks and docs are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+The Ml4Floods notebooks and docs are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
  ## Contributors
- 
+
  *Gonzalo Mateo-García*, *Enrique Portalés-Julià*, *Tarun Narayanan*, *J. Emmanuel Jonhson*, *Nadia Ahmed, Sam Budd, Satyarth Praveen, Lucas Kruitwagen, Margaret Maynard-Reid, Nicholas Roth, Cormac Purcell, Richard Strange, Leo Silverberg, Guy Schumann, Edoardo Nemni, Luis Gómez-Chova, Freddie Kalaitzis, Sara Jennings, Jodie Hughes* and *James Parr*.

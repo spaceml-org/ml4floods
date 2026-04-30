@@ -25,7 +25,7 @@ Install the latest version from GitHub:
 pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 ```
 
-## Docs 
+## Docs
 
 [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/)
 
@@ -40,11 +40,11 @@ These tutorials may help you explore the datasets and models:
 
 ## The *WorldFloods* database
  [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2)
- 
-The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
-It requires approximately 76GB of hard-disk storage. 
 
-The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks.
+It requires approximately 76GB of hard-disk storage.
+
+The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
 To download the *WorldFloods* database or the pretrained flood segmentation models see [the instructions to download the database](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html).

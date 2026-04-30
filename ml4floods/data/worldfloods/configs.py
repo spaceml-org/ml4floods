@@ -1,19 +1,18 @@
 import numpy as np
 
-
 BANDS_S2 = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B10", "B11", "B12"]
 
 # 0 based channels based on BANDS_S2
 CHANNELS_CONFIGURATIONS = {
-    "all": list(range(0,len(BANDS_S2))),
+    "all": list(range(0, len(BANDS_S2))),
     "rgb": [3, 2, 1],
     "swirnirred": [11, 7, 3],
     "bgr": [1, 2, 3],
     "bgri": [1, 2, 3, 7],
-    "riswir" : [3, 7, 11],
-    "bgriswir" : [1, 2, 3, 7, 11],
-    "bgriswirs" : [1, 2, 3, 7, 11, 12],
-    "l89s2": [0, 1, 2, 3, 7, 10, 11, 12], # Same bands as Landsat-7 and Landsat-8
+    "riswir": [3, 7, 11],
+    "bgriswir": [1, 2, 3, 7, 11],
+    "bgriswirs": [1, 2, 3, 7, 11, 12],
+    "l89s2": [0, 1, 2, 3, 7, 10, 11, 12],  # Same bands as Landsat-7 and Landsat-8
     "sub_20": [1, 2, 3, 4, 5, 6, 7, 8, 11, 12],
     "hyperscout2": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }
@@ -26,9 +25,9 @@ CHANNELS_CONFIGURATIONS_LANDSAT = {
     "swirnirred": [5, 4, 3],
     "bgr": [1, 2, 3],
     "bgri": [1, 2, 3, 4],
-    "riswir" : [3, 4, 5],
-    "bgriswir" : [1, 2, 3, 4, 5],
-    "bgriswirs" : [1, 2, 3, 4, 5, 6],
+    "riswir": [3, 4, 5],
+    "bgriswir": [1, 2, 3, 4, 5],
+    "bgriswirs": [1, 2, 3, 4, 5, 6],
     "l89s2": [0, 1, 2, 3, 4, 7, 5, 6],
 }
 
@@ -52,15 +51,18 @@ SENTINEL2_NORMALIZATION = np.array(
     dtype=np.float32,
 )
 
-COLORS_WORLDFLOODS = np.array([[0, 0, 0],
-                               [139, 64, 0],
-                               [0, 0, 139],
-                               [220, 220, 220]], dtype=np.float32) / 255
+COLORS_WORLDFLOODS = (
+    np.array([[0, 0, 0], [139, 64, 0], [0, 0, 139], [220, 220, 220]], dtype=np.float32) / 255
+)
 
 
-COLORS_WORLDFLOODS_INVLANDWATER = COLORS_WORLDFLOODS[[0, 1, 2],...]
-COLORS_WORLDFLOODS_INVCLEARCLOUD = COLORS_WORLDFLOODS[[0, 1, 3],...]
+COLORS_WORLDFLOODS_INVLANDWATER = COLORS_WORLDFLOODS[[0, 1, 2], ...]
+COLORS_WORLDFLOODS_INVCLEARCLOUD = COLORS_WORLDFLOODS[[0, 1, 3], ...]
 
 
 CLASS_FREQUENCY_WORLDFLOODSV1 = [0.516942, 0.027322, 0.455787]
-CLASS_FREQUENCY_WORLDFLOODSV1_FILTERED = [0.8680312076050476, 0.052033908148693186, 0.07993488424625929]
+CLASS_FREQUENCY_WORLDFLOODSV1_FILTERED = [
+    0.8680312076050476,
+    0.052033908148693186,
+    0.07993488424625929,
+]
