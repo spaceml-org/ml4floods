@@ -27,7 +27,7 @@ class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(BasicBlock, self).__init__()
+        super().__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
@@ -59,7 +59,7 @@ class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -103,7 +103,7 @@ class HighResolutionModule(nn.Module):
         num_channels,
         multi_scale_output=True,
     ):
-        super(HighResolutionModule, self).__init__()
+        super().__init__()
         self._check_branches(num_branches, num_blocks, num_inchannels, num_channels)
 
         self.num_inchannels = num_inchannels
@@ -297,7 +297,7 @@ EXTRA_SMALL = {
 
 class HighResolutionNet(nn.Module):
     def __init__(self, configuration=None, input_channels=3, output_channels=1):
-        super(HighResolutionNet, self).__init__()
+        super().__init__()
         if configuration is None:
             configuration = EXTRA_SMALL
 

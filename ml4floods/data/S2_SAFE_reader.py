@@ -268,7 +268,7 @@ class S2Image:
 
 class S2ImageL2A(S2Image):
     def __init__(self, s2_folder, out_res=10):
-        super(S2ImageL2A, self).__init__(s2_folder, out_res=out_res)
+        super().__init__(s2_folder, out_res=out_res)
         assert self.producttype == "MSIL2A", (
             f"Unexpected product type {self.producttype} in image {self.folder}"
         )
@@ -321,7 +321,7 @@ class S2ImageL2A(S2Image):
 
 class S2ImageL1C(S2Image):
     def __init__(self, s2_folder, out_res=10, read_metadata=False):
-        super(S2ImageL1C, self).__init__(s2_folder, out_res=out_res)
+        super().__init__(s2_folder, out_res=out_res)
 
         assert self.producttype == "MSIL1C", (
             f"Unexpected product type {self.producttype} in image {self.folder}"

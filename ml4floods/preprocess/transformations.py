@@ -24,7 +24,7 @@ def permute_channels(
 
 class ToTensor(BasicTransform):
     def __init__(self):
-        super(ToTensor, self).__init__(p=1.0)
+        super().__init__(p=1.0)
 
     # def __call__(self, input_data: dict, force_apply=True) -> dict:
     def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
@@ -59,7 +59,7 @@ class ToTensor(BasicTransform):
 
 class PermuteChannels(BasicTransform):
     def __init__(self):
-        super(PermuteChannels, self).__init__(p=1.0)
+        super().__init__(p=1.0)
 
     def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
@@ -92,7 +92,7 @@ class InversePermuteChannels(BasicTransform):
     def __init__(
         self,
     ):
-        super(InversePermuteChannels, self).__init__(p=1.0)
+        super().__init__(p=1.0)
 
     def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
         # Convert image to tensor
@@ -128,7 +128,7 @@ class OneHotEncoding(BasicTransform):
     """
 
     def __init__(self, num_classes: int):
-        super(OneHotEncoding, self).__init__(p=1.0)
+        super().__init__(p=1.0)
         self.num_classes = num_classes
 
     def __call__(self, force_apply=True, **data) -> tuple[torch.Tensor, torch.Tensor]:
@@ -170,7 +170,7 @@ class PerChannel(BaseCompose):
     """
 
     def __init__(self, transforms, channels=None, p=0.5):
-        super(PerChannel, self).__init__(transforms, p)
+        super().__init__(transforms, p)
         self.transforms = transforms
         self.channels = channels
 
@@ -221,7 +221,7 @@ class ResizeFactor(DualTransform):
         interpolation=cv2.INTER_LINEAR,
         p=1,
     ):
-        super(ResizeFactor, self).__init__(p)
+        super().__init__(p)
         self.downsampling_factor = downsampling_factor
         self.interpolation = interpolation
 

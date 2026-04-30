@@ -75,10 +75,11 @@ extend-exclude = ["notebooks", "jupyterbook"]
 
 [tool.ruff.lint]
 # Conservative starter set on a legacy codebase. Tighten in follow-up PRs by
-# enabling UP / B and removing entries from `ignore` per module as it gets cleaned.
+# enabling B and removing entries from `ignore` per module as it gets cleaned.
 select = [
     "E", "F", "W",  # pycodestyle + pyflakes
     "I",            # isort
+    "UP",           # pyupgrade
 ]
 ignore = [
     "E402",  # module-import-not-at-top

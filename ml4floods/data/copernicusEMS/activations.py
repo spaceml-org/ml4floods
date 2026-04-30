@@ -129,7 +129,7 @@ def download_vector_cems(zipfile_url: str, folder_out: str = "CopernicusEMS") ->
     # Create a filepath from folder_out and zipbasename if it doesn't exist
     zipfullpath = os.path.join(folder_out, zipbasename)
     if os.path.exists(zipfullpath):
-        print("\tFile %s already exists. Not downloaded" % zipfile_url)
+        print(f"\tFile {zipfile_url} already exists. Not downloaded")
         return zipfullpath
 
     # Check if zipfile_url is valid before making an url request
@@ -258,17 +258,17 @@ def post_event_date_difference_is_ok(
     diff_dates = date_post_event - date_ems_code
     if verbose:
         if diff_dates.days < 0:
-            print("Difference between dates is negative %d" % diff_dates.days)
+            print(f"Difference between dates is negative {diff_dates.days}")
             return False
 
         elif diff_dates.days > 35:
-            print("difference too big %d" % diff_dates.days)
+            print(f"difference too big {diff_dates.days}")
             return False
 
         elif (max_date_post_event - date_post_event).days >= 10:
             print(
-                "difference between max date post event and min date post event too big %d"
-                % (max_date_post_event - date_post_event).days
+                "difference between max date post event and min date post event too big "
+                f"{(max_date_post_event - date_post_event).days}"
             )
             return False
 
@@ -386,11 +386,8 @@ def filter_register_copernicusems(
         content_pre_event["timestamp_pre_event"] = date_pre_event
         if (min_date_post_event - date_pre_event).days < 0 and verbose:
             print(
-                "Date pre event %s is after date post event %s"
-                % (
-                    date_pre_event.strftime("%Y-%m-%d"),
-                    min_date_post_event.strftime("%Y-%m-%d"),
-                )
+                f"Date pre event {date_pre_event.strftime('%Y-%m-%d')} is after "
+                f"date post event {min_date_post_event.strftime('%Y-%m-%d')}"
             )
             return
 
