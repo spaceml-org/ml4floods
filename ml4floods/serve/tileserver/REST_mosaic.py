@@ -116,7 +116,7 @@ def _fill_worker(args, google_key_path, logger):
     scoped_credentials = credentials.with_scopes(["https://www.googleapis.com/auth/cloud-platform"])
     session = AuthorizedSession(scoped_credentials)
 
-    if logger != None:
+    if logger is not None:
         logger.info("created session")
 
     results = []
@@ -218,7 +218,7 @@ class RESTMosaic:
         # get ids
         if self.verbose:
             self.logger.info("Getting S2 ids")
-        if end_date == None:
+        if end_date is None:
             end_date = start_date + timedelta(days=self.days_offset)
 
         _ids, cloud_coverages, geometries = _get_GEE_ids(

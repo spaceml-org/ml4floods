@@ -263,7 +263,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
         print(shapefile_info)
         shapefiles_and_dbf_zip = requests.get(shapefile_info.download_url).content
         shapefile_path = get_shapefile_from_zip(io.BytesIO(shapefiles_and_dbf_zip))
-        if shapefile_path != None:
+        if shapefile_path is not None:
             meta = produce_metadata_dict(shapefile_info, shapefile_path)
             metadata_name = os.path.splitext(meta["layer name"])[0] + ".json"
             with open_fs(metadata_output_dir + "?strict=False") as fs:

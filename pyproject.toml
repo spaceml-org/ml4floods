@@ -84,7 +84,6 @@ select = [
 ignore = [
     "E402",  # module-import-not-at-top
     "E501",  # line too long (handled by formatter)
-    "E711",  # comparison to None
     "E721",  # type comparison via ==
     "E722",  # bare except
     "E731",  # lambda assignment

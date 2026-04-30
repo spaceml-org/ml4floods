@@ -81,14 +81,14 @@ class Ingestor:
         self.logger.info(f"Ingesting {ems_code}, {code_date}")
 
         # ingest the vector data
-        if aoi_geom != None and "GT" in self.include:
+        if aoi_geom is not None and "GT" in self.include:
             raise ValueError('Specify EITHER an aoi or include "GT"')
         elif "GT" in self.include:
             # ingest an EMS event
             self._ingest_vector()
 
             # ingest the S2 data
-            if self.register == None:
+            if self.register is None:
                 self.logger.info("Error with vector ingest. Proceeding to ingest S2.")
             self._ingest_S2_register()
 
@@ -96,10 +96,10 @@ class Ingestor:
             time.sleep(15)
 
             # build the floodmap raster
-            if self.register != None:
+            if self.register is not None:
                 self._construct_GT()
 
-        elif aoi_geom != None:
+        elif aoi_geom is not None:
             # ingest a custom event
             if "S2-pre" in self.include:
                 save_dest = os.path.join(self.cloud_path["S2-pre"], f"{self.ems_code}_AOI01_S2")
@@ -128,7 +128,7 @@ class Ingestor:
         else:
             raise ValueError("Include either the GT or a custom AOI")
 
-        if "ML" in self.include and self.inference_endpoint != None:
+        if "ML" in self.include and self.inference_endpoint is not None:
             ### check inference endpoint
             r = requests.get(self.inference_endpoint)
             assert json.loads(r.text)["status"] == "success", (
@@ -226,7 +226,7 @@ class Ingestor:
                 break
             else:
                 continue
-        if metadata_floodmap == None:
+        if metadata_floodmap is None:
             self.register = None
             self.logger.info(f"{self.ems_code} - Error!")
 
@@ -243,7 +243,7 @@ class Ingestor:
             ingest_fn = self._ingest_S2_REST
 
         self.logger.info(f"Ingesting Sentinel-2 {self.aoi_code} geotiff Pre-event")
-        if self.register != None:
+        if self.register is not None:
             aoi = self.register["metadata_floodmap"]["area_of_interest_polygon"]
         else:
             self.logger.info("Getting AOI from bucket.")
@@ -330,7 +330,7 @@ class Ingestor:
             verbose=2,
         )
 
-        if task != None:
+        if task is not None:
             task_status_code = task.status()["state"]
             while task_status_code != "COMPLETED":
                 self.logger.info(f"task: {task_status_code}, sleeping 10s")
