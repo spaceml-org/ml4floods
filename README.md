@@ -2,10 +2,10 @@
 [![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  [![PyPI](https://img.shields.io/pypi/v/ml4floods)](https://pypi.org/project/ml4floods/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods)](https://pypi.org/project/ml4floods/) [![PyPI - License](https://img.shields.io/pypi/l/ml4floods)](https://github.com/spaceml-org/ml4floods/blob/main/LICENSE) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow)](https://huggingface.co/isp-uv-es/ml4floods) [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/) <a href='https://youtu.be/wMLuHf9s9zk'><img src='https://img.shields.io/badge/Tutorial-%23FF0000.svg?style=flat&logo=youtube&logoColor=white' /></a>
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/images/banner.png" alt="awesome ml4floods" width="50%">
+    <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/images/banner.png" alt="awesome ml4floods" width="100%">
 </p>
 
-ML4Floods is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization. Here you can find the [WorldFloodsV2🌊 dataset](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html) and [trained models 🤗](https://huggingface.co/isp-uv-es/ml4floods) for flood extent estimation in Sentinel-2 and Landsat.
+ML4Floods (aka FloodMapper) is an end-to-end ML pipeline for flood extent estimation: from data preprocessing, model training, model deployment to visualization. Here you can find the [WorldFloodsV2🌊 dataset](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html) and [trained models 🤗](https://huggingface.co/isp-uv-es/ml4floods) for flood extent estimation in Sentinel-2 and Landsat.
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
