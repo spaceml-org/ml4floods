@@ -88,10 +88,8 @@ ignore = [
     "E722",  # bare except
     "E731",  # lambda assignment
     "E741",  # ambiguous variable name
-    "F401",  # unused import
     "F403",  # star imports
     "F405",  # may-be-undefined-from-star
-    "F841",  # unused local
 ]
 
 [tool.ruff.format]

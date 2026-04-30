@@ -133,9 +133,6 @@ def save_tiles(
             window_meta["channels"] = bands
             window_meta["transform"] = windows.transform(window_tile, dataset.transform)
 
-            # open the dataset with only the window selected
-            sub_image = dataset.read(indexes=bands, window=window_tile)
-
             # create unique filename for the tile
             window_file_name = (
                 f"{str(Path(file_name).stem)}_tile_{itile}{str(Path(file_name).suffix)}"

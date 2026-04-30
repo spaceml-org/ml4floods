@@ -164,7 +164,6 @@ def get_flood_shapefiles(session, base_url, country_list_url, download_base_rege
     all_map_links = get_map_links_from_country_links_and_url(session, base_url, all_country_links)
     flood_shapes = []
     for link in all_map_links:
-        fetched_page = session.get(base_url + link)
         info = get_flood_shape_and_meta(session, download_base_regex, base_url, link)
         if info is not None:
             flood_shapes.append(info)

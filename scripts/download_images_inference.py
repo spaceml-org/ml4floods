@@ -50,8 +50,6 @@ def main(
 
     """
 
-    fs = utils.get_filesystem(bucket_path)
-
     fs_pathaois = utils.get_filesystem(path_aois)
     assert fs_pathaois.exists(path_aois), f"File {path_aois} not found"
 

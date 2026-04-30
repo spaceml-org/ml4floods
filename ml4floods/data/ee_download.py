@@ -146,8 +146,6 @@ def add_probability_from_BQA(img: ee.Image) -> ee.Image:
     """
     qa = img.select(["QA60"], ["probability"])
     cloud_bit_mask = 1 << 10  # int("0000010000000000", 2)
-    cirrus_bit_mask = int("0000100000000000", 2)
-    # qa.bitwiseAnd(cloud_bit_mask).gt(0).Or(qa.bitwiseAnd(cirrus_bit_mask).gt(0))
 
     # Ignore cirrus since we can predict on water in those areas
     cloud_mask = qa.bitwiseAnd(cloud_bit_mask).gt(0).multiply(100).toUint16()
@@ -536,8 +534,6 @@ def download_permanent_water(
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    area_of_interest_geojson = mapping(area_of_interest)
-    pol = ee.Geometry(area_of_interest_geojson)
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
@@ -618,7 +614,6 @@ def download_merit_layer(
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    area_of_interest_geojson = mapping(area_of_interest)
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
