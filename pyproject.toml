@@ -44,6 +44,10 @@ dependencies = [
     "matplotlib-scalebar",
     "georeader-spaceml",
     "huggingface_hub[torch]",
+    "scikit-image",
+    "fs",
+    "geojson",
+    "lxml",
 ]
 
 [project.urls]
@@ -53,6 +57,9 @@ Homepage = "https://github.com/spaceml-org/ml4floods"
 dev = ["ruff", "mypy", "pre-commit", "pyprojroot"]
 tests = ["pytest"]
 docs = ["furo", "nbsphinx", "sphinx-copybutton", "jupyter-book", "ghp-import"]
+serve = ["flask", "gunicorn"]
+cloudmasks = ["segmentation-models-pytorch", "s2cloudless"]
+kappazeta = ["tensorflow"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -75,24 +82,14 @@ extend-exclude = ["notebooks", "jupyterbook"]
 
 [tool.ruff.lint]
 # Conservative starter set on a legacy codebase. Tighten in follow-up PRs by
-# enabling UP / B and removing entries from `ignore` per module as it gets cleaned.
+# enabling B and removing entries from `ignore` per module as it gets cleaned.
 select = [
     "E", "F", "W",  # pycodestyle + pyflakes
     "I",            # isort
+    "UP",           # pyupgrade
 ]
 ignore = [
-    "E402",  # module-import-not-at-top
     "E501",  # line too long (handled by formatter)
-    "E711",  # comparison to None
-    "E721",  # type comparison via ==
-    "E722",  # bare except
-    "E731",  # lambda assignment
-    "E741",  # ambiguous variable name
-    "F401",  # unused import
-    "F403",  # star imports
-    "F405",  # may-be-undefined-from-star
-    "F821",  # undefined name (pre-existing latent bugs; address per file)
-    "F841",  # unused local
 ]
 
 [tool.ruff.format]

@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import re
 import shutil
 import time
@@ -163,7 +164,6 @@ def get_flood_shapefiles(session, base_url, country_list_url, download_base_rege
     all_map_links = get_map_links_from_country_links_and_url(session, base_url, all_country_links)
     flood_shapes = []
     for link in all_map_links:
-        fetched_page = session.get(base_url + link)
         info = get_flood_shape_and_meta(session, download_base_regex, base_url, link)
         if info is not None:
             flood_shapes.append(info)
@@ -219,7 +219,7 @@ def produce_metadata_dict(shapefile_info, shapefile_path):
 def get_shapefile_from_zip(zip_file):
     try:
         shutil.rmtree("./tmp")
-    except:
+    except FileNotFoundError:
         pass
     os.mkdir("./tmp")
 
@@ -263,7 +263,7 @@ def download_shapefiles(shapefile_infos, shapefile_output_dir, metadata_output_d
         print(shapefile_info)
         shapefiles_and_dbf_zip = requests.get(shapefile_info.download_url).content
         shapefile_path = get_shapefile_from_zip(io.BytesIO(shapefiles_and_dbf_zip))
-        if shapefile_path != None:
+        if shapefile_path is not None:
             meta = produce_metadata_dict(shapefile_info, shapefile_path)
             metadata_name = os.path.splitext(meta["layer name"])[0] + ".json"
             with open_fs(metadata_output_dir + "?strict=False") as fs:

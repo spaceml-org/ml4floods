@@ -5,8 +5,6 @@ import subprocess
 import time
 from signal import SIGTERM
 
-import requests
-
 logging.basicConfig(level=logging.INFO)
 
 

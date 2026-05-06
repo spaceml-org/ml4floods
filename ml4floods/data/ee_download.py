@@ -146,8 +146,6 @@ def add_probability_from_BQA(img: ee.Image) -> ee.Image:
     """
     qa = img.select(["QA60"], ["probability"])
     cloud_bit_mask = 1 << 10  # int("0000010000000000", 2)
-    cirrus_bit_mask = int("0000100000000000", 2)
-    # qa.bitwiseAnd(cloud_bit_mask).gt(0).Or(qa.bitwiseAnd(cirrus_bit_mask).gt(0))
 
     # Ignore cirrus since we can predict on water in those areas
     cloud_mask = qa.bitwiseAnd(cloud_bit_mask).gt(0).multiply(100).toUint16()
@@ -377,7 +375,7 @@ def mayberun(
         files_in_bucket = fs.glob(f"gs://{bucket_name}/{filename}*")
         if len(files_in_bucket) > 0:
             if overwrite:
-                print("\tFile %s exists in the bucket. removing" % filename)
+                print(f"\tFile {filename} exists in the bucket. removing")
                 for b in files_in_bucket:
                     fs.remove(f"gs://{b}")
             else:
@@ -388,7 +386,7 @@ def mayberun(
         files = glob(f"{filename}*")
         if len(files) > 0:
             if overwrite:
-                print("\tFile %s exists in the bucket. removing" % filename)
+                print(f"\tFile {filename} exists in the bucket. removing")
                 for b in files:
                     os.remove(b)
             else:
@@ -398,11 +396,11 @@ def mayberun(
 
     if not dry_run and istaskrunning(desc):
         if verbose >= 2:
-            print("\ttask %s already running!" % desc)
+            print(f"\ttask {desc} already running!")
         return
 
     if dry_run:
-        print("\tDRY RUN: Downloading file %s" % filename)
+        print(f"\tDRY RUN: Downloading file {filename}")
         return
 
     try:
@@ -411,7 +409,7 @@ def mayberun(
         if image_to_download is None:
             return
 
-        print("\tDownloading file %s" % filename)
+        print(f"\tDownloading file {filename}")
 
         task = export_task(image_to_download, fileNamePrefix=filename, description=desc)
 
@@ -536,8 +534,6 @@ def download_permanent_water(
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    area_of_interest_geojson = mapping(area_of_interest)
-    pol = ee.Geometry(area_of_interest_geojson)
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
@@ -618,7 +614,6 @@ def download_merit_layer(
     bucket_name = path_bucket_no_gs.split("/")[0]
     path_no_bucket_name = "/".join(path_bucket_no_gs.split("/")[1:])
 
-    area_of_interest_geojson = mapping(area_of_interest)
     bounding_box_aoi = area_of_interest.bounds
     bounding_box_pol = ee.Geometry.Polygon(generate_polygon(bounding_box_aoi))
 
@@ -963,7 +958,7 @@ def wait_tasks(tasks: list[ee.batch.Task]) -> None:
 
     task_error = 0
     while len(task_down) > 0:
-        print("%d tasks running" % len(task_down))
+        print(f"{len(task_down)} tasks running")
 
         task_down_new = []
         for _i, (t, task) in enumerate(list(task_down)):
@@ -977,4 +972,4 @@ def wait_tasks(tasks: list[ee.batch.Task]) -> None:
         task_down = task_down_new
         time.sleep(60)
 
-    print("Tasks failed: %d" % task_error)
+    print(f"Tasks failed: {task_error}")

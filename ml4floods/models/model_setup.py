@@ -143,11 +143,17 @@ def get_model_inference_function(
             activation = "softmax"
 
     if activation == "None":
-        activation_fun = lambda ot: ot
+
+        def activation_fun(ot):
+            return ot
     elif activation == "softmax":
-        activation_fun = lambda ot: torch.softmax(ot, dim=1)
+
+        def activation_fun(ot):
+            return torch.softmax(ot, dim=1)
     elif activation == "sigmoid":
-        activation_fun = lambda ot: torch.sigmoid(ot)
+
+        def activation_fun(ot):
+            return torch.sigmoid(ot)
     else:
         raise NotImplementedError(f"Activation function {activation} not implemented")
 
@@ -202,18 +208,21 @@ def get_pred_function(
         model.train()
 
     if normalization is None:
-        normalization = lambda ti: ti
+
+        def normalization(ti):
+            return ti
 
     if activation_fun is None:
-        activation_fun = lambda ot: ot
+
+        def activation_fun(ot):
+            return ot
+
+    def pred_fun(ti):
+        return activation_fun(model(ti.to(device)))
 
     # Pad the input to be divisible by module_shape (otherwise U-Net model fails)
     if module_shape > 1:
-        pred_fun = padded_predict(
-            lambda ti: activation_fun(model(ti.to(device))), module_shape=module_shape
-        )
-    else:
-        pred_fun = lambda ti: activation_fun(model(ti.to(device)))
+        pred_fun = padded_predict(pred_fun, module_shape=module_shape)
 
     def pred_fun_final(ti):
         with torch.no_grad():

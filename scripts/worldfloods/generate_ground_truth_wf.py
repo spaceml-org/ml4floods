@@ -1,7 +1,6 @@
 import json
 import os
 from collections.abc import Callable
-from pathlib import Path
 
 import fsspec
 import pkg_resources
@@ -9,11 +8,9 @@ import tqdm
 
 from ml4floods.data import utils
 from ml4floods.data.create_gt import generate_land_water_cloud_gt, generate_water_cloud_binary_gt
-from ml4floods.data.utils import write_json_to_gcp
 from ml4floods.data.worldfloods.create_worldfloods_dataset import (
     generate_item,
     worldfloods_extra_gcp_paths,
-    worldfloods_output_files,
 )
 
 
@@ -29,21 +26,12 @@ def main(
 ):
     assert version in ["v1_0", "v2_0"], f"Unexpected ground truth version {version}"
     assert prod_dev in ["0_DEV", "2_PROD"], f"Unexpected environment {prod_dev}"
-    assert dataset in ["", "original", "extra"], f"Unexpected dataset {dataset}"
+    assert dataset in ["original", "extra"], f"Unexpected dataset {dataset}"
 
     if not destination_parent_path:
-        if dataset == "":
-            destination_parent_path = (
-                f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{version}"
-            )
-        elif dataset == "original":
-            destination_parent_path = (
-                f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
-            )
-        else:
-            destination_parent_path = (
-                f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
-            )
+        destination_parent_path = (
+            f"gs://ml4cc_data_lake/{prod_dev}/2_Mart/worldfloods_{dataset}_{version}"
+        )
 
     if version.startswith("v1"):
         gt_fun = generate_land_water_cloud_gt
@@ -52,27 +40,24 @@ def main(
     else:
         raise NotImplementedError(f"version {version} not implemented")
 
-    if dataset == "":
-        main_worldlfoods_original("ml4cc_data_lake", destination_parent_path, overwrite, gt_fun)
-    else:
-        staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
-        train_test_split_file = pkg_resources.resource_filename(
-            "ml4floods", f"data/configuration/train_test_split_{dataset}_dataset.json"
-        )
-        fs_ml4cc = fsspec.filesystem("gs", requester_pays=True)
-        files_metadata_pickled = [
-            f"gs://{f}"
-            for f in fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")
-        ]
+    staging_path = f"gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods"
+    train_test_split_file = pkg_resources.resource_filename(
+        "ml4floods", f"data/configuration/train_test_split_{dataset}_dataset.json"
+    )
+    fs_ml4cc = fsspec.filesystem("gs", requester_pays=True)
+    files_metadata_pickled = [
+        f"gs://{f}"
+        for f in fs_ml4cc.glob(f"{staging_path}/*{cems_code}/*{aoi_code}/flood_meta/*.pickle")
+    ]
 
-        main_worldlfoods_extra(
-            destination_path=destination_parent_path,
-            train_test_split_file=train_test_split_file,
-            overwrite=overwrite,
-            files_metadata_pickled=files_metadata_pickled,
-            gt_fun=gt_fun,
-            subset=subset,
-        )
+    main_worldlfoods_extra(
+        destination_path=destination_parent_path,
+        train_test_split_file=train_test_split_file,
+        overwrite=overwrite,
+        files_metadata_pickled=files_metadata_pickled,
+        gt_fun=gt_fun,
+        subset=subset,
+    )
 
 
 def main_worldlfoods_extra(
@@ -172,68 +157,6 @@ def main_worldlfoods_extra(
             print(p)
 
 
-def main_worldlfoods_original(destination_bucket_id, destination_parent_path, overwrite, gt_fun):
-    problem_files = []
-
-    dict_splits = {}
-    for ipath in ["test", "val", "train"]:
-        dict_splits[ipath] = {"S2": [], "gt": []}
-
-        # ensure path name is the same as ipath for the loop
-        demo_image = "gs://ml4floods/worldfloods/public/test/S2/EMSR286_08ITUANGONORTH_DEL_MONIT02_v1_observed_event_a.tif"
-        demo_image_gcp = GCPPath(demo_image)
-        demo_image_gcp = demo_image_gcp.replace("test", ipath)
-
-        # get all files in the parent directory
-        files_in_bucket = demo_image_gcp.get_files_in_parent_directory_with_suffix(".tif")
-
-        # loop through files in the bucket
-        print(f"Generating ML GT for {ipath}, {len(files_in_bucket)} files")
-        with tqdm.tqdm(files_in_bucket) as pbar:
-            for s2_image_path in pbar:
-                path_write = os.path.join(destination_bucket_id, destination_parent_path, ipath)
-                status = generate_item(
-                    s2_image_path,
-                    path_write,
-                    file_name=os.path.splitext(os.path.basename(s2_image_path))[0],
-                    overwrite=overwrite,
-                    pbar=pbar,
-                    gt_fun=gt_fun,
-                )
-                if status:
-                    s2path = GCPPath(s2_image_path)
-                    (
-                        cloudprob_path_dest,
-                        floodmap_path_dest,
-                        gt_path_dest,
-                        meta_parent_path,
-                        permanent_water_image_path_dest,
-                        s2_image_path_dest,
-                    ) = worldfloods_output_files(
-                        output_path=path_write,
-                        file_name=s2path.file_name,
-                        permanent_water_available=True,
-                    )
-                    dict_splits[ipath]["S2"].append(s2_image_path_dest)
-                    dict_splits[ipath]["gt"].append(gt_path_dest)
-                else:
-                    problem_files.append(path_write)
-
-    # Save train_test split file
-    path_splits = GCPPath(
-        str(
-            Path(destination_bucket_id)
-            .joinpath(destination_parent_path)
-            .joinpath("train_test_split.json")
-        )
-    )
-    write_json_to_gcp(path_splits.full_path, dict_splits)
-
-    print("Files not generated that were expected:")
-    for p in problem_files:
-        print(p)
-
-
 if __name__ == "__main__":
     import argparse
 
@@ -247,8 +170,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         default="extra",
-        choices=["", "original", "extra"],
-        help="Use the old data '', the old data with the new pre-processing 'original' data or "
+        choices=["original", "extra"],
+        help="Use the old data with the new pre-processing 'original' data or "
         "the newly downloaded data from Copernicus EMS with new pre-processing 'extra'",
     )
     parser.add_argument(

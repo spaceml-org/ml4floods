@@ -86,11 +86,11 @@ def cm_analysis(cm: np.ndarray, labels: list[int], figsize=(10, 10)):
             p = cm_perc[i, j]
             if i == j:
                 s = cm_sum[i]
-                annot[i, j] = "%.1f%%\n%d/%d" % (p, c, s)
+                annot[i, j] = f"{p:.1f}%\n{c}/{s}"
             elif c == 0:
                 annot[i, j] = ""
             else:
-                annot[i, j] = "%.1f%%\n%d" % (p, c)
+                annot[i, j] = f"{p:.1f}%\n{c}"
     cm = pd.DataFrame(cm_perc, index=labels, columns=labels)
     cm.index.name = "Predicted"
     cm.columns.name = "Actual"
@@ -136,8 +136,8 @@ def calculate_iou(confusions: torch.Tensor, labels: list[str]) -> dict[str, floa
     iou = true_positive / (true_positive + false_positive + false_negative)
 
     iou_dict = {}
-    for i, l in enumerate(labels):
-        iou_dict[l] = iou[i]
+    for i, label in enumerate(labels):
+        iou_dict[label] = iou[i]
     return iou_dict
 
 
@@ -149,8 +149,8 @@ def calculate_recall(confusions: torch.Tensor, labels: list[str]) -> dict[str, f
     recall = true_positive / (true_positive + false_negative + 1e-6)
 
     recall_dict = {}
-    for i, l in enumerate(labels):
-        recall_dict[l] = recall[i]
+    for i, label in enumerate(labels):
+        recall_dict[label] = recall[i]
     return recall_dict
 
 
@@ -162,8 +162,8 @@ def calculate_precision(confusions: torch.Tensor, labels: list[str]) -> dict[str
     precision = true_positive / (true_positive + false_positive + 1e-6)
 
     precision_dict = {}
-    for i, l in enumerate(labels):
-        precision_dict[l] = precision[i]
+    for i, label in enumerate(labels):
+        precision_dict[label] = precision[i]
     return precision_dict
 
 
@@ -217,9 +217,9 @@ def plot_metrics(metrics_dict, label_names, thresholds_water=None):
     sns.lineplot(data=plot_df, x="Recall", y="Precision", ax=ax[0])
     if thresholds_water is not None:
         for i, (rec, prec) in enumerate(zip(plot_df["Recall"], plot_df["Precision"], strict=False)):
-            ax[0].text(rec, prec, "%10.3f" % thresholds_water[i])
+            ax[0].text(rec, prec, f"{thresholds_water[i]:10.3f}")
         for i, (fps, tps) in enumerate(zip(plot_df["FP Rate"], plot_df["TP Rate"], strict=False)):
-            ax[1].text(fps, tps, "%10.3f" % thresholds_water[i])
+            ax[1].text(fps, tps, f"{thresholds_water[i]:10.3f}")
 
     sns.lineplot(data=plot_df, x="FP Rate", y="TP Rate", ax=ax[1])
 
@@ -417,7 +417,7 @@ def group_confusion(
 def compute_metrics_v2(
     dataloader: torch.utils.data.dataloader.DataLoader,
     pred_fun: Callable,
-    thresholds_water: np.array | None = None,
+    thresholds_water: np.ndarray | None = None,
     threshold_water: float = 0.5,
     threshold_clouds=0.5,
     plot=False,
