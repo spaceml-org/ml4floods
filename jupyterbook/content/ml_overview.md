@@ -3,9 +3,9 @@
 * **Authors**: Sam Budd, Gonzalo Mateo-García
 ---
 
-The MLOps section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2. 
+The MLOps section have tutorials for training, testing and running inference of flood extent segmentation models for Sentinel-2.
 Models are trained in the *WorldFloods* dataset which is [freely accessible](./worldfloods_dataset.md).
-Each of the tutorials is self-contained and can be run on Google Colab. 
+Each of the tutorials is self-contained and can be run on Google Colab.
 
 ```{image} ./ml4ops/diagram_mlops.png
 :alt: MLOps diagram
@@ -27,7 +27,7 @@ Tutorials on models of [Mateo-García et al 2021](https://www.nature.com/article
 * [Inference on Sentinel-2 images](./ml4ops/HOWTO_Run_Inference_on_new_data.ipynb): loads a worldfloods pretrained model and runs inference on a Sentinel-2 image from the *WorldFloods* V1 dataset. It shows the predictions vs the ground truth on that image. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Run_Inference_on_new_data.ipynb)
 
 
-Exploratory work: 
+Exploratory work:
 
 * [Probabilistic Neural Networks](./ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb): Run inference of the U-Nets trained with dropout. We apply Bayesian dropout at inference time to obtain an ensemble of predictions. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spaceml-org/ml4floods/blob/main/jupyterbook/content/ml4ops/HOWTO_Calculate_uncertainty_maps.ipynb)
 

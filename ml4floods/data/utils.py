@@ -2,31 +2,29 @@
 This script contains all the utility functions that are not specific to a particular kind of dataset.
 These are mainly used for explorations, testing, and demonstrations.
 """
-import os
-import json
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
-import pandas as pd
-import warnings
 
+import json
+import os
+import pickle
+import warnings
+from contextlib import contextmanager
+from datetime import datetime
+from pathlib import Path
+
+import fsspec
 import geopandas as gpd
 import numpy as np
+import pandas as pd
+import rasterio
 from shapely.geometry import Polygon, mapping
 from shapely.ops import unary_union
-from datetime import datetime
 
 from ml4floods.data.config import CLASS_LAND_COPERNICUSEMSHYDRO
-import pickle
-import fsspec
-from contextlib import contextmanager
-import rasterio
 
 
 def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """ Filter land from pandas dataframe (land class specified in hydrology maps from CopernicusEMS) """
-    isnot_land = gpddats.obj_type.apply(
-        lambda g: g not in CLASS_LAND_COPERNICUSEMSHYDRO
-    )
+    """Filter land from pandas dataframe (land class specified in hydrology maps from CopernicusEMS)"""
+    isnot_land = gpddats.obj_type.apply(lambda g: g not in CLASS_LAND_COPERNICUSEMSHYDRO)
 
     if np.sum(isnot_land) == gpddats.shape[0]:
         return gpddats
@@ -49,7 +47,7 @@ def filter_land(gpddats: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def filter_pols(gpddats: gpd.GeoDataFrame, pol_shapely: Polygon) -> gpd.GeoDataFrame:
-    """ filter pols that do not intersects pol_shapely """
+    """filter pols that do not intersects pol_shapely"""
     gpddats_cp = gpddats[~(gpddats.geometry.isna() | gpddats.geometry.is_empty)].copy()
 
     return (
@@ -58,8 +56,8 @@ def filter_pols(gpddats: gpd.GeoDataFrame, pol_shapely: Polygon) -> gpd.GeoDataF
         .copy()
     )
 
-class CustomJSONEncoder(json.JSONEncoder):
 
+class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj_to_encode):
         """Pandas and Numpy have some specific types that we want to ensure
         are coerced to Python types, for JSON generation purposes. This attempts
@@ -89,9 +87,11 @@ class CustomJSONEncoder(json.JSONEncoder):
         # routines and let it work normally.
         return super().default(obj_to_encode)
 
+
 REQUESTER_PAYS_DEFAULT = True
 
-def get_filesystem(path: Union[str, Path], requester_pays:Optional[bool]=None):
+
+def get_filesystem(path: str | Path, requester_pays: bool | None = None):
     if requester_pays is None:
         requester_pays = REQUESTER_PAYS_DEFAULT
     path = str(path)
@@ -129,9 +129,9 @@ def check_gdal_requester_pays_gcp_available() -> bool:
         version_gdal = rasterio.__gdal_version__
         vnumber, vsubnumber = version_gdal.split(".")[:2]
         vnumber, vsubnumber = int(vnumber), int(vsubnumber)
-        if (vnumber*100+vsubnumber) >= (3*100+4):
+        if (vnumber * 100 + vsubnumber) >= (3 * 100 + 4):
             return True
-    except Exception as e:
+    except Exception:
         pass
 
     return False
@@ -141,15 +141,16 @@ REQUESTER_PAYS_AVAILABLE = check_gdal_requester_pays_gcp_available()
 
 
 @contextmanager
-def rasterio_open_read(tifffile:str, requester_pays:Optional[bool]=None) -> rasterio.DatasetReader:
+def rasterio_open_read(tifffile: str, requester_pays: bool | None = None) -> rasterio.DatasetReader:
     if requester_pays is None:
         requester_pays = REQUESTER_PAYS_DEFAULT
 
     if requester_pays and tifffile.startswith("gs"):
         if REQUESTER_PAYS_AVAILABLE:
-            assert "GS_USER_PROJECT" in os.environ, \
-                "'GS_USER_PROJECT' env variable not found and requester_pays=True set a project name to read rasters from the bucket" \
+            assert "GS_USER_PROJECT" in os.environ, (
+                "'GS_USER_PROJECT' env variable not found and requester_pays=True set a project name to read rasters from the bucket"
                 "(i.e. -> export GS_USER_PROJECT='myprojectname')"
+            )
 
             with rasterio.open(tifffile) as src:
                 yield src
@@ -171,13 +172,12 @@ def read_geojson_from_gcp(gs_path: str) -> gpd.GeoDataFrame:
 
 
 def write_pickle_to_gcp(gs_path: str, dict_val: dict) -> None:
-
     fs = get_filesystem(gs_path)
     with fs.open(gs_path, "wb") as fh:
         pickle.dump(dict_val, fh)
 
 
-def read_pickle_from_gcp(gs_path:str) -> dict:
+def read_pickle_from_gcp(gs_path: str) -> dict:
     fs = get_filesystem(gs_path)
     with fs.open(gs_path, "rb") as fh:
         my_dictionary = pickle.load(fh)
@@ -192,10 +192,9 @@ def write_json_to_gcp(gs_path: str, dict_val: dict) -> None:
         json.dump(dict_val, fh, cls=CustomJSONEncoder)
 
 
-def read_json_from_gcp(gs_path: str) ->Dict:
+def read_json_from_gcp(gs_path: str) -> dict:
     fs = get_filesystem(gs_path)
     with fs.open(gs_path, "r") as fh:
         my_dictionary = json.load(fh)
 
     return my_dictionary
-

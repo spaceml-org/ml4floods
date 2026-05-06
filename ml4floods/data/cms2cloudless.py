@@ -1,10 +1,10 @@
 import argparse
 import os
 
-from typing import Optional
 import numpy as np
 import rasterio
 from s2cloudless import S2PixelCloudDetector
+
 from ml4floods.data.worldfloods.configs import BANDS_S2
 
 
@@ -18,13 +18,19 @@ def sentinel2_to_cloud_mask_preprocess(x):
     return x[:13, :, :].transpose(1, 2, 0)[None, ...] / 10000
 
 
-def compute_cloud_mask(x: np.ndarray, threshold: float=0.4, average_over: int=4, dilation_size: int=2, all_bands: bool=True):
+def compute_cloud_mask(
+    x: np.ndarray,
+    threshold: float = 0.4,
+    average_over: int = 4,
+    dilation_size: int = 2,
+    all_bands: bool = True,
+):
     z = sentinel2_to_cloud_mask_preprocess(x)
     cloud_detector = S2PixelCloudDetector(
-        threshold=threshold, 
-        average_over=average_over, 
-        dilation_size=dilation_size, 
-        all_bands=all_bands
+        threshold=threshold,
+        average_over=average_over,
+        dilation_size=dilation_size,
+        all_bands=all_bands,
     )
 
     cloud_mask = cloud_detector.get_cloud_probability_maps(z)
@@ -51,14 +57,17 @@ def compute_cloud_mask_save(cp_path, x, profile):
     return cloud_mask
 
 
-def compute_s2cloudless_probs(s2_image_path: str, window: Optional[rasterio.windows.Window]=None, **kwargs) -> np.ndarray:
+def compute_s2cloudless_probs(
+    s2_image_path: str, window: rasterio.windows.Window | None = None, **kwargs
+) -> np.ndarray:
     bands_read = list(range(1, len(BANDS_S2) + 1))
-    
+
     # open the S2 Image
     with rasterio.open(s2_image_path, "r") as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
-        
+
     return compute_cloud_mask(s2_img, **kwargs)
+
 
 def create_cloud_mask(tf_path, cp_path, verbose):
     with rasterio.open(tf_path) as x_tif:
@@ -69,19 +78,19 @@ def create_cloud_mask(tf_path, cp_path, verbose):
 
 
 def main(worldfloods_root, verbose):
-    copernicus_s2_path = os.path.join(worldfloods_root, "tiffimages", "S2").replace("\\","/")
+    copernicus_s2_path = os.path.join(worldfloods_root, "tiffimages", "S2").replace("\\", "/")
 
-    copernicus_cloudprob_path = os.path.join(
-        worldfloods_root, "tiffimages", "cloudprob"
-    ).replace("\\","/")
+    copernicus_cloudprob_path = os.path.join(worldfloods_root, "tiffimages", "cloudprob").replace(
+        "\\", "/"
+    )
     if not os.path.exists(copernicus_cloudprob_path):
         os.mkdir(copernicus_cloudprob_path)
 
     tiffiles = os.listdir(copernicus_s2_path)
 
     for i, tf in enumerate(tiffiles):
-        tf_path = os.path.join(copernicus_s2_path, tf).replace("\\","/")
-        cp_path = os.path.join(copernicus_cloudprob_path, tf).replace("\\","/")
+        tf_path = os.path.join(copernicus_s2_path, tf).replace("\\", "/")
+        cp_path = os.path.join(copernicus_cloudprob_path, tf).replace("\\", "/")
         if i % 20 == 0:
             print("")
         if verbose:
@@ -100,9 +109,7 @@ def main(worldfloods_root, verbose):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("worldfloods_root", help="directory where bucket is mounted")
-    parser.add_argument(
-        "-v", "--verbose", help="turn on verbose mode", action="store_true"
-    )
+    parser.add_argument("-v", "--verbose", help="turn on verbose mode", action="store_true")
 
     args = parser.parse_args()
 

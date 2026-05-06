@@ -56,7 +56,7 @@ In this notebook, we generalize the above notebooks to provide an all inclusive 
 
 ## 5 - GroundTruth Generation
 
-In this notebook, we showcase how one can generate groundtruth given a Sentinel-2 Image and some floodmap meta data that we have preprocessed within the bucket. We demonstrate the two types of groundtruth that we have available: 
+In this notebook, we showcase how one can generate groundtruth given a Sentinel-2 Image and some floodmap meta data that we have preprocessed within the bucket. We demonstrate the two types of groundtruth that we have available:
 
 * 3-Class: water, land, cloud
 * Binary:

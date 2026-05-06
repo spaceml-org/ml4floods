@@ -8,7 +8,7 @@ class MapDataFactory:
         """
         Initialize a MapDataFactory from a geographic index that is capable of producing MapData objects given coordinate rectangles.
         """
-        with open(index_path, 'rb') as f:
+        with open(index_path, "rb") as f:
             self.index_list = pickle.load(f)
 
     def create_map_data(self, min_lat: int, min_lon: int, max_lat: int, max_lon: int):

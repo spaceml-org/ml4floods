@@ -1,24 +1,23 @@
 import logging
 import os
-from typing import Dict, Optional, Tuple, List, Union
 
 import geopandas as gpd
 import numpy as np
 import rasterio
 import rasterio.windows
-from rasterio import features
-
-from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
-from ml4floods.data.config import CODES_FLOODMAP
-from ml4floods.data import utils
-from skimage.morphology import binary_opening, disk
 import torch
+from rasterio import features
+from skimage.morphology import binary_opening, disk
+
+from ml4floods.data import utils
+from ml4floods.data.config import CODES_FLOODMAP
+from ml4floods.data.worldfloods.configs import BANDS_L8, BANDS_S2
 
 
 def compute_water(
     tiffs2: str,
     floodmap: gpd.GeoDataFrame,
-    window: Optional[rasterio.windows.Window] = None,
+    window: rasterio.windows.Window | None = None,
     permanent_water_path: str = None,
     keep_streams: bool = False,
 ) -> np.ndarray:
@@ -41,9 +40,7 @@ def compute_water(
             out_shape = src_s2.shape
             transform = src_s2.transform
         else:
-            out_shape = rasterio.windows.shape(
-                window, height=src_s2.height, width=src_s2.width
-            )
+            out_shape = rasterio.windows.shape(window, height=src_s2.height, width=src_s2.width)
             transform = rasterio.windows.transform(window, src_s2.transform)
         target_crs = str(src_s2.crs).lower()
 
@@ -62,9 +59,8 @@ def compute_water(
 
     shapes_rasterise = (
         (g, CODES_FLOODMAP[w])
-        for g, w in floodmap_rasterise[["geometry", "w_class"]].itertuples(
-            index=False, name=None
-        ) if g and not g.is_empty
+        for g, w in floodmap_rasterise[["geometry", "w_class"]].itertuples(index=False, name=None)
+        if g and not g.is_empty
     )
 
     water_mask = features.rasterize(
@@ -80,9 +76,8 @@ def compute_water(
     if floodmap_aoi.shape[0] > 0:
         shapes_rasterise = (
             (g, 1)
-            for g, w in floodmap_aoi[["geometry", "w_class"]].itertuples(
-                index=False, name=None
-            ) if g and not g.is_empty
+            for g, w in floodmap_aoi[["geometry", "w_class"]].itertuples(index=False, name=None)
+            if g and not g.is_empty
         )
         valid_mask = features.rasterize(
             shapes=shapes_rasterise,
@@ -111,10 +106,10 @@ def compute_water(
 
 def read_s2img_cloudmask(
     s2tiff: str,
-    window: Optional[rasterio.windows.Window] = None,
-    cloudprob_image_path: Optional[str] = None,
-    bands_read: Optional[List[int]] = None
-) -> Tuple[np.ndarray, np.ndarray]:
+    window: rasterio.windows.Window | None = None,
+    cloudprob_image_path: str | None = None,
+    bands_read: list[int] | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Helper function to load a s2 image and its cloud mask
 
@@ -132,13 +127,17 @@ def read_s2img_cloudmask(
     if bands_read is None:
         bands_read = list(range(1, len(BANDS_S2) + 1))
     else:
-        bands_read = [b+1 for b in bands_read]
+        bands_read = [b + 1 for b in bands_read]
 
     with utils.rasterio_open_read(s2tiff) as s2_rst:
         s2_img = s2_rst.read(bands_read, window=window)
         bands = s2_rst.descriptions
         cloudprob_in_lastband = (len(bands) > 14) and (bands[14] == "probability")
-        transform = s2_rst.transform if window is None else rasterio.windows.transform(window, s2_rst.transform)
+        transform = (
+            s2_rst.transform
+            if window is None
+            else rasterio.windows.transform(window, s2_rst.transform)
+        )
         crs = str(s2_rst.crs).lower()
         shape = s2_img.shape[1:]
 
@@ -153,7 +152,7 @@ def read_s2img_cloudmask(
             with utils.rasterio_open_read(cloudprob_image_path) as cld_rst:
                 cloud_prob = cld_rst.read(1, window=window)
 
-        elif  ext == ".geojson":
+        elif ext == ".geojson":
             # check if empty file -> cloud_masks=np.zeros(shape)
             clouds_vec = utils.read_geojson_from_gcp(cloudprob_image_path)
             if clouds_vec.shape[0] == 0:
@@ -166,9 +165,7 @@ def read_s2img_cloudmask(
                 clouds_vec = clouds_vec[clouds_vec["class"].isin(["CLOUD", "cloud"])]
                 shapes_rasterise = (
                     (g, 1)
-                    for g,w in clouds_vec[["geometry", "class"]].itertuples(
-                    index=False, name=None
-                )
+                    for g, w in clouds_vec[["geometry", "class"]].itertuples(index=False, name=None)
                 )
                 cloud_prob = features.rasterize(
                     shapes=shapes_rasterise,
@@ -187,6 +184,7 @@ def read_s2img_cloudmask(
             )  # cloud mask in the last band is from 0 - 100
     else:
         from ml4floods.data import cloud_masks
+
         # Compute cloud mask
         cloud_prob = cloud_masks.compute_cloud_mask(s2_img)
 
@@ -196,12 +194,12 @@ def read_s2img_cloudmask(
 def generate_land_water_cloud_gt(
     s2_image_path: str,
     floodmap: gpd.GeoDataFrame,
-    metadata_floodmap: Dict,
-    window: Optional[rasterio.windows.Window] = None,
+    metadata_floodmap: dict,
+    window: rasterio.windows.Window | None = None,
     keep_streams: bool = False,
-    permanent_water_image_path: Optional[str] = None,
-    cloudprob_image_path: Optional[str] = None,
-) -> Tuple[np.ndarray, Dict]:
+    permanent_water_image_path: str | None = None,
+    cloudprob_image_path: str | None = None,
+) -> tuple[np.ndarray, dict]:
     """
     Old ground truth generating function (inherited from worldfloods_internal.compute_meta_tif.generate_mask_meta_clouds)
 
@@ -253,9 +251,7 @@ def generate_land_water_cloud_gt(
         else "None"
     )
     metadata["cloudprob_image_path"] = (
-        os.path.basename(cloudprob_image_path)
-        if cloudprob_image_path is not None
-        else "None"
+        os.path.basename(cloudprob_image_path) if cloudprob_image_path is not None else "None"
     )
     metadata["method clouds"] = "s2cloudless"
 
@@ -275,9 +271,9 @@ def generate_land_water_cloud_gt(
         metadata["pixels flood water S2"]
         + metadata["pixels hydro water S2"]
         + metadata["pixels permanent water S2"]
-    ) == metadata[
-        "pixels water S2"
-    ], f'Different number of water pixels than expected {metadata["pixels flood water S2"]} {metadata["pixels hydro water S2"]} {metadata["pixels permanent water S2"]}, {metadata["pixels water S2"]} '
+    ) == metadata["pixels water S2"], (
+        f"Different number of water pixels than expected {metadata['pixels flood water S2']} {metadata['pixels hydro water S2']} {metadata['pixels permanent water S2']}, {metadata['pixels water S2']} "
+    )
 
     with utils.rasterio_open_read(s2_image_path) as s2_src:
         metadata["bounds"] = s2_src.bounds
@@ -290,12 +286,12 @@ def generate_land_water_cloud_gt(
 def generate_water_cloud_binary_gt(
     s2_image_path: str,
     floodmap: gpd.GeoDataFrame,
-    metadata_floodmap: Dict,
-    window: Optional[rasterio.windows.Window] = None,
+    metadata_floodmap: dict,
+    window: rasterio.windows.Window | None = None,
     keep_streams: bool = False,
-    permanent_water_image_path: Optional[str] = None,
-    cloudprob_image_path: Optional[str] = None,
-) -> Tuple[np.ndarray, Dict]:
+    permanent_water_image_path: str | None = None,
+    cloudprob_image_path: str | None = None,
+) -> tuple[np.ndarray, dict]:
     """
     New ground truth generating function for multioutput binary classification
 
@@ -324,7 +320,9 @@ def generate_water_cloud_binary_gt(
         window=window,
         cloudprob_image_path=cloudprob_image_path,
     )
-    custom_cloud_mask = (cloudprob_image_path is not None) and cloudprob_image_path.endswith(".geojson")
+    custom_cloud_mask = (cloudprob_image_path is not None) and cloudprob_image_path.endswith(
+        ".geojson"
+    )
 
     water_mask = compute_water(
         s2_image_path,
@@ -363,9 +361,7 @@ def generate_water_cloud_binary_gt(
         else "None"
     )
     metadata["cloudprob_image_path"] = (
-        os.path.basename(cloudprob_image_path)
-        if cloudprob_image_path is not None
-        else "None"
+        os.path.basename(cloudprob_image_path) if cloudprob_image_path is not None else "None"
     )
     metadata["method clouds"] = "s2cloudless"
 
@@ -417,8 +413,12 @@ def _generate_gt_v1_fromarray(
 
     return gt
 
-def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Optional[List[int]]=None,
-                   collection_name:str="S2") -> Union[np.ndarray, torch.Tensor]:
+
+def get_brightness(
+    s2_image: np.ndarray | torch.Tensor,
+    channels_input: list[int] | None = None,
+    collection_name: str = "S2",
+) -> np.ndarray | torch.Tensor:
     """
     Returns brightness of visible bands of s2
     Args:
@@ -429,16 +429,18 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
         (H, W) array
     """
     if channels_input is not None:
-        assert len(channels_input) == s2_image.shape[0], \
+        assert len(channels_input) == s2_image.shape[0], (
             f"Given {len(channels_input)} channels expected {s2_image.shape[0]}"
+        )
 
         if collection_name == "Landsat":
             bands_read_names = [BANDS_L8[iband] for iband in channels_input]
         else:
             bands_read_names = [BANDS_S2[i] for i in channels_input]
     else:
-        assert len(BANDS_S2) == s2_image.shape[0], \
+        assert len(BANDS_S2) == s2_image.shape[0], (
             f"Given {len(BANDS_S2)} channels expected {s2_image.shape[0]}"
+        )
         if collection_name == "Landsat":
             bands_read_names = BANDS_L8
         else:
@@ -454,7 +456,7 @@ def get_brightness(s2_image:Union[np.ndarray, torch.Tensor], channels_input:Opti
     return np.sqrt(np.sum(rgb_img, axis=0))
 
 
-CLOUDS_THRESHOLD = .5
+CLOUDS_THRESHOLD = 0.5
 BRIGHTNESS_THRESHOLD = 3_500
 
 
@@ -462,7 +464,7 @@ def _generate_gt_fromarray(
     s2_img: np.ndarray,
     cloudprob: np.ndarray,
     water_mask: np.ndarray,
-    custom_clouds: bool=False,
+    custom_clouds: bool = False,
 ) -> np.ndarray:
     """
 
@@ -484,7 +486,11 @@ def _generate_gt_fromarray(
 
     """
 
-    invalids = np.any(np.isnan(s2_img), axis=0) | np.all(s2_img[:len(BANDS_S2)] == 0, axis=0) | (water_mask == -1)
+    invalids = (
+        np.any(np.isnan(s2_img), axis=0)
+        | np.all(s2_img[: len(BANDS_S2)] == 0, axis=0)
+        | (water_mask == -1)
+    )
 
     # Set cloudprobs to zero in invalid pixels
     cloudgt = np.ones(water_mask.shape, dtype=np.uint8)
@@ -504,8 +510,8 @@ def _generate_gt_fromarray(
         watergt[clouds] = 0
     else:
         # set to invalid in watergt for bright clouds
-        brightness = get_brightness(s2_img) # (H, W)
-        clouds &= (brightness >= BRIGHTNESS_THRESHOLD)
+        brightness = get_brightness(s2_img)  # (H, W)
+        clouds &= brightness >= BRIGHTNESS_THRESHOLD
 
         # binary opening of bright clouds
         open_clouds = binary_opening(clouds, disk(3)).astype(np.bool)

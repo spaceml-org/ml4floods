@@ -1,14 +1,15 @@
 import argparse
+import os
+import sys
+import traceback
+import warnings
+from datetime import datetime
+
 from ml4floods.data import utils
 from ml4floods.models import postprocess
-from datetime import datetime
-import sys
-import warnings
-import traceback
-import os
 
 
-def main(folder_image:str, overwrite:bool=False):
+def main(folder_image: str, overwrite: bool = False):
     folder_image = folder_image.replace("\\", "/")
 
     fs = utils.get_filesystem(folder_image)
@@ -23,25 +24,30 @@ def main(folder_image:str, overwrite:bool=False):
 
         assert len(permanent_water_files) > 0, f"No Tiff files found in {folder_image}*.tif"
 
-
     files_with_errors = []
     for total, filename in enumerate(permanent_water_files):
         dir_save = os.path.dirname(os.path.dirname(filename))
-        name_folder = os.path.basename(os.path.dirname(filename))+"_vec"
-        filename_save_vect = os.path.join(dir_save, name_folder, os.path.splitext(os.path.basename(filename))[0]+".geojson")
+        name_folder = os.path.basename(os.path.dirname(filename)) + "_vec"
+        filename_save_vect = os.path.join(
+            dir_save, name_folder, os.path.splitext(os.path.basename(filename))[0] + ".geojson"
+        )
 
         if (not overwrite) and fs.exists(filename_save_vect):
             continue
 
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(permanent_water_files)}) Processing {filename}")
+        print(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({total}/{len(permanent_water_files)}) Processing {filename}"
+        )
 
         try:
             with utils.rasterio_open_read(filename) as rst:
                 permanent_water_data = rst.read(1)
-                crs  = rst.crs
+                crs = rst.crs
                 transform = rst.transform
 
-            data_out = postprocess.vectorize_jrc_permanent_water_layer(permanent_water_data, crs, transform)
+            data_out = postprocess.vectorize_jrc_permanent_water_layer(
+                permanent_water_data, crs, transform
+            )
 
             if data_out is not None:
                 utils.write_geojson_to_gcp(filename_save_vect, data_out)
@@ -56,15 +62,16 @@ def main(folder_image:str, overwrite:bool=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Vectorize Permanent Water JRC')
-    parser.add_argument("--image", required=True, help="Path to folder with tif files or tif file with permanent water")
-    parser.add_argument('--overwrite', default=False, action='store_true',
-                        help="Overwrite the prediction if exists")
+    parser = argparse.ArgumentParser("Vectorize Permanent Water JRC")
+    parser.add_argument(
+        "--image",
+        required=True,
+        help="Path to folder with tif files or tif file with permanent water",
+    )
+    parser.add_argument(
+        "--overwrite", default=False, action="store_true", help="Overwrite the prediction if exists"
+    )
 
     args = parser.parse_args()
 
     main(folder_image=args.image, overwrite=args.overwrite)
-
-
-
-

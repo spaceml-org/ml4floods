@@ -1,9 +1,10 @@
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 import numpy as np
 import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset
+
 from ml4floods.preprocess.tiling import WindowSize
 from ml4floods.preprocess.utils import get_list_of_window_slices
 
@@ -32,12 +33,11 @@ class RasterioImageDataset(Dataset):
 
     def __init__(
         self,
-        image_files: List[str],
+        image_files: list[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        transforms: Optional[List[Callable]] = None,
+        transforms: list[Callable] | None = None,
     ) -> None:
-
         self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
@@ -48,7 +48,7 @@ class RasterioImageDataset(Dataset):
         # TODO: Do this for the list of filepaths at the end as well
         self.image_files.sort()
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, idx: int) -> dict:
         """Index to select an image
 
         Args:
@@ -121,13 +121,12 @@ class RasterioImageTilingDataset(Dataset):
 
     def __init__(
         self,
-        image_files: List[str],
+        image_files: list[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        window_size: Tuple[int, int] = (64, 64),
-        transforms: Optional[List[Callable]] = None,
+        window_size: tuple[int, int] = (64, 64),
+        transforms: list[Callable] | None = None,
     ) -> None:
-
         self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
@@ -143,7 +142,7 @@ class RasterioImageTilingDataset(Dataset):
             self.image_files, window_size=self.window_size
         )
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, idx: int) -> dict:
         """Index to select an image tile
 
         Args:

@@ -134,6 +134,10 @@ dmypy.json
 /datasets/
 /data/
 /.vscode/
+.idea/
+
+# uv
+.venv/
 
 *.geojson
 *.data

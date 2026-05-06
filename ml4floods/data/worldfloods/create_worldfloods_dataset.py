@@ -1,21 +1,19 @@
-import sys
-import warnings
-import traceback
-
-import tqdm
-import pandas as pd
-from datetime import datetime, timezone
-from ml4floods.data import utils, vectorize
-from ml4floods.data.ee_download import process_metadata
 import os
-import numpy as np
-
+import sys
+import traceback
+import warnings
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional, Callable, Tuple, Dict, Any
-import geopandas as gpd
-import fsspec
-from ml4floods.data import save_cog
+from typing import Any
 
+import fsspec
+import geopandas as gpd
+import pandas as pd
+import tqdm
+
+from ml4floods.data import save_cog, utils, vectorize
+from ml4floods.data.ee_download import process_metadata
 
 CLOUDPROB_PARENT_PATH = "worldfloods/tiffimages"
 PERMANENT_WATER_PARENT_PATH = "worldfloods/tiffimages/PERMANENTWATERJRC"
@@ -23,7 +21,9 @@ META_FLOODMAP_PARENT_PATH = "worldfloods/tiffimages/meta"
 WORLDFLOODS_V0_BUCKET = "ml4floods"
 
 
-def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optional[str], Optional[str], Dict, str]:
+def worldfloods_extra_gcp_paths(
+    main_path: str,
+) -> tuple[gpd.GeoDataFrame, str | None, str | None, dict, str]:
     """
     Given a pickle file in "gs://ml4cc_data_lake/{prod_dev}/1_Staging/WorldFloods it returns the rest of the files to
     create the full worldfloods registry (the corresponding floodmap, cloud probability and permanent water)
@@ -41,7 +41,9 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
     meta_floodmap = utils.read_pickle_from_gcp(main_path)
 
     # path to floodmap path
-    floodmap_path = main_path.replace("/flood_meta/", "/floodmap_edited/").replace(".pickle", ".geojson")
+    floodmap_path = main_path.replace("/flood_meta/", "/floodmap_edited/").replace(
+        ".pickle", ".geojson"
+    )
     if not fs.exists(floodmap_path):
         floodmap_path = floodmap_path.replace("/floodmap_edited/", "/floodmap/")
 
@@ -51,10 +53,12 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
 
     # open floodmap with geopandas
     floodmap = utils.read_geojson_from_gcp(floodmap_path)
-    floodmap_date = meta_floodmap['satellite date']
+    floodmap_date = meta_floodmap["satellite date"]
 
     # create permenant water path
-    permanent_water_path = os.path.join(path_aoi, "PERMANENTWATERJRC", f"{floodmap_date.year}.tif").replace("\\", "/")
+    permanent_water_path = os.path.join(
+        path_aoi, "PERMANENTWATERJRC", f"{floodmap_date.year}.tif"
+    ).replace("\\", "/")
 
     if not fs.exists(permanent_water_path):
         warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")
@@ -71,8 +75,9 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
 
     assert s2_date is not None, f"Not found valid S2 files for {main_path}. {metadatas2}"
 
-    assert (s2_date - floodmap_date).total_seconds() / (3600. * 24) < 10, \
+    assert (s2_date - floodmap_date).total_seconds() / (3600.0 * 24) < 10, (
         f"Difference between S2 date {s2_date} and floodmap date {floodmap_date} is larger than 10 days"
+    )
 
     # add exact metadata from the csv file
     meta_floodmap["s2_date"] = s2_date
@@ -80,7 +85,7 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
     meta_floodmap["cloud_probability"] = metadatas2.loc[index, "cloud_probability"]
     meta_floodmap["valids"] = metadatas2.loc[index, "valids"]
 
-    s2_image_path = os.path.join(path_aoi, "S2", index+".tif").replace("\\", "/")
+    s2_image_path = os.path.join(path_aoi, "S2", index + ".tif").replace("\\", "/")
 
     # Add cloud_probability if exists in edited
     cm_edited = s2_image_path.replace("/S2/", "/cmedited_vec/").replace(".tif", ".geojson")
@@ -92,7 +97,7 @@ def worldfloods_extra_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, Optio
     return floodmap, cm_edited, permanent_water_path, meta_floodmap, s2_image_path
 
 
-def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any, datetime]:
+def best_s2_match(metadatas2: pd.DataFrame, floodmap_date: datetime) -> tuple[Any, datetime]:
     """
     Return s2 date posterior to the floodmap_date
 
@@ -105,10 +110,10 @@ def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any,
     """
     index = None
     s2_date = None
-    floodmap_date = floodmap_date.replace(tzinfo=timezone.utc)
+    floodmap_date = floodmap_date.replace(tzinfo=UTC)
     for tup in metadatas2[metadatas2.s2available].itertuples():
         date_img = tup.datetime
-        if (floodmap_date < date_img) or ((floodmap_date - date_img).total_seconds() / 3600. < 10):
+        if (floodmap_date < date_img) or ((floodmap_date - date_img).total_seconds() / 3600.0 < 10):
             if s2_date is None:
                 s2_date = date_img
                 index = tup.Index
@@ -119,93 +124,16 @@ def best_s2_match(metadatas2:pd.DataFrame, floodmap_date:datetime) -> Tuple[Any,
     return index, s2_date
 
 
-def worldfloods_old_gcp_paths(main_path: str) -> Tuple[gpd.GeoDataFrame, str, Optional[str], Dict, str]:
-    """
-    Given a S2 tiff file in the V0 WorldFloods dataset it returns the rest of the anciliary files to
-    the corresponding floodmap, cloud probability and permanent water
-
-    Args:
-        main_path: S2 path in gs://ml4floods/worldfloods/public folder
-
-    Returns:
-        GCPPaths with locations of corresponding  floodmap, cloud probability,  permanent water, meta_floodmap and sentinel2 image
-
-    Examples
-        >>> s2_path_file = "gs://ml4floods/worldfloods/public/train/S2/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif"
-        >>> worldfloods_old_gcp_paths(GCPPath(s2_path_file))
-
-    (GCPPath(full_path='gs://ml4floods/worldfloods/public/train/floodmaps/EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', bucket_id='ml4floods', parent_path='worldfloods/public/train/floodmaps', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.shp', suffix='shp'),
-     GCPPath(full_path='gs://ml4floods/worldfloods/tiffimages/cloudprob/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', bucket_id='ml4floods', parent_path='worldfloods/tiffimages/cloudprob', file_name='EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif', suffix='tif'),
-     'gs://ml4floods/worldfloods/tiffimages/PERMANENTWATERJRC/EMSR260_09RUBIERA_GRA_v2_observed_event_a.tif')
-
-    """
-    assert main_path.check_if_file_exists(), f"File {main_path} does not exists"
-
-    s2_image_path = main_path
-
-    # path to floodmap path
-    floodmap_path = s2_image_path.replace("/S2/", "/floodmaps/")
-    floodmap_path = floodmap_path.replace(".tif", f".shp")
-
-    assert floodmap_path.check_if_file_exists(), f"Floodmap not found in {floodmap_path}"
-
-    # open floodmap with geopandas
-    floodmap = gpd.read_file(floodmap_path.full_path)
-
-    # create cloudprob path
-    cloudprob_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-                .joinpath(CLOUDPROB_PARENT_PATH)
-                .joinpath("cloudprob_edited")
-                .joinpath(s2_image_path.file_name)
-        )
-    )
-    if not cloudprob_path.check_if_file_exists():
-        cloudprob_path = GCPPath(
-            str(
-                Path(WORLDFLOODS_V0_BUCKET)
-                    .joinpath(CLOUDPROB_PARENT_PATH)
-                    .joinpath("cloudprob")
-                    .joinpath(s2_image_path.file_name)
-            )
-        )
-
-    assert cloudprob_path.check_if_file_exists(), f"Clouds not found in {cloudprob_path}"
-
-    # create permenant water path
-    permanent_water_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-                .joinpath(PERMANENT_WATER_PARENT_PATH)
-                .joinpath(s2_image_path.file_name)
-        )
-    )
-
-    if not permanent_water_path.check_if_file_exists():
-        warnings.warn(f"Permanent water {permanent_water_path}. Will not be used")
-        permanent_water_path = None
-
-
-    # path to meta_floodmap
-    meta_floodmap_path = GCPPath(
-        str(
-            Path(WORLDFLOODS_V0_BUCKET)
-                .joinpath(META_FLOODMAP_PARENT_PATH)
-                .joinpath(s2_image_path.file_name.replace(".tif",".json"))
-        )
-    )
-    assert meta_floodmap_path.check_if_file_exists(), f"Meta floodmap not found in {meta_floodmap_path}"
-
-    meta_floodmap = utils.read_json_from_gcp(meta_floodmap_path.full_path)
-
-    return floodmap, cloudprob_path, permanent_water_path, meta_floodmap, s2_image_path
-
-
-def generate_item(main_path:str, output_path:str, file_name:str,
-                  overwrite:bool=False, pbar:Optional[tqdm.tqdm]=None,
-                  gt_fun:Callable=None, delete_if_error:bool=True,
-                  paths_function:Callable=worldfloods_old_gcp_paths) -> bool:
+def generate_item(
+    main_path: str,
+    output_path: str,
+    file_name: str,
+    overwrite: bool = False,
+    pbar: tqdm.tqdm | None = None,
+    gt_fun: Callable = None,
+    delete_if_error: bool = True,
+    paths_function: Callable = worldfloods_extra_gcp_paths,
+) -> bool:
     """
 
     Generates an "element" of the WorldFloods dataset with the expected naming convention. An "element" is a set of files
@@ -242,7 +170,12 @@ def generate_item(main_path:str, output_path:str, file_name:str,
         # Check if output products exist before reading from the bucket
         if not overwrite:
             expected_outputs = worldfloods_output_files(
-                output_path, file_name, permanent_water_available=True, clouds_available=False, mkdirs=False)
+                output_path,
+                file_name,
+                permanent_water_available=True,
+                clouds_available=False,
+                mkdirs=False,
+            )
             fsdest = utils.get_filesystem(expected_outputs[-1])
 
             must_process = False
@@ -255,11 +188,25 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 return True
 
         # Get input files and check that they all exist
-        floodmap, cloudprob_path, permanent_water_path, metadata_floodmap, s2_image_path = paths_function(main_path)
+        floodmap, cloudprob_path, permanent_water_path, metadata_floodmap, s2_image_path = (
+            paths_function(main_path)
+        )
 
         # get output files
-        cloudprob_path_dest, floodmap_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(
-            output_path, file_name, permanent_water_available=permanent_water_path is not None, clouds_available=cloudprob_path is not None, mkdirs=True)
+        (
+            cloudprob_path_dest,
+            floodmap_path_dest,
+            gt_path_dest,
+            meta_json_path_dest,
+            permanent_water_image_path_dest,
+            s2_image_path_dest,
+        ) = worldfloods_output_files(
+            output_path,
+            file_name,
+            permanent_water_available=permanent_water_path is not None,
+            clouds_available=cloudprob_path is not None,
+            mkdirs=True,
+        )
     except Exception:
         warnings.warn(f"File {main_path} problem when computing input/output names")
         traceback.print_exc(file=sys.stdout)
@@ -280,7 +227,7 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 floodmap,
                 metadata_floodmap=metadata_floodmap,
                 keep_streams=True,
-                cloudprob_image_path=cloudprob_path, # Could be None!
+                cloudprob_image_path=cloudprob_path,  # Could be None!
                 permanent_water_image_path=permanent_water_path,  # Could be None!
             )
 
@@ -295,11 +242,19 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             else:
                 desc = ["invalid/land/water/cloud"]
 
-            save_cog.save_cog(gt, gt_path_dest,
-                              {"crs": gt_meta["crs"], "transform":gt_meta["transform"] ,"RESAMPLING": "NEAREST",
-                               "compress": "lzw", "nodata": 0}, # In both gts 0 is nodata
-                              descriptions=desc,
-                              tags=gt_meta)
+            save_cog.save_cog(
+                gt,
+                gt_path_dest,
+                {
+                    "crs": gt_meta["crs"],
+                    "transform": gt_meta["transform"],
+                    "RESAMPLING": "NEAREST",
+                    "compress": "lzw",
+                    "nodata": 0,
+                },  # In both gts 0 is nodata
+                descriptions=desc,
+                tags=gt_meta,
+            )
 
             # upload meta json to bucket
             if pbar is not None:
@@ -307,8 +262,14 @@ def generate_item(main_path:str, output_path:str, file_name:str,
 
             # save meta in local json file
             gt_meta["crs"] = str(gt_meta["crs"])
-            gt_meta["transform"] = [gt_meta["transform"].a, gt_meta["transform"].b, gt_meta["transform"].c,
-                                    gt_meta["transform"].d, gt_meta["transform"].e, gt_meta["transform"].f]
+            gt_meta["transform"] = [
+                gt_meta["transform"].a,
+                gt_meta["transform"].b,
+                gt_meta["transform"].c,
+                gt_meta["transform"].d,
+                gt_meta["transform"].e,
+                gt_meta["transform"].f,
+            ]
 
             utils.write_json_to_gcp(meta_json_path_dest, gt_meta)
 
@@ -328,15 +289,13 @@ def generate_item(main_path:str, output_path:str, file_name:str,
                 clouds = gt[0] == 3
 
             # vectorize clouds
-            geoms_polygons = vectorize.get_polygons(clouds,
-                                                    transform=transform)
+            geoms_polygons = vectorize.get_polygons(clouds, transform=transform)
             if len(geoms_polygons) > 0:
-                clouds_vec = gpd.GeoDataFrame({"geometry": geoms_polygons,
-                                               "class": "cloud"},
-                                              crs=crs)
+                clouds_vec = gpd.GeoDataFrame(
+                    {"geometry": geoms_polygons, "class": "cloud"}, crs=crs
+                )
             else:
-                clouds_vec = gpd.GeoDataFrame(data={"class": []},
-                                              geometry=[], crs=crs)
+                clouds_vec = gpd.GeoDataFrame(data={"class": []}, geometry=[], crs=crs)
 
             utils.write_geojson_to_gcp(cloudprob_path_dest, clouds_vec)
 
@@ -345,32 +304,42 @@ def generate_item(main_path:str, output_path:str, file_name:str,
             if pbar is not None:
                 pbar.write(f"Saving floodmap {file_name}...")
 
-            utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)                
-        
+            utils.write_geojson_to_gcp(floodmap_path_dest, floodmap)
+
         # Copy S2 image
         if not fsdest.exists(s2_image_path_dest) or overwrite:
             if pbar is not None:
                 pbar.write(f"Saving S2 image {file_name}...")
-            
+
             _copy(s2_image_path, s2_image_path_dest, fs)
 
         # Copy permanent water
-        if (permanent_water_image_path_dest is not None) and (not fsdest.exists(permanent_water_image_path_dest) or overwrite):
+        if (permanent_water_image_path_dest is not None) and (
+            not fsdest.exists(permanent_water_image_path_dest) or overwrite
+        ):
             if pbar is not None:
                 pbar.write(f"Saving permanent water image {file_name}...")
 
             _copy(permanent_water_path, permanent_water_image_path_dest, fs)
 
     except Exception:
-        warnings.warn(f"File input: {main_path} output S2 file: {s2_image_path_dest} problem when computing Ground truth")
+        warnings.warn(
+            f"File input: {main_path} output S2 file: {s2_image_path_dest} problem when computing Ground truth"
+        )
         traceback.print_exc(file=sys.stdout)
 
         if not delete_if_error:
             return False
 
         fsdest = utils.get_filesystem(s2_image_path_dest)
-        files_to_delete = [cloudprob_path_dest, gt_path_dest, meta_json_path_dest, permanent_water_image_path_dest,
-                           s2_image_path_dest, floodmap_path_dest]
+        files_to_delete = [
+            cloudprob_path_dest,
+            gt_path_dest,
+            meta_json_path_dest,
+            permanent_water_image_path_dest,
+            s2_image_path_dest,
+            floodmap_path_dest,
+        ]
         for f in files_to_delete:
             if f and fsdest.exists(f):
                 print(f"Deleting file {f}")
@@ -381,14 +350,16 @@ def generate_item(main_path:str, output_path:str, file_name:str,
     return True
 
 
-def _copy(file_or, file_dest, fsor):    
+def _copy(file_or, file_dest, fsor):
     if file_dest.startswith("gs"):
         fsor.copy(file_or, file_dest)
     else:
         fsor.get_file(file_or, file_dest)
-    
 
-def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_permanent_water:bool=True):
+
+def assert_element_consistency(
+    output_path: Path, tiff_file_name: str, warn_permanent_water: bool = True
+):
     """
     Assert all elements in worldlfooods_output_files exists for the given tiff_file_name.
 
@@ -398,19 +369,35 @@ def assert_element_consistency(output_path:Path, tiff_file_name:str, warn_perman
         warn_permanent_water: warn if the permanent water layer is not found
 
     """
-    cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest = worldfloods_output_files(output_path, tiff_file_name)
+    (
+        cloudprob_path_dest,
+        floodmap_path_dest,
+        gt_path,
+        meta_parent_path,
+        permanent_water_image_path_dest,
+        s2_image_path_dest,
+    ) = worldfloods_output_files(output_path, tiff_file_name)
 
-    for p in [cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, s2_image_path_dest]:
+    for p in [
+        cloudprob_path_dest,
+        floodmap_path_dest,
+        gt_path,
+        meta_parent_path,
+        s2_image_path_dest,
+    ]:
         assert p.check_if_file_exists(), f"{p.full_path} not found"
 
     if warn_permanent_water and not permanent_water_image_path_dest.check_if_file_exists():
         warnings.warn(f"{permanent_water_image_path_dest.full_path} not found")
 
 
-def worldfloods_output_files(output_path:str, file_name:str,
-                             permanent_water_available:bool=True,
-                             clouds_available:bool=True,
-                             mkdirs:bool=False) -> Tuple[str, str, str, str, Optional[str], str]:
+def worldfloods_output_files(
+    output_path: str,
+    file_name: str,
+    permanent_water_available: bool = True,
+    clouds_available: bool = True,
+    mkdirs: bool = False,
+) -> tuple[str, str, str, str, str | None, str]:
     """
     For a given file (`tiff_file_name`) it returns the set of paths that the function generate_item produce.
 
@@ -434,27 +421,47 @@ def worldfloods_output_files(output_path:str, file_name:str,
 
     """
     if permanent_water_available:
-        permanent_water_image_path_dest = os.path.join(output_path, "PERMANENTWATERJRC", file_name+".tif").replace("\\", "/")
+        permanent_water_image_path_dest = os.path.join(
+            output_path, "PERMANENTWATERJRC", file_name + ".tif"
+        ).replace("\\", "/")
     else:
         permanent_water_image_path_dest = None
 
     output_path = str(output_path)
-    s2_image_path_dest = os.path.join(output_path,"S2",file_name+".tif").replace("\\", "/")
-    meta_parent_path = os.path.join(output_path,"meta",file_name+".json").replace("\\", "/")
+    s2_image_path_dest = os.path.join(output_path, "S2", file_name + ".tif").replace("\\", "/")
+    meta_parent_path = os.path.join(output_path, "meta", file_name + ".json").replace("\\", "/")
 
     if clouds_available:
-        cloudprob_path_dest = os.path.join(output_path, "cloud_vec",file_name+".geojson").replace("\\", "/")
+        cloudprob_path_dest = os.path.join(
+            output_path, "cloud_vec", file_name + ".geojson"
+        ).replace("\\", "/")
     else:
         cloudprob_path_dest = None
 
-    floodmap_path_dest = os.path.join(output_path,"floodmaps",file_name+".geojson").replace("\\", "/")
-    gt_path = os.path.join(output_path,"gt",file_name+".tif").replace("\\", "/")
+    floodmap_path_dest = os.path.join(output_path, "floodmaps", file_name + ".geojson").replace(
+        "\\", "/"
+    )
+    gt_path = os.path.join(output_path, "gt", file_name + ".tif").replace("\\", "/")
 
     # makedir if not gs
     if mkdirs and not s2_image_path_dest.startswith("gs"):
         fs = utils.get_filesystem(s2_image_path_dest)
-        for f in [s2_image_path_dest, meta_parent_path, cloudprob_path_dest, floodmap_path_dest, gt_path, permanent_water_image_path_dest]:
+        for f in [
+            s2_image_path_dest,
+            meta_parent_path,
+            cloudprob_path_dest,
+            floodmap_path_dest,
+            gt_path,
+            permanent_water_image_path_dest,
+        ]:
             if f is not None:
                 fs.makedirs(os.path.dirname(f), exist_ok=True)
 
-    return cloudprob_path_dest, floodmap_path_dest, gt_path, meta_parent_path, permanent_water_image_path_dest, s2_image_path_dest
+    return (
+        cloudprob_path_dest,
+        floodmap_path_dest,
+        gt_path,
+        meta_parent_path,
+        permanent_water_image_path_dest,
+        s2_image_path_dest,
+    )

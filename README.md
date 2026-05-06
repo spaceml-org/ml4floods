@@ -1,5 +1,5 @@
 
-[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  [![PyPI](https://img.shields.io/pypi/v/ml4floods)](https://pypi.org/project/ml4floods/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods)](https://pypi.org/project/ml4floods/) [![PyPI - License](https://img.shields.io/pypi/l/ml4floods)](https://github.com/spaceml-org/ml4floods/blob/main/LICENSE) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow)](https://huggingface.co/isp-uv-es/ml4floods) [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/) <a href='https://youtu.be/wMLuHf9s9zk'><img src='https://img.shields.io/badge/Tutorial-%23FF0000.svg?style=flat&logo=youtube&logoColor=white' /></a>
+[![Article DOI:10.1038/s41598-023-47595-7](https://img.shields.io/badge/Article%20DOI-10.1038%2Fs41598.023.47595.7-blue)](https://doi.org/10.1038/s41598-023-47595-7)  [![PyPI](https://img.shields.io/pypi/v/ml4floods)](https://pypi.org/project/ml4floods/) [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ml4floods)](https://pypi.org/project/ml4floods/) [![PyPI - License](https://img.shields.io/pypi/l/ml4floods)](https://github.com/spaceml-org/ml4floods/blob/main/LICENSE) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2) [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow)](https://huggingface.co/isp-uv-es/ml4floods) [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/) <a href='https://youtu.be/wMLuHf9s9zk'><img src='https://img.shields.io/badge/Tutorial-%23FF0000.svg?style=flat&logo=youtube&logoColor=white' /></a>
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/images/banner.png" alt="awesome ml4floods" width="100%">
@@ -25,7 +25,7 @@ Install the latest version from GitHub:
 pip install git+https://github.com/spaceml-org/ml4floods#egg=ml4floods
 ```
 
-## Docs 
+## Docs
 
 [![docs](https://badgen.net/badge/docs/spaceml-org.github.io%2Fml4floods/blue)](https://spaceml-org.github.io/ml4floods/)
 
@@ -40,11 +40,11 @@ These tutorials may help you explore the datasets and models:
 
 ## The *WorldFloods* database
  [![HF](https://img.shields.io/badge/%F0%9F%A4%97-Datasets-yellow)](https://huggingface.co/datasets/isp-uv-es/WorldFloodsv2)
- 
-The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks. 
-It requires approximately 76GB of hard-disk storage. 
 
-The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt) 
+The [*WorldFloods* database](https://www.nature.com/articles/s41598-023-47595-7) contains 509 pairs of Sentinel-2 images and flood segmentation masks.
+It requires approximately 76GB of hard-disk storage.
+
+The *WorldFloods* database and all pre-trained models are released under a [Creative Commons non-commercial licence](https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt)
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" alt="licence" width="60"/>
 
 To download the *WorldFloods* database or the pretrained flood segmentation models see [the instructions to download the database](https://spaceml-org.github.io/ml4floods/content/worldfloods_dataset.html).

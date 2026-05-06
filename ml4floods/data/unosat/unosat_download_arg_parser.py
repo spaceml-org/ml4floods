@@ -2,11 +2,8 @@ from argparse import ArgumentParser
 
 
 class UnosatDownloadArgParser(ArgumentParser):
-
     def __init__(self):
-        super().__init__(
-            prog="unosat_download.py", description="Download UNOSAT data to buckets"
-        )
+        super().__init__(prog="unosat_download.py", description="Download UNOSAT data to buckets")
 
         self.add_argument(
             "--base-url",
@@ -25,7 +22,7 @@ class UnosatDownloadArgParser(ArgumentParser):
         self.add_argument(
             "--download-base-regex",
             type=str,
-            default="https?://unosat-maps\.web\.cern\.ch/",
+            default=r"https?://unosat-maps\.web\.cern\.ch/",
             help="RegEx for UNOSAT map download server",
         )
 
@@ -42,4 +39,3 @@ class UnosatDownloadArgParser(ArgumentParser):
             default="gs://ml4cc_data_lake/0_DEV/0_Raw/WorldFloods/meta/",
             help="Path in FS or a major cloud (S3, GCS, Azure Blob) to store shapfile metadata",
         )
-

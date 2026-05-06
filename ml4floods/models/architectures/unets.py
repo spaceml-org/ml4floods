@@ -33,15 +33,15 @@ class UNet(nn.Module):
 
         x = self.dconv_down4(x)
 
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv3], dim=1)
 
         x = self.dconv_up3(x)
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv2], dim=1)
 
         x = self.dconv_up2(x)
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv1], dim=1)
 
         x = self.dconv_up1(x)
@@ -50,7 +50,7 @@ class UNet(nn.Module):
 
         return out
 
-    
+
 class UNet_dropout(nn.Module):
     def __init__(self, n_channels, n_class):
         super().__init__()
@@ -65,7 +65,7 @@ class UNet_dropout(nn.Module):
         self.dconv_up3 = layer_factory.double_conv(256 + 512, 256)
         self.dconv_up2 = layer_factory.double_conv(128 + 256, 128)
         self.dconv_up1 = layer_factory.double_conv(128 + 64, 64)
-        
+
         self.dropout = nn.Dropout2d()
 
         self.conv_last = nn.Conv2d(64, n_class, 1)
@@ -82,15 +82,15 @@ class UNet_dropout(nn.Module):
 
         x = self.dropout(self.dconv_down4(x))
 
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv3], dim=1)
 
         x = self.dropout(self.dconv_up3(x))
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv2], dim=1)
 
         x = self.dropout(self.dconv_up2(x))
-        x = nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=True)
+        x = nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=True)
         x = torch.cat([x, conv1], dim=1)
 
         x = self.dropout(self.dconv_up1(x))

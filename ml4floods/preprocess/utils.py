@@ -1,16 +1,9 @@
-import math
-import os
-import sys
-from typing import List
-
 import rasterio
 
 from ml4floods.preprocess.tiling import WindowSize, WindowSlices, get_window_tiles
 
 
-def get_list_of_window_slices(
-    file_names: List[str], window_size: WindowSize
-) -> List[WindowSlices]:
+def get_list_of_window_slices(file_names: list[str], window_size: WindowSize) -> list[WindowSlices]:
     """Function to return the list of window slices for the all the
     input images and the given window size.
 
@@ -25,7 +18,6 @@ def get_list_of_window_slices(
 
     accumulated_list_of_windows = []
     for ifilename in file_names:
-
         with rasterio.open(ifilename) as dataset:
             # get list of windows
             list_of_windows = get_window_tiles(
@@ -33,8 +25,7 @@ def get_list_of_window_slices(
             )
             # create a list of filenames
             list_of_windows = [
-                WindowSlices(file_name=ifilename, window=iwindow)
-                for iwindow in list_of_windows
+                WindowSlices(file_name=ifilename, window=iwindow) for iwindow in list_of_windows
             ]
 
         accumulated_list_of_windows += list_of_windows

@@ -1,24 +1,27 @@
-import torch
 import itertools
-from ml4floods.models.worldfloods_model import WorldFloodsModel, ML4FloodsModel, load_weights
-from ml4floods.models.utils.configuration import AttrDict
-from ml4floods.data.worldfloods.configs import CHANNELS_CONFIGURATIONS, SENTINEL2_NORMALIZATION, CHANNELS_CONFIGURATIONS_LANDSAT, BANDS_S2, BANDS_L8
-import numpy as np
 import os
+from collections.abc import Callable
+
+import numpy as np
+import torch
 from tqdm import tqdm
 
-from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional,
-                    Tuple, Union)
-
+from ml4floods.data.worldfloods.configs import (
+    BANDS_S2,
+    CHANNELS_CONFIGURATIONS,
+    CHANNELS_CONFIGURATIONS_LANDSAT,
+    SENTINEL2_NORMALIZATION,
+)
+from ml4floods.models.utils.configuration import AttrDict
+from ml4floods.models.worldfloods_model import ML4FloodsModel, WorldFloodsModel, load_weights
 
 # U-Net inputs must be divisible by 8
-SUBSAMPLE_MODULE = {
-    "unet": 8,
-    "unet_dropout": 8
-}
+SUBSAMPLE_MODULE = {"unet": 8, "unet_dropout": 8}
 
-def get_model(model_params:AttrDict,
-              experiment_name:Optional[str]=None, normalized_data:bool=True) -> Union[ML4FloodsModel, WorldFloodsModel]:
+
+def get_model(
+    model_params: AttrDict, experiment_name: str | None = None, normalized_data: bool = True
+) -> ML4FloodsModel | WorldFloodsModel:
     """
     Creates a model from a model_params Dict. (i.e. config.model_params).
     if model_params is in test or deploy model it will load the weights in the model_params.model_folder
@@ -33,20 +36,21 @@ def get_model(model_params:AttrDict,
 
     """
     if model_params.get("test", False) or model_params.get("deploy", False):
-        assert experiment_name is not None, f"Expermient name must be set on test or deploy mode"
+        assert experiment_name is not None, "Expermient name must be set on test or deploy mode"
 
         if model_params.get("model_version", "v1") == "v2":
             model = ML4FloodsModel(model_params)
         else:
             model = WorldFloodsModel(model_params, normalized_data=normalized_data)
 
-        path_to_models = os.path.join(model_params.model_folder, experiment_name, "model.pt").replace("\\", "/")
+        path_to_models = os.path.join(
+            model_params.model_folder, experiment_name, "model.pt"
+        ).replace("\\", "/")
         model.load_state_dict(load_weights(path_to_models))
         print(f"Loaded model weights: {path_to_models}")
         return model
 
     elif model_params.get("train", False):
-
         if model_params.get("model_version", "v1") == "v2":
             return ML4FloodsModel(model_params)
 
@@ -55,10 +59,10 @@ def get_model(model_params:AttrDict,
     else:
         raise Exception("No model type set in config e.g model_params.test == True")
 
-        
-        
-def get_channel_configuration_bands(channel_configuration:str, collection_name:str="S2",
-                                    as_string:bool=False) -> Union[List[int], List[str]]:
+
+def get_channel_configuration_bands(
+    channel_configuration: str, collection_name: str = "S2", as_string: bool = False
+) -> list[int] | list[str]:
     """
     Returns 0-based list of channels of a given configuration name
     """
@@ -67,7 +71,7 @@ def get_channel_configuration_bands(channel_configuration:str, collection_name:s
         if as_string:
             return [BANDS_S2[idx] for idx in channel_indexes]
         return channel_indexes
-    elif collection_name =="Landsat":
+    elif collection_name == "Landsat":
         channel_indexes = CHANNELS_CONFIGURATIONS_LANDSAT[channel_configuration]
         if as_string:
             return [BANDS_S2[idx] for idx in channel_indexes]
@@ -75,13 +79,16 @@ def get_channel_configuration_bands(channel_configuration:str, collection_name:s
     else:
         raise NotImplementedError(f"Collection {collection_name} not implemented")
 
-        
-        
-def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
-                                 apply_normalization:bool=True, eval_mode:bool=True,
-                                 activation:Optional[str]=None,
-                                 disable_pbar:bool = True,
-                                 device:Optional[torch.device]=None) -> Callable[[torch.Tensor], torch.Tensor]:
+
+def get_model_inference_function(
+    model: torch.nn.Module,
+    config: AttrDict,
+    apply_normalization: bool = True,
+    eval_mode: bool = True,
+    activation: str | None = None,
+    disable_pbar: bool = True,
+    device: torch.device | None = None,
+) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Loads a model inference function for an specific configuration. It loads the model, the weights and ensure that
     prediction does not break bc of memory errors when predicting large tiles.
@@ -106,16 +113,18 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
     module_shape = SUBSAMPLE_MODULE.get(model_type, 1)
 
     if apply_normalization:
-        channel_configuration_bands = get_channel_configuration_bands(config.model_params.hyperparameters.channel_configuration)
+        channel_configuration_bands = get_channel_configuration_bands(
+            config.model_params.hyperparameters.channel_configuration
+        )
 
         mean_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 0]
         if config.data_params.add_mndwi_input:
-            mean_batch = np.concatenate([mean_batch,np.array([0])],axis = 0)
+            mean_batch = np.concatenate([mean_batch, np.array([0])], axis=0)
         mean_batch = torch.tensor(mean_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         std_batch = SENTINEL2_NORMALIZATION[channel_configuration_bands, 1]
         if config.data_params.add_mndwi_input:
-            std_batch = np.concatenate([std_batch,np.array([1])],axis = 0)
+            std_batch = np.concatenate([std_batch, np.array([1])], axis=0)
         std_batch = torch.tensor(std_batch[None, :, None, None])  # (1, num_channels, 1, 1)
 
         def normalize(batch_image):
@@ -134,29 +143,44 @@ def get_model_inference_function(model: torch.nn.Module, config: AttrDict,
             activation = "softmax"
 
     if activation == "None":
-        activation_fun = lambda ot: ot
+
+        def activation_fun(ot):
+            return ot
     elif activation == "softmax":
-        activation_fun = lambda ot: torch.softmax(ot, dim=1)
+
+        def activation_fun(ot):
+            return torch.softmax(ot, dim=1)
     elif activation == "sigmoid":
-        activation_fun = lambda ot: torch.sigmoid(ot)
+
+        def activation_fun(ot):
+            return torch.sigmoid(ot)
     else:
         raise NotImplementedError(f"Activation function {activation} not implemented")
 
     device = device if device is not None else model.device
 
-    return get_pred_function(model, device,
-                             module_shape=module_shape,
-                             max_tile_size=config.model_params.max_tile_size,
-                             activation_fun=activation_fun,
-                             disable_pbar=disable_pbar,
-                             normalization=normalize, eval_mode=eval_mode)
+    return get_pred_function(
+        model,
+        device,
+        module_shape=module_shape,
+        max_tile_size=config.model_params.max_tile_size,
+        activation_fun=activation_fun,
+        disable_pbar=disable_pbar,
+        normalization=normalize,
+        eval_mode=eval_mode,
+    )
 
 
-def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape: int=1, max_tile_size: int=128,
-                      normalization: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-                      activation_fun: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-                      disable_pbar:bool = False,
-                      eval_mode:bool=True) -> Callable[[torch.Tensor], torch.Tensor]:
+def get_pred_function(
+    model: torch.nn.Module,
+    device: torch.device,
+    module_shape: int = 1,
+    max_tile_size: int = 128,
+    normalization: Callable[[torch.Tensor], torch.Tensor] | None = None,
+    activation_fun: Callable[[torch.Tensor], torch.Tensor] | None = None,
+    disable_pbar: bool = False,
+    eval_mode: bool = True,
+) -> Callable[[torch.Tensor], torch.Tensor]:
     """
     Given a model it returns a callable function to make inferences that:
     1) Normalize the input tensor if provided a callable normalization fun
@@ -182,29 +206,35 @@ def get_pred_function(model: torch.nn.Module, device:torch.device, module_shape:
         model.eval()
     else:
         model.train()
-    
+
     if normalization is None:
-        normalization = lambda ti: ti
+
+        def normalization(ti):
+            return ti
 
     if activation_fun is None:
-        activation_fun = lambda ot: ot
-    
+
+        def activation_fun(ot):
+            return ot
+
+    def pred_fun(ti):
+        return activation_fun(model(ti.to(device)))
+
     # Pad the input to be divisible by module_shape (otherwise U-Net model fails)
     if module_shape > 1:
-        pred_fun = padded_predict(lambda ti: activation_fun(model(ti.to(device))),
-                                  module_shape=module_shape)
-    else:
-        pred_fun = lambda ti: activation_fun(model(ti.to(device)))
+        pred_fun = padded_predict(pred_fun, module_shape=module_shape)
 
     def pred_fun_final(ti):
         with torch.no_grad():
             ti_norm = normalization(ti)
-            if any((s > max_tile_size for s in ti.shape[2:])):
-                return predbytiles(pred_fun,
-                                   input_batch=ti_norm,
-                                   tile_size=max_tile_size,
-                                   disable_pbar=disable_pbar)
-            
+            if any(s > max_tile_size for s in ti.shape[2:]):
+                return predbytiles(
+                    pred_fun,
+                    input_batch=ti_norm,
+                    tile_size=max_tile_size,
+                    disable_pbar=disable_pbar,
+                )
+
             return pred_fun(ti_norm)
 
     return pred_fun_final
@@ -223,6 +253,7 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
         Function that pads the input if it is not multiple of module_shape
 
     """
+
     def predict(x: torch.Tensor):
         """
 
@@ -233,7 +264,9 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
 
         """
         shape_tensor = np.array(list(x.shape))[2:].astype(np.int64)
-        shape_new_tensor = np.ceil(shape_tensor.astype(np.float32) / module_shape).astype(np.int64) * module_shape
+        shape_new_tensor = (
+            np.ceil(shape_tensor.astype(np.float32) / module_shape).astype(np.int64) * module_shape
+        )
 
         if np.all(shape_tensor == shape_new_tensor):
             return predfunction(x)
@@ -243,19 +276,26 @@ def padded_predict(predfunction: Callable, module_shape: int) -> Callable:
 
         refl_pad_result = refl_pad_layer(x)
         pred_padded = predfunction(refl_pad_result)
-        slice_ = (slice(None),
-                  slice(None),
-                  slice(0, shape_new_tensor[0]-pad_to_add[0]),
-                  slice(0, shape_new_tensor[1]-pad_to_add[1]))
+        slice_ = (
+            slice(None),
+            slice(None),
+            slice(0, shape_new_tensor[0] - pad_to_add[0]),
+            slice(0, shape_new_tensor[1] - pad_to_add[1]),
+        )
 
         return pred_padded[slice_]
 
     return predict
 
 
-def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_batch: torch.Tensor,
-                tile_size=1280, pad_size=32, device=torch.device("cpu"),
-                disable_pbar:bool=False) -> torch.Tensor:
+def predbytiles(
+    pred_function: Callable[[torch.Tensor], torch.Tensor],
+    input_batch: torch.Tensor,
+    tile_size=1280,
+    pad_size=32,
+    device=torch.device("cpu"),
+    disable_pbar: bool = False,
+) -> torch.Tensor:
     """
     Apply a pred_function (usually a torch model) by tiling the input_batch array.
     The purpose is to run `pred_function(input_batch)` avoiding memory errors.
@@ -275,24 +315,38 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
     pred_continuous_tf = None
     assert input_batch.dim() == 4, "Expected batch of images"
 
-    indexes_list = list(itertools.product(range(0, input_batch.shape[0]),
-                                     range(0, input_batch.shape[2], tile_size),
-                                     range(0, input_batch.shape[3], tile_size)))
-    
-    for b, i, j in tqdm(indexes_list, desc="Predicting by tiles",
-                        disable=disable_pbar or (len(indexes_list) == 1)):
+    indexes_list = list(
+        itertools.product(
+            range(0, input_batch.shape[0]),
+            range(0, input_batch.shape[2], tile_size),
+            range(0, input_batch.shape[3], tile_size),
+        )
+    )
 
-        slice_current = (slice(i, min(i + tile_size, input_batch.shape[2])),
-                         slice(j, min(j + tile_size, input_batch.shape[3])))
-        slice_pad = (slice(max(i - pad_size, 0), min(i + tile_size + pad_size, input_batch.shape[2])),
-                     slice(max(j - pad_size, 0), min(j + tile_size + pad_size, input_batch.shape[3])))
+    for b, i, j in tqdm(
+        indexes_list, desc="Predicting by tiles", disable=disable_pbar or (len(indexes_list) == 1)
+    ):
+        slice_current = (
+            slice(i, min(i + tile_size, input_batch.shape[2])),
+            slice(j, min(j + tile_size, input_batch.shape[3])),
+        )
+        slice_pad = (
+            slice(max(i - pad_size, 0), min(i + tile_size + pad_size, input_batch.shape[2])),
+            slice(max(j - pad_size, 0), min(j + tile_size + pad_size, input_batch.shape[3])),
+        )
 
-        slice_save_i = slice(slice_current[0].start - slice_pad[0].start,
-                             None if (slice_current[0].stop - slice_pad[0].stop) == 0 else slice_current[0].stop -
-                                                                                           slice_pad[0].stop)
-        slice_save_j = slice(slice_current[1].start - slice_pad[1].start,
-                             None if (slice_current[1].stop - slice_pad[1].stop) == 0 else slice_current[1].stop -
-                                                                                           slice_pad[1].stop)
+        slice_save_i = slice(
+            slice_current[0].start - slice_pad[0].start,
+            None
+            if (slice_current[0].stop - slice_pad[0].stop) == 0
+            else slice_current[0].stop - slice_pad[0].stop,
+        )
+        slice_save_j = slice(
+            slice_current[1].start - slice_pad[1].start,
+            None
+            if (slice_current[1].stop - slice_pad[1].stop) == 0
+            else slice_current[1].stop - slice_pad[1].stop,
+        )
 
         slice_save = (slice_save_i, slice_save_j)
 
@@ -307,9 +361,15 @@ def predbytiles(pred_function: Callable[[torch.Tensor], torch.Tensor], input_bat
         assert cnn_out.dim() == 4, "Expected 4-band prediction (after softmax)"
 
         if pred_continuous_tf is None:
-            pred_continuous_tf = torch.zeros((input_batch.shape[0], cnn_out.shape[1],
-                                              input_batch.shape[2], input_batch.shape[3]),
-                                             device=device)
+            pred_continuous_tf = torch.zeros(
+                (
+                    input_batch.shape[0],
+                    cnn_out.shape[1],
+                    input_batch.shape[2],
+                    input_batch.shape[3],
+                ),
+                device=device,
+            )
 
         pred_continuous_tf[slice_current] = cnn_out[slice_save]
 

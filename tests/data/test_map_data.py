@@ -1,12 +1,13 @@
-import unittest
 import os
+import unittest
+
 from dateutil import parser
 
 from ml4floods.data.index.geographic_index import GeographicIndex
 from ml4floods.data.index.map_data_factory import MapDataFactory
 
-class TestMapData(unittest.TestCase):
 
+class TestMapData(unittest.TestCase):
     def test_load_empty(self):
         """
         Save an empty index, load it, and ensure we are able to create
@@ -28,12 +29,49 @@ class TestMapData(unittest.TestCase):
         master_prefix = "worldfloods/tiffimages"
         satdate = parser.parse("2018-03-18T03:05:00Z")
         records = []
-        
-        records.append({"type": "meta", "last_modified": satdate, "path": os.path.join(master_prefix, metadata_prefix, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.json")})
+
+        records.append(
+            {
+                "type": "meta",
+                "last_modified": satdate,
+                "path": os.path.join(
+                    master_prefix,
+                    metadata_prefix,
+                    "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.json",
+                ),
+            }
+        )
         for provider in provider_geotiff_prefixes:
-            records.append({"type": "satellite_image", "last_modified": satdate, "provider_id": provider, "path": os.path.join(master_prefix, provider, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.tif")})
-        records.append({"type": "floodmap", "last_modified": satdate, "path": os.path.join(master_prefix, floodmap_prefix, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.shp")})
-        records.append({"type": "cloudmask", "last_modified": satdate, "path": os.path.join(master_prefix, cloudmask_prefix, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.tif")})
+            records.append(
+                {
+                    "type": "satellite_image",
+                    "last_modified": satdate,
+                    "provider_id": provider,
+                    "path": os.path.join(
+                        master_prefix, provider, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.tif"
+                    ),
+                }
+            )
+        records.append(
+            {
+                "type": "floodmap",
+                "last_modified": satdate,
+                "path": os.path.join(
+                    master_prefix, floodmap_prefix, "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.shp"
+                ),
+            }
+        )
+        records.append(
+            {
+                "type": "cloudmask",
+                "last_modified": satdate,
+                "path": os.path.join(
+                    master_prefix,
+                    cloudmask_prefix,
+                    "EMSR274_01AMBILOBE_DEL_v2_observed_event_a.tif",
+                ),
+            }
+        )
         return records
 
     def test_load_coords_single(self):
@@ -68,4 +106,3 @@ class TestMapData(unittest.TestCase):
         mdata = fac.create_map_data(45, 179, 46, 180)
         assert len(mdata.metadata) == 0
         os.remove("foo.pkl")
-

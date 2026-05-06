@@ -1,8 +1,10 @@
-from typing import Tuple, Optional, List, Callable, Dict
-from torch.utils.data import DataLoader
-from ml4floods.data.worldfloods.dataset import WorldFloodsDatasetTiled, WorldFloodsDataset
-from ml4floods.data.worldfloods.configs import BANDS_S2, BANDS_L8
+from collections.abc import Callable
+
 import pytorch_lightning as pl
+from torch.utils.data import DataLoader
+
+from ml4floods.data.worldfloods.configs import BANDS_S2
+from ml4floods.data.worldfloods.dataset import WorldFloodsDataset, WorldFloodsDatasetTiled
 from ml4floods.preprocess.tiling import WindowSize
 from ml4floods.preprocess.utils import get_list_of_window_slices
 
@@ -38,11 +40,11 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         gt_prefix (str): the target folder sub directory
         window_size (Tuple[int,int]): the window size used to tile the images
             for training
-        filter_windows (Callable): function to filter the training tiles by 
-            number of invalid and cloud pixels 
-        filenames_train_test (Dict): path to images and ground truth for 
-            the training, validation and test splits 
-      
+        filter_windows (Callable): function to filter the training tiles by
+            number of invalid and cloud pixels
+        filenames_train_test (Dict): path to images and ground truth for
+            the training, validation and test splits
+
     Example:
         >>> from ml4floods.data.worldfloods.lightning import WorldFloodsDataModule
         >>> wf_dm = WorldFloodsDataModule()
@@ -53,19 +55,19 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
     def __init__(
         self,
-        filenames_train_test: Dict,
+        filenames_train_test: dict,
         input_folder: str = "S2",
         target_folder: str = "gt",
-        train_transformations: Optional[Callable] = None,
-        test_transformations: Optional[Callable] = None,
+        train_transformations: Callable | None = None,
+        test_transformations: Callable | None = None,
         add_mndwi_input: bool = False,
-        window_size: Tuple[int, int] = (64, 64),
+        window_size: tuple[int, int] = (64, 64),
         batch_size: int = 32,
-        bands: List[int] = [1, 2, 3],
-        num_workers:int = 4,
-        num_workers_val:int = 0,
+        bands: list[int] = [1, 2, 3],
+        num_workers: int = 4,
+        num_workers_val: int = 0,
         num_workers_test: int = 0,
-        filter_windows:Callable = None,
+        filter_windows: Callable = None,
         lock_read: bool = False,
     ):
         super().__init__()
@@ -94,8 +96,8 @@ class WorldFloodsDataModule(pl.LightningDataModule):
 
         # loop through the naming splits
         for isplit in splits:
-                # TODO we might could use the train_test_split dict directly to avoid using image_prefix and gt_prefix
-                files[isplit] = self.filenames_train_test[isplit][self.image_prefix]
+            # TODO we might could use the train_test_split dict directly to avoid using image_prefix and gt_prefix
+            files[isplit] = self.filenames_train_test[isplit][self.image_prefix]
 
         # save filenames
         self.train_files = files["train"]
@@ -106,39 +108,39 @@ class WorldFloodsDataModule(pl.LightningDataModule):
         """Does Nothing for now. Here for compatibility."""
         # TODO: here we can check for correspondence between the files
         pass
-    
+
     def get_mndwi_indices(self, bands):
         band_names_current_image = [BANDS_S2[iband] for iband in bands]
         mndwi_indexes_current_image = [band_names_current_image.index(b) for b in ["B3", "B11"]]
         return mndwi_indexes_current_image
-    
+
     def setup(self, stage=None):
         """This creates the PyTorch dataset given the preconfigured
         file paths.
         """
-        
+
         self.train_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(self.train_files, window_size=self.window_size),
+            list_of_windows=get_list_of_window_slices(
+                self.train_files, window_size=self.window_size
+            ),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
+            mndwi_indices=self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.train_transform,
-            lock_read=self.lock_read
+            lock_read=self.lock_read,
         )
         if self.filter_windows is not None:
             self.train_dataset.list_of_windows = self.filter_windows(self.train_dataset)
 
         self.val_dataset = WorldFloodsDatasetTiled(
-            list_of_windows=get_list_of_window_slices(
-                self.val_files, window_size=self.window_size
-            ),
+            list_of_windows=get_list_of_window_slices(self.val_files, window_size=self.window_size),
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
+            mndwi_indices=self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.test_transform,
-            lock_read=self.lock_read
+            lock_read=self.lock_read,
         )
 
         self.test_dataset = WorldFloodsDataset(
@@ -146,24 +148,28 @@ class WorldFloodsDataModule(pl.LightningDataModule):
             image_prefix=self.image_prefix,
             gt_prefix=self.gt_prefix,
             bands=self.bands,
-            mndwi_indices = self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
+            mndwi_indices=self.get_mndwi_indices(self.bands) if self.add_mndwi_input else None,
             transforms=self.test_transform,
-            lock_read=self.lock_read
+            lock_read=self.lock_read,
         )
 
     def train_dataloader(self):
         """Initializes and returns the training dataloader"""
-        return DataLoader(self.train_dataset, batch_size=self.batch_size,
-                          num_workers=self.num_workers, shuffle=True)
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=True,
+        )
 
     def val_dataloader(self, num_workers=None):
         """Initializes and returns the validation dataloader"""
         num_workers = num_workers or self.num_workers_val
-        return DataLoader(self.val_dataset, batch_size=self.batch_size,
-                          num_workers=num_workers, shuffle=False)
+        return DataLoader(
+            self.val_dataset, batch_size=self.batch_size, num_workers=num_workers, shuffle=False
+        )
 
     def test_dataloader(self, num_workers=None):
         """Initializes and returns the test dataloader"""
         num_workers = num_workers or self.num_workers_test
-        return DataLoader(self.test_dataset, batch_size=1,
-                          num_workers=num_workers, shuffle=False)
+        return DataLoader(self.test_dataset, batch_size=1, num_workers=num_workers, shuffle=False)

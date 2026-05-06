@@ -5,7 +5,7 @@
 ## Brief description
 The ml4floods viewer and label editor is a Flask web application to view and manually edit the floodmaps of the *WorldFloods* dataset.
 We use this application to keep growing *WorldFloods* and to improve the quality of its labels. In order to test it, you need
-to [download the *WorldFloodsv2* dataset (at least a subset of it)](./worldfloods_dataset.md). 
+to [download the *WorldFloodsv2* dataset (at least a subset of it)](./worldfloods_dataset.md).
 
 To launch the viewer clone the package and run:
 

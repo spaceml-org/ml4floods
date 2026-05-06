@@ -1,20 +1,17 @@
+import contextlib
 import numbers
-
-from ml4floods.preprocess.tiling import WindowSlices
-from typing import Callable, Dict, List, Optional, Tuple, Union
+import threading
+from collections.abc import Callable
 
 import numpy as np
 import rasterio
 import rasterio.windows
 import torch
 from torch.utils.data import Dataset
-import contextlib
+
 from ml4floods.data import utils
-
-
 from ml4floods.data.worldfloods.configs import BANDS_S2
-
-import threading
+from ml4floods.preprocess.tiling import WindowSlices
 
 
 class WorldFloodsDataset(Dataset):
@@ -43,15 +40,14 @@ class WorldFloodsDataset(Dataset):
 
     def __init__(
         self,
-        image_files: List[str],
+        image_files: list[str],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        transforms: Optional[Callable] = None,
-        bands: List[int] = list(range(len(BANDS_S2))),
-        mndwi_indices: List[int] = None,
+        transforms: Callable | None = None,
+        bands: list[int] = list(range(len(BANDS_S2))),
+        mndwi_indices: list[int] = None,
         lock_read: bool = False,
     ) -> None:
-
         self.image_files = image_files
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
@@ -68,7 +64,7 @@ class WorldFloodsDataset(Dataset):
         # TODO: Do this for the list of filepaths at the end as well
         self.image_files.sort()
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, idx: int) -> dict:
         """Index to select an image
 
         Args:
@@ -84,18 +80,18 @@ class WorldFloodsDataset(Dataset):
 
         y_name = image_name.replace(self.image_prefix, self.gt_prefix, 1)
 
-        image_tif = rasterio_read(
-            image_name, self._lock, channels=[c + 1 for c in self.bands_read]
-        )
+        image_tif = rasterio_read(image_name, self._lock, channels=[c + 1 for c in self.bands_read])
 
         mask_tif = rasterio_read(y_name, self._lock)
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
-        
+
         if self.mndwi_indices is not None:
-            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6)
-            image = np.concatenate([image,mndwi[np.newaxis]], axis = 0)
+            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (
+                image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6
+            )
+            image = np.concatenate([image, mndwi[np.newaxis]], axis=0)
 
         # The 0-index comes from reading all the bands with f.read()
         mask = np.nan_to_num(mask_tif)
@@ -139,15 +135,14 @@ class WorldFloodsDatasetTiled(Dataset):
 
     def __init__(
         self,
-        list_of_windows: List[WindowSlices],
+        list_of_windows: list[WindowSlices],
         image_prefix: str = "/image_files/",
         gt_prefix: str = "/gt_files/",
-        transforms: Optional[Callable] = None,
-        bands: List[int] = list(range(len(BANDS_S2))),
-        mndwi_indices: List[int] = None,
+        transforms: Callable | None = None,
+        bands: list[int] = list(range(len(BANDS_S2))),
+        mndwi_indices: list[int] = None,
         lock_read: bool = False,
     ) -> None:
-
         self.image_prefix = image_prefix
         self.gt_prefix = gt_prefix
         self.transforms = transforms
@@ -185,7 +180,7 @@ class WorldFloodsDatasetTiled(Dataset):
             },
         )
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, idx: int) -> dict:
         """Index to select an image tile
 
         Args:
@@ -231,10 +226,12 @@ class WorldFloodsDatasetTiled(Dataset):
 
         # get rid of nan, convert to float
         image = np.nan_to_num(image_tif).astype(np.float32)
-        
+
         if self.mndwi_indices is not None:
-            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6)
-            image = np.concatenate([image,mndwi[np.newaxis]], axis = 0)
+            mndwi = (image[self.mndwi_indices][0] - image[self.mndwi_indices][1]) / (
+                image[self.mndwi_indices][0] + image[self.mndwi_indices][1] + 1e-6
+            )
+            image = np.concatenate([image, mndwi[np.newaxis]], axis=0)
         mask = np.nan_to_num(mask_tif).astype(int)
 
         # Apply transformation
@@ -250,7 +247,7 @@ class WorldFloodsDatasetTiled(Dataset):
 
 
 def rasterio_read(
-    image_name: str, lock, channels: List[int] = None, kwargs_rasterio: Dict = {}
+    image_name: str, lock, channels: list[int] = None, kwargs_rasterio: dict = {}
 ) -> np.ndarray:
     with lock:
         with utils.rasterio_open_read(image_name) as f:
@@ -259,8 +256,9 @@ def rasterio_read(
     return im_tif
 
 
-def load_input(tiff_input:str, channels:Union[List[int],List[str]],
-               window:Optional[rasterio.windows.Window]=None) -> Tuple[torch.Tensor, rasterio.transform.Affine]:
+def load_input(
+    tiff_input: str, channels: list[int] | list[str], window: rasterio.windows.Window | None = None
+) -> tuple[torch.Tensor, rasterio.transform.Affine]:
     """
     Reads from a tiff the specified channel and window.
 
@@ -281,9 +279,11 @@ def load_input(tiff_input:str, channels:Union[List[int],List[str]],
             channels_tiff = list(rst.descriptions)
             indexes = [channels_tiff.index(c) + 1 for c in channels]
 
-        inputs = rst.read(indexes, window = window)
+        inputs = rst.read(indexes, window=window)
 
         # Shifted transform based on the given window (used for plotting)
-        transform = rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+        transform = (
+            rst.transform if window is None else rasterio.windows.transform(window, rst.transform)
+        )
         torch_inputs = torch.tensor(np.nan_to_num(inputs).astype(np.float32))
     return torch_inputs, transform
