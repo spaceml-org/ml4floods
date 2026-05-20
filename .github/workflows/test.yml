@@ -10,8 +10,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: "3.11"
       - run: uv sync --extra dev
@@ -23,8 +23,8 @@ jobs:
   type:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: "3.11"
       - run: uv sync --extra dev
@@ -38,8 +38,8 @@ jobs:
       matrix:
         python-version: ["3.11"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --extra tests
