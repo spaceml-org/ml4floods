@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync lock format lint type test check clean build publish build-jupyterbook clean-jupyterbook publish-docs
+.PHONY: help install install-dev sync lock format lint type test check clean build publish build-jupyterbook clean-jupyterbook
 .DEFAULT_GOAL = help
 
 PKGROOT = ml4floods
@@ -48,9 +48,6 @@ build-jupyterbook:  ## Build jupyter book
 
 clean-jupyterbook:  ## Clean jupyter book html
 	uv run jupyter-book clean jupyterbook
-
-publish-docs:  ## Publish docs to gh-pages
-	uv run ghp-import -n -p -f jupyterbook/_build/html
 
 ##@ Build & Publish
 
