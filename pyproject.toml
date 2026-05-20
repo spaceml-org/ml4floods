@@ -56,7 +56,7 @@ Homepage = "https://github.com/spaceml-org/ml4floods"
 [project.optional-dependencies]
 dev = ["ruff", "mypy", "pre-commit", "pyprojroot"]
 tests = ["pytest"]
-docs = ["jupyter-book<2", "ghp-import"]
+docs = ["jupyter-book<2"]
 serve = ["flask", "gunicorn"]
 cloudmasks = ["segmentation-models-pytorch", "s2cloudless"]
 kappazeta = ["tensorflow"]

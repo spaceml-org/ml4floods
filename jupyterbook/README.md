@@ -1,34 +1,27 @@
 # Create docs
 
-Install `jupyter-book` and `ghp-import`. From the main directory run
+The documentation site is built with [Jupyter Book](https://jupyterbook.org/).
 
-```bask
+Build it locally from the repository root:
+
+```bash
 make build-jupyterbook
-# Check doc in local looks good
-
-# Upload the doc to GitHub
-ghp-import -n -p -f jupyterbook/_build/html
 ```
-The commit should appear in branch `gh-pages` and the page will be live at [spaceml-org.github.io/ml4floods](https://spaceml-org.github.io/ml4floods)
 
-# Publish package in pip
+Then open `jupyterbook/_build/html/index.html` to review it.
 
-Install `twine`.
+Deployment is automatic: on every merge to `main`, the `deploy` GitHub Actions
+workflow builds the book and publishes it to GitHub Pages at
+[spaceml-org.github.io/ml4floods](https://spaceml-org.github.io/ml4floods).
 
-First update the version number in `ml4floods/__init__.py`
+# Publish package to PyPI
 
+First bump the version number in `ml4floods/__init__.py`, then from the
+repository root:
+
+```bash
+make build      # build sdist + wheel (uv build)
+make publish    # upload to PyPI (uv publish)
 ```
-rm -rf build/
-rm -rf dist/
-python setup.py sdist bdist_wheel
 
-# upload to testpypi
-python -m twine upload --repository testpypi dist/*
-
-# Upload to real pypi
-python -m twine upload dist/*
-```
-The package in PyPi will be shown at [pypi.org/project/ml4floods/](https://pypi.org/project/ml4floods/). The test version can be checked at [test.pypi.org/project/ml4floods/](https://test.pypi.org/project/ml4floods/)
-
-
-Follow [this tutorial](https://towardsdatascience.com/how-to-publish-a-python-package-to-pypi-7be9dd5d6dcd) to understand how pip works
+The package is listed at [pypi.org/project/ml4floods](https://pypi.org/project/ml4floods/).
