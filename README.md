@@ -11,7 +11,8 @@ ML4Floods (aka FloodMapper) is an end-to-end ML pipeline for flood extent estima
     <img src="https://raw.githubusercontent.com/spaceml-org/ml4floods/main/jupyterbook/content/ml4ops/ts_albania.gif" alt="awesome flood extent estimation" width="100%">
 </p>
 
-## Install
+## Install<img width="1412" height="175" alt="Label for FDL Produts-01" src="https://github.com/user-attachments/assets/dd80c0e9-b151-42b3-94fc-a93b8f4ee92f" />
+
 
 Install from [pip](https://pypi.org/project/ml4floods/):
 
